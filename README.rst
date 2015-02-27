@@ -28,9 +28,29 @@ the executable yourself.
 
 Running the model
 =================
-Add the python examples.
-Add code usage - 2 flags...
-    
+A simple model usage can be displayed by calling GDAY as follows ::
+
+::
+
+    $ gday -u
+
+========
+ USAGE:
+========
+	./gday [options]
+
+
+Expected input file is a .ini/.cfg style param file, passed with the -p flag .
+
+The options are:
+
+++General options:
+[-ver          	] Print the git hash tag.]
+[-p       fname	] Location of parameter file (.ini/.cfg).]
+[-s            	] Spin-up GDAY, when it the model is finished it will print the final state to the param file.]
+
+++Print this message:
+[-u/-h         	] usage/help]
     
 Contacts
 ========
