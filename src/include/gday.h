@@ -99,52 +99,52 @@ typedef struct {
 
 
 typedef struct {
-    double activesoil;
-    double activesoiln;
-    double age;
-    double avg_albranch;
-    double avg_alcroot;
-    double avg_alleaf;
-    double avg_alroot;
-    double avg_alstem;
-    double branch;
-    double branchn;
-    double canht;
-    double croot;
-    double crootn;
-    double cstore;
-    double inorgn;
-    double lai;
+    double activesoil;                  /* active C som pool (t/ha) */
+    double activesoiln;                 /* active N som pool (t/ha) */
+    double age;                         /* Current stand age (years) */
+    double avg_albranch;                /* Average branch growing season allocation fractions */
+    double avg_alcroot;                 /* Average coarse root growing season allocation fractions */
+    double avg_alleaf;                  /* Average leaf growing season allocation fractions */
+    double avg_alroot;                  /* Average fine root growing season allocation fractions */
+    double avg_alstem;                  /* Average stem growing season allocation fractions */
+    double branch;                      /* branch c (t/ha) */
+    double branchn;                     /* branch n (t/ha) */
+    double canht;                       /* canopy height (m) */
+    double croot;                       /* coarse root c (t/ha) */
+    double crootn;                      /* coarse root n (t/ha) */
+    double cstore;                      /* C store for deciduous model (t/ha) */
+    double inorgn;                      /* Inorganic soil N pool - dynamic (t/ha) */
+    double lai;                         /* leaf area index m2 (leaf) m-2 (ground) */
     double fipar;
     double max_lai;
     double max_shoot;
-    double metabsoil;
-    double metabsoiln;
-    double metabsurf;
-    double metabsurfn;
-    double nstore;
-    double passivesoil;
-    double passivesoiln;
-    double pawater_root;
-    double pawater_topsoil;
+    double metabsoil;                   /* metabolic soil c (t/ha) */
+    double metabsoiln;                  /* metabolic soil n (t/ha) */
+    double metabsurf;                   /* metabolic surface c (t/ha) */
+    double metabsurfn;                  /* metabolic surface n (t/ha) */
+    double nstore;                      /* N store for deciduous model (t/ha) */
+    double passivesoil;                 /* passive C som pool (t/ha) */
+    double passivesoiln;                /* passive N som pool (t/ha) */
+    double pawater_root;                /* plant available water - root zone (mm) */
+    double pawater_topsoil;             /* plant available water - top soil(mm) */
     double prev_sma;
-    double root;
-    double root_depth;
-    double rootn;
+    double root;                        /* root c (t/ha) */
+    double root_depth;                  /* rooting depth, Dmax (m) */
+    double rootn;                       /* root n (t/ha) */
     double sapwood;
-    double shoot;
-    double shootn;
-    double sla;
-    double slowsoil;
-    double slowsoiln;
+    double shoot;                       /* shoot c (t/ha) */
+    double shootn;                      /* shoot n (t/ha) */
+    double sla;                         /* specific leaf area */
+    double slowsoil;                    /* slow C som pool (t/ha) */
+    double slowsoiln;                   /* slow N som pool (t/ha) */
     double stem;
-    double stemn;
+    double stemn;                       /* Stem N (t/ha) = stemnimm + stemnmob */
     double stemnimm;
     double stemnmob;
-    double structsoil;
-    double structsoiln;
-    double structsurf;
-    double structsurfn;
+    double structsoil;                  /* soil structural c (t/ha) */
+    double structsoiln;                 /* soil structural n (t/ha) */
+    double structsurf;                  /* surface structural c (t/ha) */
+    double structsurfn;                 /* surface structural n (t/ha) */
     double shootnc;
     double rootnc;
     double remaining_days[366];
