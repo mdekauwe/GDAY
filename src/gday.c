@@ -48,34 +48,34 @@ int main(int argc, char **argv)
     state *s;
 
     c = (control *)malloc(sizeof (control));
-	if (c == NULL) {
-		fprintf(stderr, "control structure: Not allocated enough memory!\n");
-		exit(1);
-	}
+    if (c == NULL) {
+        fprintf(stderr, "control structure: Not allocated enough memory!\n");
+    	exit(1);
+    }
 
     f = (fluxes *)malloc(sizeof (fluxes));
-	if (f == NULL) {
-		fprintf(stderr, "fluxes structure: Not allocated enough memory!\n");
-		exit(1);
-	}
+    if (f == NULL) {
+    	fprintf(stderr, "fluxes structure: Not allocated enough memory!\n");
+    	exit(1);
+    }
 
     m = (met *)malloc(sizeof (met));
-	if (m == NULL) {
-		fprintf(stderr, "met structure: Not allocated enough memory!\n");
-		exit(1);
-	}
+    if (m == NULL) {
+    	fprintf(stderr, "met structure: Not allocated enough memory!\n");
+    	exit(1);
+    }
 
     p = (params *)malloc(sizeof (params));
-	if (p == NULL) {
-		fprintf(stderr, "params structure: Not allocated enough memory!\n");
-		exit(1);
-	}
+    if (p == NULL) {
+    	fprintf(stderr, "params structure: Not allocated enough memory!\n");
+    	exit(1);
+    }
 
     s = (state *)malloc(sizeof (state));
-	if (s == NULL) {
-		fprintf(stderr, "state structure: Not allocated enough memory!\n");
-		exit(1);
-	}
+    if (s == NULL) {
+    	fprintf(stderr, "state structure: Not allocated enough memory!\n");
+    	exit(1);
+    }
 
     initialise_control(c);
     initialise_params(p);
@@ -111,8 +111,6 @@ int main(int argc, char **argv)
     free(m);
     free(p);
     free(s);
-
-
 
     exit(EXIT_SUCCESS);
 }
