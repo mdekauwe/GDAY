@@ -5,7 +5,6 @@
 #include <stdlib.h>
 
 #include "gday.h"
-#include "memory.h"
 #include "utilities.h"
 
 void   read_met_data(char **, control *, met *);

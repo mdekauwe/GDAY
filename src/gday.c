@@ -18,7 +18,6 @@
 
 #include "gday.h"
 #include "constants.h"
-#include "memory.h"
 #include "utilities.h"
 #include "litter_production.h"
 #include "plant_growth.h"

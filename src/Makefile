@@ -10,7 +10,7 @@ PROGRAM  =  gday
 
 
 SOURCES  =  \
-$(PROGRAM).c version.c memory.c read_param_file.c read_met_file.c \
+$(PROGRAM).c version.c read_param_file.c read_met_file.c \
 litter_production.c utilities.c plant_growth.c mate.c water_balance.c \
 simple_moving_average.c soils.c optimal_root_model.c initialise_model.c \
 write_output_file.c phenology.c
