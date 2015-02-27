@@ -368,11 +368,11 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
 }
 
 void clparser(int argc, char **argv, control *c) {
-	int i;
+    int i;
 
-	for (i = 1; i < argc; i++) {
-	    if (*argv[i] == '-') {
-		    if (!strncasecmp(argv[i], "-p", 2)) {
+    for (i = 1; i < argc; i++) {
+        if (*argv[i] == '-') {
+            if (!strncasecmp(argv[i], "-p", 2)) {
 			    strcpy(c->cfg_fname, argv[++i]);
             } else if (!strncasecmp(argv[i], "-s", 2)) {
                 c->spin_up = TRUE;
@@ -390,7 +390,7 @@ void clparser(int argc, char **argv, control *c) {
             }
         }
     }
-	return;
+    return;
 }
 
 
