@@ -226,7 +226,7 @@ void calculate_ncwood_ratios(control *c, params *p, state *s, double nitfac,
     *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
 
     /* fixed N:C in the stemwood */
-    if (c->fixed_stem_nc == 1) {
+    if (c->fixed_stem_nc) {
         /* n:c ratio of stemwood - immobile pool and new ring */
         *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
 
