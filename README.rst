@@ -15,9 +15,7 @@ Key References
 
 Dependancies
 =============
-If using the optimal allocation routines... ::
-
-- GNU Scientific Library: [GSL 1.16](http://www.linuxfromscratch.org/blfs/view/svn/general/gsl.html)
+If using the optimal allocation routines then you will need to build GDAY against the `GNU scientific libraries <http://www.gnu.org/software/gsl/>`_.
 
 
 .. contents:: :local:
