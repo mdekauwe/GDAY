@@ -57,7 +57,6 @@ void initialise_params(params *p) {
     p->ac = 0.5;
     p->actncmax = 0.333333;
     p->actncmin = 0.066667;
-    p->adapt = 0.012;
     p->ageold = 10000.0;
     p->ageyoung = 0.0;
     p->albedo = 0.123;

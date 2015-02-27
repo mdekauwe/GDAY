@@ -9,6 +9,8 @@
 #include <math.h>
 
 
+#define EPSILON 1E-08
+
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -18,10 +20,6 @@
 #endif
 
 #define STRING_LENGTH 2000
-
-
-
-
 
 #define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define MAX(a,b) (((a) > (b)) ? (a) : (b))
@@ -50,6 +48,13 @@
 
 #define DAILY 0
 #define END 1
+
+#define SILT 0
+#define SAND 1
+#define CLAY 2
+
+
+
 
 typedef struct {
     FILE *ifp;
@@ -544,22 +549,12 @@ typedef struct {
 
 
 
-
-
-void    read_met_data(char **, control *, met *);
-int     calc_days_in_year(int);
-
-int parse_ini_file(control *, params *, state *);
-void usage(char **);
-
-
-void run_sim(control *, fluxes *, met *, params *p, state *);
-void spin_up_pools(control *, fluxes *, met *, params *p, state *);
-
-/* gday main */
-void   correct_rate_constants(params *, int output);
 void   clparser(int, char **, control *);
+void   usage(char **);
 
+void   run_sim(control *, fluxes *, met *, params *p, state *);
+void   spin_up_pools(control *, fluxes *, met *, params *p, state *);
+void   correct_rate_constants(params *, int output);
 void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   zero_stuff(control *, state *);
 void   day_end_calculations(control *, params *, state *, int, int);

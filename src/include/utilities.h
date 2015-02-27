@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdbool.h>
+#include <string.h>
+#include <ctype.h>
+#include "gday.h"
 
-#define TRUE 1
-#define FALSE 0
 
-#define EPSILON 1E-08
 
 
 

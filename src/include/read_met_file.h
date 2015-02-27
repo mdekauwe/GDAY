@@ -1,3 +1,6 @@
+#ifndef READ_MET_H
+#define READ_MET_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -5,4 +8,6 @@
 #include "memory.h"
 #include "utilities.h"
 
-#define STRING_LENGTH 2000
+void   read_met_data(char **, control *, met *);
+
+#endif /* READ_MET_H */

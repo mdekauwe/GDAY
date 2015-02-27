@@ -3,7 +3,6 @@
 
 #include "gday.h"
 
-void calc_opt_root_depth(double, double, double ,
-                         double *, double *, double *);
+void calc_opt_root_depth(double, double, double , double *, double *, double *);
 
 #endif /*  OPTROOT_H */

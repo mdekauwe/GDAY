@@ -1,5 +1,5 @@
-#ifndef MEMORY
-#define MEMORY
+#ifndef MEMORY_H
+#define MEMORY_H
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -15,4 +15,4 @@ int    *allocate_memory_int(int, const unsigned int);
 float  *allocate_memory_float(int, const unsigned int);
 double *allocate_memory_double(int, const unsigned int);
 
-#endif /* MEMORY */
+#endif /* MEMORY_H */

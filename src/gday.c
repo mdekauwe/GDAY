@@ -12,7 +12,7 @@
 *   Martin De Kauwe
 *
 * DATE:
-*   17.02.2015
+*   27.02.2015
 *
 * =========================================================================== */
 
@@ -28,11 +28,11 @@
 #include "soils.h"
 #include "optimal_root_model.h"
 #include "initialise_model.h"
-#include "print_outputs.h"
+#include "write_output_file.h"
 #include "version.h"
 #include "phenology.h"
-
-
+#include "read_param_file.h"
+#include "read_met_file.h"
 
 int main(int argc, char **argv)
 {
@@ -244,6 +244,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             calculate_csoil_flows(c, f, p, s, m->tsoil[project_day]);
             calculate_nsoil_flows(c, f, p, s, m->ndep[project_day]);
 
+            printf("%f\n", f->gpp*100.);
+
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
                  /*Allocation is annually for deciduous "tree" model, but we
@@ -439,7 +441,6 @@ void correct_rate_constants(params *p, int output) {
         p->kdec7 *= NDAYS_IN_YR;
         p->nuptakez *= NDAYS_IN_YR;
         p->nmax *= NDAYS_IN_YR;
-        p->adapt *= NDAYS_IN_YR;
     } else {
         p->rateuptake /= NDAYS_IN_YR;
         p->rateloss /= NDAYS_IN_YR;
@@ -461,7 +462,6 @@ void correct_rate_constants(params *p, int output) {
         p->kdec7 /= NDAYS_IN_YR;
         p->nuptakez /= NDAYS_IN_YR;
         p->nmax /= NDAYS_IN_YR;
-        p->adapt /= NDAYS_IN_YR;
     }
 
     return;

@@ -13,7 +13,7 @@
 *   25.02.2015
 *
 * =========================================================================== */
-#include "print_outputs.h"
+#include "write_output_file.h"
 
 
 void open_output_file(control *c, char *fname) {

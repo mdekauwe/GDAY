@@ -5,6 +5,10 @@
 #include "constants.h"
 #include "utilities.h"
 
+/* C3 */
+void   mate_C3_photosynthesis(control *, fluxes *, met *, params *,
+                              state *, int, double, double);
+
 double  calculate_top_of_canopy_n(params *, state *, double);
 void    get_met_stuff(met *, int, double *, double *, double *, double *,
                      double *, double *);
@@ -22,6 +26,8 @@ double  epsilon(params *, double, double, double, double);
 
 
 /* C4 additional prototypes */
+void   mate_C4_photosynthesis(control *, fluxes *, met *, params *,
+                              state *, int, double, double);
 void   calculate_vcmax_parameter(params *, state *s, double, double, double *,
                                  double *, double);
 double calc_respiration(double, double);

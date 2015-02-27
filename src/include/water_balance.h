@@ -5,14 +5,9 @@
 #include "constants.h"
 #include "utilities.h"
 
-#define SILT 0
-#define SAND 1
-#define CLAY 2
 
-#define MATE 0
-#define MEDLYN 0
-#define BEWDY 1
-
+void    calculate_water_balance(control *, fluxes *, met *, params *,
+                               state *, int, double);
 void    get_met_data(met *, int , double *, double *, double *, double *,
                     double *, double *, double *, double *, double *, double *,
                     double *, double *, double *, double *, double *);
@@ -42,5 +37,5 @@ double *get_soil_fracs(char *);
 void    get_soil_params(char *, double *, double *);
 void    calc_soil_params(double *, double *, double *,
                         double *, double *, double *);
-void calculate_soil_water_fac(control *, params *, state *);
+void    calculate_soil_water_fac(control *, params *, state *);
 #endif /* WATER_BALANCE */
