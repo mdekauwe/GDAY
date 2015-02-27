@@ -242,7 +242,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             calculate_csoil_flows(c, f, p, s, m->tsoil[project_day]);
             calculate_nsoil_flows(c, f, p, s, m->ndep[project_day]);
 
-            printf("%f\n", f->gpp*100.);
+            /*printf("%f\n", f->gpp*100.);*/
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {

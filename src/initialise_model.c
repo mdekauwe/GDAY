@@ -66,7 +66,6 @@ void initialise_params(params *p) {
     p->branch0 = 5.61;
     p->branch1 = 0.346;
     p->bretrans = 0.0;
-    p->burn_specific_yr = -999.9;
     p->c_alloc_bmax = 0.1;
     p->c_alloc_bmin = 0.1;
     p->c_alloc_cmax = 0.0;

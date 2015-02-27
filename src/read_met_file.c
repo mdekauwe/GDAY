@@ -24,7 +24,7 @@ void read_met_data(char **argv, control *c, met *m)
         file_len++;
     }
     rewind(fp);
-    c->num_days = file_len-1;
+    c->num_days = file_len;
 
     /* allocate memory for meteorological arrays */
     if ((m->year = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
@@ -160,6 +160,7 @@ void read_met_data(char **argv, control *c, met *m)
             skipped_lines++;
             continue;
         }
+
         if (sscanf(line, "%lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
