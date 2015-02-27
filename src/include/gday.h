@@ -184,8 +184,6 @@ typedef struct {
     double totalc;
     double soilc;
     double soiln;
-
-
 } state;
 
 typedef struct {
