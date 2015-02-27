@@ -454,11 +454,7 @@ int handler(char *section, char *name, char *value, control *c,
     }
 
     /* Params */
-    if (MATCH("params", "a1")) {
-        p->a1 = atof(value);
-    } else if (MATCH("params", "ac")) {
-        p->ac = atof(value);
-    } else if (MATCH("params", "actncmax")) {
+    if (MATCH("params", "actncmax")) {
         p->actncmax = atof(value);
     } else if (MATCH("params", "actncmin")) {
         p->actncmin = atof(value);
@@ -484,8 +480,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->branch0 = atof(value);
     } else if (MATCH("params", "branch1")) {
         p->branch1 = atof(value);
-    } else if (MATCH("params", "burn_specific_yr")) {
-        p->burn_specific_yr = atof(value);
     } else if (MATCH("params", "c_alloc_bmax")) {
         p->c_alloc_bmax = atof(value);
     } else if (MATCH("params", "c_alloc_bmin")) {

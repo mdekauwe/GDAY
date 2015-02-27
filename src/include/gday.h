@@ -203,7 +203,6 @@ typedef struct {
     double branch0;
     double branch1;
     double bretrans;
-    double burn_specific_yr;
     double c_alloc_bmax;
     double c_alloc_bmin;
     double c_alloc_cmax;
