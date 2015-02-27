@@ -38,7 +38,7 @@ void initialise_control(control *c) {
     c->trans_model = 0;             /* 0=trans from WUE, 1=Penman-Monteith, 2=Priestley-Taylor */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
-    c->spin_up = FALSE;
+    c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
 
     /* Internal calculated */
     c->num_years = 0;               /* Total number of years simulated */
@@ -53,8 +53,6 @@ void initialise_params(params *p) {
     *** Default values for params structure.
     */
     int i;
-    p->a1 = 0.0;
-    p->ac = 0.5;
     p->actncmax = 0.333333;
     p->actncmin = 0.066667;
     p->ageold = 10000.0;

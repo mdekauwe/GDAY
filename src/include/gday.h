@@ -189,8 +189,6 @@ typedef struct {
 } state;
 
 typedef struct {
-    double a1;
-    double ac;
     double actncmax;
     double actncmin;
     double adapt;
