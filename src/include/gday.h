@@ -192,11 +192,11 @@ typedef struct {
     double actncmax;
     double actncmin;
     double adapt;
-    double ageold;
-    double ageyoung;
+    double ageold;                          /* Plant age when max leaf N C ratio is lowest */
+    double ageyoung;                        /* Plant age when max leaf N C ratio is highest */
     double albedo;
-    double alpha_c4;
-    double alpha_j;
+    double alpha_c4;                        /* quantium efficiency for C4 plants has no Ci and temp dependancy, so if a fixed constant. */
+    double alpha_j;                         /* initial slope of rate of electron transport, used in calculation of quantum yield. Value calculated by Belinda */
     double b_root;
     double b_topsoil;
     double bdecay;
@@ -210,24 +210,24 @@ typedef struct {
     double c_alloc_fmin;
     double c_alloc_rmax;
     double c_alloc_rmin;
-    double cfracts;
+    double cfracts;                         /* carbon fraction of dry biomass */
     double crdecay;
     double cretrans;
     double croot0;
     double croot1;
     double ctheta_root;
     double ctheta_topsoil;
-    double cue;
+    double cue;                             /* carbon use efficiency, or the ratio of NPP to GPP */
     double d0;
     double d0x;
     double d1;
-    double delsj;
+    double delsj;                           /* Deactivation energy for electron transport (J mol-1 k-1) */
     double density;
-    double direct_frac;
+    double direct_frac;                     /* direct beam fraction of incident radiation - this is only used with the BEWDY model */
     double displace_ratio;
     double disturbance_doy;
     double dz0v_dh;
-    double eac;
+    double eac;                             /* Activation energy for carboxylation [J mol-1] */
     double eag;
     double eaj;
     double eao;
@@ -238,7 +238,7 @@ typedef struct {
     double fdecay;
     double fdecaydry;
     double fhw;
-    double finesoil;
+    double finesoil;                        /* clay+silt fraction */
     double fracfaeces;
     double fracteaten;
     double fractosoil;
@@ -267,13 +267,13 @@ typedef struct {
     double kdec5;
     double kdec6;
     double kdec7;
-    double kext;
+    double kext;                            /* extinction coefficient */
     double knl;
     double ko25;
     double kq10;
     double kr;
-    double lai_closed;
-    double latitude;
+    double lai_closed;                      /* LAI of closed canopy (max cover fraction is reached (m2 (leaf) m-2 (ground) ~ 2.5) */
+    double latitude;                        /* latitude (degrees, negative for south) */
     double leafsap0;
     double leafsap1;
     double ligfaeces;
@@ -308,8 +308,8 @@ typedef struct {
     double passivesoilz;
     double passncmax;
     double passncmin;
-    double prescribed_leaf_NC;
-    double previous_ncd;
+    double prescribed_leaf_NC;              /* If the N-Cycle is switched off this needs to be set, e.g. 0.03 */
+    double previous_ncd;                    /* In the first year we don't have last years data, so I have precalculated the average of all the november-jan chilling values  */
     double prime_y;
     double prime_z;
     double psi_sat_root;
@@ -328,9 +328,9 @@ typedef struct {
     char   rootsoil_type[STRING_LENGTH];
     double rretrans;
     double sapturnover;
-    double sla;
-    double slamax;
-    double slazero;
+    double sla;                             /* specific leaf area (m2 one-sided/kg DW) */
+    double slamax;                          /* (if equal slazero=no effect) specific leaf area new fol at max leaf N/C (m2 one-sided/kg DW) */
+    double slazero;                         /* (if equal slamax=no effect) specific leaf area new fol at zero leaf N/C (m2 one-sided/kg DW) */
     double slowncmax;
     double slowncmin;
     double store_transfer_len;
