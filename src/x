@@ -1,0 +1,286 @@
+==93742== Memcheck, a memory error detector
+==93742== Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.
+==93742== Using Valgrind-3.11.0.SVN and LibVEX; rerun with -h for copyright info
+==93742== Command: gday -p ../example/params/NCEAS_DUKE_model_youngforest_amb.cfg
+==93742== 
+--93742-- run: /usr/bin/dsymutil "./gday"
+--93742-- UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option
+--93742-- UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option (repeated 2 times)
+--93742-- UNKNOWN mach_msg unhandled MACH_SEND_TRAILER option (repeated 4 times)
+==93742== Invalid free() / delete / delete[] / realloc()
+==93742==    at 0x100029A17: free (vg_replace_malloc.c:480)
+==93742==    by 0x1000094C5: handler (read_param_file.c:785)
+==93742==    by 0x100003810: parse_ini_file (read_param_file.c:67)
+==93742==    by 0x100001742: main (gday.c:88)
+==93742==  Address 0x104822ffb is on thread 1's stack
+==93742==  in frame #2, created by parse_ini_file (read_param_file.c:6)
+==93742== 
+Error: couldn't open Met file met_data/DUKE_met_data_amb_co2.csv for read
+==93742== 
+==93742== HEAP SUMMARY:
+==93742==     in use at exit: 63,085 bytes in 430 blocks
+==93742==   total heap usage: 517 allocs, 405 frees, 73,501 bytes allocated
+==93742== 
+==93742== 16 bytes in 1 blocks are definitely lost in loss record 7 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C6D0E: recursive_mutex_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6CBF: lock_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6A2C: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x100033A9F: libSystem_initializer (in /usr/lib/libSystem.B.dylib)
+==93742==    by 0x7FFF5FC12CEA: ImageLoaderMachO::doModInitFunctions(ImageLoader::LinkContext const&) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC12E77: ImageLoaderMachO::doInitialization(ImageLoader::LinkContext const&) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC0F870: ImageLoader::recursiveInitialization(ImageLoader::LinkContext const&, unsigned int, ImageLoader::InitializerTimingList&, ImageLoader::UninitedUpwards&) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC0F805: ImageLoader::recursiveInitialization(ImageLoader::LinkContext const&, unsigned int, ImageLoader::InitializerTimingList&, ImageLoader::UninitedUpwards&) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC0F6F7: ImageLoader::processInitializers(ImageLoader::LinkContext const&, unsigned int, ImageLoader::InitializerTimingList&, ImageLoader::UninitedUpwards&) (in /usr/lib/dyld)
+==93742== 
+==93742== 24 bytes in 1 blocks are possibly lost in loss record 15 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C937C: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C946F: _NXHashRehashToCapacity (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C93B9: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8E5B: NXCreateMapTableFromZone (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C9709: remappedClasses(signed char) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D714F: remapClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D769E: readClass(objc_class*, bool, bool) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C830A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742== 
+==93742== 24 bytes in 1 blocks are possibly lost in loss record 16 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C937C: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8676: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B66: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 32 bytes in 1 blocks are possibly lost in loss record 28 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C932E: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C907A: NXCreateHashTableFromZone (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C81F6: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 32 bytes in 1 blocks are possibly lost in loss record 29 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C932E: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C946F: _NXHashRehashToCapacity (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C93B9: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8676: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B66: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742== 
+==93742== 48 bytes in 2 blocks are possibly lost in loss record 34 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C937C: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C946F: _NXHashRehashToCapacity (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C93B9: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8676: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B66: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742== 
+==93742== 72 bytes in 3 blocks are possibly lost in loss record 44 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C937C: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8687: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 72 bytes in 3 blocks are possibly lost in loss record 45 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C937C: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C946F: _NXHashRehashToCapacity (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C93B9: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8687: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742== 
+==93742== 192 bytes in 5 blocks are possibly lost in loss record 55 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C932E: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8687: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 224 bytes in 6 blocks are possibly lost in loss record 59 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C932E: NXHashInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8676: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B66: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 528 bytes in 1 blocks are possibly lost in loss record 63 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C8EA3: NXCreateMapTableFromZone (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004CA1BD: unattachedCategories() (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8573: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B66: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B53: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B53: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B53: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742== 
+==93742== 730 bytes in 44 blocks are possibly lost in loss record 68 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C9EE5: _strdup_internal (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C9E9B: NXMapKeyCopyingInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C893C: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 1,040 bytes in 1 blocks are possibly lost in loss record 73 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C8EA3: NXCreateMapTableFromZone (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C9709: remappedClasses(signed char) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D714F: remapClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D769E: readClass(objc_class*, bool, bool) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C830A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742== 
+==93742== 1,040 bytes in 1 blocks are possibly lost in loss record 74 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C8EA3: NXCreateMapTableFromZone (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C9679: futureNamedClasses() (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D76D0: readClass(objc_class*, bool, bool) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C830A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 1,040 bytes in 1 blocks are possibly lost in loss record 75 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C9F94: _NXMapRehash(_NXMapTable*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C9CA8: NXMapInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C893C: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742== 
+==93742== 2,064 bytes in 1 blocks are possibly lost in loss record 78 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C8EA3: NXCreateMapTableFromZone (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8186: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x100033A9F: libSystem_initializer (in /usr/lib/libSystem.B.dylib)
+==93742== 
+==93742== 2,064 bytes in 1 blocks are possibly lost in loss record 79 of 86
+==93742==    at 0x10002989C: malloc_zone_malloc (vg_replace_malloc.c:305)
+==93742==    by 0x1004C9F94: _NXMapRehash(_NXMapTable*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C9CA8: NXMapInsert (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004E0050: __sel_registerName(char const*, int, int) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004CD1CC: fixupMethodList(method_list_t*, bool, bool) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004DDD50: attachMethodLists(objc_class*, method_list_t**, int, bool, bool, bool) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D8546: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B66: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B53: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B53: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004D7B53: realizeClass(objc_class*) (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C8A8A: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742== 
+==93742== 3,872 bytes in 44 blocks are possibly lost in loss record 82 of 86
+==93742==    at 0x100029EAB: malloc_zone_calloc (vg_replace_malloc.c:632)
+==93742==    by 0x1004C8906: _read_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C7446: map_images_nolock (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x1004C6EC8: map_images (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x7FFF5FC0498E: dyld::notifyBatchPartial(dyld_image_states, bool, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x7FFF5FC046D6: dyld::registerImageStateBatchChangeHandler(dyld_image_states, char const* (*)(dyld_image_states, unsigned int, dyld_image_info const*)) (in /usr/lib/dyld)
+==93742==    by 0x10017E958: dyld_register_image_state_change_handler (in /usr/lib/system/libdyld.dylib)
+==93742==    by 0x1004C6A53: _objc_init (in /usr/lib/libobjc.A.dylib)
+==93742==    by 0x10012E87C: _os_object_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x10012E864: libdispatch_init (in /usr/lib/system/libdispatch.dylib)
+==93742==    by 0x100033A9F: libSystem_initializer (in /usr/lib/libSystem.B.dylib)
+==93742==    by 0x7FFF5FC12CEA: ImageLoaderMachO::doModInitFunctions(ImageLoader::LinkContext const&) (in /usr/lib/dyld)
+==93742== 
+==93742== LEAK SUMMARY:
+==93742==    definitely lost: 16 bytes in 1 blocks
+==93742==    indirectly lost: 0 bytes in 0 blocks
+==93742==      possibly lost: 13,098 bytes in 117 blocks
+==93742==    still reachable: 49,971 bytes in 312 blocks
+==93742==         suppressed: 0 bytes in 0 blocks
+==93742== Reachable blocks (those to which a pointer was found) are not shown.
+==93742== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==93742== 
+==93742== For counts of detected and suppressed errors, rerun with: -v
+==93742== ERROR SUMMARY: 336 errors from 19 contexts (suppressed: 0 from 0)

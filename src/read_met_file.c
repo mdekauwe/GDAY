@@ -129,28 +129,6 @@ void read_met_data(char **argv, control *c, met *m)
 
     current_yr = m->year[0];
 
-    /*
-    m->year = allocate_memory_double(c->num_days, __LINE__);
-    m->prjday = allocate_memory_double(c->num_days, __LINE__);
-    m->sw_rad = allocate_memory_double(c->num_days, __LINE__);
-    m->tair = allocate_memory_double(c->num_days, __LINE__);
-    m->rain = allocate_memory_double(c->num_days, __LINE__);
-    m->tsoil = allocate_memory_double(c->num_days, __LINE__);
-    m->tam = allocate_memory_double(c->num_days, __LINE__);
-    m->tpm = allocate_memory_double(c->num_days, __LINE__);
-    m->vpd_am = allocate_memory_double(c->num_days, __LINE__);
-    m->vpd_pm = allocate_memory_double(c->num_days, __LINE__);
-    m->vpd_avg = allocate_memory_double(c->num_days, __LINE__);
-    m->co2 = allocate_memory_double(c->num_days, __LINE__);
-    m->ndep = allocate_memory_double(c->num_days, __LINE__);
-    m->wind = allocate_memory_double(c->num_days, __LINE__);
-    m->atmos_press = allocate_memory_double(c->num_days, __LINE__);
-    m->par = allocate_memory_double(c->num_days, __LINE__);
-    m->wind_am = allocate_memory_double(c->num_days, __LINE__);
-    m->wind_pm = allocate_memory_double(c->num_days, __LINE__);
-    m->sw_rad_am = allocate_memory_double(c->num_days, __LINE__);
-    m->sw_rad_pm = allocate_memory_double(c->num_days, __LINE__);
-    */
     i = 0;
     c->num_years = 0;
     skipped_lines = 0;

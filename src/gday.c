@@ -5,6 +5,8 @@
 * simulates carbon, nutrient and water state and fluxes. See below for model
 * description.
 *
+* Paramaeter descriptions are in gday.h
+*
 * NOTES:
 *   I'm essentially transfering the python to C here...
 *
@@ -105,6 +107,9 @@ int main(int argc, char **argv)
 
     /* clean up */
     fclose(c->ofp);
+    if(c->ifp) {
+        fclose(c->ifp);
+    }
     free(c);
     free(f);
     if (m) {
@@ -333,9 +338,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         write_final_state(c, p, s);
     }
 
-
     sma(SMA_FREE, hw);
     free(day_length);
+
     return;
 
 

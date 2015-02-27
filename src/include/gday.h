@@ -201,20 +201,20 @@ typedef struct {
     double branch0;
     double branch1;
     double bretrans;
-    double c_alloc_bmax;
-    double c_alloc_bmin;
-    double c_alloc_cmax;
-    double c_alloc_fmax;
-    double c_alloc_fmin;
-    double c_alloc_rmax;
-    double c_alloc_rmin;
+    double c_alloc_bmax;                    /* allocation to branches at branch n_crit. If using allometric model this is the max alloc to branches */
+    double c_alloc_bmin;                    /* allocation to branches at zero branch n/c. If using allometric model this is the min alloc to branches */
+    double c_alloc_cmax;                    /* allocation to coarse roots at n_crit. If using allometric model this is the max alloc to coarse roots */
+    double c_alloc_fmax;                    /* allocation to leaves at leaf n_crit. If using allometric model this is the max alloc to leaves */
+    double c_alloc_fmin;                    /* allocation to leaves at zero leaf n/c. If using allometric model this is the min alloc to leaves */
+    double c_alloc_rmax;                    /* allocation to roots at root n_crit. If using allometric model this is the max alloc to fine roots */
+    double c_alloc_rmin;                    /* allocation to roots at zero root n/c. If using allometric model this is the min alloc to fine roots */
     double cfracts;                         /* carbon fraction of dry biomass */
     double crdecay;
     double cretrans;
     double croot0;
     double croot1;
-    double ctheta_root;
-    double ctheta_topsoil;
+    double ctheta_root;                     /* Fitted parameter based on Landsberg and Waring */
+    double ctheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double cue;                             /* carbon use efficiency, or the ratio of NPP to GPP */
     double d0;
     double d0x;
@@ -222,9 +222,9 @@ typedef struct {
     double delsj;                           /* Deactivation energy for electron transport (J mol-1 k-1) */
     double density;
     double direct_frac;                     /* direct beam fraction of incident radiation - this is only used with the BEWDY model */
-    double displace_ratio;
+    double displace_ratio;                  /* Value for coniferous forest (0.78) from Jarvis et al 1976, taken from Jones 1992 pg 67. More standard assumption is 2/3 */
     double disturbance_doy;
-    double dz0v_dh;
+    double dz0v_dh;                         /* Rate of change of vegetation roughness length for momentum with height. Value from Jarvis? for conifer 0.075 */
     double eac;                             /* Activation energy for carboxylation [J mol-1] */
     double eag;                             /* Activation energy at CO2 compensation point [J mol-1] */
     double eaj;                             /* Activation energy for electron transport (J mol-1) */
@@ -240,23 +240,23 @@ typedef struct {
     double fracfaeces;
     double fracteaten;
     double fractosoil;
-    double fractup_soil;
+    double fractup_soil;                    /* fraction of uptake from top soil layer */
     double fretrans;
-    double g1;
+    double g1;                              /* stomatal conductance parameter: Slope of reln btw gs and assimilation (fitted by species/pft). */
     double gamstar25;                       /* Base rate of CO2 compensation point at 25 deg C [umol mol-1] */
     double growth_efficiency;               /* growth efficiency (yg) - used only in Bewdy */
-    double height0;
-    double height1;
-    double heighto;
-    double htpower;
+    double height0;                         /* Height when leaf:sap area ratio = leafsap0 (trees) */
+    double height1;                         /* Height when leaf:sap area ratio = leafsap1 (trees) */
+    double heighto;                         /* constant in avg tree height (m) - stem (t C/ha) reln */
+    double htpower;                         /* Exponent in avg tree height (m) - stem (t C/ha) reln */
     double hurricane_doy;
     double hurricane_yr;
-    double intercep_frac;
+    double intercep_frac;                   /* Maximum intercepted fraction, values in Oishi et al 2008, AFM, 148, 1719-1732 ~13.9% +/- 4.1, so going to assume 15% following Landsberg and Sands 2011, pg. 193. */
     double jmax;                            /* maximum rate of electron transport (umol m-2 s-1) */
     double jmaxna;                          /* slope of the reln btween jmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double jmaxnb;                          /* intercept of jmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
-    double jv_intercept;
-    double jv_slope;
+    double jv_intercept;                    /* Jmax to Vcmax intercept */
+    double jv_slope;                        /* Jmax to Vcmax slope */
     double kc25;                            /* Base rate for carboxylation by Rubisco at 25degC [mmol mol-1] */
     double kdec1;
     double kdec2;
@@ -272,13 +272,13 @@ typedef struct {
     double kr;
     double lai_closed;                      /* LAI of closed canopy (max cover fraction is reached (m2 (leaf) m-2 (ground) ~ 2.5) */
     double latitude;                        /* latitude (degrees, negative for south) */
-    double leafsap0;
-    double leafsap1;
+    double leafsap0;                        /* leaf area  to sapwood cross sectional area ratio when Height = Height0 (mm^2/mm^2) */
+    double leafsap1;                        /* leaf to sap area ratio when Height = Height1 (mm^2/mm^2) */
     double ligfaeces;
     double ligroot;
     double ligshoot;
     double liteffnc;
-    double max_intercep_lai;
+    double max_intercep_lai;                /* canopy LAI at which interception is maximised. */
     double measurement_temp;                /* temperature Vcmax/Jmax are measured at, typical 25.0 (celsius)  */
     double ncbnew;
     double ncbnewz;
@@ -298,8 +298,8 @@ typedef struct {
     double nmin;
     double nmin0;
     double nmincrit;
-    double ntheta_root;
-    double ntheta_topsoil;
+    double ntheta_root;                     /* Fitted parameter based on Landsberg and Waring */
+    double ntheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double nuptakez;
     double oi;                              /* intercellular concentration of O2 [umol mol-1] */
     double passivesoilnz;
@@ -310,9 +310,9 @@ typedef struct {
     double previous_ncd;                    /* In the first year we don't have last years data, so I have precalculated the average of all the november-jan chilling values  */
     double prime_y;
     double prime_z;
-    double psi_sat_root;
-    double psi_sat_topsoil;
-    double qs;
+    double psi_sat_root;                    /* MPa */
+    double psi_sat_topsoil;                 /* MPa */
+    double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;
     double rateloss;
     double rateuptake;
@@ -322,7 +322,7 @@ typedef struct {
     double return_interval;
     double rfmult;
     double root_exu_CUE;
-    double rooting_depth;
+    double rooting_depth;                   /* Rooting depth (mm) */
     char   rootsoil_type[STRING_LENGTH];
     double rretrans;
     double sapturnover;
@@ -338,19 +338,19 @@ typedef struct {
     double theta;                           /* curvature of photosynthetic light response curve */
     double theta_sat_root;
     double theta_sat_topsoil;
-    double topsoil_depth;
+    double topsoil_depth;                   /* Topsoil depth (mm) */
     char   topsoil_type[STRING_LENGTH];
     double vcmax;                           /* maximum rate of carboxylation (umol m-2 s-1)  */
     double vcmaxna;                         /* slope of the reln btween vcmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double vcmaxnb;                         /* intercept of vcmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double watdecaydry;
     double watdecaywet;
-    double wcapac_root;
-    double wcapac_topsoil;
+    double wcapac_root;                     /* Max plant avail soil water -root zone, i.e. total (mm) (smc_sat-smc_wilt) * root_depth (750mm) = [mm (water) / m (soil depth)] */
+    double wcapac_topsoil;                  /* Max plant avail soil water -top soil (mm) */
     double wdecay;
-    double wetloss;
+    double wetloss;                         /* Daily rainfall lost per lai (mm/day) */
     double wretrans;
-    double z0h_z0m;
+    double z0h_z0m;                         /* Assume z0m = z0h, probably a big assumption [as z0h often < z0m.], see comment in code!! But 0.1 might be a better assumption */
     double fmleaf;
     double fmroot;
     double decayrate[7];
