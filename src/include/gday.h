@@ -228,11 +228,11 @@ typedef struct {
     double disturbance_doy;
     double dz0v_dh;
     double eac;                             /* Activation energy for carboxylation [J mol-1] */
-    double eag;
-    double eaj;
-    double eao;
-    double eav;
-    double edj;
+    double eag;                             /* Activation energy at CO2 compensation point [J mol-1] */
+    double eaj;                             /* Activation energy for electron transport (J mol-1) */
+    double eao;                             /* Activation energy for oxygenation [J mol-1] */
+    double eav;                             /* Activation energy for Rubisco (J mol-1) */
+    double edj;                             /* Deactivation energy for electron transport (J mol-1) */
     double faecescn;
     double faecesn;
     double fdecay;
@@ -245,8 +245,8 @@ typedef struct {
     double fractup_soil;
     double fretrans;
     double g1;
-    double gamstar25;
-    double growth_efficiency;
+    double gamstar25;                       /* Base rate of CO2 compensation point at 25 deg C [umol mol-1] */
+    double growth_efficiency;               /* growth efficiency (yg) - used only in Bewdy */
     double height0;
     double height1;
     double heighto;
@@ -254,12 +254,12 @@ typedef struct {
     double hurricane_doy;
     double hurricane_yr;
     double intercep_frac;
-    double jmax;
-    double jmaxna;
-    double jmaxnb;
+    double jmax;                            /* maximum rate of electron transport (umol m-2 s-1) */
+    double jmaxna;                          /* slope of the reln btween jmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
+    double jmaxnb;                          /* intercept of jmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double jv_intercept;
     double jv_slope;
-    double kc25;
+    double kc25;                            /* Base rate for carboxylation by Rubisco at 25degC [mmol mol-1] */
     double kdec1;
     double kdec2;
     double kdec3;
@@ -269,8 +269,8 @@ typedef struct {
     double kdec7;
     double kext;                            /* extinction coefficient */
     double knl;
-    double ko25;
-    double kq10;
+    double ko25;                            /* Base rate for oxygenation by Rubisco at 25degC [umol mol-1]. Note value in Bernacchie 2001 is in mmol!! */
+    double kq10;                            /* exponential coefficient for Rm vs T */
     double kr;
     double lai_closed;                      /* LAI of closed canopy (max cover fraction is reached (m2 (leaf) m-2 (ground) ~ 2.5) */
     double latitude;                        /* latitude (degrees, negative for south) */
@@ -281,7 +281,7 @@ typedef struct {
     double ligshoot;
     double liteffnc;
     double max_intercep_lai;
-    double measurement_temp;
+    double measurement_temp;                /* temperature Vcmax/Jmax are measured at, typical 25.0 (celsius)  */
     double ncbnew;
     double ncbnewz;
     double nccnew;
@@ -303,7 +303,7 @@ typedef struct {
     double ntheta_root;
     double ntheta_topsoil;
     double nuptakez;
-    double oi;
+    double oi;                              /* intercellular concentration of O2 [umol mol-1] */
     double passivesoilnz;
     double passivesoilz;
     double passncmax;
@@ -337,14 +337,14 @@ typedef struct {
     double structcn;
     double structrat;
     double targ_sens;
-    double theta;
+    double theta;                           /* curvature of photosynthetic light response curve */
     double theta_sat_root;
     double theta_sat_topsoil;
     double topsoil_depth;
     char   topsoil_type[STRING_LENGTH];
-    double vcmax;
-    double vcmaxna;
-    double vcmaxnb;
+    double vcmax;                           /* maximum rate of carboxylation (umol m-2 s-1)  */
+    double vcmaxna;                         /* slope of the reln btween vcmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
+    double vcmaxnb;                         /* intercept of vcmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double watdecaydry;
     double watdecaywet;
     double wcapac_root;
