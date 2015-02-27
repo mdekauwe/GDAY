@@ -103,8 +103,6 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
-    printf("%f %f %f %f %f\n", f->gpp_gCm2, asat_am, asat_pm, s->fipar, lue_avg);
-
     return;
 }
 
