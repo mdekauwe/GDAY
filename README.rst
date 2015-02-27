@@ -18,7 +18,7 @@ Key References
 
 Installation
 =============
-There is a Makefile in the src directory...
+There is a Makefile in the src directory...:
 
 ```bash
 $ make clean ; make 
