@@ -18,19 +18,10 @@ Key References
 
 Installation
 =============
-There is a Makefile in the src directory...:
+There is a Makefile in the src directory... ::
 
-```bash
-$ make clean ; make 
-```
+    $ make clean ; make 
 
-With git:
-
-```bash
-$ git clone https://github.com/clibs/clib.git /tmp/clib
-$ cd /tmp/clib
-$ make install
-```
 
 I haven't done anything about an installation directory so you will need to move
 the executable yourself.
