@@ -3,8 +3,8 @@ HOME     = /Users/mdekauwe
 #CFLAGS   = -g -Wall -Wformat -fsanitize=bounds -fsanitize-undefined-trap-on-error -O0#-Wextra
 CFLAGS   = -O3
 ARCH     =  x86_64
-INCLS    = -I./include
-LIBS     = -lm
+INCLS    = -I./include #-I/opt/local/include
+LIBS     = -lm #-L/opt/local/lib -lgsl -lgslcblas
 CC       =  gcc
 PROGRAM  =  gday
 

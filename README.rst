@@ -15,7 +15,7 @@ Key References
 
 Dependancies
 =============
-If using the optimal allocation routines then you will need to build GDAY against the `GNU scientific libraries <http://www.gnu.org/software/gsl/>`_.
+If using the optimal allocation routines then you will need to build GDAY against the `GNU scientific libraries <http://www.gnu.org/software/gsl/>`_. Have a look at the Makefile, i.e. uncomment lines. Note you will have to set the appropriate path to the libraries on your machine.
 
 
 .. contents:: :local:
