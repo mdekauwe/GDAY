@@ -1,5 +1,5 @@
 /* ============================================================================
-* GDAY
+* Generic Decomposition And Yield (GDAY) model.
 *
 * G'DAY is a process based model, which runs on a daily timestep and
 * simulates carbon, nutrient and water state and fluxes. See below for model
