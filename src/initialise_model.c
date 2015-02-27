@@ -43,6 +43,7 @@ void initialise_control(control *c) {
     /* Internal calculated */
     c->num_years = 0;
     c->num_days = 0;
+    c->PRINT_GIT = FALSE;
 
     return;
 }

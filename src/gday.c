@@ -91,6 +91,11 @@ int main(int argc, char **argv)
         prog_error("Error reading .INI file on line", __LINE__);
     }
     strcpy(c->git_code_ver, build_git_sha);
+    if (c->PRINT_GIT) {
+        fprintf(stderr, "\n%s\n", c->git_code_ver);
+        exit(EXIT_FAILURE);
+    }
+    
     read_met_data(argv, c, m);
 
 
@@ -366,19 +371,44 @@ void clparser(int argc, char **argv, control *c) {
 	int i;
 
 	for (i = 1; i < argc; i++) {
-		if (*argv[i] == '-') {
-			if (!strncasecmp(argv[i], "-p", 2)) {
+	    if (*argv[i] == '-') {
+		    if (!strncasecmp(argv[i], "-p", 2)) {
 			    strcpy(c->cfg_fname, argv[++i]);
             } else if (!strncasecmp(argv[i], "-s", 2)) {
                 c->spin_up = TRUE;
-			} else {
-                fprintf(stderr,"%s: unknown argument on command line: %s\n",
-                        argv[0], argv[i]);
-				exit(EXIT_FAILURE);
-     		}
+            } else if (!strncasecmp(argv[i], "-ver", 4)) {
+                c->PRINT_GIT = TRUE;
+            } else if (!strncasecmp(argv[i], "-u", 2) ||
+                       !strncasecmp(argv[i], "-h", 2)) {
+                usage(argv);
+                exit(EXIT_FAILURE);
+            } else {
+                fprintf(stderr, "%s: unknown argument on command line: %s\n",
+                               argv[0], argv[i]);
+                usage(argv);
+                exit(EXIT_FAILURE);
+            }
         }
     }
 	return;
+}
+
+
+void usage(char **argv) {
+    fprintf(stderr, "\n========\n");
+    fprintf(stderr, " USAGE:\n");
+    fprintf(stderr, "========\n");
+    fprintf(stderr, "\t%s [options]\n", argv[0]);
+    fprintf(stderr, "\n\nExpected input file is a .ini/.cfg style param file, passed with the -p flag .\n");
+    fprintf(stderr, "\nThe options are:\n\n");
+    fprintf(stderr, "\n++General options:\n" );
+    fprintf(stderr, "[-ver          \t Print the git hash tag]\n");
+    fprintf(stderr, "[-p    fname   \t Location of parameter file (.ini/.cfg).]\n");
+    fprintf(stderr, "[-s            \t Spin-up GDAY, when it the model is finished it will print the final state to the param file.]\n");
+    fprintf(stderr, "\n++Print this message:\n" );
+    fprintf(stderr, "[-u/-h         \t usage/help]\n");
+
+    return;
 }
 
 

@@ -89,6 +89,7 @@ typedef struct {
     int   num_days;
     char  git_code_ver[STRING_LENGTH];
     int   spin_up;
+    int   PRINT_GIT;
 } control;
 
 
@@ -549,7 +550,7 @@ void    read_met_data(char **, control *, met *);
 int     calc_days_in_year(int);
 
 int parse_ini_file(control *, params *, state *);
-
+void usage(char **);
 
 
 void run_sim(control *, fluxes *, met *, params *p, state *);
