@@ -103,7 +103,7 @@ void write_daily_outputs(control *c, fluxes *f, state *s, int year, int doy) {
 
 
     /* time stuff */
-    fprintf(c->ofp, "%d,%d,", year, doy);
+    fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
 
     /*
     ** STATE

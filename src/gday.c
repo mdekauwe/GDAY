@@ -145,10 +145,10 @@ int main(int argc, char **argv)
 
 void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
-    int yr, doy, window_size, i;
+    int nyr, doy, window_size, i;
     int project_day = 0;
 
-    double fdecay, rdecay, current_limitation, nitfac;
+    double fdecay, rdecay, current_limitation, nitfac, year;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
        index by num_days */
@@ -233,13 +233,13 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     **   Y E A R    L O O P   **
     ** ====================== */
     project_day = 0;
-    for (yr = 0; yr < c->num_years; yr++) {
-
-        if (is_leap_year(yr))
+    for (nyr = 0; nyr < c->num_years; nyr++) {
+        year = m->year[project_day];
+        if (is_leap_year(year))
             c->num_days = 366;
         else
             c->num_days = 365;
-
+        
         calculate_daylength(c->num_days, p->latitude, *(&day_length));
 
         if (c->deciduous_model) {
@@ -303,9 +303,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
-
+            
             if (c->print_options == DAILY && c->spin_up == FALSE) {
-                write_daily_outputs(c, f, s, m->year[project_day], doy+1);
+                write_daily_outputs(c, f, s, year, doy+1);
             }
 
 
