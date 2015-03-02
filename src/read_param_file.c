@@ -74,9 +74,8 @@ int parse_ini_file(control *c, params *p, state *s)
             }
         }
     }
-    if (c->print_options == DAILY) {
-        fclose(c->ifp);
-    } else if (c->print_options == END) {
+   
+    if (c->print_options == END) {
         /* we need to re-read this file to dump the final state */
         rewind(c->ifp);
     }

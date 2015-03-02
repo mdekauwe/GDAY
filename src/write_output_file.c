@@ -267,7 +267,6 @@ int write_final_state(control *c, params *p, state *s)
         else
             match = FALSE; /* reset match flag */
     }
-    fclose(c->ifp);
     return error;
 
 }

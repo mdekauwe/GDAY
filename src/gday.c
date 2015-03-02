@@ -107,9 +107,8 @@ int main(int argc, char **argv)
 
     /* clean up */
     fclose(c->ofp);
-    if(c->ifp) {
-        fclose(c->ifp);
-    }
+    fclose(c->ifp);
+
     free(c);
     free(f);
     if (m) {
