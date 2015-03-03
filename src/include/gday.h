@@ -46,9 +46,11 @@
 #define C3 0
 #define C4 1
 
+/* output time step, where end = the final state */
 #define DAILY 0
 #define END 1
 
+/* Texture identifiers */
 #define SILT 0
 #define SAND 1
 #define CLAY 2
@@ -64,7 +66,6 @@ typedef struct {
     char  out_fname[STRING_LENGTH];
     char  out_param_fname[STRING_LENGTH];
     char  git_hash[STRING_LENGTH];
-    int   adjust_rtslow;
     int   alloc_model;
     int   assim_model;
     int   calc_sw_params;
@@ -75,7 +76,6 @@ typedef struct {
     int   fixleafnc;
     int   grazing;
     int   gs_model;
-    int   hurricane;
     int   model_optroot;
     int   modeljm;
     int   ncycle;
@@ -249,8 +249,6 @@ typedef struct {
     double height1;                         /* Height when leaf:sap area ratio = leafsap1 (trees) */
     double heighto;                         /* constant in avg tree height (m) - stem (t C/ha) reln */
     double htpower;                         /* Exponent in avg tree height (m) - stem (t C/ha) reln */
-    double hurricane_doy;
-    double hurricane_yr;
     double intercep_frac;                   /* Maximum intercepted fraction, values in Oishi et al 2008, AFM, 148, 1719-1732 ~13.9% +/- 4.1, so going to assume 15% following Landsberg and Sands 2011, pg. 193. */
     double jmax;                            /* maximum rate of electron transport (umol m-2 s-1) */
     double jmaxna;                          /* slope of the reln btween jmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
@@ -308,8 +306,6 @@ typedef struct {
     double passncmin;                       /* Passive pool (=1/10) N:C of new SOM - when Nmin=Nmin0 [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double prescribed_leaf_NC;              /* If the N-Cycle is switched off this needs to be set, e.g. 0.03 */
     double previous_ncd;                    /* In the first year we don't have last years data, so I have precalculated the average of all the november-jan chilling values  */
-    double prime_y;
-    double prime_z;
     double psi_sat_root;                    /* MPa */
     double psi_sat_topsoil;                 /* MPa */
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
@@ -319,7 +315,6 @@ typedef struct {
     double rdecay;                          /* root turnover rate (1/yr) */
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
     double retransmob;                      /* Fraction stem mobile N retranscd (/yr) */
-    double return_interval;
     double rfmult;
     double root_exu_CUE;
     double rooting_depth;                   /* Rooting depth (mm) */
@@ -355,7 +350,7 @@ typedef struct {
     double fmroot;
     double decayrate[7];
     double fmfaeces;
-    int growing_seas_len;
+    int    growing_seas_len;
 } params;
 
 typedef struct {
@@ -373,7 +368,7 @@ typedef struct {
     double *co2;
     double *ndep;
     double *wind;
-    double *atmos_press;
+    double *press;
     double *par;
     double *wind_am;
     double *wind_pm;
@@ -520,7 +515,6 @@ typedef struct {
     double cica_avg; /* used in water balance, only when running mate model */
 
     double rabove;
-    double microbial_resp;
     double tfac_soil_decomp;
     double co2_rel_from_surf_struct_litter;
     double co2_rel_from_soil_struct_litter;

@@ -97,8 +97,8 @@ void read_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->atmos_press = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for atmos_press array\n");
+    if ((m->press = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for press array\n");
 		exit(EXIT_FAILURE);
     }
 
@@ -150,7 +150,7 @@ void read_met_data(char **argv, control *c, met *m)
                           &(m->tair[i]), &(m->rain[i]), &(m->tsoil[i]), \
                           &(m->tam[i]), &(m->tpm[i]), &(m->vpd_am[i]), \
                           &(m->vpd_pm[i]), &(m->vpd_avg[i]), &(m->co2[i]), \
-                          &(m->ndep[i]), &(m->wind[i]), &(m->atmos_press[i]), \
+                          &(m->ndep[i]), &(m->wind[i]), &(m->press[i]), \
                           &(m->par[i]), &(m->wind_am[i]), &(m->wind_pm[i]), \
                           &(m->sw_rad_am[i]), &(m->sw_rad_pm[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \

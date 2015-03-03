@@ -114,8 +114,6 @@ void initialise_params(params *p) {
     p->height1 = 30.0;
     p->heighto = 4.826;
     p->htpower = 0.35;
-    p->hurricane_doy = -999.9;
-    p->hurricane_yr = -999.9;
     p->intercep_frac = 0.15;
     p->jmax = -999.9;
     p->jmaxna = 62.0;
@@ -173,8 +171,6 @@ void initialise_params(params *p) {
     p->passncmin = 0.1;
     p->prescribed_leaf_NC = 0.03;
     p->previous_ncd = 35.0;
-    p->prime_y = 0.0;
-    p->prime_z = 0.0;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
     p->qs = 1.0; /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
@@ -184,7 +180,6 @@ void initialise_params(params *p) {
     p->rdecay = 0.33333;
     p->rdecaydry = 0.33333;
     p->retransmob = 0.0;
-    p->return_interval = 10.0;
     p->rfmult = 1.0;
     p->root_exu_CUE = -999.9;
     p->rooting_depth = 750.0;
@@ -370,7 +365,6 @@ void initialise_fluxes(fluxes *f) {
     f-> cica_avg = 0.0; /* used in water balance, only when running mate model */
 
     f->rabove = 0.0;
-    f->microbial_resp = 0.0;
     f->tfac_soil_decomp = 0.0;
     f->co2_rel_from_surf_struct_litter = 0.0;
     f->co2_rel_from_soil_struct_litter = 0.0;

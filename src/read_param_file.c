@@ -74,7 +74,7 @@ int parse_ini_file(control *c, params *p, state *s)
             }
         }
     }
-   
+
     if (c->print_options == END) {
         /* we need to re-read this file to dump the final state */
         rewind(c->ifp);
@@ -577,10 +577,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->heighto = atof(value);
     } else if (MATCH("params", "htpower")) {
         p->htpower = atof(value);
-    } else if (MATCH("params", "hurricane_doy")) {
-        p->hurricane_doy = atof(value);
-    } else if (MATCH("params", "hurricane_yr")) {
-        p->hurricane_yr = atof(value);
     } else if (MATCH("params", "intercep_frac")) {
         p->intercep_frac = atof(value);
     } else if (MATCH("params", "jmax")) {
@@ -693,10 +689,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->prescribed_leaf_NC = atof(value);
     } else if (MATCH("params", "previous_ncd")) {
         p->previous_ncd = atof(value);
-    } else if (MATCH("params", "prime_y")) {
-        p->prime_y = atof(value);
-    } else if (MATCH("params", "prime_z")) {
-        p->prime_z = atof(value);
     } else if (MATCH("params", "psi_sat_root")) {
         p->psi_sat_root = atof(value);
     } else if (MATCH("params", "psi_sat_topsoil")) {
@@ -715,8 +707,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->rdecaydry = atof(value);
     } else if (MATCH("params", "retransmob")) {
         p->retransmob = atof(value);
-    } else if (MATCH("params", "return_interval")) {
-        p->return_interval = atof(value);
     } else if (MATCH("params", "rfmult")) {
         p->rfmult = atof(value);
     } else if (MATCH("params", "root_exu_CUE")) {

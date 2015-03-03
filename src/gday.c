@@ -111,29 +111,27 @@ int main(int argc, char **argv)
 
     free(c);
     free(f);
-    if (m) {
-        free(m->year);
-        free(m->prjday);
-        free(m->sw_rad);
-        free(m->tair);
-        free(m->rain);
-        free(m->tsoil);
-        free(m->tam);
-        free(m->tpm);
-        free(m->vpd_am);
-        free(m->vpd_pm);
-        free(m->vpd_avg);
-        free(m->co2);
-        free(m->ndep);
-        free(m->wind);
-        free(m->atmos_press);
-        free(m->par);
-        free(m->wind_am);
-        free(m->wind_pm);
-        free(m->sw_rad_am);
-        free(m->sw_rad_pm);
-        free(m);
-    }
+    free(m->year);
+    free(m->prjday);
+    free(m->sw_rad);
+    free(m->tair);
+    free(m->rain);
+    free(m->tsoil);
+    free(m->tam);
+    free(m->tpm);
+    free(m->vpd_am);
+    free(m->vpd_pm);
+    free(m->vpd_avg);
+    free(m->co2);
+    free(m->ndep);
+    free(m->wind);
+    free(m->press);
+    free(m->par);
+    free(m->wind_am);
+    free(m->wind_pm);
+    free(m->sw_rad_am);
+    free(m->sw_rad_pm);
+    free(m);
     free(p);
     free(s);
 
@@ -238,7 +236,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             c->num_days = 366;
         else
             c->num_days = 365;
-        
+
         calculate_daylength(c->num_days, p->latitude, *(&day_length));
 
         if (c->deciduous_model) {
@@ -302,7 +300,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
-            
+
             if (c->print_options == DAILY && c->spin_up == FALSE) {
                 write_daily_outputs(c, f, s, year, doy+1);
             }

@@ -173,7 +173,7 @@ void get_met_data(met *m, int project_day, double *tair_am,
     *wind_am = m->wind_am[project_day];
     *wind_pm = m->wind_pm[project_day];
     *wind_day = m->wind[project_day];
-    *press = m->atmos_press[project_day];
+    *press = m->press[project_day];
 
     return;
 }
