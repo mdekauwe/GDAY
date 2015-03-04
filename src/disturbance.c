@@ -1,14 +1,9 @@
 #include "disturbance.h"
 
 
-void initialise_disturbance(int years, int **yrs, int **cnt) {
-    int i, year_of_disturbance, yrs_till_event, cnt;
-
-    double *yrs = NULL;
-    if ((yrs = (double *)calloc(1, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for yrs\n");
-		exit(EXIT_FAILURE);
-    }
+void figure_out_years_with_disturbances(control *c, met *m, int years,
+                                        int **yrs, int **cnt) {
+    int nyr, year_of_disturbance, yrs_till_event, cnt, prjday;
 
     if (p->burn_specific_yr < -900.0) {
         year_of_disturbance = p->burn_specific_yr;
@@ -20,24 +15,31 @@ void initialise_disturbance(int years, int **yrs, int **cnt) {
 
         /* figure out the years of the disturbance events  */
         *cnt = 0;
+        prjday = 0;
         while (year_of_disturbance < years[-1]) {
 
-            for(i = 0, i < num_years; i++) {
-                if(year == year_of_disturbance)
-                    index = year
+            for (nyr = 0; nyr < c->num_years; nyr++) {
+                year = m->year[prjday];
+                if (is_leap_year(year))
+                    prjday+=366;
+                else
+                    prjday+=365;
+
+                if (year == year_of_disturbance)
+                    index = year;
             }
 
-            yrs_till_event = self.time_till_next_disturbance()
+            yrs_till_event = time_till_next_disturbance()
 
             if (*cnt == 0) {
-                yrs[0] = year_of_disturbance;
+                *yrs[0] = year_of_disturbance;
             } else {
                 *cnt++;
                 if ((yrs = (double *)realloc(1 + *cnt, sizeof(double))) == NULL) {
                     fprintf(stderr,"Error resizing years array\n");
             		exit(EXIT_FAILURE);
                 }
-                yrs[*cnt] = year_of_disturbance;
+                *yrs[*cnt] = year_of_disturbance;
             }
 
             /* See if there is another event? */
@@ -46,13 +48,6 @@ void initialise_disturbance(int years, int **yrs, int **cnt) {
     }
 
     return;
-}
-
-
-
-def check_for_fire(int year, growth_obj) {
-    if year in self.yrs:
-        self.fire(growth_obj)
 }
 
 int time_till_next_disturbance() {
@@ -71,6 +66,21 @@ int time_till_next_disturbance() {
     /*return int(-log(1.0 - random.random()) / rate); */
 
     return (11);
+}
+
+int check_for_fire(int year, int distrubance_yrs, int num_disturbance_yrs) {
+    /* Check if the current year has a fire, if so "burn" and then
+       return an indicator to tell the main code to reset the stress stream */
+    int fire_found = FALSE;
+    int nyr;
+
+    for (nyr = 0; nyr < num_disturbance_yrs; nyr++) {
+        if (year == distrubance_yrs[nyr]) {
+            fire();
+            fire_found = TRUE;
+        }
+
+    return (fire_found);
 }
 
 void fire(control *c, params *p, state *s) {
@@ -144,11 +154,7 @@ void fire(control *c, params *p, state *s) {
         s->rootnc = 0.0;
     else
         s->rootnc = MAX(0.0, s->rootn / s->root);
-
-    growth_obj.sma.reset_stream() /* reset any stress limitation */
-    s->prev_sma = 1.0
-
-    return (reset_stream);
+    return;
 }
 
 void hurricane(fluxes *f, params *p, state *s) {
