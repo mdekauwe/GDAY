@@ -298,8 +298,9 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         rtot = s->root * TONNES_HA_2_KG_M2 / p->cfracts;
         /*f->nuptake_old = f->nuptake; */
 
-        calc_opt_root_depth(rtot, nsupply, depth_guess, &s->root_depth,
-                                 &f->nuptake, &f->rabove);
+        calc_opt_root_depth(p->d0x, p->r0, p->topsoil_depth * MM_TO_M,
+                            rtot, nsupply, depth_guess, &s->root_depth, &f->nuptake,
+                            &f->rabove);
 
         /*umax = self.rm.calc_umax(f->nuptake) */
 

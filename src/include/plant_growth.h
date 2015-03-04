@@ -11,6 +11,7 @@
 #include "water_balance.h"
 #include "utilities.h"
 #include "mate.h"
+#include "optimal_root_model.h"
 
 /* C stuff */
 void   calc_day_growth(control *, fluxes *, met *, params *, state *, int,
@@ -45,5 +46,4 @@ void   calculate_ncwood_ratios(control *c, params *, state *, double, double *,
 
 /* misc */
 
-void calc_opt_root_depth(double, double, double, double *, double *, double *);
 #endif /* PLANT_GROWTH */
