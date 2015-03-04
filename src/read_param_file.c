@@ -119,6 +119,8 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(c->met_fname, temp);
     } else if (MATCH("files", "out_fname")) {
         strcpy(c->out_fname, temp);
+    } else if (MATCH("files", "out_fname_hdr")) {
+        strcpy(c->out_fname_hdr, temp);
     } else if (MATCH("files", "out_param_fname")) {
         strcpy(c->out_param_fname, temp);
     }

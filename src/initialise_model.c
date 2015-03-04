@@ -11,9 +11,11 @@ void initialise_control(control *c) {
 
     c->ifp = NULL;
     c->ofp = NULL;
+    c->ofp_hdr = NULL;
     strcpy(c->cfg_fname, "*NOT SET*");
     strcpy(c->met_fname, "*NOT SET*");
     strcpy(c->out_fname, "*NOT SET*");
+    strcpy(c->out_fname_hdr, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
 
     c->alloc_model = ALLOMETRIC;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */

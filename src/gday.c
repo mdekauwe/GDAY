@@ -99,7 +99,6 @@ int main(int argc, char **argv)
 
     read_met_data(argv, c, m);
 
-
     if (c->spin_up)
         spin_up_pools(c, f, m, p, s);
     else
@@ -108,6 +107,9 @@ int main(int argc, char **argv)
     /* clean up */
     fclose(c->ofp);
     fclose(c->ifp);
+    if (c->output_ascii == FALSE) {
+        fclose(c->ofp_hdr);
+    }
 
     free(c);
     free(f);
@@ -184,11 +186,17 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     /* Setup output file */
     if (c->print_options == DAILY && c->spin_up == FALSE) {
         /* Daily outputs */
-        open_output_file(c, c->out_fname);
-        write_output_header(c);
+        open_output_file(c, c->out_fname, &(c->ofp));
+
+        if (c->output_ascii) {
+            write_output_header(c, &(c->ofp));
+        } else {
+            open_output_file(c, c->out_fname_hdr, &(c->ofp_hdr));
+            write_output_header(c, &(c->ofp_hdr));
+        }
     } else if (c->print_options == END && c->spin_up == FALSE) {
         /* Final state + param file */
-        open_output_file(c, c->out_param_fname);
+        open_output_file(c, c->out_param_fname, &(c->ofp));
     }
 
 
@@ -302,7 +310,10 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
-                write_daily_outputs(c, f, s, year, doy+1);
+                if(c->output_ascii)
+                    write_daily_outputs_ascii(c, f, s, year, doy+1);
+                else
+                    write_daily_outputs_binary(c, f, s, year, doy+1);
             }
 
 
@@ -365,7 +376,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
 
 
     /* Final state + param file */
-    open_output_file(c, c->out_param_fname);
+    open_output_file(c, c->out_param_fname, &(c->ofp));
 
     fprintf(stderr, "Spinning up the model...\n");
     while (TRUE) {
