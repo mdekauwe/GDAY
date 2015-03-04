@@ -4,5 +4,7 @@
 #include "gday.h"
 
 
+int  time_till_next_disturbance();
+void hurricane(fluxes *, params *, state *);
 
 #endif /* DISTURBANCE_H */
