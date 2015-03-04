@@ -54,7 +54,7 @@ int time_till_next_disturbance() {
     return (11);
 }
 
-def fire(self, growth_obj) {
+void fire(control *c, params *p, state *s) {
     /*
     Fire...
 
@@ -68,12 +68,11 @@ def fire(self, growth_obj) {
     http://treephys.oxfordjournals.org/content/24/7/765.full.pdf
     */
 
-    totaln = (s->branchn + s->shootn + s->stemn +
-              s->structsurfn)
+    totaln = s->branchn + s->shootn + s->stemn + s->structsurfn;
     s->inorgn += totaln / 2.0
 
     /* re-establish everything with C/N ~ 25.  */
-    if self.control.alloc_model == "GRASSES":
+    if (c->alloc_model == GRASSES) {
         s->branch = 0.0
         s->branchn = 0.0
         s->sapwood = 0.0
@@ -120,7 +119,7 @@ def fire(self, growth_obj) {
     else:
         s->shootnc = s->shootn / s->shoot
 
-    if self.control.ncycle == False:
+    if c->ncycle == False:
         s->shootnc = p->prescribed_leaf_NC
 
     if float_eq(s->root, 0.0):
@@ -131,7 +130,7 @@ def fire(self, growth_obj) {
     growth_obj.sma.reset_stream() /* reset any stress limitation */
     s->prev_sma = 1.0
 
-    return;
+    return (reset_stream);
 }
 
 void hurricane(fluxes *f, params *p, state *s) {
