@@ -96,6 +96,7 @@ typedef struct {
     char  git_code_ver[STRING_LENGTH];
     int   spin_up;
     int   PRINT_GIT;
+    int   hurricane;
 } control;
 
 

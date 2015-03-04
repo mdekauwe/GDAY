@@ -1,16 +1,17 @@
 #include "disturbance.h"
 
 
-void figure_out_years_with_disturbances(control *c, met *m, int years,
+void figure_out_years_with_disturbances(control *c, met *m, params *p, int years,
                                         int **yrs, int **cnt) {
-    int nyr, year_of_disturbance, yrs_till_event, cnt, prjday;
+    int nyr, year_of_disturbance, yrs_till_event, prjday, year;
 
     if (p->burn_specific_yr < -900.0) {
         year_of_disturbance = p->burn_specific_yr;
-        yrs[0] = p->burn_specific_yr;
+        *yrs[0] = p->burn_specific_yr;
     } else {
         yrs_till_event = time_till_next_disturbance();
-        year_of_disturbance = years[0] + yrs_till_event;
+        year = (int)m->year[prjday];
+        year_of_disturbance = year + yrs_till_event;
         year_of_disturbance = 1996;
 
         /* figure out the years of the disturbance events  */
@@ -19,7 +20,7 @@ void figure_out_years_with_disturbances(control *c, met *m, int years,
         while (year_of_disturbance < years[-1]) {
 
             for (nyr = 0; nyr < c->num_years; nyr++) {
-                year = m->year[prjday];
+                year = (int)m->year[prjday];
                 if (is_leap_year(year))
                     prjday+=366;
                 else
@@ -29,7 +30,7 @@ void figure_out_years_with_disturbances(control *c, met *m, int years,
                     index = year;
             }
 
-            yrs_till_event = time_till_next_disturbance()
+            yrs_till_event = time_till_next_disturbance();
 
             if (*cnt == 0) {
                 *yrs[0] = year_of_disturbance;
@@ -68,7 +69,8 @@ int time_till_next_disturbance() {
     return (11);
 }
 
-int check_for_fire(int year, int distrubance_yrs, int num_disturbance_yrs) {
+int check_for_fire(control *c, fluxes *f, params *p, state *s, int year,
+                   int distrubance_yrs, int num_disturbance_yrs) {
     /* Check if the current year has a fire, if so "burn" and then
        return an indicator to tell the main code to reset the stress stream */
     int fire_found = FALSE;
@@ -76,14 +78,15 @@ int check_for_fire(int year, int distrubance_yrs, int num_disturbance_yrs) {
 
     for (nyr = 0; nyr < num_disturbance_yrs; nyr++) {
         if (year == distrubance_yrs[nyr]) {
-            fire();
+            fire(c, f, p, s);
             fire_found = TRUE;
         }
+    }
 
     return (fire_found);
 }
 
-void fire(control *c, params *p, state *s) {
+void fire(control *c, fluxes *f, params *p, state *s) {
     /*
     Fire...
 
@@ -96,6 +99,7 @@ void fire(control *c, params *p, state *s) {
     vaguely following ...
     http://treephys.oxfordjournals.org/content/24/7/765.full.pdf
     */
+    double totaln;
 
     totaln = s->branchn + s->shootn + s->stemn + s->structsurfn;
     s->inorgn += totaln / 2.0;
@@ -147,7 +151,7 @@ void fire(control *c, params *p, state *s) {
     else
         s->shootnc = s->shootn / s->shoot;
 
-    if (c->ncycle == False)
+    if (c->ncycle == FALSE)
         s->shootnc = p->prescribed_leaf_NC;
 
     if (float_eq(s->root, 0.0))
@@ -195,8 +199,8 @@ void hurricane(fluxes *f, params *p, state *s) {
     f->surf_metab_litter += lost_c * fmleaf;
 
     /* N -> structural */
-    if (float_eq(f->surf_struct_litter, 0.0) {
-        f->n_surf_struct_litter += 0.0
+    if (float_eq(f->surf_struct_litter, 0.0)) {
+        f->n_surf_struct_litter += 0.0;
     } else {
         f->n_surf_struct_litter += (lost_n * f->surf_struct_litter *
                                     p->structrat / f->surf_struct_litter);

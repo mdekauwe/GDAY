@@ -34,6 +34,7 @@
 #include "phenology.h"
 #include "read_param_file.h"
 #include "read_met_file.h"
+#include "disturbance.h"
 
 int main(int argc, char **argv)
 {
@@ -148,6 +149,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     int project_day = 0, fire_found = FALSE;
 
     double fdecay, rdecay, current_limitation, nitfac, year;
+    double *distrubance_yrs = NULL;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
        index by num_days */
@@ -236,12 +238,11 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
     if (c->disturbance) {
         int num_disturbance_yrs = 0;
-        double *distrubance_yrs = NULL;
         if ((distrubance_yrs = (double *)calloc(1, sizeof(double))) == NULL) {
             fprintf(stderr,"Error allocating space for distrubance_yrs\n");
     		exit(EXIT_FAILURE);
         }
-        figure_out_years_with_disturbances(m, &distrubance_yrs,
+        figure_out_years_with_disturbances(c, m, p, &distrubance_yrs,
                                            &num_disturbance_yrs);
     }
 
@@ -283,7 +284,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             if (c->disturbance != 0 && p->disturbance_doy == doy) {
                 /* Fire Disturbance? */
                 fire_found = FALSE;
-                fire_found = check_for_fire(yr, distrubance_yrs,
+                fire_found = check_for_fire(c, f, p, s, year, distrubance_yrs,
                                             num_disturbance_yrs);
                 if (fire_found) {
                     sma(SMA_FREE, hw);
@@ -302,11 +303,11 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                     }
 
                 }
-            } else if (c->hurricane == 1 &&
-                       p->hurricane_yr == yr &&
+            } else if (c->hurricane &&
+                       p->hurricane_yr == year &&
                        p->hurricane_doy == doy) {
                 /* Hurricane? */
-                hurricane();
+                hurricane(f, p, s);
             }
 
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
