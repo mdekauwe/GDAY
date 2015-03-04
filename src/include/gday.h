@@ -97,6 +97,8 @@ typedef struct {
     char  git_code_ver[STRING_LENGTH];
     int   spin_up;
     int   PRINT_GIT;
+    int   adjust_rtslow;
+    int   exudation;
 } control;
 
 
@@ -353,6 +355,9 @@ typedef struct {
     double decayrate[7];
     double fmfaeces;
     int    growing_seas_len;
+    double root_exu_CUE;
+    double prime_y;
+    double prime_z;
 } params;
 
 typedef struct {
@@ -536,6 +541,14 @@ typedef struct {
     double wnimrate;
     double wnmobrate;
     double cnrate;
+
+    /* priming/exudation */
+    double root_exc;
+    double root_exn;
+    double co2_released_exud;
+    double factive;
+    double rtslow;
+    double rexc_cue;
 } fluxes;
 
 
