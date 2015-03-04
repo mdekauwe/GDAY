@@ -62,6 +62,7 @@ void calc_opt_root_depth(double d0, double r0, double top_soil_depth,
 
     /* G'DAY requires root litter input to the top 30 cm of soil, so
        return the roots above this depth */
+    printf("%f\n", depth);
     *rabove = calculate_root_mass_above_depth(rtoti, depth, r0, d0,
                                               top_soil_depth);
 
@@ -189,8 +190,7 @@ double calculate_root_mass_above_depth(double rtoti, double root_depth,
 
     arg1 = rtoti + 2.0 * r0 * d0 + root_depth * r0;
     arg2 = 1.0 - exp(-top_soil_depth / (2.0 * d0));
-
-    return (arg1 * arg2 - r0 * top_soil_depth );
+    return (arg1 * arg2 - r0 * top_soil_depth);
 }
 
 double calc_plant_nuptake(double root_depth, double nsupply, double d0,
