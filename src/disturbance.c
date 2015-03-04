@@ -1,37 +1,56 @@
 #include "disturbance.h"
 
 
-def initialise_disturbance(years) {
+void initialise_disturbance(int years, int **yrs, int **cnt) {
+    int i, year_of_disturbance, yrs_till_event, cnt;
 
-    if p->burn_specific_yr is not None:
-        year_of_disturbance = p->burn_specific_yr
-        self.yrs = [p->burn_specific_yr]
+    double *yrs = NULL;
+    if ((yrs = (double *)calloc(1, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for yrs\n");
+		exit(EXIT_FAILURE);
+    }
 
-    else:
-        yrs_till_event = self.time_till_next_disturbance()
-        year_of_disturbance = years[0]+yrs_till_event
-        year_of_disturbance = 1996
+    if (p->burn_specific_yr < -900.0) {
+        year_of_disturbance = p->burn_specific_yr;
+        yrs[0] = p->burn_specific_yr;
+    } else {
+        yrs_till_event = time_till_next_disturbance();
+        year_of_disturbance = years[0] + yrs_till_event;
+        year_of_disturbance = 1996;
 
         /* figure out the years of the disturbance events  */
-        self.yrs = []
-        while year_of_disturbance < years[-1]:
+        *cnt = 0;
+        while (year_of_disturbance < years[-1]) {
 
-            index = self.index_id(years, year_of_disturbance)
+            for(i = 0, i < num_years; i++) {
+                if(year == year_of_disturbance)
+                    index = year
+            }
 
             yrs_till_event = self.time_till_next_disturbance()
-            self.yrs.append(year_of_disturbance)
+
+            if (*cnt == 0) {
+                yrs[0] = year_of_disturbance;
+            } else {
+                *cnt++;
+                if ((yrs = (double *)realloc(1 + *cnt, sizeof(double))) == NULL) {
+                    fprintf(stderr,"Error resizing years array\n");
+            		exit(EXIT_FAILURE);
+                }
+                yrs[*cnt] = year_of_disturbance;
+            }
 
             /* See if there is another event? */
-            year_of_disturbance = years[index]+yrs_till_event
+            year_of_disturbance = years[index] + yrs_till_event;
+        }
+    }
+
     return;
 }
 
-def index_id(self, a_list, elem) {
-    return (index for index, item in enumerate(a_list)
-            if item == elem).next()
-}
 
-def check_for_fire(self, year, growth_obj) {
+
+def check_for_fire(int year, growth_obj) {
     if year in self.yrs:
         self.fire(growth_obj)
 }
@@ -69,63 +88,62 @@ void fire(control *c, params *p, state *s) {
     */
 
     totaln = s->branchn + s->shootn + s->stemn + s->structsurfn;
-    s->inorgn += totaln / 2.0
+    s->inorgn += totaln / 2.0;
 
     /* re-establish everything with C/N ~ 25.  */
     if (c->alloc_model == GRASSES) {
-        s->branch = 0.0
-        s->branchn = 0.0
-        s->sapwood = 0.0
-        s->stem = 0.0
-        s->stemn = 0.0
-        s->stemnimm = 0.0
-        s->stemnmob = 0.0
-    else:
-        s->branch = 0.001
-        s->branchn = 0.00004
-        s->sapwood = 0.001
-        s->stem = 0.001
-        s->stemn = 0.00004
-        s->stemnimm = 0.00004
-        s->stemnmob = 0.0
+        s->branch = 0.0;
+        s->branchn = 0.0;
+        s->sapwood = 0.0;
+        s->stem = 0.0;
+        s->stemn = 0.0;
+        s->stemnimm = 0.0;
+        s->stemnmob = 0.0;
+    } else {
+        s->branch = 0.001;
+        s->branchn = 0.00004;
+        s->sapwood = 0.001;
+        s->stem = 0.001;
+        s->stemn = 0.00004;
+        s->stemnimm = 0.00004;
+        s->stemnmob = 0.0;
+    }
 
-    s->age = 0.0
-    s->metabsurf = 0.0
-    s->metabsurfn = 0.0
-    s->prev_sma = 1.0
-    s->root = 0.001
-    s->rootn = 0.00004
-    s->shoot = 0.001
-    s->lai = (p->sla * const.M2_AS_HA /
-                      const.KG_AS_TONNES / p->cfracts *
-                      s->shoot)
-    s->shootn = 0.00004
-    s->structsurf = 0.001
-    s->structsurfn = 0.00004
+    s->age = 0.0;
+    s->metabsurf = 0.0;
+    s->metabsurfn = 0.0;
+    s->prev_sma = 1.0;
+    s->root = 0.001;
+    s->rootn = 0.00004;
+    s->shoot = 0.001;
+    s->lai = p->sla * M2_AS_HA / KG_AS_TONNES / p->cfracts * s->shoot;
+    s->shootn = 0.00004;
+    s->structsurf = 0.001;
+    s->structsurfn = 0.00004;
 
-    /* reset litter flows
-    f->deadroots = 0.0
-    f->deadstems = 0.0
-    f->deadbranch = 0.0
-    f->deadsapwood = 0.0
-    f->deadleafn = 0.0
-    f->deadrootn = 0.0
-    f->deadbranchn = 0.0
-    f->deadstemn = 0.0
+    /* reset litter flows */
+    f->deadroots = 0.0;
+    f->deadstems = 0.0;
+    f->deadbranch = 0.0;
+    f->deadsapwood = 0.0;
+    f->deadleafn = 0.0;
+    f->deadrootn = 0.0;
+    f->deadbranchn = 0.0;
+    f->deadstemn = 0.0;
 
     /* update N:C of plant pools */
-    if float_eq(s->shoot, 0.0):
-        s->shootnc = 0.0
-    else:
-        s->shootnc = s->shootn / s->shoot
+    if (float_eq(s->shoot, 0.0))
+        s->shootnc = 0.0;
+    else
+        s->shootnc = s->shootn / s->shoot;
 
-    if c->ncycle == False:
-        s->shootnc = p->prescribed_leaf_NC
+    if (c->ncycle == False)
+        s->shootnc = p->prescribed_leaf_NC;
 
-    if float_eq(s->root, 0.0):
-        s->rootnc = 0.0
-    else:
-        s->rootnc = max(0.0, s->rootn / s->root)
+    if (float_eq(s->root, 0.0))
+        s->rootnc = 0.0;
+    else
+        s->rootnc = MAX(0.0, s->rootn / s->root);
 
     growth_obj.sma.reset_stream() /* reset any stress limitation */
     s->prev_sma = 1.0
