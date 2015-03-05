@@ -202,7 +202,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         open_output_file(c, c->out_param_fname, &(c->ofp));
     }
 
-
     /*
         Window size = root lifespan in days...
         For deciduous species window size is set as the length of the
@@ -270,10 +269,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
             hw = sma(SMA_NEW, p->growing_seas_len).handle;
-            /*for (i = 0; i < p->growing_seas_len; i++) {
-                sma(SMA_ADD, hw, 1.0);
-            }*/
-
+  
             zero_stuff(c, s);
         }
         /* =================== **
@@ -338,7 +334,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                 sma(SMA_FREE, hw);
                 hw = sma(SMA_NEW, p->growing_seas_len).handle;
             }
-
 
             /* Turn off all N calculations */
             if (c->ncycle == FALSE)
