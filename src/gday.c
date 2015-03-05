@@ -294,16 +294,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                     sma(SMA_FREE, hw);
                     if (c->deciduous_model) {
                         hw = sma(SMA_NEW, p->growing_seas_len).handle;
-                        for (i = 0; i < p->growing_seas_len; i++) {
-                            /* don't rely on previous year */
-                            sma(SMA_ADD, hw, 1.0);
-                        }
                     } else {
-                        sma_obj *hw = sma(SMA_NEW, window_size).handle;
-                        for (i = 0; i < window_size; i++) {
-                            /* don't rely on previous year */
-                            sma(SMA_ADD, hw, 1.0);
-                        }
+                        hw = sma(SMA_NEW,window_size).handle;
                     }
 
                 }
@@ -372,6 +364,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
+
 
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
