@@ -74,7 +74,6 @@ typedef struct {
     int   calc_sw_params;
     int   deciduous_model;
     int   disturbance;
-    int   exudation;
     int   fixed_stem_nc;
     int   fixleafnc;
     int   grazing;
@@ -98,8 +97,7 @@ typedef struct {
     char  git_code_ver[STRING_LENGTH];
     int   spin_up;
     int   PRINT_GIT;
-
-
+    int   hurricane;
 } control;
 
 
@@ -321,7 +319,6 @@ typedef struct {
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
     double retransmob;                      /* Fraction stem mobile N retranscd (/yr) */
     double rfmult;
-    double root_exu_CUE;
     double rooting_depth;                   /* Rooting depth (mm) */
     char   rootsoil_type[STRING_LENGTH];
     double rretrans;                        /* root n retranslocation fraction */
@@ -358,6 +355,10 @@ typedef struct {
     int    growing_seas_len;
     double prime_y;
     double prime_z;
+    int    return_interval;                 /* years */
+    int    burn_specific_yr;
+    int    hurricane_doy;
+    int    hurricane_yr;
 } params;
 
 typedef struct {

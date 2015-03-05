@@ -28,6 +28,7 @@ void initialise_control(control *c) {
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = FALSE;             /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
+    c->hurricane = FALSE;
     c->model_optroot = FALSE;       /* Ross's optimal root model...not sure if this works yet...0=off, 1=on */
     c->modeljm = 2;                 /* modeljm=0, Jmax and Vcmax parameters are read in, modeljm=1, parameters are calculated from leaf N content, modeljm=2, Vcmax is calculated from leaf N content but Jmax is related to Vcmax */
     c->ncycle = TRUE;               /* Nitrogen cycle on or off? */
@@ -185,7 +186,6 @@ void initialise_params(params *p) {
     p->rdecaydry = 0.33333;
     p->retransmob = 0.0;
     p->rfmult = 1.0;
-    p->root_exu_CUE = -999.9;
     p->rooting_depth = 750.0;
     strcpy(p->rootsoil_type, "clay");
     p->rretrans = 0.0;
