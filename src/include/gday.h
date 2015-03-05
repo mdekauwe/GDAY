@@ -98,6 +98,7 @@ typedef struct {
     int   spin_up;
     int   PRINT_GIT;
     int   hurricane;
+    int   exudation;
 } control;
 
 
@@ -359,6 +360,7 @@ typedef struct {
     int    burn_specific_yr;
     int    hurricane_doy;
     int    hurricane_yr;
+    double root_exu_CUE;
 } params;
 
 typedef struct {
