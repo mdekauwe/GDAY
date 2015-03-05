@@ -18,10 +18,12 @@ void initialise_control(control *c) {
     strcpy(c->out_fname_hdr, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
 
+    c->adjust_rtslow = FALSE;        /* Adjust turn over rate */
     c->alloc_model = ALLOMETRIC;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */
     c->assim_model = MATE;          /* Photosynthesis model: BEWDY (not coded :p) or MATE */
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
+    c->exudation = FALSE;
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = FALSE;             /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
@@ -221,6 +223,11 @@ void initialise_params(params *p) {
     for (i = 0; i < 7; i++) {
         p->decayrate[i] = 0.0;
     }
+
+    /* priming/exudation */
+    p->root_exu_CUE = -999.9;
+    p->prime_y = 0.0;
+    p->prime_z = 0.0;
 }
 
 
@@ -375,6 +382,15 @@ void initialise_fluxes(fluxes *f) {
     f->co2_rel_from_active_pool = 0.0;
     f->co2_rel_from_slow_pool = 0.0;
     f->co2_rel_from_passive_pool = 0.0;
+
+    /* priming/exudation */
+    f->root_exc = 0.0;
+    f->root_exn = 0.0;
+    f->co2_released_exud = 0.0;
+    f->factive = 0.0;
+    f->rtslow = 0.0;
+    f->rexc_cue = 0.0;
+
 
     return;
 }

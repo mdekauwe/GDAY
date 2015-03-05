@@ -86,6 +86,10 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
     recalc_wb = nitrogen_allocation(c, f, p, s, ncbnew, nccnew, ncwimm, ncwnew,
                                     fdecay, rdecay, doy);
 
+    if (c->exudation) {
+        calc_root_exudation_release(f, s);
+    }
+
     /* If we didn't have enough N available to satisfy wood demand, NPP
        is down-regulated and thus so is GPP. We also need to recalculate the
        water balance given the lower GPP. */
@@ -101,7 +105,39 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
     return;
 }
 
+void calc_root_exudation_release(fluxes *f, state *s) {
+    /* Root exudation modelled to occur: with (1) fine root growth or (2)
+       as a result of excess C. A fraction of fine root growth is allocated
+       to stimulate exudation. This fraction increases with N stress. */
+    double leaf_CN, frac_to_rexc, presc_leaf_CN, fine_root_NC;
 
+    if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
+        /* nothing happens during leaf off period */
+        leaf_CN = 0.0;
+        frac_to_rexc = 0.0;
+    } else {
+        leaf_CN = 1.0 / s->shootnc;
+        presc_leaf_CN = 30.0; /* make a parameter */
+
+        /* fraction varies between 0 and 50 % as a function of leaf CN */
+        frac_to_rexc = MAX(0.0, MIN(0.5, (leaf_CN / presc_leaf_CN) - 1.0));
+    }
+
+    f->root_exc = frac_to_rexc * f->cproot;
+    if (float_eq(f->cproot, 0.0)) {
+        f->root_exn = 0.0;
+    } else {
+        fine_root_NC = f->nproot / f->cproot;
+        f->root_exn = f->root_exc * fine_root_NC;
+    }
+
+    /* Need to exudation C & N fluxes from fine root growth fluxes so that
+       things balance. */
+    f->cproot -= f->root_exc;
+    f->nproot -= f->root_exn;
+
+    return;
+}
 void carbon_production(control *c, fluxes *f, met *m, params *p, state *s,
                        int project_day, double daylen) {
     /* Calculate GPP, NPP and plant respiration
