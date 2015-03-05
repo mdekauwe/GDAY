@@ -206,18 +206,7 @@ int handler(char *section, char *name, char *value, control *c,
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "grazing")) {
-        if (strcmp(temp, "False") == 0 ||
-            strcmp(temp, "FALSE") == 0 ||
-            strcmp(temp, "false") == 0)
-            c->grazing = FALSE;
-        else if (strcmp(temp, "True") == 0 ||
-            strcmp(temp, "TRUE") == 0 ||
-            strcmp(temp, "true") == 0)
-            c->grazing = TRUE;
-        else {
-            fprintf(stderr, "Unknown grazing option: %s\n", temp);
-            exit(EXIT_FAILURE);
-        }
+        c->grazing = atoi(value);
     } else if (MATCH("control", "gs_model")) {
         if (strcmp(temp, "MEDLYN") == 0||
             strcmp(temp, "medlyn") == 0)

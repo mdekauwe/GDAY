@@ -42,7 +42,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
         f->deadleaves = f->lrate * s->remaining_days[doy];
     else
         f->deadleaves = *fdecay * s->shoot;
-    
+
     /* N litter production */
     f->deadleafn = f->deadleaves * ncflit;
 
