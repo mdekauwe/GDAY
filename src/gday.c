@@ -373,10 +373,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
             allocate_stored_c_and_n(f, p, s);
-
-            /* reset the stress buffer at the end of the growing season */
-            /*sma(SMA_FREE, hw);
-            sma(SMA_NEW, window_size);*/
         }
     }
     /* ========================= **
