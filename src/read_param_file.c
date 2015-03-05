@@ -192,6 +192,8 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown deciduous option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "disturbance")) {
+        c->disturbance = atoi(value);
     } else if (MATCH("control", "exudation")) {
             if (strcmp(temp, "False") == 0 ||
                 strcmp(temp, "FALSE") == 0 ||

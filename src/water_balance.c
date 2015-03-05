@@ -829,17 +829,7 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
 
     exit(1); */
 
-    /*
-    printf("%f\n", p->wcapac_topsoil);
-    printf("%f\n\n", p->wcapac_root);
 
-    printf("%f\n", p->ctheta_topsoil);
-    printf("%f\n", p->ntheta_topsoil);
-    printf("%f\n", p->ctheta_root);
-    printf("%f\n", p->ntheta_root);
-    printf("%f\n", p->rooting_depth);
-
-    exit(1); */
 
     free(fsoil_top);
     free(fsoil_root);
