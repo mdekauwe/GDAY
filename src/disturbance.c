@@ -1,50 +1,47 @@
 #include "disturbance.h"
 
 
-void figure_out_years_with_disturbances(control *c, met *m, params *p, int years,
-                                        int **yrs, int **cnt) {
+void figure_out_years_with_disturbances(control *c, met *m, params *p,
+                                        int **yrs, int *cnt) {
     int nyr, year_of_disturbance, yrs_till_event, prjday, year;
 
     if (p->burn_specific_yr < -900.0) {
         year_of_disturbance = p->burn_specific_yr;
-        *yrs[0] = p->burn_specific_yr;
+        (*yrs)[0] = p->burn_specific_yr;
     } else {
         yrs_till_event = time_till_next_disturbance();
         year = (int)m->year[prjday];
-        year_of_disturbance = year + yrs_till_event;
+        /*year_of_disturbance = year + yrs_till_event; */
         year_of_disturbance = 1996;
 
         /* figure out the years of the disturbance events  */
         *cnt = 0;
         prjday = 0;
-        while (year_of_disturbance < years[-1]) {
 
-            for (nyr = 0; nyr < c->num_years; nyr++) {
-                year = (int)m->year[prjday];
-                if (is_leap_year(year))
-                    prjday+=366;
-                else
-                    prjday+=365;
+        for (nyr = 0; nyr < c->num_years - 1; nyr++) {
+            year = (int)m->year[prjday];
+            if (is_leap_year(year))
+                prjday+=366;
+            else
+                prjday+=365;
 
-                if (year == year_of_disturbance)
-                    index = year;
-            }
+            if (year == year_of_disturbance) {
+                yrs_till_event = time_till_next_disturbance();
 
-            yrs_till_event = time_till_next_disturbance();
-
-            if (*cnt == 0) {
-                *yrs[0] = year_of_disturbance;
-            } else {
-                *cnt++;
-                if ((yrs = (double *)realloc(1 + *cnt, sizeof(double))) == NULL) {
-                    fprintf(stderr,"Error resizing years array\n");
-            		exit(EXIT_FAILURE);
+                if (*cnt == 0) {
+                    (*yrs)[0] = year_of_disturbance;
+                } else {
+                    *cnt += 1;
+                    if ((yrs = (int **)realloc(yrs, (1 + *cnt) * sizeof(int))) == NULL) {
+                        fprintf(stderr,"Error resizing years array\n");
+                		exit(EXIT_FAILURE);
+                    }
+                    (*yrs)[*cnt] = year_of_disturbance;
                 }
-                *yrs[*cnt] = year_of_disturbance;
-            }
 
-            /* See if there is another event? */
-            year_of_disturbance = years[index] + yrs_till_event;
+                /* See if there is another event? */
+                year_of_disturbance = year + yrs_till_event;
+            }
         }
     }
 
@@ -70,7 +67,7 @@ int time_till_next_disturbance() {
 }
 
 int check_for_fire(control *c, fluxes *f, params *p, state *s, int year,
-                   int distrubance_yrs, int num_disturbance_yrs) {
+                   int *distrubance_yrs, int num_disturbance_yrs) {
     /* Check if the current year has a fire, if so "burn" and then
        return an indicator to tell the main code to reset the stress stream */
     int fire_found = FALSE;

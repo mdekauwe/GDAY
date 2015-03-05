@@ -145,11 +145,12 @@ int main(int argc, char **argv)
 
 void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
-    int nyr, doy, window_size, i;
-    int project_day = 0, fire_found = FALSE;
+    int    nyr, doy, window_size, i;
+    int    project_day = 0, fire_found = FALSE;
+    int    num_disturbance_yrs = 0;
 
     double fdecay, rdecay, current_limitation, nitfac, year;
-    double *distrubance_yrs = NULL;
+    int   *disturbance_yrs = NULL;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
        index by num_days */
@@ -237,12 +238,11 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                         p->cfracts * s->shoot));
 
     if (c->disturbance) {
-        int num_disturbance_yrs = 0;
-        if ((distrubance_yrs = (double *)calloc(1, sizeof(double))) == NULL) {
-            fprintf(stderr,"Error allocating space for distrubance_yrs\n");
+        if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
+            fprintf(stderr,"Error allocating space for disturbance_yrs\n");
     		exit(EXIT_FAILURE);
         }
-        figure_out_years_with_disturbances(c, m, p, &distrubance_yrs,
+        figure_out_years_with_disturbances(c, m, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
 
@@ -284,7 +284,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             if (c->disturbance != 0 && p->disturbance_doy == doy) {
                 /* Fire Disturbance? */
                 fire_found = FALSE;
-                fire_found = check_for_fire(c, f, p, s, year, distrubance_yrs,
+                fire_found = check_for_fire(c, f, p, s, year, disturbance_yrs,
                                             num_disturbance_yrs);
                 if (fire_found) {
                     sma(SMA_FREE, hw);
@@ -392,7 +392,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     sma(SMA_FREE, hw);
     free(day_length);
     if (c->disturbance) {
-        free(distrubance_yrs);
+        free(disturbance_yrs);
     }
 
     return;
