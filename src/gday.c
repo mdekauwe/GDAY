@@ -229,8 +229,10 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     correct_rate_constants(p, FALSE);
     day_end_calculations(c, p, s, -99, TRUE);
 
+    initialise_soil_moisture_parameters(c, p);
     s->pawater_root = p->wcapac_root;
     s->pawater_topsoil = p->wcapac_topsoil;
+    
     s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                         p->cfracts * s->shoot));
 
