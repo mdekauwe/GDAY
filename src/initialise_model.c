@@ -26,7 +26,7 @@ void initialise_control(control *c) {
     c->exudation = FALSE;
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
-    c->grazing = FALSE;             /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
+    c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
     c->hurricane = FALSE;
     c->model_optroot = FALSE;       /* Ross's optimal root model...not sure if this works yet...0=off, 1=on */
