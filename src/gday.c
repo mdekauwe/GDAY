@@ -272,8 +272,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             calculate_csoil_flows(c, f, p, s, m->tsoil[project_day]);
             calculate_nsoil_flows(c, f, p, s, m->ndep[project_day]);
 
-            printf("%.13f %.13f %.13f %.13f %.13f\n", f->gpp*100, s->lai, f->deadleaves, f->lrate , s->remaining_days[doy]);
-
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
                  /*Allocation is annually for deciduous "tree" model, but we
@@ -322,7 +320,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-        exit(1);
+
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);

@@ -197,8 +197,13 @@ void carbon_production(control *c, fluxes *f, met *m, params *p, state *s,
         fprintf(stderr,"Not implemented, use MATE");
         exit(EXIT_FAILURE);
     } else if (c->assim_model == MATE) {
-        mate_C3_photosynthesis(c, f, m, p, s, project_day, daylen,
-                               ncontent);
+        if (c->ps_pathway == C3) {
+            mate_C3_photosynthesis(c, f, m, p, s, project_day, daylen,
+                                   ncontent);
+        } else {
+            mate_C4_photosynthesis(c, f, m, p, s, project_day, daylen,
+                                   ncontent);
+        }
     } else {
         fprintf(stderr,"Unknown photosynthesis model'");
         exit(EXIT_FAILURE);
@@ -574,6 +579,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alstem = 0.0;
         f->albranch = 0.0;
         f->alcroot = 0.0;
+
 
     } else if (c->alloc_model == ALLOMETRIC) {
 
