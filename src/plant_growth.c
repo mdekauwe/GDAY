@@ -194,7 +194,6 @@ void carbon_production(control *c, fluxes *f, met *m, params *p, state *s,
     }
     /* Estimate photosynthesis */
     if (c->assim_model == BEWDY){
-        fprintf(stderr,"Not implemented, use MATE");
         exit(EXIT_FAILURE);
     } else if (c->assim_model == MATE) {
         if (c->ps_pathway == C3) {
