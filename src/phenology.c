@@ -381,20 +381,22 @@ void calculate_days_left_in_growing_season(control *c, state *s,
     return;
 }
 
-void calculate_growing_season_fluxes(fluxes *f, state *s, double len_groloss) {
+void calculate_growing_season_fluxes(fluxes *f, state *s, int len_groloss) {
+
+    double denominator = (double)(len_groloss * len_groloss);
 
     /* C allocation rates across growing season */
-    f->lrate = 2.0 * s->c_to_alloc_shoot / (len_groloss * len_groloss);
-    f->wrate = 2.0 * s->c_to_alloc_stem / (len_groloss * len_groloss);
-    f->brate = 2.0 * s->c_to_alloc_branch / (len_groloss * len_groloss);
-    f->crate = 2.0 * s->c_to_alloc_croot / (len_groloss * len_groloss);
+    f->lrate = 2.0 * s->c_to_alloc_shoot / denominator;
+    f->wrate = 2.0 * s->c_to_alloc_stem / denominator;
+    f->brate = 2.0 * s->c_to_alloc_branch / denominator;
+    f->crate = 2.0 * s->c_to_alloc_croot / denominator;
 
     /* N allocation rates across growing season */
-    f->lnrate = 2.0 * s->n_to_alloc_shoot / (len_groloss * len_groloss);
-    f->bnrate = 2.0 * s->n_to_alloc_branch / (len_groloss * len_groloss);
-    f->wnimrate = 2.0 * s->n_to_alloc_stemimm / (len_groloss * len_groloss);
-    f->wnmobrate = 2.0 * s->n_to_alloc_stemmob / (len_groloss * len_groloss);
-    f->cnrate = 2.0 * s->n_to_alloc_croot / (len_groloss * len_groloss);
+    f->lnrate = 2.0 * s->n_to_alloc_shoot / denominator;
+    f->bnrate = 2.0 * s->n_to_alloc_branch / denominator;
+    f->wnimrate = 2.0 * s->n_to_alloc_stemimm / denominator;
+    f->wnmobrate = 2.0 * s->n_to_alloc_stemmob / denominator;
+    f->cnrate = 2.0 * s->n_to_alloc_croot / denominator;
 
     return;
 }
