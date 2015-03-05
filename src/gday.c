@@ -199,7 +199,18 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         open_output_file(c, c->out_param_fname, &(c->ofp));
     }
 
-
+    /*
+        Window size = root lifespan in days...
+        For deciduous species window size is set as the length of the
+        growing season in the main part of the code
+    */
+    window_size = (int)(1.0 / p->rdecay * NDAYS_IN_YR);
+    sma_obj *hw = sma(SMA_NEW, window_size).handle;
+    if (s->prev_sma > -900) {
+        for (i = 0; i < window_size; i++) {
+            sma(SMA_ADD, hw, s->prev_sma);
+        }
+    }
     /* Set up SMA
     **  - If we don't have any information about the N & water limitation, i.e.
     **    as would be the case with spin-up, assume that there is no limitation
@@ -209,17 +220,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         s->prev_sma = 1.0;
     if (s->grw_seas_stress < -900)
         s->grw_seas_stress = 1.0;
-
-    /*
-        Window size = root lifespan in days...
-        For deciduous species window size is set as the length of the
-        growing season in the main part of the code
-    */
-    window_size = (int)(1.0 / p->rdecay * NDAYS_IN_YR);
-    sma_obj *hw = sma(SMA_NEW, window_size).handle;
-    for (i = 0; i < window_size; i++) {
-        sma(SMA_ADD, hw, s->prev_sma);
-    }
 
     /*
         params are defined in per year, needs to be per day. Important this is
@@ -232,7 +232,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     initialise_soil_moisture_parameters(c, p);
     s->pawater_root = p->wcapac_root;
     s->pawater_topsoil = p->wcapac_topsoil;
-    
+
     s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                         p->cfracts * s->shoot));
 
@@ -255,9 +255,10 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
             hw = sma(SMA_NEW, p->growing_seas_len).handle;
-            for (i = 0; i < p->growing_seas_len; i++) {
-                sma(SMA_ADD, hw, 1.0); /* don't rely on previous year */
+            /*for (i = 0; i < p->growing_seas_len; i++) {
+                sma(SMA_ADD, hw, 1.0);
             }
+            */
 
             zero_stuff(c, s);
         }
@@ -293,16 +294,14 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                 s->prev_sma = sma(SMA_MEAN, hw).sma;
             }
 
-            /* if grazing took place need to reset "stress" running mean calculation
-               for grasses */
-            if (c->grazing == 2) {
+            /*
+                if grazing took place need to reset "stress" running mean
+                calculation for grasses
+            */
+            if (c->grazing == 2 && p->disturbance_doy == doy) {
                 sma(SMA_FREE, hw);
-                hw = sma(SMA_NEW, window_size).handle;
-                for (i = 0; i < window_size; i++) {
-                    sma(SMA_ADD, hw, s->prev_sma);
-                }
+                hw = sma(SMA_NEW, p->growing_seas_len).handle;
             }
-
 
             /* Turn off all N calculations */
             if (c->ncycle == FALSE)

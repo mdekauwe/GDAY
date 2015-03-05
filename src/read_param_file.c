@@ -515,7 +515,7 @@ int handler(char *section, char *name, char *value, control *c,
     } else if (MATCH("params", "displace_ratio")) {
         p->displace_ratio = atof(value);
     } else if (MATCH("params", "disturbance_doy")) {
-        p->disturbance_doy = atof(value);
+        p->disturbance_doy = atoi(value);
     } else if (MATCH("params", "dz0v_dh")) {
         p->dz0v_dh = atof(value);
     } else if (MATCH("params", "eac")) {

@@ -225,7 +225,7 @@ typedef struct {
     double density;                         /* sapwood density kg DM m-3 (trees) */
     double direct_frac;                     /* direct beam fraction of incident radiation - this is only used with the BEWDY model */
     double displace_ratio;                  /* Value for coniferous forest (0.78) from Jarvis et al 1976, taken from Jones 1992 pg 67. More standard assumption is 2/3 */
-    double disturbance_doy;
+    int    disturbance_doy;
     double dz0v_dh;                         /* Rate of change of vegetation roughness length for momentum with height. Value from Jarvis? for conifer 0.075 */
     double eac;                             /* Activation energy for carboxylation [J mol-1] */
     double eag;                             /* Activation energy at CO2 compensation point [J mol-1] */
