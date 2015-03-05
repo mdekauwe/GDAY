@@ -826,6 +826,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
         s->sapwood += f->cpstem - f->deadsapwood;
     }
 
+
     /*
     ** Nitrogen pools
     */
