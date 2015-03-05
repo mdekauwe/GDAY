@@ -330,14 +330,13 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                 s->prev_sma = sma(SMA_MEAN, hw).sma;
             }
 
-            /* if grazing took place need to reset "stress" running mean calculation
-               for grasses */
-            if (c->grazing == 2) {
+            /*
+                if grazing took place need to reset "stress" running mean
+                calculation for grasses
+            */
+            if (c->grazing == 2 && p->disturbance_doy == doy) {
                 sma(SMA_FREE, hw);
-                hw = sma(SMA_NEW, window_size).handle;
-                for (i = 0; i < window_size; i++) {
-                    sma(SMA_ADD, hw, s->prev_sma);
-                }
+                hw = sma(SMA_NEW, p->growing_seas_len).handle;
             }
 
 
