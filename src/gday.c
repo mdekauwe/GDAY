@@ -34,6 +34,7 @@
 #include "phenology.h"
 #include "read_param_file.h"
 #include "read_met_file.h"
+#include "disturbance.h"
 
 int main(int argc, char **argv)
 {
