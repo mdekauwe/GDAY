@@ -7,7 +7,7 @@
 
 void   soil_temp_factor(fluxes *, double);
 void   calculate_csoil_flows(control *, fluxes *, params *, state *,
-                             double);
+                             double, int);
 void   calculate_decay_rates(fluxes *, params *, state *);
 void   flux_from_grazers(control *c, fluxes *, params *);
 void   ligin_nratio(control *c, fluxes *f, params *, double *, double *);
@@ -27,7 +27,7 @@ void   precision_control_soil_c(fluxes *, state *);
 
 
 /* N stuff */
-void   calculate_nsoil_flows(control *, fluxes *, params *, state *, double);
+void   calculate_nsoil_flows(control *, fluxes *, params *, state *, double, int);
 void   grazer_inputs(control *, fluxes *, params *);
 void   inputs_from_plant_litter(fluxes *, params *, double *, double *);
 void   partition_plant_litter_n(control *, fluxes *, params *, double, double);
