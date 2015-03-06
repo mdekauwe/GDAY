@@ -269,8 +269,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay);
 
-            calculate_csoil_flows(c, f, p, s, m->tsoil[project_day]);
-            calculate_nsoil_flows(c, f, p, s, m->ndep[project_day]);
+            calculate_csoil_flows(c, f, p, s, m->tsoil[project_day], doy);
+            calculate_nsoil_flows(c, f, p, s, m->ndep[project_day], doy);
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
@@ -311,7 +311,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
 
-
             /* check the daily water balance */
             /*check_water_balance(project_day); */
 
@@ -320,6 +319,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
+
 
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {

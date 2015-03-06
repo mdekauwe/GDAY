@@ -602,6 +602,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     calculate_vcmax_parameter(p, s, Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
     calculate_vcmax_parameter(p, s, Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
 
+
     /* Rubisco and light-limited capacity (Appendix, 2B) */
     par_per_sec = par / (60.0 * 60.0 * daylen);
     M_am = quadratic(beta1, -(vcmax_am + p->alpha_c4 * par_per_sec),
@@ -647,9 +648,6 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
-
-    /* Plant respiration assuming carbon-use efficiency. */
-    f->auto_resp = f->gpp - f->npp;
 
     return;
 }

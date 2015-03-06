@@ -20,10 +20,17 @@
 #include "soils.h"
 
 void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
-                           double tsoil) {
+                           double tsoil, int doy) {
     double lnleaf, lnroot, nc_leaf_litter;
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+
+    /* need to store grazing flag. Allows us to switch on the annual
+       grazing event, but turn it off for every other day of the year.  */
+    int cntrl_grazing = c->grazing;
+    if (c->grazing == 2 && p->disturbance_doy == doy+1) {
+        c->grazing = TRUE;
+    }
 
     soil_temp_factor(f, tsoil);
 
@@ -63,6 +70,9 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     f->co2_rel_from_active_pool = f->co2_to_air[4];
     f->co2_rel_from_slow_pool = f->co2_to_air[5];
     f->co2_rel_from_passive_pool = f->co2_to_air[6];
+
+    /* switch off grazing if this was just activated as an annual event */
+    c->grazing = cntrl_grazing;
 
     if (c->exudation) {
         calc_root_exudation_uptake_of_C(f, p, s);
@@ -534,7 +544,14 @@ void precision_control_soil_c(fluxes *f, state *s) {
 
 
 void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
-                           double ndep) {
+                           double ndep, int doy) {
+
+    /* need to store grazing flag. Allows us to switch on the annual
+       grazing event, but turn it off for every other day of the year.  */
+    int cntrl_grazing = c->grazing;
+    if (c->grazing == 2 && p->disturbance_doy == doy+1) {
+        c->grazing = TRUE;
+    }
 
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
@@ -565,6 +582,9 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
 
     /* calculate N net mineralisation */
     calc_net_mineralisation(f);
+
+    /* switch off grazing if this was just activated as an annual event */
+    c->grazing = cntrl_grazing;
 
     if (c->exudation) {
         calc_root_exudation_uptake_of_N(f, s);
