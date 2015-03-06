@@ -144,10 +144,12 @@ int main(int argc, char **argv)
 
 void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
-    int nyr, doy, window_size, i;
-    int project_day = 0;
+    int    nyr, doy, window_size, i;
+    int    project_day = 0, fire_found = FALSE;;
+    int    num_disturbance_yrs = 0;
 
     double fdecay, rdecay, current_limitation, nitfac, year;
+    int   *disturbance_yrs = NULL;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
        index by num_days */
@@ -236,6 +238,15 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                         p->cfracts * s->shoot));
 
+    if (c->disturbance) {
+        if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
+            fprintf(stderr,"Error allocating space for disturbance_yrs\n");
+    		exit(EXIT_FAILURE);
+        }
+        figure_out_years_with_disturbances(c, m, p, &disturbance_yrs,
+                                           &num_disturbance_yrs);
+    }
+
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
@@ -265,6 +276,22 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         for (doy = 0; doy < c->num_days; doy++) {
 
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
+
+            if (c->disturbance != 0 && p->disturbance_doy == doy) {
+                /* Fire Disturbance? */
+                fire_found = FALSE;
+                fire_found = check_for_fire(c, f, p, s, year, disturbance_yrs,
+                                            num_disturbance_yrs);
+                if (fire_found) {
+                    sma(SMA_FREE, hw);
+                    hw = sma(SMA_NEW, p->growing_seas_len).handle;
+                }
+            } else if (c->hurricane &&
+                p->hurricane_yr == year &&
+                p->hurricane_doy == doy) {
+                /* Hurricane? */
+                hurricane(f, p, s);
+            }
 
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay);
@@ -339,6 +366,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
     sma(SMA_FREE, hw);
     free(day_length);
+    if (c->disturbance) {
+        free(disturbance_yrs);
+    }
 
     return;
 
@@ -361,7 +391,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
     double tol = 5E-03;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
-    int i;
+    int i, cntrl_flag;
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
 
@@ -369,22 +399,50 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
 
-    fprintf(stderr, "Spinning up the model...\n");
-    while (TRUE) {
-        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
-            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
-            break;
-        } else {
-            prev_plantc = s->plantc;
-            prev_soilc = s->soilc;
+    /* If we are prescribing disturbance, first allow the forest to establish */
+    if (c->disturbance != 0) {
+        cntrl_flag = c->disturbance;
+        c->disturbance = FALSE;
+        /*  200 years (50 yrs x 4 cycles) */
+        for (i = 0; i < 4; i++) {
+            run_sim(c, f, m, p, s); /* run GDAY */
+            c->disturbance = cntrl_flag;
+        }
 
-            /* 1000 years (50 yrs x 20 cycles) */
-            for (i = 0; i < 20; i++)
-                run_sim(c, f, m, p, s); /* run GDAY */
+        fprintf(stderr, "Spinning up the model...\n");
+        while (TRUE) {
+            if (fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+                break;
+            } else {
+                prev_soilc = s->soilc;
 
-            /* Have we reached a steady state? */
-            fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
-                    s->plantc, s->soilc);
+                /* 1000 years (50 yrs x 20 cycles) */
+                for (i = 0; i < 20; i++)
+                    run_sim(c, f, m, p, s); /* run GDAY */
+
+                /* Have we reached a steady state? */
+                fprintf(stderr, "Spinup: Soil C - %f\n", s->soilc);
+            }
+        }
+
+    } else {
+        fprintf(stderr, "Spinning up the model...\n");
+        while (TRUE) {
+            if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
+                fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+                break;
+            } else {
+                prev_plantc = s->plantc;
+                prev_soilc = s->soilc;
+
+                /* 1000 years (50 yrs x 20 cycles) */
+                for (i = 0; i < 20; i++)
+                    run_sim(c, f, m, p, s); /* run GDAY */
+
+                /* Have we reached a steady state? */
+                fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
+                        s->plantc, s->soilc);
+            }
         }
     }
     write_final_state(c, p, s);
