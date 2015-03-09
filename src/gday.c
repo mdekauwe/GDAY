@@ -343,7 +343,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             /* check the daily water balance */
             /*check_water_balance(project_day); */
-            
+
             project_day++;
             /* ======================= **
             **   E N D   O F   D A Y   **
