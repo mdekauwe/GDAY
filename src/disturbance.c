@@ -4,7 +4,7 @@
 void figure_out_years_with_disturbances(control *c, met *m, params *p,
                                         int **yrs, int *cnt) {
     int nyr, year_of_disturbance, yrs_till_event, prjday, year;
-    
+
     if (p->burn_specific_yr < -900.0) {
         year_of_disturbance = p->burn_specific_yr;
         (*yrs)[0] = p->burn_specific_yr;
@@ -75,7 +75,6 @@ int check_for_fire(control *c, fluxes *f, params *p, state *s, int year,
 
     for (nyr = 0; nyr < num_disturbance_yrs; nyr++) {
         if (year == distrubance_yrs[nyr]) {
-            fire(c, f, p, s);
             fire_found = TRUE;
         }
     }

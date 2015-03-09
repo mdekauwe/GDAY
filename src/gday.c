@@ -278,12 +278,14 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
-            if (c->disturbance != 0 && p->disturbance_doy == doy) {
+            if (c->disturbance && p->disturbance_doy == doy+1) {
                 /* Fire Disturbance? */
                 fire_found = FALSE;
                 fire_found = check_for_fire(c, f, p, s, year, disturbance_yrs,
                                             num_disturbance_yrs);
+
                 if (fire_found) {
+                    fire(c, f, p, s);
                     sma(SMA_FREE, hw);
                     hw = sma(SMA_NEW, p->growing_seas_len).handle;
                 }
@@ -320,7 +322,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                 if grazing took place need to reset "stress" running mean
                 calculation for grasses
             */
-            if (c->grazing == 2 && p->disturbance_doy == doy) {
+            if (c->grazing == 2 && p->disturbance_doy == doy+1) {
                 sma(SMA_FREE, hw);
                 hw = sma(SMA_NEW, p->growing_seas_len).handle;
             }
@@ -341,7 +343,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             /* check the daily water balance */
             /*check_water_balance(project_day); */
-
+            /*printf("%f %f\n", s->lai, f->gpp*100.);*/
             project_day++;
             /* ======================= **
             **   E N D   O F   D A Y   **
@@ -401,20 +403,22 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
     open_output_file(c, c->out_param_fname, &(c->ofp));
 
     /* If we are prescribing disturbance, first allow the forest to establish */
-    if (c->disturbance != 0) {
+    if (c->disturbance) {
         cntrl_flag = c->disturbance;
         c->disturbance = FALSE;
         /*  200 years (50 yrs x 4 cycles) */
         for (i = 0; i < 4; i++) {
             run_sim(c, f, m, p, s); /* run GDAY */
-            c->disturbance = cntrl_flag;
         }
+        c->disturbance = cntrl_flag;
 
         fprintf(stderr, "Spinning up the model...\n");
         while (TRUE) {
-            if (fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+            if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
+                fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
                 break;
             } else {
+                prev_plantc = s->plantc;
                 prev_soilc = s->soilc;
 
                 /* 1000 years (50 yrs x 20 cycles) */
@@ -422,7 +426,8 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
                     run_sim(c, f, m, p, s); /* run GDAY */
 
                 /* Have we reached a steady state? */
-                fprintf(stderr, "Spinup: Soil C - %f\n", s->soilc);
+                fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
+                        s->plantc, s->soilc);
             }
         }
 

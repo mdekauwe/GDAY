@@ -18,12 +18,12 @@ void initialise_control(control *c) {
     strcpy(c->out_fname_hdr, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
 
-    c->adjust_rtslow = FALSE;        /* Adjust turn over rate */
+    c->adjust_rtslow = FALSE;       /* Adjust turn over rate */
     c->alloc_model = ALLOMETRIC;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */
     c->assim_model = MATE;          /* Photosynthesis model: BEWDY (not coded :p) or MATE */
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
-    c->disturbance = 0;             /* 0=No disturbance, 1=Fire */
+    c->disturbance = FALSE;         /* 0=No disturbance, 1=Fire */
     c->exudation = FALSE;
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
@@ -94,7 +94,7 @@ void initialise_params(params *p) {
     p->density = 420.0;
     p->direct_frac = 0.5;
     p->displace_ratio = 0.78;
-    p->disturbance_doy = 1.0;
+    p->disturbance_doy = -999;
     p->dz0v_dh = 0.075;
     p->eac = 79430.0;
     p->eag = 37830.0;
