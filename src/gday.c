@@ -411,44 +411,24 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
             run_sim(c, f, m, p, s); /* run GDAY */
         }
         c->disturbance = cntrl_flag;
+    }
 
-        fprintf(stderr, "Spinning up the model...\n");
-        while (TRUE) {
-            if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
-                fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
-                break;
-            } else {
-                prev_plantc = s->plantc;
-                prev_soilc = s->soilc;
+    fprintf(stderr, "Spinning up the model...\n");
+    while (TRUE) {
+        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
+            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+            break;
+        } else {
+            prev_plantc = s->plantc;
+            prev_soilc = s->soilc;
 
-                /* 1000 years (50 yrs x 20 cycles) */
-                for (i = 0; i < 20; i++)
-                    run_sim(c, f, m, p, s); /* run GDAY */
+            /* 1000 years (50 yrs x 20 cycles) */
+            for (i = 0; i < 20; i++)
+                run_sim(c, f, m, p, s); /* run GDAY */
 
-                /* Have we reached a steady state? */
-                fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
-                        s->plantc, s->soilc);
-            }
-        }
-
-    } else {
-        fprintf(stderr, "Spinning up the model...\n");
-        while (TRUE) {
-            if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
-                fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
-                break;
-            } else {
-                prev_plantc = s->plantc;
-                prev_soilc = s->soilc;
-
-                /* 1000 years (50 yrs x 20 cycles) */
-                for (i = 0; i < 20; i++)
-                    run_sim(c, f, m, p, s); /* run GDAY */
-
-                /* Have we reached a steady state? */
-                fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
-                        s->plantc, s->soilc);
-            }
+            /* Have we reached a steady state? */
+            fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
+                    s->plantc, s->soilc);
         }
     }
     write_final_state(c, p, s);
