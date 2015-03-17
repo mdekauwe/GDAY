@@ -153,7 +153,6 @@ typedef struct {
     double wtfac_root;
     double wtfac_topsoil;
     double delta_sw_store;
-    double grw_seas_stress;
     double b_root;
     double theta_sat_root;
     double theta_sat_topsoil;
