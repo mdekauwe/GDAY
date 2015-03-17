@@ -119,7 +119,9 @@ typedef struct {
     double lai;                         /* leaf area index m2 (leaf) m-2 (ground) */
     double fipar;
     double max_lai;
+    double last_yrs_max_lai;
     double max_shoot;
+    double last_yrs_max_shoot;
     double metabsoil;                   /* metabolic soil c (t/ha) */
     double metabsoiln;                  /* metabolic soil n (t/ha) */
     double metabsurf;                   /* metabolic surface c (t/ha) */

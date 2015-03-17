@@ -52,15 +52,6 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
            calc for grasses here too. */
         if (s->leaf_out_days[doy] > 0.0) {
 
-
-            /* Need to save max lai for pipe model because at the end of the
-               year LAI=0.0 */
-            if (s->lai > s->max_lai)
-                s->max_lai = s->lai;
-
-            if (s->shoot > s->max_shoot)
-                s->max_shoot = s->shoot;
-
             calc_carbon_allocation_fracs(c, f, p, s, nitfac);
 
             /* store the days allocation fraction, we average these at the
@@ -560,7 +551,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         sap_cross_sec_area = arg1 / arg2;
 
         if (c->deciduous_model)
-            leaf2sap = s->max_lai / sap_cross_sec_area;
+            leaf2sap = s->lai / sap_cross_sec_area;
         else
             leaf2sap = s->lai / sap_cross_sec_area;
 
@@ -605,7 +596,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
 
         /* calculate imbalance, based on *biomass* */
         if (c->deciduous_model) {
-            mis_match = s->max_shoot / (s->root * stress);
+            mis_match = s->shoot / (s->root * stress);
         } else {
             /* Catch for floating point reset of root C mass */
             if (float_eq(s->root, 0.0))
