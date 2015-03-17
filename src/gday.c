@@ -212,9 +212,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     */
     if (s->prev_sma < -900)
         s->prev_sma = 1.0;
-    if (s->grw_seas_stress < -900)
-        s->grw_seas_stress = 1.0;
-
+    
     /*
         params are defined in per year, needs to be per day. Important this is
         done here as rate constants elsewhere in the code are assumed to be in
@@ -249,10 +247,11 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
             hw = sma(SMA_NEW, p->growing_seas_len).handle;
-            /*for (i = 0; i < p->growing_seas_len; i++) {
-                sma(SMA_ADD, hw, 1.0);
+            if (s->prev_sma > -900) {
+                for (i = 0; i < p->growing_seas_len; i++) {
+                    sma(SMA_ADD, hw, s->prev_sma);
+                }
             }
-            */
 
             zero_stuff(c, s);
         }
@@ -570,7 +569,6 @@ void zero_stuff(control *c, state *s) {
     s->cstore = 0.0;
     s->nstore = 0.0;
     s->anpp = 0.0;
-    s->grw_seas_stress = 1.0;
 
     if (c->deciduous_model) {
         s->avg_alleaf = 0.0;
