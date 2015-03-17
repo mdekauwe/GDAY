@@ -120,8 +120,6 @@ typedef struct {
     double inorgn;                      /* Inorganic soil N pool - dynamic (t/ha) */
     double lai;                         /* leaf area index m2 (leaf) m-2 (ground) */
     double fipar;
-    double max_lai;
-    double max_shoot;
     double metabsoil;                   /* metabolic soil c (t/ha) */
     double metabsoiln;                  /* metabolic soil n (t/ha) */
     double metabsurf;                   /* metabolic surface c (t/ha) */

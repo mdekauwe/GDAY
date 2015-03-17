@@ -435,10 +435,6 @@ int handler(char *section, char *name, char *value, control *c,
         s->inorgn = atof(value);
     } else if (MATCH("state", "lai")) {
         s->lai = atof(value);
-    } else if (MATCH("state", "max_lai")) {
-        s->max_lai = atof(value);
-    } else if (MATCH("state", "max_shoot")) {
-        s->max_shoot = atof(value);
     } else if (MATCH("state", "metabsoil")) {
         s->metabsoil = atof(value);
     } else if (MATCH("state", "metabsoiln")) {

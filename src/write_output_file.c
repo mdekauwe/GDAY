@@ -509,12 +509,6 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "lai")) {
         fprintf(c->ofp, "lai = %.10f\n", s->lai);
         *match = TRUE;
-    } else if (MATCH("state", "max_lai")) {
-        fprintf(c->ofp, "max_lai = %.10f\n", s->max_lai);
-        *match = TRUE;
-    } else if (MATCH("state", "max_shoot")) {
-        fprintf(c->ofp, "max_shoot = %.10f\n", s->max_shoot);
-        *match = TRUE;
     } else if (MATCH("state", "metabsoil")) {
         fprintf(c->ofp, "metabsoil = %.10f\n", s->metabsoil);
         *match = TRUE;

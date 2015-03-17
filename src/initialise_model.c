@@ -18,18 +18,14 @@ void initialise_control(control *c) {
     strcpy(c->out_fname_hdr, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
 
-    c->adjust_rtslow = FALSE;       /* Adjust turn over rate */
     c->alloc_model = ALLOMETRIC;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */
     c->assim_model = MATE;          /* Photosynthesis model: BEWDY (not coded :p) or MATE */
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
-    c->disturbance = FALSE;         /* 0=No disturbance, 1=Fire */
-    c->exudation = FALSE;
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
-    c->hurricane = FALSE;
     c->model_optroot = FALSE;       /* Ross's optimal root model...not sure if this works yet...0=off, 1=on */
     c->modeljm = 2;                 /* modeljm=0, Jmax and Vcmax parameters are read in, modeljm=1, parameters are calculated from leaf N content, modeljm=2, Vcmax is calculated from leaf N content but Jmax is related to Vcmax */
     c->ncycle = TRUE;               /* Nitrogen cycle on or off? */
@@ -94,7 +90,7 @@ void initialise_params(params *p) {
     p->density = 420.0;
     p->direct_frac = 0.5;
     p->displace_ratio = 0.78;
-    p->disturbance_doy = -999;
+    p->disturbance_doy = 1.0;
     p->dz0v_dh = 0.075;
     p->eac = 79430.0;
     p->eag = 37830.0;
@@ -187,6 +183,7 @@ void initialise_params(params *p) {
     p->rdecaydry = 0.33333;
     p->retransmob = 0.0;
     p->rfmult = 1.0;
+    p->root_exu_CUE = -999.9;
     p->rooting_depth = 750.0;
     strcpy(p->rootsoil_type, "clay");
     p->rretrans = 0.0;
@@ -224,11 +221,6 @@ void initialise_params(params *p) {
     for (i = 0; i < 7; i++) {
         p->decayrate[i] = 0.0;
     }
-
-    /* priming/exudation */
-    p->root_exu_CUE = -999.9;
-    p->prime_y = 0.0;
-    p->prime_z = 0.0;
 }
 
 
@@ -384,15 +376,6 @@ void initialise_fluxes(fluxes *f) {
     f->co2_rel_from_slow_pool = 0.0;
     f->co2_rel_from_passive_pool = 0.0;
 
-    /* priming/exudation */
-    f->root_exc = 0.0;
-    f->root_exn = 0.0;
-    f->co2_released_exud = 0.0;
-    f->factive = 0.0;
-    f->rtslow = 0.0;
-    f->rexc_cue = 0.0;
-
-
     return;
 }
 
@@ -419,8 +402,6 @@ void initialise_state(state *s) {
     s->crootn = 0.0;
     s->cstore = 0.01;
     s->inorgn = 0.0274523714275;
-    s->max_lai = -999.9;
-    s->max_shoot = -999.9;
     s->metabsoil = 0.135656771805;
     s->metabsoiln = 0.00542627087221;
     s->metabsurf = 0.0336324759951;

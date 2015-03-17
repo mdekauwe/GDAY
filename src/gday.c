@@ -161,11 +161,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     }
 
     if (c->deciduous_model) {
-        if (s->max_lai < -900.){
-            /* initialise to something really low */
-            s->max_lai = 0.01;
-            s->max_shoot = 0.01;
-        }
 
         /* Are we reading in last years average growing season? */
         if (float_eq(s->avg_alleaf, 0.0) &&
@@ -611,8 +606,6 @@ void zero_stuff(control *c, state *s) {
     s->shootn = 0.0;
     s->shootnc = 0.0;
     s->lai = 0.0;
-    s->max_lai = 0.0;
-    s->max_shoot = 0.0;
     s->cstore = 0.0;
     s->nstore = 0.0;
     s->anpp = 0.0;
