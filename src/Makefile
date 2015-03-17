@@ -42,6 +42,6 @@ clean:
 		$(RM) $(OBJECTS) $(PROGRAM) version.c
 
 install:
-		cp $(PROGRAM) $(HOME)/bin/$(ARCH)/gday_nceas_phase2
+		cp $(PROGRAM) $(HOME)/bin/$(ARCH)/.
 		$(RM) $(OBJECTS)
 ##############################################################################
