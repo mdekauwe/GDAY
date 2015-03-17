@@ -9,3 +9,6 @@
 *.a
 *.la
 *.lo
+
+src/gday
+src/version.c
