@@ -53,7 +53,9 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
 
     calculate_days_left_in_growing_season(c, s, leaf_on, leaf_off, len_groloss);
     calculate_growing_season_fluxes(f, s, len_groloss);
-
+    
+    /*printf("%d %d\n", leaf_on, leaf_off); */
+    
     return;
 }
 
@@ -162,23 +164,50 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
         */
         if (c->alloc_model == GRASSES) {
             if (leaf_off_found == FALSE) {
-                /* test for hot && dry conditions, based on white et al. 1997 */
-                if (ppt_sum_prev < 11.4 &&
-                    ppt_sum_next < 9.7 &&
-                    Tmean > tmax_ann) {
-
-                    leaf_off_found = TRUE;
-                    *leaf_off = d;
-                } else if (d > 182 && Tair_next_3days < grass_temp_threshold) {
+                
+                
+                if (d > 182 && Tair_next_3days < grass_temp_threshold) {
                     /*
                         test for cold offset condition
                         Leaf drop constraint is based on Foley et al. 1996 as
                         we dont have access to the Tmin for the constraint from
-                        White et al. This is likely more straightforward anyway
+                        White et al. In addition, the below code was tested and
+                        led to unrealistically early leaf shut down due to the 
+                        PPT and temp thresholds from White.
+                        
+                        The 182 is just a safe guard to make sure we have 
+                        reached half a year. It really shouldn't have an effect.
+                        
+                        This is likely more straightforward anyway
                     */
                     leaf_off_found = TRUE;
                     *leaf_off = d;
+                    
                 }
+                
+                /* 
+                
+                    ** Does not work, led to unrealistically early leaf shut in
+                       PHAC runs down due to the PPT and temp thresholds from 
+                       White.
+                
+                    test for hot && dry conditions, based on white et al. 1997 
+                if (ppt_sum_prev < 11.4 &&
+                    ppt_sum_next < 9.7 &&
+                    Tmean > tmax_ann && 
+                    d > 243) {
+                    
+                    leaf_off_found = TRUE;
+                    *leaf_off = d;
+                } else if (d > 243 && Tair_next_3days < grass_temp_threshold) {
+                    
+                        test for cold offset condition
+                        Leaf drop constraint is based on Foley et al. 1996 as
+                        we dont have access to the Tmin for the constraint from
+                        White et al. This is likely more straightforward anyway
+                    
+                }
+                */
             }
         } else {
             if (leaf_off_found == FALSE && accum_gdd >= gdd_thresh) {
