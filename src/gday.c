@@ -122,6 +122,8 @@ int main(int argc, char **argv)
     free(m->tsoil);
     free(m->tam);
     free(m->tpm);
+    free(m->tmin);
+    free(m->tmax);
     free(m->vpd_am);
     free(m->vpd_pm);
     free(m->vpd_avg);
