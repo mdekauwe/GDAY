@@ -65,7 +65,7 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
 
     double grass_temp_threshold, tmax_ann, ppt_sum_crit, ppt_sum_next, ppt_sum,
            ppt_sum_prev, Tmean, Tsoil, Tsoil_next_3days, Tair_next_3days,
-           gdd_thresh, Tmin_boxcar, Tmin_avg, Tmax;
+           gdd_thresh, Tmin_boxcar, Tmin_avg, Tmax, Tday;
     double accumulated_ncd = 0.0;
     double accum_gdd = 0.0;
     int    leaf_on_found = FALSE;
@@ -97,6 +97,7 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
     ppt_sum = 0.0;
     for (d = 1; d < c->num_days+1; d++) {
         Tmean = m->tair[project_day];
+        Tday = m->tday[project_day];
         Tsoil = m->tsoil[project_day];
         Tmax = m->tmax[project_day];
         ppt_sum += m->rain[project_day];
@@ -181,7 +182,11 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
                     This Tmean is the mean daytime temp, but I wonder if it 
                     should be the full 24 daytime temp mean?
                 */
-                if (d >= 243 && Tmean <= grass_temp_threshold) {
+                
+                /*if (d >= 243) {
+                    printf("%d %f %f\n", d, Tmean, grass_temp_threshold);
+                }*/
+                if (d >= 243 && Tday <= grass_temp_threshold) {
                     leaf_off_found = TRUE;
                     *leaf_off = d;
                 }

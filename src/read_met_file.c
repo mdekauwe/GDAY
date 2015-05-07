@@ -6,7 +6,7 @@ void read_met_data(char **argv, control *c, met *m)
     char   line[STRING_LENGTH];
     int    file_len = 0;
     int    i = 0;
-    int    nvars = 22;
+    int    nvars = 23;
     int    skipped_lines = 0;
     double current_yr;
 
@@ -74,6 +74,11 @@ void read_met_data(char **argv, control *c, met *m)
     
     if ((m->tmax = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tmax array\n");
+		exit(EXIT_FAILURE);
+    }
+    
+    if ((m->tday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tday array\n");
 		exit(EXIT_FAILURE);
     }
 
@@ -156,11 +161,11 @@ void read_met_data(char **argv, control *c, met *m)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
-                          %lf", \
+                          %lf,%lf", \
                           &(m->year[i]), &(m->prjday[i]), &(m->sw_rad[i]), \
                           &(m->tair[i]), &(m->rain[i]), &(m->tsoil[i]), \
                           &(m->tam[i]), &(m->tpm[i]), &(m->tmin[i]), \
-                          &(m->tmax[i]), &(m->vpd_am[i]), \
+                          &(m->tmax[i]), &(m->tday[i]), &(m->vpd_am[i]), \
                           &(m->vpd_pm[i]), &(m->vpd_avg[i]), &(m->co2[i]), \
                           &(m->ndep[i]), &(m->wind[i]), &(m->press[i]), \
                           &(m->par[i]), &(m->wind_am[i]), &(m->wind_pm[i]), \

@@ -371,6 +371,7 @@ typedef struct {
     double *tpm;
     double *tmin;
     double *tmax;
+    double *tday;
     double *vpd_am;
     double *vpd_pm;
     double *vpd_avg;
