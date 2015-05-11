@@ -72,7 +72,7 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
     int    leaf_off_found = FALSE;
     int    drop_leaves = FALSE;
     int    d, dd, st, en, nov_doy;
-
+    int project_day_save = project_day;
     /*
         Krinner et al. 2005, page 26, alternatively Foley et al. 1996 suggests
         the same value = 100 for both pathways
@@ -259,6 +259,182 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
     if (leaf_on_found == FALSE) {
         fprintf(stderr, "Problem in phenology leaf on/ not found\n");
         exit(EXIT_FAILURE);
+    }
+    
+    
+    /* 
+        No leaf drop found, try a warmer temperature i.e. 5 instead of 0,
+        if this doesn't work there really is an issue.
+        
+        When you get a second tidy this code up as I've quickly pasted the 
+        above code 
+    */
+    if (leaf_off_found == FALSE) {
+        
+        grass_temp_threshold = 5.0;
+        
+        /* reset date index */
+        project_day = project_day_save;
+        
+        ppt_sum = 0.0;
+        for (d = 1; d < c->num_days+1; d++) {
+            Tmean = m->tair[project_day];
+            Tday = m->tday[project_day];
+            Tsoil = m->tsoil[project_day];
+            Tmax = m->tmax[project_day];
+            ppt_sum += m->rain[project_day];
+
+            /* Calculate ppt total from the next 7 days */
+            if (d < 358) {
+                st = project_day + 1;
+                en = project_day + 8;
+                ppt_sum_next = 0.0;
+                for (dd = st; dd < en; dd++) {
+                    ppt_sum_next += m->rain[dd];
+                }
+            } else {
+                /* i.e. end of year, didn't find this so have no effect */
+                ppt_sum_next = 0.0;
+            }
+
+            /* Calculate ppt total from the previous 30 days */
+            if (project_day < 30) {
+                ppt_sum_prev = 0.0;
+            } else {
+                st = project_day - 30;
+                en = project_day;
+                ppt_sum_prev = 0.0;
+                for (dd = st; dd < en; dd++) {
+                    ppt_sum_prev += m->rain[dd];
+                }
+            }
+
+            if (d < 362) {
+                Tsoil_next_3days = ((m->tsoil[project_day] +
+                                     m->tsoil[project_day+1] +
+                                     m->tsoil[project_day+2]) / 3.0);
+
+                Tair_next_3days = ((m->tair[project_day] +
+                                    m->tair[project_day+1] +
+                                    m->tair[project_day+2]) / 3.0);
+            
+                Tmin_boxcar = ((m->tmin[project_day-1] +
+                                m->tmin[project_day] +
+                                m->tmin[project_day+1]) / 3.0);
+                                
+            } else {
+                /* i.e. end of year, didn't find this so have no effect */
+                Tsoil_next_3days = 999.9;
+                Tair_next_3days = 999.9;
+            }
+
+            /* Sum the daily mean air temperature above 5degC starting on Jan 1 */
+            accum_gdd += calc_gdd(Tmean);
+
+            /*
+            ** Calculate leaf on
+            */
+            if (c->alloc_model == GRASSES) {
+                if (leaf_on_found == FALSE &&
+                    accum_gdd >= gdd_thresh &&
+                    ppt_sum >= ppt_sum_crit) {
+
+                    *leaf_on = d;
+                    leaf_on_found = TRUE;
+                }
+            } else {
+                if (leaf_on_found == FALSE && accum_gdd >= gdd_thresh) {
+                      *leaf_on = d;
+                      leaf_on_found = TRUE;
+                }
+            }
+
+            /*
+            ** Calculate leaf off
+            */
+            if (c->alloc_model == GRASSES) {
+                if (leaf_off_found == FALSE) {
+                
+                    /* 
+                        Leaf drop constraint is based on Foley et al. 1996
+                    
+                        The 243 is just a safe guard to make sure we avoid 
+                        predicting offset in late spring (White et al. 1997). 
+                    
+                        This Tmean is the mean daytime temp, but I wonder if it 
+                        should be the full 24 daytime temp mean?
+                    */
+                
+                    
+                    if (d >= 243 && Tday <= grass_temp_threshold) {
+                        leaf_off_found = TRUE;
+                        *leaf_off = d;
+                    }
+                
+                
+                    /* 
+                        Leaf drop constraint is based on White et al. 1997 
+                
+                         - test for hot && dry conditions.  
+                
+                    if (ppt_sum_prev < 11.4 &&
+                        ppt_sum_next < 9.7 &&
+                        Tmax > tmax_ann && 
+                        d > 243) {
+                    
+                        leaf_off_found = TRUE;
+                        *leaf_off = d;
+                
+                        - test for cold offset condition 
+                    } else if (d > 243 && Tmin_boxcar <= Tmin_avg) {
+                    
+                        leaf_off_found = TRUE;
+                        *leaf_off = d; 
+                     
+                    }
+                    */
+                
+                }
+            } else {
+                if (leaf_off_found == FALSE && accum_gdd >= gdd_thresh) {
+                    /*
+                        I am prescribing that no leaves can fall off before doy=180
+                        Had issue with KSCO simulations where the photoperiod was
+                        less than the threshold very soon after leaf out.
+                    */
+                    if (d > 182) {
+                        drop_leaves = leaf_drop(daylen[d-1], Tsoil, Tsoil_next_3days);
+                        if (drop_leaves) {
+                            leaf_off_found = TRUE;
+                            *leaf_off = d;
+                        }
+                    }
+                }
+            }
+            /* Calculated NCD from fixed date following Murray et al 1989. */
+            if (d+1 >= nov_doy)
+                accumulated_ncd += calc_ncd(Tmean);
+            project_day++;
+        }
+    
+    
+        /* updated stored param, note this will be written out if the user
+           dumps the current state, which makes sense as we may want pass the
+           stat between spinup and a simulation */
+        p->previous_ncd = accumulated_ncd;
+
+        /*
+            Length of time taken for new growth from storage to be allocated.
+            This is either some site-specific calibration or the midpoint of the
+            length of the growing season. The litterfall takes place over an
+            identical period. Dividing by a larger number would increase the
+            rate the C&N is allocated.
+        */
+        p->growing_seas_len = *leaf_off - *leaf_on;
+        if (p->store_transfer_len < -900)
+            *len_groloss = (int)floor((float)p->growing_seas_len / 2.0);
+        else
+            *len_groloss = p->store_transfer_len;
     }
     
     if (leaf_off_found == FALSE) {
