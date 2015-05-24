@@ -4,8 +4,9 @@
 #include "gday.h"
 
 void    phenology(control *, fluxes *, met *, params *, state *, double *, int);
-void    calculate_leafon_off(control *, met *, params *, double *, int, double,
-                          double, double, int *, int *, int *);
+void    calculate_leafon_off(control *, met *, params *, double *, double, 
+                             double, double, double, int, int *, int *, int *, 
+                             int *, int *, double);
 double  calc_gdd(double);
 double  gdd_chill_thresh(double, double, double, double);
 double  calc_ncd(double);
