@@ -69,31 +69,52 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
     
     calculate_leafon_off(c, m, p, daylen, grass_temp_threshold, tmax_ann, 
                          Tmin_avg, ppt_sum_crit, project_day, 
-                         &leaf_on, &leaf_off, &len_groloss, &leaf_on_found, 
+                         &leaf_on, &leaf_off, &leaf_on_found, 
                          &leaf_off_found, gdd_thresh);
-    
    
-    /* 
+    /*
         No leaf drop found, try a warmer temperature i.e. 5 instead of 0,
         if this doesn't work there really is an issue (or there is no leaf
         drop and we have an evergreen grass...
-        
-    */
+    */  
     if (leaf_off_found == FALSE) {
         grass_temp_threshold = 5.0;
         calculate_leafon_off(c, m, p, daylen, grass_temp_threshold, tmax_ann, 
                              Tmin_avg, ppt_sum_crit, project_day,  
-                             &leaf_on, &leaf_off, &len_groloss, &leaf_on_found, 
+                             &leaf_on, &leaf_off, &leaf_on_found, 
                              &leaf_off_found, gdd_thresh);
     }
     
-    /* 
+    /*
         if widening the temperature threshold didn't produce a suitable leaf
-        drop date then we have a problem. Either a real one, or we have an 
-        evergreen grass and I've not plugged in a scheme to deal with that so
-        the user will have to turn off the "Deciduous" flag and that would
-        get an evergreen grass
+        drop date we will follow biome-bgc and assume the leaves fall on the 
+        last day
     */
+    if (leaf_off_found == FALSE) {
+        leaf_off = 364;
+    }
+    
+    /* 
+        subtract 15 days from on/off dates to approximate the
+        start of the new growth period, instead of the middle of
+		the new growth period, as is used in the White et al. ms. 
+		
+		-- Taken from Biome-BGC
+	*/
+	
+	if (leaf_on >= 15) {
+	    leaf_on -= 15;
+	} else {
+	    leaf_on = 0;
+	}
+	
+	if (leaf_off <= 349) {
+	    leaf_off += 15;
+	} else {
+	    leaf_off = 364;
+	}
+    
+    /* This now is impossible, but I will leave it on */
     if (leaf_off_found == FALSE) {
         fprintf(stderr, "Problem in phenology leaf *OFF* not found\n");
         exit(EXIT_FAILURE);
@@ -105,6 +126,19 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
     }
     
     
+    /*
+        Length of time taken for new growth from storage to be allocated.
+        This is either some site-specific calibration or the midpoint of the
+        length of the growing season. The litterfall takes place over an
+        identical period. Dividing by a larger number would increase the
+        rate the C&N is allocated.
+    */
+    p->growing_seas_len = leaf_off - leaf_on;
+    if (p->store_transfer_len < -900)
+        len_groloss = (int)floor((float)p->growing_seas_len / 2.0);
+    else
+        len_groloss = p->store_transfer_len;
+
     calculate_days_left_in_growing_season(c, s, leaf_on, leaf_off, len_groloss);
     calculate_growing_season_fluxes(f, s, len_groloss);
     
@@ -117,8 +151,8 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
                           double grass_temp_threshold, double tmax_ann, 
                           double Tmin_avg, double ppt_sum_crit,
                           int project_day, int *leaf_on, int *leaf_off, 
-                          int *len_groloss, int *leaf_on_found, 
-                          int *leaf_off_found, double gdd_thresh) {
+                          int *leaf_on_found, int *leaf_off_found, 
+                          double gdd_thresh) {
 
     double ppt_sum_next, ppt_sum, ppt_sum_prev, Tmean, Tsoil, Tsoil_next_3days, 
            Tair_next_3days, Tmin_boxcar, Tmax, Tday;
@@ -284,19 +318,6 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
        dumps the current state, which makes sense as we may want pass the
        stat between spinup and a simulation */
     p->previous_ncd = accumulated_ncd;
-
-    /*
-        Length of time taken for new growth from storage to be allocated.
-        This is either some site-specific calibration or the midpoint of the
-        length of the growing season. The litterfall takes place over an
-        identical period. Dividing by a larger number would increase the
-        rate the C&N is allocated.
-    */
-    p->growing_seas_len = *leaf_off - *leaf_on;
-    if (p->store_transfer_len < -900)
-        *len_groloss = (int)floor((float)p->growing_seas_len / 2.0);
-    else
-        *len_groloss = p->store_transfer_len;
 
     
     
