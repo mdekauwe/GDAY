@@ -114,11 +114,7 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
 	    leaf_off = 364;
 	}
     
-    /* This now is impossible, but I will leave it on */
-    if (leaf_off_found == FALSE) {
-        fprintf(stderr, "Problem in phenology leaf *OFF* not found\n");
-        exit(EXIT_FAILURE);
-    }
+    
     
     if (leaf_on_found == FALSE) {
         fprintf(stderr, "Problem in phenology leaf *ON* not found\n");
