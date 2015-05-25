@@ -94,26 +94,6 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
         leaf_off = 364;
     }
     
-    /* 
-        subtract 15 days from on/off dates to approximate the
-        start of the new growth period, instead of the middle of
-		the new growth period, as is used in the White et al. ms. 
-		
-		-- Taken from Biome-BGC
-	*/
-	
-	if (leaf_on >= 15) {
-	    leaf_on -= 15;
-	} else {
-	    leaf_on = 0;
-	}
-	
-	if (leaf_off <= 349) {
-	    leaf_off += 15;
-	} else {
-	    leaf_off = 364;
-	}
-    
     
     
     if (leaf_on_found == FALSE) {
