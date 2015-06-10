@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
     int    nyr, doy, window_size, i;
-    int    project_day = 0, fire_found = FALSE;;
+    int    project_day = 0;
     double fdecay, rdecay, current_limitation, nitfac, year;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
