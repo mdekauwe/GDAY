@@ -128,20 +128,7 @@ int handler(char *section, char *name, char *value, control *c,
     /*
     ** CONTROL
     */
-    if (MATCH("control", "adjust_rtslow")) {
-        if (strcmp(temp, "False") == 0 ||
-            strcmp(temp, "FALSE") == 0 ||
-            strcmp(temp, "false") == 0)
-            c->adjust_rtslow = FALSE;
-        else if (strcmp(temp, "True") == 0 ||
-            strcmp(temp, "TRUE") == 0 ||
-            strcmp(temp, "true") == 0)
-            c->adjust_rtslow = TRUE;
-        else {
-            fprintf(stderr, "Unknown adjust_rtslow option: %s\n", temp);
-            exit(EXIT_FAILURE);
-        }
-    } else if (MATCH("control", "alloc_model")) {
+    if (MATCH("control", "alloc_model")) {
         if (strcmp(temp, "FIXED") == 0||
             strcmp(temp, "fixed") == 0)
             c->alloc_model = FIXED;
