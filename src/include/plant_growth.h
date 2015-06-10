@@ -41,8 +41,6 @@ double nitrogen_retrans(control *, fluxes *, params *, state *,
 void   calculate_ncwood_ratios(control *c, params *, state *, double, double *,
                               double *, double *, double *);
 
-/* Priming/Exudation stuff */
-void   calc_root_exudation_release(fluxes *, state *);
 
 /* misc */
 

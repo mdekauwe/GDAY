@@ -68,7 +68,6 @@ typedef struct {
     char  out_fname_hdr[STRING_LENGTH];
     char  out_param_fname[STRING_LENGTH];
     char  git_hash[STRING_LENGTH];
-    int   adjust_rtslow;
     int   alloc_model;
     int   assim_model;
     int   calc_sw_params;
@@ -97,8 +96,6 @@ typedef struct {
     char  git_code_ver[STRING_LENGTH];
     int   spin_up;
     int   PRINT_GIT;
-    int   hurricane;
-    int   exudation;
 } control;
 
 
