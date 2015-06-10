@@ -183,7 +183,6 @@ void initialise_params(params *p) {
     p->rdecaydry = 0.33333;
     p->retransmob = 0.0;
     p->rfmult = 1.0;
-    p->root_exu_CUE = -999.9;
     p->rooting_depth = 750.0;
     strcpy(p->rootsoil_type, "clay");
     p->rretrans = 0.0;
