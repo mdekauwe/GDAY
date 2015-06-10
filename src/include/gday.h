@@ -351,13 +351,6 @@ typedef struct {
     double decayrate[7];
     double fmfaeces;
     int    growing_seas_len;
-    double prime_y;
-    double prime_z;
-    int    return_interval;                 /* years */
-    int    burn_specific_yr;
-    int    hurricane_doy;
-    int    hurricane_yr;
-    double root_exu_CUE;
 } params;
 
 typedef struct {
@@ -545,13 +538,6 @@ typedef struct {
     double wnmobrate;
     double cnrate;
 
-    /* priming/exudation */
-    double root_exc;
-    double root_exn;
-    double co2_released_exud;
-    double factive;
-    double rtslow;
-    double rexc_cue;
 } fluxes;
 
 

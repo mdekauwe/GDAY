@@ -205,19 +205,6 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown disturbance option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
-    } else if (MATCH("control", "exudation")) {
-            if (strcmp(temp, "False") == 0 ||
-                strcmp(temp, "FALSE") == 0 ||
-                strcmp(temp, "false") == 0)
-                c->exudation = FALSE;
-            else if (strcmp(temp, "True") == 0 ||
-                strcmp(temp, "TRUE") == 0 ||
-                strcmp(temp, "true") == 0)
-                c->exudation = TRUE;
-            else {
-                fprintf(stderr, "Unknown exudation option: %s\n", temp);
-                exit(EXIT_FAILURE);
-            }
     } else if (MATCH("control", "fixed_stem_nc")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -252,19 +239,6 @@ int handler(char *section, char *name, char *value, control *c,
             c->gs_model = MEDLYN;
         else {
             fprintf(stderr, "Unknown gs model: %s\n", temp);
-            exit(EXIT_FAILURE);
-        }
-    } else if (MATCH("control", "hurricane")) {
-        if (strcmp(temp, "False") == 0 ||
-            strcmp(temp, "FALSE") == 0 ||
-            strcmp(temp, "false") == 0)
-            c->hurricane = FALSE;
-        else if (strcmp(temp, "True") == 0 ||
-            strcmp(temp, "TRUE") == 0 ||
-            strcmp(temp, "true") == 0)
-            c->hurricane = TRUE;
-        else {
-            fprintf(stderr, "Unknown hurricane option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "model_optroot")) {
@@ -732,10 +706,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->psi_sat_root = atof(value);
     } else if (MATCH("params", "psi_sat_topsoil")) {
         p->psi_sat_topsoil = atof(value);
-    } else if (MATCH("params", "prime_y")) {
-        p->prime_y = atof(value);
-    } else if (MATCH("params", "prime_z")) {
-        p->prime_z = atof(value);
     } else if (MATCH("params", "qs")) {
         p->qs = atof(value);
     } else if (MATCH("params", "r0")) {

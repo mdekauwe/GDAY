@@ -74,52 +74,7 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     /* switch off grazing if this was just activated as an annual event */
     c->grazing = cntrl_grazing;
 
-    if (c->exudation) {
-        calc_root_exudation_uptake_of_C(f, p, s);
-    }
-
-    return;
-}
-
-void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
-    /* The amount of C which enters the active pool varies according to the
-    CUE of SOM in response to root exudation (REXCUE). REXCUE determines
-    the fraction of REXC that enters the active pool as C. The remaining
-    flux is respired.
-
-
-    REXCUE determines which fraction of REXC enters the active pool as C
-    (delta_Cact). The remaining fraction of REXC is respired as CO2.
-
-    */
-    double active_CN, rex_NC, C_to_active_pool;
-
-    active_CN = s->activesoil / s->activesoiln;
-
-    if (p->root_exu_CUE < -0.5) {
-        /*
-            flexible cue
-             - The constraint of 0.3<=REXCUE<=0.6 is based on observations of
-               the physical limits of microbes
-        */
-
-        if (float_eq(f->root_exc, 0.0)) {
-            rex_NC = 0.0;
-        } else {
-            rex_NC = f->root_exn / f->root_exc;
-        }
-        f->rexc_cue = MAX(0.3, MIN(0.6, rex_NC * active_CN));
-    } else {
-        f->rexc_cue = p->root_exu_CUE;
-    }
-
-    C_to_active_pool = f->root_exc * f->rexc_cue;
-    s->activesoil += C_to_active_pool;
-
-    /* update respiration fluxes. */
-    f->co2_released_exud = f->root_exc * (1.0 - f->rexc_cue);
-    f->hetero_resp += f->co2_released_exud;
-
+   
     return;
 }
 
@@ -586,81 +541,7 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     /* switch off grazing if this was just activated as an annual event */
     c->grazing = cntrl_grazing;
 
-    if (c->exudation) {
-        calc_root_exudation_uptake_of_N(f, s);
-    }
-
-    if (c->adjust_rtslow) {
-        adjust_residence_time_of_slow_pool(f, p);
-    }
-
-    return;
-}
-
-void calc_root_exudation_uptake_of_N(fluxes *f, state *s) {
-    /* When N mineralisation is large enough to allow a small amount of N
-    immobilisation, the amount of N which enters the active pool is
-    calculated according to REXC divided by the CN of the active pool. When
-    exudation enters the active pool, the CN ratio of the exudates drops
-    from REXC/REXN to the CN of the active pool. Which is consistent with
-    the CENTURY framework, where C flows between pools lead to either
-    mineralisation (N gain) or immobilisation (N loss) due to differences
-    in the CN ratio of the outgoing and incoming pools.
-
-    The amount of N added to the active pool is independent of the CUE of
-    the microbial pool in response to root exudation (REXCUE).
-    */
-    double N_available, active_NC_ratio, delta_Nact, N_miss, N_to_active_pool;
-
-    N_available = f->nmineralisation;
-
-    active_NC_ratio = s->activesoiln / s->activesoil;
-    delta_Nact = f->root_exc * f->rexc_cue * active_NC_ratio;
-
-    N_miss = delta_Nact - f->root_exn;
-    if (N_miss <= 0.0) {
-        N_to_active_pool = f->root_exn;
-    } else if (N_miss <= N_available) {
-        f->nmineralisation -= N_miss;
-        N_to_active_pool = f->root_exn + N_miss;
-    } else if (f->nmineralisation <= N_miss) {
-        N_to_active_pool = f->root_exn + N_available;
-        f->nmineralisation = 0.0;
-    }
-
-    /* update active pool */
-    s->activesoiln += N_to_active_pool;
-
-    return;
-}
-
-void adjust_residence_time_of_slow_pool(fluxes *f, params *p) {
-    /* Priming simulations the residence time of the slow pool is flexible,
-    as the flux out of the active pool (factive) increases the residence
-    time of the slow pool decreases.
-    */
-    double rt_slow_pool;
-
-    /* total flux out of the factive pool */
-    f->factive = f->active_to_slow + f->active_to_passive + f->co2_to_air[4];
-
-    if (float_eq(f->factive, 0.0)) {
-        /* Need to correct units of rate constant */
-        rt_slow_pool = 1.0 / (p->kdec6 * NDAYS_IN_YR);
-    } else {
-        rt_slow_pool = (1.0 / p->prime_y  *
-                        (f->factive / (f->factive + p->prime_z)));
-
-        /* GDAY uses decay rates rather than residence times... */
-        p->kdec6 = 1.0 / rt_slow_pool;
-
-        /* rate constant needs to be per day inside GDAY */
-        p->kdec6 /= NDAYS_IN_YR;
-    }
-
-    /* Save for outputting purposes only */
-    f->rtslow = rt_slow_pool;
-
+    
     return;
 }
 
