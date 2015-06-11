@@ -446,6 +446,7 @@ double calculate_growth_stress_limitation(params *p, state *s) {
        that have a flexible bucket depth. Minimum constraint is limited to
        0.1, following Zaehle et al. 2010 (supp), eqn 18. */
     current_limitation = MAX(0.1, MIN(nlim, s->wtfac_root));
+    
     return (current_limitation);
 }
 
