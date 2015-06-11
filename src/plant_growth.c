@@ -113,7 +113,7 @@ void calc_root_exudation_release(fluxes *f, state *s) {
         /* fraction varies between 0 and 50 % as a function of leaf CN */
         frac_to_rexc = MAX(0.0, MIN(0.5, (leaf_CN / presc_leaf_CN) - 1.0));
     }
-
+    /*printf("%f %f\n", s->shootnc, 1./30.);*
     f->root_exc = frac_to_rexc * f->cproot;
     if (float_eq(f->cproot, 0.0)) {
         f->root_exn = 0.0;
@@ -401,7 +401,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->cpcroot = f->npp * f->alcroot;
             f->cpbranch = f->npp * f->albranch;
             f->cpstem = f->npp * f->alstem;
-
+            
             f->npbranch = f->npp * f->albranch * ncbnew;
             f->npstemimm = f->npp * f->alstem * ncwimm;
             f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
@@ -694,6 +694,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         fprintf(stderr, "Unknown C allocation model: %d\n", c->alloc_model);
         exit(EXIT_FAILURE);
     }
+    
 
     /*printf("%f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);*/
 
