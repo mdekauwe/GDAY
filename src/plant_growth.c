@@ -113,7 +113,7 @@ void calc_root_exudation_release(fluxes *f, state *s) {
         /* fraction varies between 0 and 50 % as a function of leaf CN */
         frac_to_rexc = MAX(0.0, MIN(0.5, (leaf_CN / presc_leaf_CN) - 1.0));
     }
-    /*printf("%f %f\n", s->shootnc, 1./30.);*
+    /*printf("%f %f\n", s->shootnc, 1./30.);*/
     f->root_exc = frac_to_rexc * f->cproot;
     if (float_eq(f->cproot, 0.0)) {
         f->root_exn = 0.0;
