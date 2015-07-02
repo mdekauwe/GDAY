@@ -44,55 +44,22 @@ void write_output_header(control *c, FILE **fp) {
     */
 
     /* water*/
-    fprintf(*fp, "wtfac_root,pawater_root,");
+    fprintf(*fp, "wtfac_root,");
 
     /* plant */
-    fprintf(*fp, "shoot,lai,branch,stem,root,croot,shootn,branchn,stemn,");
-    fprintf(*fp, "rootn,crootn,cstore,nstore,");
-
-    /* belowground */
-    fprintf(*fp, "soilc,soiln,inorgn,litterc,littercag,littercbg,");
-    fprintf(*fp, "litternag,litternbg,activesoil,slowsoil,");
-    fprintf(*fp, "passivesoil,activesoiln,slowsoiln,passivesoiln,");
+    fprintf(*fp, "shoot,lai,branch,stem,root,");
 
     /*
     ** FLUXES
     */
 
     /* water */
-    fprintf(*fp, "et,transpiration,soil_evap,interception,runoff,");
-    fprintf(*fp, "gs_mol_m2_sec,ga_mol_m2_sec,");
-
-    /* litter */
-    fprintf(*fp, "deadleaves,deadbranch,deadstems,deadroots,deadcroots,");
-    fprintf(*fp, "deadleafn,deadbranchn,deadstemn,deadrootn,deadcrootn,");
+    fprintf(*fp, "transpiration,");
 
     /* C fluxes */
-    fprintf(*fp, "nep,gpp,npp,hetero_resp,auto_resp,apar,");
+    fprintf(*fp, "gpp,npp\n");
 
-    /* C & N growth */
-    fprintf(*fp, "cpleaf,cpbranch,cpstem,cproot,cpcroot,");
-    fprintf(*fp, "npleaf,npbranch,npstemimm,npstemmob,nproot,npcroot,");
-
-    /* N stuff */
-    fprintf(*fp, "nuptake,ngross,nmineralisation,nloss,");
-
-    /* traceability stuff */
-    fprintf(*fp, "tfac_soil_decomp,c_into_active,c_into_slow,");
-    fprintf(*fp, "c_into_passive,active_to_slow,active_to_passive,");
-    fprintf(*fp, "slow_to_active,slow_to_passive,passive_to_active,");
-    fprintf(*fp, "co2_rel_from_surf_struct_litter,");
-    fprintf(*fp, "co2_rel_from_soil_struct_litter,");
-    fprintf(*fp, "co2_rel_from_surf_metab_litter,");
-    fprintf(*fp, "co2_rel_from_soil_metab_litter,");
-    fprintf(*fp, "co2_rel_from_active_pool,");
-    fprintf(*fp, "co2_rel_from_slow_pool,");
-    fprintf(*fp, "co2_rel_from_passive_pool,");
-
-    /* Misc */
-    fprintf(*fp, "leafretransn\n");
-
-
+    
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
         fprintf(*fp, "ncols=%d\n", ncols);
@@ -119,77 +86,22 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     */
 
     /* water*/
-    fprintf(c->ofp, "%.10f,%.10f,", s->wtfac_root,s->pawater_root);
+    fprintf(c->ofp, "%.10f,", s->wtfac_root);
 
     /* plant */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->shoot,s->lai,s->branch,s->stem,s->root,s->croot,
-                    s->shootn,s->branchn,s->stemn);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
-                    s->rootn,s->crootn,s->cstore,s->nstore);
-
-    /* belowground */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->soilc,s->soiln,s->inorgn,s->litterc,s->littercag,
-                    s->littercbg);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->litternag,s->litternbg,s->activesoiln,s->slowsoiln,
-                    s->passivesoiln,s->activesoiln,s->slowsoiln,
-                    s->passivesoiln);
-
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->shoot,s->lai,s->branch,s->stem,s->root);
+    
     /*
     ** FLUXES
     */
 
     /* water */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
-                    f->et,f->transpiration,f->soil_evap,f->interception);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
-                    f->runoff,f->gs_mol_m2_sec,f->ga_mol_m2_sec);
-
-    /* litter */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    f->deadleaves,f->deadbranch,f->deadstems,f->deadroots,
-                    f->deadcroots);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    f->deadleafn,f->deadbranchn,f->deadstemn,f->deadrootn,
-                    f->deadcrootn);
-
+    fprintf(c->ofp, "%.10f,", f->transpiration);
+    
+    
     /* C fluxes */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    f->nep,f->gpp,f->npp,f->hetero_resp,f->auto_resp,
-                    f->apar);
-
-    /* C & N growth */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    f->cpleaf,f->cpbranch,f->cpstem,f->cproot,f->cpcroot);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    f->npleaf,f->npbranch,f->npstemimm,f->npstemmob,f->nproot,
-                    f->npcroot);
-
-    /* N stuff */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
-                    f->nuptake,f->ngross,f->nmineralisation,f->nloss);
-
-
-    /* traceability stuff */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
-                    f->tfac_soil_decomp,f->c_into_active,f->c_into_slow);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
-                    f->c_into_passive,f->active_to_slow,f->active_to_passive);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
-                    f->slow_to_active,f->slow_to_passive,f->passive_to_active);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_surf_struct_litter);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_soil_struct_litter);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_surf_metab_litter);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_soil_metab_litter);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_active_pool);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_slow_pool);
-    fprintf(c->ofp, "%.10f,", f->co2_rel_from_passive_pool);
-
-    /* Misc */
-    fprintf(c->ofp, "%.10f\n", f->leafretransn);
-
+    fprintf(c->ofp, "%.10f,%.10f\n,", f->gpp,f->npp);
 
     return;
 }
@@ -219,7 +131,6 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
 
     /* water*/
     fwrite(&(s->wtfac_root), sizeof(double), 1, c->ofp);
-    fwrite(&(s->pawater_root), sizeof(double), 1, c->ofp);
 
     /* plant */
     fwrite(&(s->shoot), sizeof(double), 1, c->ofp);
@@ -227,103 +138,21 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     fwrite(&(s->branch), sizeof(double), 1, c->ofp);
     fwrite(&(s->stem), sizeof(double), 1, c->ofp);
     fwrite(&(s->root), sizeof(double), 1, c->ofp);
-    fwrite(&(s->croot), sizeof(double), 1, c->ofp);
-    fwrite(&(s->shootn), sizeof(double), 1, c->ofp);
-    fwrite(&(s->branchn), sizeof(double), 1, c->ofp);
-    fwrite(&(s->stemn), sizeof(double), 1, c->ofp);
-    fwrite(&(s->rootn), sizeof(double), 1, c->ofp);
-    fwrite(&(s->crootn), sizeof(double), 1, c->ofp);
-    fwrite(&(s->cstore), sizeof(double), 1, c->ofp);
-    fwrite(&(s->nstore), sizeof(double), 1, c->ofp);
+    
 
-    /* belowground */
-    fwrite(&(s->soilc), sizeof(double), 1, c->ofp);
-    fwrite(&(s->soiln), sizeof(double), 1, c->ofp);
-    fwrite(&(s->inorgn), sizeof(double), 1, c->ofp);
-    fwrite(&(s->litterc), sizeof(double), 1, c->ofp);
-    fwrite(&(s->littercag), sizeof(double), 1, c->ofp);
-    fwrite(&(s->littercbg), sizeof(double), 1, c->ofp);
-    fwrite(&(s->litternag), sizeof(double), 1, c->ofp);
-    fwrite(&(s->litternbg), sizeof(double), 1, c->ofp);
-    fwrite(&(s->activesoiln), sizeof(double), 1, c->ofp);
-    fwrite(&(s->slowsoiln), sizeof(double), 1, c->ofp);
-    fwrite(&(s->passivesoiln), sizeof(double), 1, c->ofp);
-    fwrite(&(s->activesoiln), sizeof(double), 1, c->ofp);
-    fwrite(&(s->slowsoiln), sizeof(double), 1, c->ofp);
-    fwrite(&(s->passivesoiln), sizeof(double), 1, c->ofp);
-
-
+    
     /*
     ** FLUXES
     */
 
     /* water */
-    fwrite(&(f->et), sizeof(double), 1, c->ofp);
     fwrite(&(f->transpiration), sizeof(double), 1, c->ofp);
-    fwrite(&(f->soil_evap), sizeof(double), 1, c->ofp);
-    fwrite(&(f->interception), sizeof(double), 1, c->ofp);
-    fwrite(&(f->runoff), sizeof(double), 1, c->ofp);
-    fwrite(&(f->gs_mol_m2_sec), sizeof(double), 1, c->ofp);
-    fwrite(&(f->ga_mol_m2_sec), sizeof(double), 1, c->ofp);
-
-    /* litter */
-    fwrite(&(f->deadleaves), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadbranch), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadstems), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadroots), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadcroots), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadleafn), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadbranchn), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadstemn), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadrootn), sizeof(double), 1, c->ofp);
-    fwrite(&(f->deadcrootn), sizeof(double), 1, c->ofp);
-
+    
+    
     /* C fluxes */
-    fwrite(&(f->nep), sizeof(double), 1, c->ofp);
     fwrite(&(f->gpp), sizeof(double), 1, c->ofp);
     fwrite(&(f->npp), sizeof(double), 1, c->ofp);
-    fwrite(&(f->hetero_resp), sizeof(double), 1, c->ofp);
-    fwrite(&(f->auto_resp), sizeof(double), 1, c->ofp);
-    fwrite(&(f->apar), sizeof(double), 1, c->ofp);
-
-    /* C & N growth */
-    fwrite(&(f->cpleaf), sizeof(double), 1, c->ofp);
-    fwrite(&(f->cpbranch), sizeof(double), 1, c->ofp);
-    fwrite(&(f->cpstem), sizeof(double), 1, c->ofp);
-    fwrite(&(f->cproot), sizeof(double), 1, c->ofp);
-    fwrite(&(f->cpcroot), sizeof(double), 1, c->ofp);
-    fwrite(&(f->npleaf), sizeof(double), 1, c->ofp);
-    fwrite(&(f->npbranch), sizeof(double), 1, c->ofp);
-    fwrite(&(f->npstemimm), sizeof(double), 1, c->ofp);
-    fwrite(&(f->npstemmob), sizeof(double), 1, c->ofp);
-    fwrite(&(f->nproot), sizeof(double), 1, c->ofp);
-    fwrite(&(f->npcroot), sizeof(double), 1, c->ofp);
-
-
-    /* N stuff */
-    fwrite(&(f->nuptake), sizeof(double), 1, c->ofp);
-    fwrite(&(f->ngross), sizeof(double), 1, c->ofp);
-    fwrite(&(f->nmineralisation), sizeof(double), 1, c->ofp);
-    fwrite(&(f->nloss), sizeof(double), 1, c->ofp);
-
-    /* traceability stuff */
-    fwrite(&(f->tfac_soil_decomp), sizeof(double), 1, c->ofp);
-    fwrite(&(f->c_into_active), sizeof(double), 1, c->ofp);
-    fwrite(&(f->c_into_slow), sizeof(double), 1, c->ofp);
-    fwrite(&(f->c_into_passive), sizeof(double), 1, c->ofp);
-    fwrite(&(f->active_to_slow), sizeof(double), 1, c->ofp);
-    fwrite(&(f->active_to_passive), sizeof(double), 1, c->ofp);
-    fwrite(&(f->slow_to_active), sizeof(double), 1, c->ofp);
-    fwrite(&(f->slow_to_passive), sizeof(double), 1, c->ofp);
-    fwrite(&(f->passive_to_active), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_surf_struct_litter), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_soil_struct_litter), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_surf_metab_litter), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_soil_metab_litter), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_active_pool), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_slow_pool), sizeof(double), 1, c->ofp);
-    fwrite(&(f->co2_rel_from_passive_pool), sizeof(double), 1, c->ofp);
-    fwrite(&(f->leafretransn), sizeof(double), 1, c->ofp);
+    
 
     return;
 }
