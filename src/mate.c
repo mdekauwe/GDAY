@@ -332,6 +332,18 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
         *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk, p->delsj,
                                p->edj);
+    
+    } else if (c->modeljm == 3) {
+        /* the maximum rate of electron transport at 25 degC */
+        jmax25 = p->jmax;
+
+        /* this response is well-behaved for TLEAF < 0.0 */
+        *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk,
+                            p->delsj, p->edj);
+
+        /* the maximum rate of electron transport at 25 degC */
+        vcmax25 = p->vcmax;
+        *vcmax = arrh(mt, vcmax25, p->eav, Tk);
     }
 
     /* reduce photosynthetic capacity with moisture stress */
