@@ -346,8 +346,6 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     
     }
     
-    printf("%f %f\n", p->jmax, p->vcmax);
-    exit(1);
 
     /* reduce photosynthetic capacity with moisture stress */
     *jmax *= s->wtfac_root;
