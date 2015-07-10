@@ -57,7 +57,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "transpiration,");
 
     /* C fluxes */
-    fprintf(*fp, "gpp,npp\n");
+    fprintf(*fp, "gpp\n");
 
     
     if (c->output_ascii == FALSE) {
@@ -101,7 +101,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     
     
     /* C fluxes */
-    fprintf(c->ofp, "%.10f,%.10f\n", f->gpp,f->npp);
+    fprintf(c->ofp, "%.10f\n", f->gpp);
 
     return;
 }
@@ -151,7 +151,6 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     
     /* C fluxes */
     fwrite(&(f->gpp), sizeof(double), 1, c->ofp);
-    fwrite(&(f->npp), sizeof(double), 1, c->ofp);
     
 
     return;
