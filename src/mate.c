@@ -345,7 +345,7 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         vcmax25 = p->vcmax;
         *vcmax = arrh(mt, vcmax25, p->eav, Tk);
     }
-
+    
     /* reduce photosynthetic capacity with moisture stress */
     *jmax *= s->wtfac_root;
     *vcmax *= s->wtfac_root;
