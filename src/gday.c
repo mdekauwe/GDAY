@@ -366,7 +366,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
     open_output_file(c, c->out_param_fname, &(c->ofp));
 
     
-    fprintf(stderr, "Spinning up the model...\n");
+    /*fprintf(stderr, "Spinning up the model...\n");*/
     while (TRUE) {
         if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
             fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
@@ -380,8 +380,8 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
                 run_sim(c, f, m, p, s); /* run GDAY */
 
             /* Have we reached a steady state? */
-            fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
-                    s->plantc, s->soilc);
+            /*fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
+                    s->plantc, s->soilc);*/
         }
     }
     write_final_state(c, p, s);
