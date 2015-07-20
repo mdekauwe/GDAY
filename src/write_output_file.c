@@ -44,7 +44,7 @@ void write_output_header(control *c, FILE **fp) {
     */
 
     /* water*/
-    fprintf(*fp, "BETA,SWC");
+    fprintf(*fp, "BETA,SWC,");
 
     /* plant */
     fprintf(*fp, "CF,LAI,CW,CR,");
