@@ -37,7 +37,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
     /* time stuff */
-    fprintf(*fp, "YEAR,DOY,");
+    fprintf(*fp, "YEAR,DOY,SYEAR,SDOY,");
 
     /*
     ** STATE
@@ -78,9 +78,26 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
         data, units and nice header information.
     */
     float tonnes_per_ha_to_g_m2 = 100.0;
+    int half_yr, offset;
 
     /* time stuff */
     fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
+
+    /* add southern hemisphere date offset */
+    if (is_leap_year(year)) {
+        half_yr = 183;
+        offset = 182;
+    } else {
+        half_yr = 182;
+        offset = 181;
+    }
+    if (doy < half_yr) {
+        fprintf(c->ofp, "%.10f,%.10f,", (double)year - 1, (double)doy + offset);
+    } else {
+        fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy - offset);
+    }
+
+
 
     /*
     ** STATE
