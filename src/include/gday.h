@@ -41,6 +41,7 @@
 #define FIXED 0
 #define GRASSES 1
 #define ALLOMETRIC 2
+#define ALLOMETRIC_FIX_ROOT 3
 
 /* Ps pathway */
 #define C3 0

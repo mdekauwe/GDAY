@@ -138,6 +138,9 @@ int handler(char *section, char *name, char *value, control *c,
         else if (strcmp(temp, "ALLOMETRIC") == 0 ||
                  strcmp(temp, "allometric") == 0)
             c->alloc_model = ALLOMETRIC;
+        else if (strcmp(temp, "ALLOMETRIC_FIX_ROOT") == 0 ||
+                 strcmp(temp, "allometric_fix_root") == 0)
+            c->alloc_model = ALLOMETRIC_FIX_ROOT;
         else {
             fprintf(stderr, "Unknown alloc model: %s\n", temp);
             exit(EXIT_FAILURE);

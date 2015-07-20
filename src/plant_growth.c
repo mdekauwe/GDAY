@@ -76,7 +76,7 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
     recalc_wb = nitrogen_allocation(c, f, p, s, ncbnew, nccnew, ncwimm, ncwnew,
                                     fdecay, rdecay, doy);
-                                    
+
     /* If we didn't have enough N available to satisfy wood demand, NPP
        is down-regulated and thus so is GPP. We also need to recalculate the
        water balance given the lower GPP. */
@@ -446,7 +446,7 @@ double calculate_growth_stress_limitation(params *p, state *s) {
        that have a flexible bucket depth. Minimum constraint is limited to
        0.1, following Zaehle et al. 2010 (supp), eqn 18. */
     current_limitation = MAX(0.1, MIN(nlim, s->wtfac_root));
-    
+
     return (current_limitation);
 }
 
@@ -534,6 +534,61 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alstem = 0.0;
         f->albranch = 0.0;
         f->alcroot = 0.0;
+
+    } else if (c->alloc_model == ALLOMETRIC_FIX_ROOT) {
+        /* Calculate tree height: allometric reln using the power function
+           (Causton, 1985) */
+        s->canht = p->heighto * pow(s->stem, p->htpower);
+
+        /* LAI to stem sapwood cross-sectional area (As m-2 m-2)
+           (dimensionless)
+           Assume it varies between LS0 and LS1 as a linear function of tree
+           height (m) */
+        arg1 = s->sapwood * TONNES_AS_KG * M2_AS_HA;
+        arg2 = s->canht * p->density * p->cfracts;
+        sap_cross_sec_area = arg1 / arg2;
+        leaf2sap = s->lai / sap_cross_sec_area;
+
+        /* Allocation to leaves dependant on height. Modification of pipe
+           theory, leaf-to-sapwood ratio is not constant above a certain
+           height, due to hydraulic constraints (Magnani et al 2000; Deckmyn
+           et al. 2006). */
+
+        if (s->canht < p->height0) {
+            leaf2sa_target = p->leafsap0;
+        } else if (float_eq(s->canht, p->height1)) {
+            leaf2sa_target = p->leafsap1;
+        } else if (s->canht > p->height1) {
+            leaf2sa_target = p->leafsap1;
+        } else {
+            arg1 = p->leafsap0;
+            arg2 = p->leafsap1 - p->leafsap0;
+            arg3 = s->canht - p->height0;
+            arg4 = p->height1 - p->height0;
+            leaf2sa_target = arg1 + (arg2 * arg3 / arg4);
+        }
+        f->alleaf = alloc_goal_seek(leaf2sap, leaf2sa_target, p->c_alloc_fmax,
+                                    p->targ_sens);
+
+        /* hold constant */
+        f->alroot = p->c_alloc_rmax;
+
+        /* Ensure we don't end up with alloc fractions that make no
+           physical sense. In such a situation assume a bl */
+        left_over = 1.0 - f->alroot - f->alleaf;
+        if (f->albranch + f->alcroot > left_over) {
+            if (float_eq(s->croot, 0.0)) {
+                f->alcroot = 0.0;
+                f->alstem = 0.5 * left_over;
+                f->albranch = 0.5 * left_over;
+            } else {
+                f->alcroot = 0.3 * left_over;
+                f->alstem = 0.4 * left_over;
+                f->albranch = 0.3 * left_over;
+            }
+        }
+        f->alstem = 1.0 - f->alroot - f->albranch - f->alleaf - f->alcroot;
+        /*fprintf("%f %f %f\n", f->alleaf, f->alroot, f->alstem)*/
 
 
     } else if (c->alloc_model == ALLOMETRIC) {
@@ -964,7 +1019,7 @@ void allocate_stored_c_and_n(fluxes *f, params *p, state *s) {
     for the first time or at the end of each year.
     */
     double ntot;
-    
+
     /* ========================
        Carbon - fixed fractions
        ======================== */

@@ -37,29 +37,31 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
     /* time stuff */
-    fprintf(*fp, "year,doy,");
+    fprintf(*fp, "YEAR,DOY,");
 
     /*
     ** STATE
     */
 
     /* water*/
-    fprintf(*fp, "wtfac_root,");
+    fprintf(*fp, "BETA,SWC");
 
     /* plant */
-    fprintf(*fp, "shoot,lai,branch,stem,root,");
+    fprintf(*fp, "CF,LAI,CW,CR,");
 
     /*
     ** FLUXES
     */
 
     /* water */
-    fprintf(*fp, "transpiration,");
+    fprintf(*fp, "TRANS,");
 
     /* C fluxes */
-    fprintf(*fp, "gpp\n");
+    fprintf(*fp, "GPP,");
 
-    
+    /* Alloc fracs */
+    fprintf(*fp, "AF,AW,AR\n");
+
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
         fprintf(*fp, "ncols=%d\n", ncols);
@@ -75,7 +77,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-
+    float tonnes_per_ha_to_g_m2 = 100.0;
 
     /* time stuff */
     fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
@@ -86,22 +88,31 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     */
 
     /* water*/
-    fprintf(c->ofp, "%.10f,", s->wtfac_root);
+    fprintf(c->ofp, "%.10f,%.10f", s->wtfac_root,s->pawater_root);
 
     /* plant */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->shoot,s->lai,s->branch,s->stem,s->root);
-    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
+                    s->shoot * tonnes_per_ha_to_g_m2,
+                    s->lai,
+                    (s->stem + s->branch) * tonnes_per_ha_to_g_m2,
+                    s->root * tonnes_per_ha_to_g_m2);
+
     /*
     ** FLUXES
     */
 
     /* water */
     fprintf(c->ofp, "%.10f,", f->transpiration);
-    
-    
+
+
     /* C fluxes */
-    fprintf(c->ofp, "%.10f\n", f->gpp);
+    fprintf(c->ofp, "%.10f,", f->gpp * tonnes_per_ha_to_g_m2);
+
+    /* alloc fracs */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f\n", f->alleaf,
+                                           f->albranch + f->alstem,
+                                           f->alroot);
+
 
     return;
 }
@@ -138,20 +149,20 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     fwrite(&(s->branch), sizeof(double), 1, c->ofp);
     fwrite(&(s->stem), sizeof(double), 1, c->ofp);
     fwrite(&(s->root), sizeof(double), 1, c->ofp);
-    
 
-    
+
+
     /*
     ** FLUXES
     */
 
     /* water */
     fwrite(&(f->transpiration), sizeof(double), 1, c->ofp);
-    
-    
+
+
     /* C fluxes */
     fwrite(&(f->gpp), sizeof(double), 1, c->ofp);
-    
+
 
     return;
 }
@@ -179,7 +190,7 @@ int write_final_state(control *c, params *p, state *s)
     int error = 0;
     int line_number = 0;
     int match = FALSE;
-    
+
     while (fgets(line, sizeof(line), c->ifp) != NULL) {
         strcpy(saved_line, line);
         line_number++;

@@ -19,6 +19,7 @@ void initialise_control(control *c) {
     strcpy(c->out_param_fname, "*NOT SET*");
 
     c->alloc_model = ALLOMETRIC;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */
+    c->alloc_model = ALLOMETRIC_FIX_ROOT;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */
     c->assim_model = MATE;          /* Photosynthesis model: BEWDY (not coded :p) or MATE */
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */

@@ -212,7 +212,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     */
     if (s->prev_sma < -900)
         s->prev_sma = 1.0;
-    
+
 
     /*
         params are defined in per year, needs to be per day. Important this is
@@ -335,7 +335,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
     sma(SMA_FREE, hw);
     free(day_length);
-    
+
     return;
 
 
@@ -365,7 +365,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
 
-    
+
     /*fprintf(stderr, "Spinning up the model...\n");*/
     while (TRUE) {
         if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
