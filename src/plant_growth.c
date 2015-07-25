@@ -607,10 +607,22 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alleaf = alloc_goal_seek(leaf2sap, leaf2sa_target, p->c_alloc_fmax,
                                     p->targ_sens);
 
+        /* Allocation to branch dependent on relationship between the stem
+           and branch */
+        target_branch = p->branch0 * pow(s->stem, p->branch1);
+        f->albranch = alloc_goal_seek(s->branch, target_branch, p->c_alloc_bmax,
+                                      p->targ_sens);
+
+        coarse_root_target = p->croot0 * pow(s->stem, p->croot1);
+        f->alcroot = alloc_goal_seek(s->croot, coarse_root_target,
+                                      p->c_alloc_cmax, p->targ_sens);
+
+
+
         /* figure out root allocation given available water & nutrients
            hyperbola shape to allocation, this is adjusted below as we aim
            to maintain a functional balance */
-        printf("%f\n", s->prev_sma);
+
         f->alroot = (p->c_alloc_rmax * p->c_alloc_rmin /
                      (p->c_alloc_rmin + (p->c_alloc_rmax - p->c_alloc_rmin) *
                       s->prev_sma));
@@ -639,10 +651,16 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
 
         if (mis_match > 1.0) {
             /* reduce leaf allocation fraction */
-            orig_af = f->alleaf;
-            adj = f->alleaf / mis_match;
-            f->alleaf = MAX(p->c_alloc_fmin, MIN(p->c_alloc_fmax, adj));
-            f->alroot += (MAX(p->c_alloc_rmin, orig_af - f->alleaf));
+
+            float spare;
+            /* Root=Leaf biomass in balance, borrow from the stem to try
+               and alleviate this difference and move towards a
+               functional balance */
+            spare = 1.0 - f->alleaf - f->albranch - f->alcroot - 0.02;
+
+            adj = f->alroot * mis_match;
+
+            f->alroot += MAX(p->c_alloc_rmin, MIN(spare, adj));
         } else if (mis_match < 1.0) {
             /* reduce root allocation */
             orig_ar = f->alroot;
@@ -652,15 +670,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
             f->alleaf += MAX(p->c_alloc_fmax, reduction);
         }
 
-        /* Allocation to branch dependent on relationship between the stem
-           and branch */
-        target_branch = p->branch0 * pow(s->stem, p->branch1);
-        f->albranch = alloc_goal_seek(s->branch, target_branch, p->c_alloc_bmax,
-                                      p->targ_sens);
-
-        coarse_root_target = p->croot0 * pow(s->stem, p->croot1);
-        f->alcroot = alloc_goal_seek(s->croot, coarse_root_target,
-                                      p->c_alloc_cmax, p->targ_sens);
 
         /* Ensure we don't end up with alloc fractions that make no
            physical sense. In such a situation assume a bl */
