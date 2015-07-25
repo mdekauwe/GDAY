@@ -514,7 +514,10 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     double min_leaf_alloc, adj, arg1, arg2, arg3, arg4, leaf2sa_target,
            sap_cross_sec_area, lr_max, stress, mis_match, orig_af, orig_ar,
            reduction, target_branch, coarse_root_target, left_over,
-           total_alloc, leaf2sap;
+           total_alloc, leaf2sap, spare;
+
+    /* this is obviously arbitary */
+    double min_stem_alloc = 0.01;
 
     if (c->alloc_model == FIXED){
         f->alleaf = (p->c_alloc_fmax + nitfac *
@@ -650,18 +653,16 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
 
 
         if (mis_match > 1.0) {
-            /* reduce leaf allocation fraction */
-
-            float spare;
-            /* Root=Leaf biomass in balance, borrow from the stem to try
-               and alleviate this difference and move towards a
-               functional balance */
-            spare = 1.0 - f->alleaf - f->albranch - f->alcroot - 0.02;
-
+            /* Root=Leaf biomass in out of balance, borrow from the stem to try
+               and alleviate this difference and move towards a functional
+               balance */
+            spare = 1.0 - f->alleaf - f->albranch - f->alcroot - min_stem_alloc;
             adj = f->alroot * mis_match;
-
             f->alroot += MAX(p->c_alloc_rmin, MIN(spare, adj));
         } else if (mis_match < 1.0) {
+            /* Root=Leaf biomass in out of balance, borrow from the root to try
+               and alleviate this difference and move towards a functional
+               balance */
             /* reduce root allocation */
             orig_ar = f->alroot;
             adj = f->alroot * mis_match;
@@ -672,7 +673,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
 
 
         /* Ensure we don't end up with alloc fractions that make no
-           physical sense. In such a situation assume a bl */
+           physical sense. */
         left_over = 1.0 - f->alroot - f->alleaf;
         if (f->albranch + f->alcroot > left_over) {
             if (float_eq(s->croot, 0.0)) {
