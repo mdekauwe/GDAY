@@ -401,7 +401,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->cpcroot = f->npp * f->alcroot;
             f->cpbranch = f->npp * f->albranch;
             f->cpstem = f->npp * f->alstem;
-            
+
             f->npbranch = f->npp * f->albranch * ncbnew;
             f->npstemimm = f->npp * f->alstem * ncwimm;
             f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
@@ -610,7 +610,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         /* figure out root allocation given available water & nutrients
            hyperbola shape to allocation, this is adjusted below as we aim
            to maintain a functional balance */
-
+        printf("%f\n", s->prev_sma);
         f->alroot = (p->c_alloc_rmax * p->c_alloc_rmin /
                      (p->c_alloc_rmin + (p->c_alloc_rmax - p->c_alloc_rmin) *
                       s->prev_sma));
@@ -694,7 +694,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         fprintf(stderr, "Unknown C allocation model: %d\n", c->alloc_model);
         exit(EXIT_FAILURE);
     }
-    
+
 
     /*printf("%f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);*/
 
@@ -1000,7 +1000,7 @@ void allocate_stored_c_and_n(fluxes *f, params *p, state *s) {
     for the first time or at the end of each year.
     */
     double ntot;
-    
+
     /* ========================
        Carbon - fixed fractions
        ======================== */
