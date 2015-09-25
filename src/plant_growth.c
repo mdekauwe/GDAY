@@ -401,7 +401,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->cpcroot = f->npp * f->alcroot;
             f->cpbranch = f->npp * f->albranch;
             f->cpstem = f->npp * f->alstem;
-            
+
             f->npbranch = f->npp * f->albranch * ncbnew;
             f->npstemimm = f->npp * f->alstem * ncwimm;
             f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
@@ -570,7 +570,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->albranch = 0.0;
         f->alcroot = 0.0;
 
-
     } else if (c->alloc_model == ALLOMETRIC) {
 
         /* Calculate tree height: allometric reln using the power function
@@ -694,7 +693,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         fprintf(stderr, "Unknown C allocation model: %d\n", c->alloc_model);
         exit(EXIT_FAILURE);
     }
-    
+
 
     /*printf("%f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);*/
 
@@ -979,6 +978,8 @@ void calculate_cn_store(fluxes *f, state *s) {
 
 
 void calculate_average_alloc_fractions(fluxes *f, state *s, int days) {
+    double excess;
+
     s->avg_alleaf /= (float) days;
     s->avg_alroot /= (float) days;
     s->avg_alcroot /= (float) days;
@@ -991,6 +992,14 @@ void calculate_average_alloc_fractions(fluxes *f, state *s, int days) {
     f->albranch = s->avg_albranch;
     f->alstem = s->avg_alstem;
 
+    /*
+        Because we are taking the average growing season fracs the total may
+        end up being just under 1, due to rounding. So put the missing
+        bit into the leaves - arbitary decision there
+    */
+    excess = 1.0 - f->alleaf - f->alroot - f->alcroot - f->albranch - f->alstem;
+    f->alleaf += excess;
+
     return;
 }
 
@@ -1000,7 +1009,7 @@ void allocate_stored_c_and_n(fluxes *f, params *p, state *s) {
     for the first time or at the end of each year.
     */
     double ntot;
-    
+
     /* ========================
        Carbon - fixed fractions
        ======================== */
