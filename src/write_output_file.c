@@ -143,10 +143,9 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
                     s->soilc,s->soiln,s->inorgn,s->litterc,s->littercag,
                     s->littercbg);
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->litternag,s->litternbg,s->activesoiln,s->slowsoiln,
-                    s->passivesoiln,s->activesoiln,s->slowsoiln,
+                    s->litternag,s->litternbg,s->activesoil,s->slowsoil,
+                    s->passivesoil,s->activesoiln,s->slowsoiln,
                     s->passivesoiln);
-
     /*
     ** FLUXES
     */
@@ -369,7 +368,7 @@ int write_final_state(control *c, params *p, state *s)
     int error = 0;
     int line_number = 0;
     int match = FALSE;
-    
+
     while (fgets(line, sizeof(line), c->ifp) != NULL) {
         strcpy(saved_line, line);
         line_number++;

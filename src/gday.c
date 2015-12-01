@@ -218,7 +218,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     */
     if (s->prev_sma < -900)
         s->prev_sma = 1.0;
-    
+
 
     /*
         params are defined in per year, needs to be per day. Important this is
