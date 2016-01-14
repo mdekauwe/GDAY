@@ -11,6 +11,12 @@
 
 #define EPSILON 1E-08
 
+/* Solar radiaiton 1 W m-2 ~ 2.3 umol m-2 s-1 PAR
+   Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
+#define SW_2_PAR 2.3
+#define PAR_2_SW 1.0 / SW_2_PAR
+
+
 #ifndef TRUE
 #define TRUE 1
 #endif
@@ -394,6 +400,7 @@ typedef struct {
     /* sub-daily timestep */
     double *vpd;
     double *doy;
+    double *diffuse_frac;
 
 
 } met;

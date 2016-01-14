@@ -192,7 +192,7 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
     char   line[STRING_LENGTH];
     int    file_len = 0;
     int    i = 0;
-    int    nvars = 13;
+    int    nvars = 12;
     int    skipped_lines = 0;
     double current_yr, temp_HOD;
 
@@ -234,11 +234,6 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->sw_rad = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for sw_rad array\n");
-		exit(EXIT_FAILURE);
-    }
-
     if ((m->tair = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tair array\n");
 		exit(EXIT_FAILURE);
@@ -274,6 +269,12 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
+    if ((m->diffuse_frac = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for diffuse_frac array\n");
+		exit(EXIT_FAILURE);
+    }
+
+
     current_yr = m->year[0];
 
     i = 0;
@@ -292,17 +293,20 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
         if (sscanf(line, "%lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
-                          %lf,%lf,%lf,\
-                          %lf", \
+                          %lf,%lf,%lf", \
                           &(m->year[i]), &(m->doy[i]), &temp_HOD, \
-                          &(m->rain[i]), &(m->par[i]), &(m->sw_rad[i]), \
-                          &(m->tair[i]), &(m->tsoil[i]), &(m->vpd[i]), \
-                          &(m->co2[i]), &(m->ndep[i]), &(m->wind[i]), \
+                          &(m->rain[i]), &(m->par[i]), &(m->tair[i]), \
+                          &(m->tsoil[i]), &(m->vpd[i]), &(m->co2[i]), \
+                          &(m->ndep[i]), &(m->wind[i]), \
                           &(m->press[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
         }
+
+        /* calculates diffuse frac from half-hourly incident radiation */
+        m->diffuse_frac[i] = get_diffuse_frac(m->doy[i], m->par[i]);
+
 
         /* Build an array of the unique years as we loop over the input file */
         if (current_yr != m->year[i]) {
@@ -313,4 +317,53 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
     }
     fclose(fp);
     return;
+}
+
+double get_diffuse_frac(int doy, double par) {
+    /*
+        For the moment, I am only going to implement Spitters, so this is a bit
+        of a useless wrapper function.
+
+    */
+
+    return spitters(doy, par);
+}
+
+double spitters(int doy, double par) {
+
+    /*
+
+    Spitters algorithm to estimate the diffuse component from the measured
+    irradiance.
+
+    Parameters:
+    ----------
+    doy : int
+        day of year
+    zenith : double
+        sun zenith angle [degrees]
+    par : double
+        total par measured [umol m-2 s-1]
+
+    Returns:
+    -------
+    diffuse : double
+        diffuse component of incoming radiation
+
+    References:
+    ----------
+    * Spitters, C. J. T., Toussaint, H. A. J. M. and Goudriaan, J. (1986)
+      Separating the diffuse and direct component of global radiation and its
+      implications for modeling canopy photosynthesis. Part I. Components of
+      incoming radiation. Agricultural Forest Meteorol., 38:217-229.
+    */
+
+    double sw_rad;
+    double diffuse;
+
+    printf("%lf\n", PAR_2_SW);
+    exit(EXIT_SUCCESS);
+
+    return (diffuse);
+
 }
