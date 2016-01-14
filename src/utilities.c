@@ -184,18 +184,20 @@ double spitters(int doy, double zenith_angle, double par) {
         radiation values, eqn 20a-d
     */
     if (tau <= 0.22) {
-        diffuse_frac = 1.0
-    } else if (tau > 0.222 && (tau <= 0.35) {
+        diffuse_frac = 1.0;
+    } else if (tau > 0.222 && tau <= 0.35) {
         diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
-    } else if (tau > 0.35 && (tau <= K) {
+    } else if (tau > 0.35 && tau <= K) {
         diffuse_frac = 1.47 - 1.66 * tau;
     } else if (tau > K) {
         diffuse_frac = R;
+    }
 
-    if (diffuse_frac <= 0.0)
+    if (diffuse_frac <= 0.0) {
         diffuse_frac = 0.0;
-    else if (diffuse_frac >= 1.0)
+    } else if (diffuse_frac >= 1.0) {
         diffuse_frac = 1.0;
+    }
 
 
     return (diffuse_frac);
@@ -332,4 +334,35 @@ double calculate_longitudal_correction(double lon) {
     lc = (lon - SM) * -4.0 / 60.0;
 
     return (lc);
+}
+
+double calc_extra_terrestrial_irradiance(double doy) {
+    /* Solar radiation incident outside the earth's atmosphere, e.g.
+    extra-terrestrial radiation. The value varies a little with the earths
+    orbit.
+
+    Reference:
+    ----------
+    Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
+    */
+    double Sc = 1367.0; /* solar constant */
+    return (Sc * (1.0 + 0.033 * cos(2.0 * M_PI * (doy - 10.0) / 365.0)));
+}
+
+double estimate_clearness(double sw_rad, double S_0, double cos_zenith) {
+    /* estimate atmospheric transmisivity - the amount of diffuse radiation
+    is a function of the amount of haze and/or clouds in the sky. Estimate
+    a proxy for this, i.e. the ratio between global solar radiation on a
+    horizontal surface at the ground and the extraterrestrial solar
+    radiation */
+    double tau;
+
+    tau = sw_rad / (S_0 * cos_zenith);
+    if (tau > 1.0) {
+        tau = 1.0;
+    } else if (tau < 0.0) {
+        tau = 0.0;
+    }
+
+    return (tau);
 }

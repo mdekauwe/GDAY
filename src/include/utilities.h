@@ -20,6 +20,8 @@ double calculate_eqn_of_time(int);
 double calculate_longitudal_correction(double);
 double get_diffuse_frac(int, double, double);
 double spitters(int, double, double);
+double calc_extra_terrestrial_irradiance(double);
+double estimate_clearness(double, double, double);
 double day_length(int, int, double);
 void   calculate_daylength(int, double, double *);
 int    is_leap_year(int);
