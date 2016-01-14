@@ -681,6 +681,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->ligshoot = atof(value);
     } else if (MATCH("params", "liteffnc")) {
         p->liteffnc = atof(value);
+    } else if (MATCH("params", "longitude")) {
+        p->longitude = atof(value);
     } else if (MATCH("params", "max_intercep_lai")) {
         p->max_intercep_lai = atof(value);
     } else if (MATCH("params", "measurement_temp")) {

@@ -131,7 +131,6 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(m->vpd);
         free(m->doy);
-        free(m->diffuse_frac);
     } else {
         free(m->prjday);
         free(m->sw_rad);

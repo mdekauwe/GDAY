@@ -280,6 +280,7 @@ typedef struct {
     double kr;                              /* N uptake coefficent (0.05 kg C m-2 to 0.5 tonnes/ha) see Silvia's PhD, Dewar and McM, 96. */
     double lai_closed;                      /* LAI of closed canopy (max cover fraction is reached (m2 (leaf) m-2 (ground) ~ 2.5) */
     double latitude;                        /* latitude (degrees, negative for south) */
+    double longitude;                       /* longitude (degrees, negative for west) */
     double leafsap0;                        /* leaf area  to sapwood cross sectional area ratio when Height = Height0 (mm^2/mm^2) */
     double leafsap1;                        /* leaf to sap area ratio when Height = Height1 (mm^2/mm^2) */
     double ligfaeces;                       /* Faeces lignin as fractn of biomass */

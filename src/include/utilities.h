@@ -14,6 +14,9 @@
 
 
 /* utilities */
+double calculate_zenith_angle(params *, double, double);
+double get_diffuse_frac(int, double);
+double spitters(int, double);
 double day_length(int, int, double);
 void   calculate_daylength(int, double, double *);
 int    is_leap_year(int);

@@ -1191,7 +1191,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     -----------
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
-    double leafn, fc, ncontent;
+    double leafn, fc, ncontent, diffuse_frac, zenith;
     long   offset;
     int    hod;
 
@@ -1241,12 +1241,20 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     f->auto_resp = 0.0;
     f->apar = 0.0;
 
-
+    /* !Set FBM = 0.0 for ZEN > 80 degrees */
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         offset = project_day * c->num_days + hod;
 
-        printf("%d %lf\n", hod, m->par[offset]);
+         zenith = calculate_zenith_angle(p, m->doy[project_day], hod);
+
+        /* calculates diffuse frac from half-hourly incident radiation */
+        diffuse_frac = get_diffuse_frac(m->doy[offset], m->par[offset]);
+
+
+
+
+        /*printf("%d %lf %lf\n", hod, m->par[offset], diffuse_frac);*/
     }
     exit(1);
 

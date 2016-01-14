@@ -9,7 +9,6 @@
 
 void    read_daily_met_data(char **, control *, met *);
 void    read_subdaily_met_data(char **, control *, met *);
-double  get_diffuse_frac(int, double);
-double  spitters(int, double);
+
 
 #endif /* READ_MET_H */

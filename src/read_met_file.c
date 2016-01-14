@@ -269,12 +269,6 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->diffuse_frac = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for diffuse_frac array\n");
-		exit(EXIT_FAILURE);
-    }
-
-
     current_yr = m->year[0];
 
     i = 0;
@@ -304,10 +298,6 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
             exit(EXIT_FAILURE);
         }
 
-        /* calculates diffuse frac from half-hourly incident radiation */
-        m->diffuse_frac[i] = get_diffuse_frac(m->doy[i], m->par[i]);
-
-
         /* Build an array of the unique years as we loop over the input file */
         if (current_yr != m->year[i]) {
             c->num_years++;
@@ -317,53 +307,4 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
     }
     fclose(fp);
     return;
-}
-
-double get_diffuse_frac(int doy, double par) {
-    /*
-        For the moment, I am only going to implement Spitters, so this is a bit
-        of a useless wrapper function.
-
-    */
-
-    return spitters(doy, par);
-}
-
-double spitters(int doy, double par) {
-
-    /*
-
-    Spitters algorithm to estimate the diffuse component from the measured
-    irradiance.
-
-    Parameters:
-    ----------
-    doy : int
-        day of year
-    zenith : double
-        sun zenith angle [degrees]
-    par : double
-        total par measured [umol m-2 s-1]
-
-    Returns:
-    -------
-    diffuse : double
-        diffuse component of incoming radiation
-
-    References:
-    ----------
-    * Spitters, C. J. T., Toussaint, H. A. J. M. and Goudriaan, J. (1986)
-      Separating the diffuse and direct component of global radiation and its
-      implications for modeling canopy photosynthesis. Part I. Components of
-      incoming radiation. Agricultural Forest Meteorol., 38:217-229.
-    */
-
-    double sw_rad;
-    double diffuse;
-
-    printf("%lf\n", PAR_2_SW);
-    exit(EXIT_SUCCESS);
-
-    return (diffuse);
-
 }
