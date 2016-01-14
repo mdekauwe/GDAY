@@ -204,31 +204,24 @@ double calculate_zenith_angle(params *p, double doy, double hod) {
 
     */
 
-    double zen_angle, dec, et, lc, t0, h, rlat;
+    double zenith_angle, dec, et, lc, t0, h, rlat, cos_zen;
+
+    /* need to convert 30 min data, 0-47 to 0-23.5 */
+    hod /= 2.0;
 
     dec = calculate_solar_declination(doy);
+    et = calculate_eqn_of_time(doy);
+    lc = calculate_longitudal_correction(p->longitude);
+    t0 = 12.0 - lc - et; /* time of solar noon (h) */
+    h = DEG2RAD(15.0 * (hod - t0));
+    rlat = DEG2RAD(p->latitude);
+    cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
+    if (cos_zen < 0.0)
+        cos_zen = 0.0;
 
-    /* dec = self.calculate_solar_declination(doy)
-    et = self.calculate_eqn_of_time(doy)
-    lc = self.calculate_longitudal_correction(lon)
-    t0 = 12.0 - lc - et # time of solar noon (h)
+    zenith_angle = RAD2DEG(acos(cos_zen));
 
-    # solar hour
-    h = 15.0 * (hour - t0) * self.deg2rad
-
-    rlat = lat * self.deg2rad
-    cos_zen = (np.sin(rlat) * np.sin(dec) + np.cos(rlat) * np.cos(dec) *
-                np.cos(h))
-    cos_zen = np.where(cos_zen < 0.0, 0.0, cos_zen)
-
-    zen_angle = np.arccos(cos_zen) * self.rad2deg
-    zen_angle = np.ma.masked_array(zen_angle, mask=cos_zen < 0.0001)
-
-
-    return cos_zen, zen_angle
-    */
-
-    return (zen_angle);
+    return (zenith_angle);
 }
 
 
@@ -252,8 +245,66 @@ double calculate_solar_declination(int doy) {
     */
     double sindec;
 
-    sindec = -sin(23.5 * DEG2RAD) * cos(2.0 * PI * (doy + 10.0) / 365.);
+    sindec = -sin(DEG2RAD(23.5)) * cos(2.0 * M_PI * (doy + 10.0) / 365.);
 
-    return (ARCSIN(sindec));
+    return (asin(sindec));
 
+}
+
+double calculate_eqn_of_time(int doy) {
+    /* Equation of time - correction for the difference btw solar time
+    and the clock time.
+
+    Arguments:
+    ----------
+    doy : int
+        day of year
+
+    References:
+    -----------
+    * Campbell, G. S. and Norman, J. M. (1998) Introduction to environmental
+      biophysics. Pg 169.
+    */
+    double f, arg1, arg2, arg3, et;
+
+    f = DEG2RAD(279.575 + 0.9856 * doy);
+    arg1 = -104.7 * sin(f) + 596.2 * sin(2.0 * f) + 4.3;
+    arg2 = sin(3.0 * f) - 12.7 * sin(4.0 * f) - 429.3;
+    arg3 = cos(f) - 2.0 * cos(2.0 * f) + 19.3 * cos(3.0 * f);
+    et = arg1 * arg2 * arg3;
+
+    return (et / 3600.0);
+}
+
+
+double calculate_longitudal_correction(double lon) {
+    /*
+    Calculate the longitudal correction for travelling east and west.
+    +4 minutes (+1/15 hour) for every degree east of the standard meridian
+    and -4 mins for each degree west.
+
+    Arguments:
+    ----------
+    lon : double
+        day of year
+
+    */
+    double merid, Ih, A, SM, lc;
+
+    merid = floor(lon / 15.0) * 15.0;
+    if (merid < 0.0)
+        merid += 15.0;
+
+    Ih = floor(lon / 15.0);
+    A = lon / 15.;
+    if (A > (Ih + 0.5)) {
+        SM = (Ih + 1.0) * 15.0;
+    } else {
+        SM = Ih * 15.0;
+    }
+
+    /* longitudinal correction */
+    lc = (lon - SM) * -4.0 / 60.0;
+
+    return (lc);
 }

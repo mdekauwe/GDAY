@@ -1191,7 +1191,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     -----------
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
-    double leafn, fc, ncontent, diffuse_frac, zenith;
+    double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation;
     long   offset;
     int    hod;
 
@@ -1241,57 +1241,59 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     f->auto_resp = 0.0;
     f->apar = 0.0;
 
-    /* !Set FBM = 0.0 for ZEN > 80 degrees */
-
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         offset = project_day * c->num_days + hod;
 
-         zenith = calculate_zenith_angle(p, m->doy[project_day], hod);
+        zenith_angle = calculate_zenith_angle(p, m->doy[project_day], hod);
+        elevation = 90.0 - zenith_angle;
 
-        /* calculates diffuse frac from half-hourly incident radiation */
-        diffuse_frac = get_diffuse_frac(m->doy[offset], m->par[offset]);
+        /* Is the sun up? If so calculate photosynthesis */
+        if (elevation > 0.0) {
+            /* calculates diffuse frac from half-hourly incident radiation */
+            /*diffuse_frac = get_diffuse_frac(m->doy[offset], m->par[offset]);*/
+
+            fprintf(stderr, "Sub-daily not implemented yet\n");
+            exit(EXIT_FAILURE);
+
+            if (c->ps_pathway == C3) {
+                photosynthesis_C3(c, f, m, p, s, project_day, daylen, ncontent);
+            } else {
+                /* Nothing implemented */
+                fprintf(stderr, "C4 photosynthesis not implemented\n");
+                exit(EXIT_FAILURE);
+            }
+
+            /* Calculate plant respiration */
+            if (c->respiration_model == FIXED) {
+                /* Plant respiration assuming carbon-use efficiency. */
+                f->auto_resp += f->gpp * p->cue;
+            } else if(c->respiration_model == TEMPERATURE) {
+                fprintf(stderr, "Not implemented yet\n");
+                exit(EXIT_FAILURE);
+            } else if (c->respiration_model == BIOMASS) {
+                fprintf(stderr, "Not implemented yet\n");
+                exit(EXIT_FAILURE);
+            }
+
+            /* Calculate NPP */
+            f->npp_gCm2 = f->gpp_gCm2 * p->cue;
+            f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+
+
+        } else {
+            /* set time slot photosynthesis/respiration to be zero, but we
+               still need to calc the full water balance */
+
+
+        }
 
 
 
 
-        /*printf("%d %lf %lf\n", hod, m->par[offset], diffuse_frac);*/
+
+        printf("%f %lf\n", hod/2., elevation);
     }
     exit(1);
-
-    for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        offset = project_day * c->num_days + hod;
-
-
-
-        fprintf(stderr, "Sub-daily not implemented yet\n");
-        exit(EXIT_FAILURE);
-
-
-        if (c->ps_pathway == C3) {
-            photosynthesis_C3(c, f, m, p, s, project_day, daylen, ncontent);
-        } else {
-            /* Nothing implemented */
-            fprintf(stderr, "C4 photosynthesis not implemented\n");
-            exit(EXIT_FAILURE);
-        }
-
-        /* Calculate plant respiration */
-        if (c->respiration_model == FIXED) {
-            /* Plant respiration assuming carbon-use efficiency. */
-            f->auto_resp += f->gpp * p->cue;
-        } else if(c->respiration_model == TEMPERATURE) {
-            fprintf(stderr, "Not implemented yet\n");
-            exit(EXIT_FAILURE);
-        } else if (c->respiration_model == BIOMASS) {
-            fprintf(stderr, "Not implemented yet\n");
-            exit(EXIT_FAILURE);
-        }
-
-        /* Calculate NPP */
-        f->npp_gCm2 = f->gpp_gCm2 * p->cue;
-        f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
-    }
-
 
 
 
