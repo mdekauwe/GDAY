@@ -364,12 +364,20 @@ typedef struct {
 } params;
 
 typedef struct {
+
     double *year;
     double *prjday;
+    double *rain;
+    double *par;
     double *sw_rad;
     double *tair;
-    double *rain;
     double *tsoil;
+    double *co2;
+    double *ndep;
+    double *wind;
+    double *press;
+
+    /* Day timestep */
     double *tam;
     double *tpm;
     double *tmin;
@@ -378,15 +386,15 @@ typedef struct {
     double *vpd_am;
     double *vpd_pm;
     double *vpd_avg;
-    double *co2;
-    double *ndep;
-    double *wind;
-    double *press;
-    double *par;
     double *wind_am;
     double *wind_pm;
     double *sw_rad_am;
     double *sw_rad_pm;
+
+    /* sub-daily timestep */
+    double *vpd;
+
+
 } met;
 
 

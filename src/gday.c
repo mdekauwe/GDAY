@@ -98,7 +98,11 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    read_met_data(argv, c, m);
+    if (c->sub_daily)
+        read_subdaily_met_data(argv, c, m);
+    else
+        read_daily_met_data(argv, c, m);
+
 
     if (c->spin_up)
         spin_up_pools(c, f, m, p, s);
@@ -120,22 +124,26 @@ int main(int argc, char **argv)
     free(m->tair);
     free(m->rain);
     free(m->tsoil);
-    free(m->tam);
-    free(m->tpm);
-    free(m->tmin);
-    free(m->tmax);
-    free(m->vpd_am);
-    free(m->vpd_pm);
-    free(m->vpd_avg);
     free(m->co2);
     free(m->ndep);
     free(m->wind);
     free(m->press);
     free(m->par);
-    free(m->wind_am);
-    free(m->wind_pm);
-    free(m->sw_rad_am);
-    free(m->sw_rad_pm);
+    if (c->sub_daily) {
+        free(m->vpd);
+    } else {
+        free(m->tam);
+        free(m->tpm);
+        free(m->tmin);
+        free(m->tmax);
+        free(m->vpd_am);
+        free(m->vpd_pm);
+        free(m->vpd_avg);
+        free(m->wind_am);
+        free(m->wind_pm);
+        free(m->sw_rad_am);
+        free(m->sw_rad_pm);
+    }
     free(m);
     free(p);
     free(s);
