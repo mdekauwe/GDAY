@@ -21,8 +21,8 @@
 * =========================================================================== */
 #include "water_balance.h"
 
-void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
-                             state *s, int day, double daylen) {
+void calculate_daily_water_balance(control *c, fluxes *f, met *m, params *p,
+                                   state *s, int day, double daylen) {
     /*
 
     Calculate water balance

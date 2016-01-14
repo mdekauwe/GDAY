@@ -1,5 +1,5 @@
 /* ============================================================================
-* Model Any Terrestrial Ecosystem (MATE) model - C3 & C4
+* Photosynthesis - C3 & C4
 *
 * see below
 *
@@ -10,11 +10,17 @@
 *   Martin De Kauwe
 *
 * DATE:
-*   17.02.2015
+*   14.01.2016
 *
 * =========================================================================== */
-#include "mate.h"
+#include "photosynthesis.h"
 
+
+void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
+                            int project_day, double daylen, double ncontent) {
+
+    return;
+}
 
 void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
                             int project_day, double daylen, double ncontent) {
@@ -52,7 +58,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
-    
+
     gamma_star_am = calculate_co2_compensation_point(p, Tk_am, mt);
     gamma_star_pm = calculate_co2_compensation_point(p, Tk_pm, mt);
 
@@ -343,9 +349,9 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         /* the maximum rate of electron transport at 25 degC */
         vcmax25 = p->vcmax;
         *vcmax = arrh(mt, vcmax25, p->eav, Tk);
-    
+
     }
-    
+
 
     /* reduce photosynthetic capacity with moisture stress */
     *jmax *= s->wtfac_root;

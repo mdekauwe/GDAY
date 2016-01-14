@@ -47,6 +47,8 @@ void initialise_control(control *c) {
     c->num_days = 0;                /* Number of days in a year: 365/366 */
     c->PRINT_GIT = FALSE;           /* print the git hash to the cmd line and exit? Called from cmd line parsar */
 
+    c->sub_daily = FALSE;           /* Run at daily or 30 minute timestep */
+    c->num_hlf_hrs = 48;
     return;
 }
 

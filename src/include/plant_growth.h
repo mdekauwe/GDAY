@@ -10,7 +10,7 @@
 #include "constants.h"
 #include "water_balance.h"
 #include "utilities.h"
-#include "mate.h"
+#include "photosynthesis.h"
 #include "optimal_root_model.h"
 
 /* C stuff */
@@ -27,8 +27,10 @@ void   precision_control(fluxes *, state *);
 void   calculate_cn_store(fluxes *, state *);
 void   calculate_average_alloc_fractions(fluxes *, state *, int );
 void   allocate_stored_c_and_n(fluxes *f, params *p, state *s);
-void   carbon_production(control *, fluxes *, met *m, params *, state *, int,
-                         double);
+void   carbon_daily_production(control *, fluxes *, met *m, params *, state *,
+                               int, double);
+void   calculate_subdaily_production(control *, fluxes *, met *m, params *,
+                                     state *, int, double);
 
 /* N stuff */
 int    nitrogen_allocation(control *c, fluxes *, params *, state *, double,

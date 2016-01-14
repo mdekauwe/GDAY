@@ -28,16 +28,21 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
-
-    /* calculate GPP, NPP and plant respiration */
-    carbon_production(c, f, m, p, s, project_day, day_length);
-
-    /* calculate water balance. We also need to store the previous days
-       soil water store */
+    /* Store the previous days soil water store */
     previous_topsoil_store = s->pawater_topsoil;
     previous_rootzone_store = s->pawater_root;
 
-    calculate_water_balance(c, f, m, p, s, project_day, day_length);
+
+    if (c->sub_daily) {
+        /* calculate 30-min GPP/NPP, respiration and water fluxes */
+        calculate_subdaily_production(c, f, m, p, s, project_day, day_length);
+    } else {
+        /* calculate daily GPP/NPP, respiration and update water balance */
+        carbon_daily_production(c, f, m, p, s, project_day, day_length);
+        calculate_daily_water_balance(c, f, m, p, s, project_day, day_length);
+    }
+
+
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
        foliage in young stand */
@@ -87,7 +92,15 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
     if (recalc_wb) {
         s->pawater_topsoil = previous_topsoil_store;
         s->pawater_root = previous_rootzone_store;
-        calculate_water_balance(c, f, m, p, s, project_day, day_length);
+
+        if (c->sub_daily) {
+            printf("PROBLEM YOU NEED TO IMPLEMENT SOMETHING");
+            exit(EXIT_FAILURE);
+        } else {
+            calculate_daily_water_balance(c, f, m, p, s, project_day,
+                                          day_length);
+        }
+
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
 
@@ -129,9 +142,9 @@ void calc_root_exudation_release(fluxes *f, state *s) {
 
     return;
 }
-void carbon_production(control *c, fluxes *f, met *m, params *p, state *s,
-                       int project_day, double daylen) {
-    /* Calculate GPP, NPP and plant respiration
+void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
+                             int project_day, double daylen) {
+    /* Calculate GPP, NPP and plant respiration at the daily timestep
 
     Parameters:
     -----------
@@ -1158,4 +1171,108 @@ double calculate_nuptake(control *c, params *p, state *s) {
     }
 
     return (nuptake);
+}
+
+
+void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
+                                   state *s, int project_day, double daylen) {
+    /*
+        Calculate 30 minute carbon fluxes, solve energy balance and update
+        associated water fluxes.
+
+    Parameters:
+    -----------
+    project_day : integer
+        simulation day
+    daylen : float
+        daytime length (hrs)
+
+    References:
+    -----------
+    * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
+    */
+    double leafn, fc, ncontent;
+    int hod;
+
+    if (s->lai > 0.0) {
+        /* average leaf nitrogen content (g N m-2 leaf) */
+        leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
+
+        /* total nitrogen content of the canopy */
+        ncontent = leafn * s->lai;
+
+    } else {
+        ncontent = 0.0;
+    }
+
+    /* When canopy is not closed, canopy light interception is reduced
+        - calculate the fractional ground cover */
+    if (s->lai < p->lai_closed) {
+        /* discontinuous canopies */
+        fc = s->lai / p->lai_closed;
+    } else {
+        fc = 1.0;
+    }
+
+    /* fIPAR - the fraction of intercepted PAR = IPAR/PAR incident at the
+       top of the canopy, accounting for partial closure based on Jackson
+       and Palmer (1979). */
+    if (s->lai > 0.0)
+        s->fipar = ((1.0 - exp(-p->kext * s->lai / fc)) * fc);
+    else
+        s->fipar = 0.0;
+
+    if (c->water_stress) {
+        /* Calculate the soil moisture availability factors [0,1] in the
+           topsoil and the entire root zone */
+        calculate_soil_water_fac(c, p, s);
+    } else {
+        /* really this should only be a debugging option! */
+        s->wtfac_topsoil = 1.0;
+        s->wtfac_root = 1.0;
+    }
+
+    /* zero daily fluxes */
+    f->gpp_gCm2 = 0.0;
+    f->npp_gCm2 = 0.0;
+    f->gpp = 0.0;
+    f->npp = 0.0;
+    f->auto_resp = 0.0;
+    f->apar = 0.0;
+
+    fprintf(stderr, "Sub-daily not implemented yet\n");
+    exit(EXIT_FAILURE);
+
+    for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+
+        if (c->ps_pathway == C3) {
+            photosynthesis_C3(c, f, m, p, s, project_day, daylen, ncontent);
+        } else {
+            /* Nothing implemented */
+            fprintf(stderr, "C4 photosynthesis not implemented\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Calculate plant respiration */
+        if (c->respiration_model == FIXED) {
+            /* Plant respiration assuming carbon-use efficiency. */
+            f->auto_resp += f->gpp * p->cue;
+        } else if(c->respiration_model == TEMPERATURE) {
+            fprintf(stderr, "Not implemented yet\n");
+            exit(EXIT_FAILURE);
+        } else if (c->respiration_model == BIOMASS) {
+            fprintf(stderr, "Not implemented yet\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Calculate NPP */
+        f->npp_gCm2 = f->gpp_gCm2 * p->cue;
+        f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    }
+
+
+
+
+
+    return;
 }

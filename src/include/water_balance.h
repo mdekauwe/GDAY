@@ -6,8 +6,8 @@
 #include "utilities.h"
 
 
-void    calculate_water_balance(control *, fluxes *, met *, params *,
-                               state *, int, double);
+void    calculate_daily_water_balance(control *, fluxes *, met *, params *,
+                                      state *, int, double);
 void    get_met_data(met *, int , double *, double *, double *, double *,
                     double *, double *, double *, double *, double *, double *,
                     double *, double *, double *, double *, double *);

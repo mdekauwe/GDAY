@@ -99,6 +99,9 @@ typedef struct {
     int   PRINT_GIT;
     int   hurricane;
     int   exudation;
+    int   sub_daily;
+    int   num_hlf_hrs;
+
 } control;
 
 

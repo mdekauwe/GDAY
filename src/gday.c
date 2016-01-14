@@ -1,20 +1,20 @@
 /* ============================================================================
 * Generic Decomposition And Yield (GDAY) model.
 *
-* G'DAY is a process based model, which runs on a daily timestep and
-* simulates carbon, nutrient and water state and fluxes. See below for model
+* G'DAY simulates carbon, nutrient and water state and fluxes on either a daily
+* sub-daily (30 min) timestep. See below for model
 * description.
 *
 * Paramaeter descriptions are in gday.h
 *
 * NOTES:
-*   I'm essentially transfering the python to C here...
+*
 *
 * AUTHOR:
 *   Martin De Kauwe
 *
 * DATE:
-*   27.02.2015
+*   14.01.2016
 *
 * =========================================================================== */
 
@@ -23,7 +23,7 @@
 #include "utilities.h"
 #include "litter_production.h"
 #include "plant_growth.h"
-#include "mate.h"
+#include "photosynthesis.h"
 #include "water_balance.h"
 #include "simple_moving_average.h"
 #include "soils.h"

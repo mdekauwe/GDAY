@@ -1,14 +1,16 @@
-#ifndef MATE_H
-#define MATE_H
+#ifndef PHOTOSYNTHESIS_H
+#define PHOTOSYNTHESIS_H
 
 #include "gday.h"
 #include "constants.h"
 #include "utilities.h"
 
 /* C3 */
+void   photosynthesis_C3(control *, fluxes *, met *, params *,
+                              state *, int, double, double);
 void   mate_C3_photosynthesis(control *, fluxes *, met *, params *,
                               state *, int, double, double);
-
+                              
 double  calculate_top_of_canopy_n(params *, state *, double);
 void    get_met_stuff(met *, int, double *, double *, double *, double *,
                      double *, double *);
@@ -32,4 +34,5 @@ void   calculate_vcmax_parameter(params *, state *s, double, double, double *,
                                  double *, double);
 double calc_respiration(double, double);
 double quadratic(double, double, double);
-#endif /* MATE */
+
+#endif /* PHOTOSYNTHESIS */
