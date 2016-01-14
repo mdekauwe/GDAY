@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     free(c);
     free(f);
     free(m->year);
-    free(m->prjday);
+
     free(m->sw_rad);
     free(m->tair);
     free(m->rain);
@@ -131,7 +131,9 @@ int main(int argc, char **argv)
     free(m->par);
     if (c->sub_daily) {
         free(m->vpd);
+        free(m->doy);
     } else {
+        free(m->prjday);
         free(m->tam);
         free(m->tpm);
         free(m->tmin);

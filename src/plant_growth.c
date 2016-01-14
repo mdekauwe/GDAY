@@ -1192,7 +1192,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
     double leafn, fc, ncontent;
-    int hod;
+    long   offset;
+    int    hod;
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -1240,10 +1241,23 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     f->auto_resp = 0.0;
     f->apar = 0.0;
 
-    fprintf(stderr, "Sub-daily not implemented yet\n");
-    exit(EXIT_FAILURE);
+
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+        offset = project_day * c->num_days + hod;
+
+        printf("%d %lf\n", hod, m->par[offset]);
+    }
+    exit(1);
+
+    for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+        offset = project_day * c->num_days + hod;
+
+
+
+        fprintf(stderr, "Sub-daily not implemented yet\n");
+        exit(EXIT_FAILURE);
+
 
         if (c->ps_pathway == C3) {
             photosynthesis_C3(c, f, m, p, s, project_day, daylen, ncontent);

@@ -366,7 +366,6 @@ typedef struct {
 typedef struct {
 
     double *year;
-    double *prjday;
     double *rain;
     double *par;
     double *sw_rad;
@@ -378,6 +377,7 @@ typedef struct {
     double *press;
 
     /* Day timestep */
+    double *prjday; /* should really be renamed to doy for consistancy */
     double *tam;
     double *tpm;
     double *tmin;
@@ -393,6 +393,7 @@ typedef struct {
 
     /* sub-daily timestep */
     double *vpd;
+    double *doy;
 
 
 } met;

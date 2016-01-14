@@ -196,6 +196,7 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
     int    skipped_lines = 0;
     double current_yr, temp_HOD;
 
+
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
                 c->met_fname);
@@ -218,8 +219,8 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->prjday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for prjday array\n");
+    if ((m->doy = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for doy array\n");
 		exit(EXIT_FAILURE);
     }
 
@@ -293,7 +294,7 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf", \
-                          &(m->year[i]), &(m->prjday[i]), &temp_HOD, \
+                          &(m->year[i]), &(m->doy[i]), &temp_HOD, \
                           &(m->rain[i]), &(m->par[i]), &(m->sw_rad[i]), \
                           &(m->tair[i]), &(m->tsoil[i]), &(m->vpd[i]), \
                           &(m->co2[i]), &(m->ndep[i]), &(m->wind[i]), \
