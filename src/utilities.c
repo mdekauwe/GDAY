@@ -139,6 +139,9 @@ double get_diffuse_frac(int doy, double zenith_angle, double par) {
     return spitters(doy, zenith_angle, par);
 }
 
+
+
+
 double spitters(int doy, double zenith_angle, double par) {
 
     /*
@@ -168,29 +171,37 @@ double spitters(int doy, double zenith_angle, double par) {
       incoming radiation. Agricultural Forest Meteorol., 38:217-229.
     */
 
-    double sw_rad, cos_zenith, S_0, tau, R, K, diffuse_frac;
+    double sw_rad, sin_beta, So, tau, R, K, diffuse_frac;
+    double SEC_TO_HFHR = 60.0 * 30.0;
+    double solar_constant;
 
+    /* SW_down [W/m2] = [J m-2 s-1] */
     sw_rad = par * PAR_2_SW;
-    cos_zenith = cos(zenith_angle);
-    S_0 = calc_extra_terrestrial_irradiance(doy);
-    tau = estimate_clearness(sw_rad, S_0, cos_zenith);
 
-    /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
-    R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith);
-    K = (1.47 - R) / 1.66;
+    /* sine of the elevation of the sun above the horizon */
+    sin_beta = DEG2RAD(90.0) - DEG2RAD(zenith_angle);
+    So = calc_extra_terrestrial_irradiance(doy, sin_beta);
 
-    /*
-        Relation btw diffuse frac and atmospheric transmission for hourly
-        radiation values, eqn 20a-d
-    */
-    if (tau <= 0.22) {
+    /* atmospheric transmisivity */
+    tau = estimate_clearness(sw_rad, So);
+
+    /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
+    if (sin_beta > 0.17) {
+        /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
+        /*R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith); */
+        R = 0.847 - 1.61 * sin_beta + 1.04 * (sin_beta * sin_beta);
+        K = (1.47 - R) / 1.66;
+        if (tau <= 0.22) {
+            diffuse_frac = 1.0;
+        } else if (tau <= 0.35) {
+            diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
+        } else if (tau <= K) {
+            diffuse_frac = 1.47 - 1.66 * tau;
+        } else {
+            diffuse_frac = R;
+        }
+    } else {
         diffuse_frac = 1.0;
-    } else if (tau > 0.222 && tau <= 0.35) {
-        diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
-    } else if (tau > 0.35 && tau <= K) {
-        diffuse_frac = 1.47 - 1.66 * tau;
-    } else if (tau > K) {
-        diffuse_frac = R;
     }
 
     if (diffuse_frac <= 0.0) {
@@ -198,7 +209,6 @@ double spitters(int doy, double zenith_angle, double par) {
     } else if (diffuse_frac >= 1.0) {
         diffuse_frac = 1.0;
     }
-
 
     return (diffuse_frac);
 
@@ -336,20 +346,45 @@ double calculate_longitudal_correction(double lon) {
     return (lc);
 }
 
-double calc_extra_terrestrial_irradiance(double doy) {
+
+
+double calc_extra_terrestrial_irradiance(double doy, double sin_beta) {
     /* Solar radiation incident outside the earth's atmosphere, e.g.
     extra-terrestrial radiation. The value varies a little with the earths
     orbit.
 
+    Using formula from Spitters not Leuning!
+
+    Arguments:
+    ----------
+    doy : double
+        day of year
+    sin_beta : double
+        sine of the elevation of the sun above the horizon (radians)
+
+    Returns:
+    --------
+    So : float
+        solar radiation normal to the sun's bean outside the Earth's atmosphere
+        (W m-2)
+
     Reference:
     ----------
-    Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
+    * Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
+    * Spitters et al. (1986) AFM, 38, 217-229.
     */
-    double Sc = 1367.0; /* solar constant */
-    return (Sc * (1.0 + 0.033 * cos(2.0 * M_PI * (doy - 10.0) / 365.0)));
+    double Sc = 1370.0; /* W m-2 */
+    double orbit_correction;
+
+    /* correct the solar constant for the eccentricity of the sun's orbit */
+    orbit_correction = 1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI);
+
+    return (1367.0 * orbit_correction * sin_beta);
+
 }
 
-double estimate_clearness(double sw_rad, double S_0, double cos_zenith) {
+
+double estimate_clearness(double sw_rad, double So) {
     /* estimate atmospheric transmisivity - the amount of diffuse radiation
     is a function of the amount of haze and/or clouds in the sky. Estimate
     a proxy for this, i.e. the ratio between global solar radiation on a
@@ -357,7 +392,12 @@ double estimate_clearness(double sw_rad, double S_0, double cos_zenith) {
     radiation */
     double tau;
 
-    tau = sw_rad / (S_0 * cos_zenith);
+    /* catch possible divide by zero when zenith = 90. */
+    if (So <= 0.0)
+        tau = 0.0;
+    else
+        tau = sw_rad / So ;
+
     if (tau > 1.0) {
         tau = 1.0;
     } else if (tau < 0.0) {

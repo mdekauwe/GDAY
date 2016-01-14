@@ -17,7 +17,7 @@
    Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
 #define SW_2_PAR 2.3
 #define PAR_2_SW 1.0 / SW_2_PAR
-
+#define J_TO_MJ  1.0E-6
 
 #ifndef TRUE
 #define TRUE 1

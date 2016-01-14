@@ -1251,6 +1251,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
         diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle,
                                         m->par[offset]);
 
+        printf("%lf\n", diffuse_frac);
         
         /* Is the sun up? If so calculate photosynthesis */
         if (elevation > 0.0) {
