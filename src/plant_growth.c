@@ -1250,7 +1250,10 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
         /* Is the sun up? If so calculate photosynthesis */
         if (elevation > 0.0) {
             /* calculates diffuse frac from half-hourly incident radiation */
-            /*diffuse_frac = get_diffuse_frac(m->doy[offset], m->par[offset]);*/
+            diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle,
+                                            m->par[offset]);
+
+            printf("%lf\n", diffuse_frac);
 
             fprintf(stderr, "Sub-daily not implemented yet\n");
             exit(EXIT_FAILURE);
@@ -1291,7 +1294,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
 
 
 
-        printf("%f %lf\n", hod/2., elevation);
+
     }
     exit(1);
 

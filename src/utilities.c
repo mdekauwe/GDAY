@@ -129,17 +129,17 @@ char *strncpy0(char* dest, char* src, size_t size)
 }
 
 
-double get_diffuse_frac(int doy, double par) {
+double get_diffuse_frac(int doy, double zenith_angle, double par) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
         of a useless wrapper function.
 
     */
 
-    return spitters(doy, par);
+    return spitters(doy, zenith_angle, par);
 }
 
-double spitters(int doy, double par) {
+double spitters(int doy, double zenith_angle, double par) {
 
     /*
 
@@ -150,7 +150,7 @@ double spitters(int doy, double par) {
     ----------
     doy : int
         day of year
-    zenith : double
+    zenith_angle : double
         sun zenith angle [degrees]
     par : double
         total par measured [umol m-2 s-1]
@@ -168,12 +168,37 @@ double spitters(int doy, double par) {
       incoming radiation. Agricultural Forest Meteorol., 38:217-229.
     */
 
-    double sw_rad;
-    double diffuse = -99.;
+    double sw_rad, cos_zenith, S_0, tau, R, K, diffuse_frac;
+
+    sw_rad = par * PAR_2_SW;
+    cos_zenith = cos(zenith_angle);
+    S_0 = calc_extra_terrestrial_irradiance(doy);
+    tau = estimate_clearness(sw_rad, S_0, cos_zenith);
+
+    /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
+    R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith);
+    K = (1.47 - R) / 1.66;
+
+    /*
+        Relation btw diffuse frac and atmospheric transmission for hourly
+        radiation values, eqn 20a-d
+    */
+    if (tau <= 0.22) {
+        diffuse_frac = 1.0
+    } else if (tau > 0.222 && (tau <= 0.35) {
+        diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
+    } else if (tau > 0.35 && (tau <= K) {
+        diffuse_frac = 1.47 - 1.66 * tau;
+    } else if (tau > K) {
+        diffuse_frac = R;
+
+    if (diffuse_frac <= 0.0)
+        diffuse_frac = 0.0;
+    else if (diffuse_frac >= 1.0)
+        diffuse_frac = 1.0;
 
 
-
-    return (diffuse);
+    return (diffuse_frac);
 
 }
 
