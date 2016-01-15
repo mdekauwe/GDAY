@@ -1191,8 +1191,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     -----------
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
-    double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation, Cs;
-    double tleaf;
+    double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation;
     long   offset;
     int    hod;
 
@@ -1257,17 +1256,10 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
         /* Is the sun up? If so calculate photosynthesis */
         if (elevation > 0.0) {
 
+            canopy_wrapper(c, f, m, p, s, project_day, ncontent);
 
-            /* NEED 2-leaf loop */
 
-            if (c->ps_pathway == C3) {
-                photosynthesis_C3(c, f, m, p, s, project_day, ncontent, tleaf,
-                                  Cs);
-            } else {
-                /* Nothing implemented */
-                fprintf(stderr, "C4 photosynthesis not implemented\n");
-                exit(EXIT_FAILURE);
-            }
+
 
             /* Calculate plant respiration */
             if (c->respiration_model == FIXED) {
@@ -1302,6 +1294,69 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     exit(1);
 
 
+
+
+    return;
+}
+
+
+void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
+                       int project_day, double ncontent) {
+    /*
+        Solve Ci, Vpd etc - loop over 2 leaves.
+    */
+
+    double Cs, tleaf, dleaf;
+    int    iter = 0, itermax = 100;
+
+    /* initialise values of leaf temp, surface CO2 and VPD */
+    tleaf = m->tair[project_day];
+    dleaf = m->vpd[project_day];
+    Cs = m->co2[project_day];
+
+    while (TRUE) {
+
+        if (c->ps_pathway == C3) {
+
+            photosynthesis_C3(c, f, m, p, s, project_day, ncontent, tleaf,
+                              Cs);
+        } else {
+            /* Nothing implemented */
+            fprintf(stderr, "C4 photosynthesis not implemented\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Calculate new Tleaf, dleaf, Cs */
+        solve_leaf_energy_balance(f, m, p, tleaf);
+
+        f->gbc = f->gbH * GBH_2_GBC;
+        Cs = Ca - An / f->gbc; /* boundary layer of leaf */
+        if (et == 0.0 || gw == 0.0) {
+            dleaf = dair;
+        } else {
+            dleaf = (et * m->press[project_day] / f->gw) * self.pa_2_kpa; /* kPa */
+        }
+
+
+
+        if (iter >= itermax) {
+            frintf(stderr, "No convergence in canopy loop\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* stopping criteria */
+        if (fabs(tleaf - new_tleaf) < 0.02) {
+            break;
+        }
+
+        /* Update temperature & do another iteration */
+        tleaf = new_tleaf;
+
+        iter++;
+    }
+
+    /* convert gs to conductance to water */
+    f->gsw = f->gsc * GSC_2_GSW;
 
 
     return;

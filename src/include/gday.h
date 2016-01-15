@@ -370,6 +370,7 @@ typedef struct {
     int    hurricane_doy;
     int    hurricane_yr;
     double root_exu_CUE;
+    double leaf_width;   
 } params;
 
 typedef struct {

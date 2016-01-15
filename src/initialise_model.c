@@ -139,6 +139,7 @@ void initialise_params(params *p) {
     p->kr = 0.5;
     p->lai_closed = 0.5;
     p->latitude = 35.9;
+    p->leaf_width = 0.001;
     p->leafsap0 = 8000.0;
     p->leafsap1 = 3060.0;
     p->ligfaeces = 0.25;

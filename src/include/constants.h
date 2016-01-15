@@ -30,7 +30,13 @@
 #define KG_M2_2_TONNES_HA 10.0
 #define KG_AS_TONNES 1E-3
 #define TONNES_AS_KG 1.0 / KG_AS_TONNES
-
+#define CPAIR 1010.0           /* specific heat of dry air (j kg-1 k-1) */
+#define AIR_MASS 29.0E-3       /* mol mass air (kg mol-1) */
+#define H2OLV0 2.501E6         /* latent heat H2O (J kg-1) */
+#define H2OMW 18E-3            /* mol mass H20 (kg mol-1) */
+#define DHEAT 21.5E-6          /* molecular diffusivity for heat */
+#define GBVGBH 1.075           /* Ratio of Gbw:Gbh */
+#define GSVGSC 1.57            /* Ratio of Gsw:Gsc */
 
 
 #endif /* CONSTANTS */
