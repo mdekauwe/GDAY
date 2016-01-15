@@ -16,9 +16,9 @@
 #include "photosynthesis.h"
 
 
-void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
-                       long offset, double ncontent, double tleaf,
-                       double Cs, double dleaf) {
+void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
+                       double ncontent, double tleaf,  double Cs, double dleaf,
+                       double *gsc, double *anleaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA (ECOCRAFT-agreed formulation).
@@ -57,8 +57,8 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0) {
-        f->anleaf = -rd;
-        f->gsc = g0_zero;
+        *anleaf = -rd;
+        *gsc = g0_zero;
     } else {
         /* Hardwiring this for Medlyn gs model for the moment, till I figure
         out the best structure
@@ -93,11 +93,11 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         A = g0 + gs_over_a * (Vj - rd);
 
         arg1 = (1. - Cs * gs_over_a) * (Vj - rd) + g0 * (2. * gamma_star - Cs);
-        arg2 = gs_over_a * (Vj * gamma_star + 2.* gamma_star * rd);
+        arg2 = gs_over_a * (Vj * gamma_star + 2.0 * gamma_star * rd);
         B = arg1 - arg2;
 
         arg1 = -(1.0 - Cs * gs_over_a) * gamma_star * (Vj + 2.0 * rd);
-        arg2 = g0 * 2. * gamma_star * Cs;
+        arg2 = g0 * 2.0 * gamma_star * Cs;
         C = arg1 - arg2;
 
         /* intercellular CO2 concentration */
@@ -111,11 +111,9 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
             Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         }
 
-        f->anleaf = MIN(Ac, Aj) - rd;
-        f->gsc = MAX(g0, g0 + gs_over_a * f->anleaf);
+        *anleaf = MIN(Ac, Aj) - rd;
+        *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
     }
-
-
 
     return;
 }

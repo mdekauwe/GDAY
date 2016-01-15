@@ -1195,7 +1195,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation;
     long   offset;
     int    hod;
-    double gpp_gCm2_30_min;
+    double gpp_gCm2_30_min, anleaf, gsc;
     double SEC_2_30min = 1800.;
 
     if (s->lai > 0.0) {
@@ -1261,11 +1261,11 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
         /* Is the sun up? If so calculate photosynthesis */
         if (elevation > 0.0) {
 
-            canopy_wrapper(c, f, m, p, s, offset, ncontent);
+            canopy_wrapper(c, f, m, p, s, offset, ncontent, &anleaf, &gsc);
 
             /* umol m-2 s-1 -> gC m-2 30 min-1 */
-            gpp_gCm2_30_min += f->anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_30min;
-            /*printf("%lf\n", gpp_gCm2_30_min);*/
+            gpp_gCm2_30_min += anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_30min;
+            /*printf("%lf\n", anleaf);*/
 
 
 
@@ -1309,7 +1309,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
 
 
 void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
-                    long offset, double ncontent) {
+                    long offset, double ncontent, double *anleaf,
+                    double *gsc) {
     /*
         Solve Cs, Vpd etc - loop over 2 leaves.
     */
@@ -1325,8 +1326,8 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
     while (TRUE) {
 
         if (c->ps_pathway == C3) {
-            photosynthesis_C3(c, f, m, p, s, offset, ncontent, tleaf,
-                              Cs, dleaf);
+            photosynthesis_C3(c, m, p, s, offset, ncontent, tleaf,
+                              Cs, dleaf, gsc, anleaf);
         } else {
             /* Nothing implemented */
             fprintf(stderr, "C4 photosynthesis not implemented\n");
@@ -1334,8 +1335,8 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         }
 
         /* Calculate new Cs, dleaf, Tleaf */
-        solve_leaf_energy_balance(f, m, p, offset, tleaf, &Cs, &dleaf,
-                                  &new_tleaf, &et);
+        solve_leaf_energy_balance(f, m, p, offset, tleaf, gsc, anleaf, &Cs,
+                                  &dleaf, &new_tleaf, &et);
 
         if (iter >= itermax) {
             fprintf(stderr, "No convergence in canopy loop\n");
@@ -1358,8 +1359,9 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
 
 
 void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
-                               double tleaf, double *Cs, double *dleaf,
-                               double *new_tleaf, double *et) {
+                               double tleaf, double *gsc, double *anleaf,
+                               double *Cs, double *dleaf, double *new_tleaf,
+                               double *et) {
 
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
@@ -1397,7 +1399,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
 
     /* Total conductance for water vapour */
     gbv = GBVGBH * gbh;
-    gsv = GSVGSC * f->gsc;
+    gsv = GSVGSC * *gsc;
     gv = (gbv * gsv) / (gbv + gsv);
 
     gbc = gbh / GBHGBC;
@@ -1413,7 +1415,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
 
     /* calculate new TLEAF, DLEAF, RHLEAF & CS */
 
-    *Cs = Ca - f->anleaf / gbc;
+    *Cs = Ca - *anleaf / gbc;
     Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff / 4.;
     *dleaf = *et * press / gv;
