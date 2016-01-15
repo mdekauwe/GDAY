@@ -37,6 +37,6 @@
 #define DHEAT 21.5E-6          /* molecular diffusivity for heat */
 #define GBVGBH 1.075           /* Ratio of Gbw:Gbh */
 #define GSVGSC 1.57            /* Ratio of Gsw:Gsc */
-
+#define GBHGBC 1.32            /* Ratio of Gbh:Gbc */
 
 #endif /* CONSTANTS */

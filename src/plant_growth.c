@@ -1303,21 +1303,20 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
 void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
                        int project_day, double ncontent) {
     /*
-        Solve Ci, Vpd etc - loop over 2 leaves.
+        Solve Cs, Vpd etc - loop over 2 leaves.
     */
 
-    double Cs, tleaf, dleaf;
+    double Cs, dleaf, new_tleaf;
     int    iter = 0, itermax = 100;
 
     /* initialise values of leaf temp, surface CO2 and VPD */
-    tleaf = m->tair[project_day];
-    dleaf = m->vpd[project_day];
-    Cs = m->co2[project_day];
+    tleaf = m->tair[project_day];   /* Leaf temperature */
+    dleaf = m->vpd[project_day];    /* VPD at the leaf suface */
+    Cs = m->co2[project_day];       /* CO2 concentration at the leaf suface */
 
     while (TRUE) {
 
         if (c->ps_pathway == C3) {
-
             photosynthesis_C3(c, f, m, p, s, project_day, ncontent, tleaf,
                               Cs);
         } else {
@@ -1327,17 +1326,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         }
 
         /* Calculate new Tleaf, dleaf, Cs */
-        solve_leaf_energy_balance(f, m, p, tleaf);
-
-        f->gbc = f->gbH * GBH_2_GBC;
-        Cs = Ca - An / f->gbc; /* boundary layer of leaf */
-        if (et == 0.0 || gw == 0.0) {
-            dleaf = dair;
-        } else {
-            dleaf = (et * m->press[project_day] / f->gw) * self.pa_2_kpa; /* kPa */
-        }
-
-
+        solve_leaf_energy_balance(f, m, p, tleaf, &Cs, &dleaf, &new_tleaf);
 
         if (iter >= itermax) {
             frintf(stderr, "No convergence in canopy loop\n");
@@ -1351,13 +1340,11 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
 
         /* Update temperature & do another iteration */
         tleaf = new_tleaf;
-
         iter++;
     }
 
     /* convert gs to conductance to water */
     f->gsw = f->gsc * GSC_2_GSW;
-
 
     return;
 }

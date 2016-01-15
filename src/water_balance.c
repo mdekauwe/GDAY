@@ -1105,9 +1105,10 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 
 
 void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
-                               double tleaf) {
+                               double tleaf, double *Cs, double *dleaf,
+                               double *new_tleaf) {
 
-    double air_density;
+    double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
 
     /* unpack the met data and get the units right */
@@ -1115,6 +1116,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     double vpd_pa = m->vpd[project_day] * KPA_2_PA;
     double tair = m->tair[project_day];
     double wind = m->wind[project_day];
+    double Ca = m->co2[project_day];
 
     /* These 4 calculations do not depend on Tleaf, therefore
        they don't need to be in this function as they will get recalculated
@@ -1151,12 +1153,19 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     gv = (gbv * gsv) / (gbv + gsv);
 
     /* Penman-Monteith equation */
-    et = penman_leaf(press_pa, slope, lambda, Rnet, vpd_pa, gh, gv);
+    et = penman_leaf(press_pa, slope, lambda, Rnet, vpd_pa, gh, gv, &LE);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
     gamma = CPAIR * AIR_MASS * press_pa / lambda; /* psychrometric constant */
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
+
+    /* calculate new TLEAF, DLEAF, RHLEAF & CS */
+    gbc = gbh / GBHGBC;
+    *Cs = Ca - f->anleaf / gbc;
+    Tdiff = (rnet - LE) / (CPAIR * AIR_MASS * gh);
+    *new_tleaf = tair + Tdiff;
+    *dleaf = et * press_pa / gv;
 
     return;
 }
@@ -1189,15 +1198,15 @@ double penman_leaf(double press, double slope, double lambda, double rnet,
         et : float
             transpiration (mol H2O m-2 s-1)
     */
-    double et, gamma, latent_heat;
+    double et, gamma;
 
-    gamma = CPAIR * AIRMA * press / lambda;
+    gamma = CPAIR * AIR_MASS * press / lambda;
 
     if (gv > 0.0) {
         arg1 = slope * rnet + vpd * gh * CPAIR * AIR_MASS;
         arg2 = slope + gamma * gh / gv;
-        latent_heat = arg1 / arg2; /* W m-2 */
-        et = latent_heat / lambda; /* mol H20 m-2 s-1 */
+        *LE = arg1 / arg2; /* W m-2 */
+        et = LE / lambda; /* mol H20 m-2 s-1 */
     } else {
         et = 0.0;
     }
