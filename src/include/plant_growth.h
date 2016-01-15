@@ -14,6 +14,8 @@
 #include "optimal_root_model.h"
 
 /* C stuff */
+void   canopy_wrapper(control *, fluxes *, met *, params *, state *, int,
+                      double);
 void   calc_day_growth(control *, fluxes *, met *, params *, state *, int,
                         double, int, double, double);
 void   carbon_allocation(control *, fluxes *, params *, state *,

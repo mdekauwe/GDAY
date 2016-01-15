@@ -1106,10 +1106,12 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 
 void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
                                double tleaf, double *Cs, double *dleaf,
-                               double *new_tleaf) {
+                               double *new_tleaf, double *et) {
 
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
+    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
+    double gbc, gamma, epsilon, omega, Tdiff;
 
     /* unpack the met data and get the units right */
     double press_pa = m->press[project_day] * KPA_2_PA;
@@ -1117,6 +1119,8 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     double tair = m->tair[project_day];
     double wind = m->wind[project_day];
     double Ca = m->co2[project_day];
+
+    double rnet = -9999.9; /* fix this */
 
     /* These 4 calculations do not depend on Tleaf, therefore
        they don't need to be in this function as they will get recalculated
@@ -1129,10 +1133,10 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     /* Const s in Penman-Monteith equation  (Pa K-1) */
     arg1 = calc_sat_water_vapour_press(tair + 0.1);
     arg2 = calc_sat_water_vapour_press(tair);
-    slope = (arg1 - arg2) / 0.1
+    slope = (arg1 - arg2) / 0.1;
 
     /* Radiation conductance (mol m-2 s-1) */
-    gradn = calc_radiation_conductance(tair, RDFIPT, TUIPT, TDIPT);
+    gradn = calc_radiation_conductance(tair);
 
     /* Boundary layer conductance for heat - single sided, forced
        convection (mol m-2 s-1) */
@@ -1153,7 +1157,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     gv = (gbv * gsv) / (gbv + gsv);
 
     /* Penman-Monteith equation */
-    et = penman_leaf(press_pa, slope, lambda, Rnet, vpd_pa, gh, gv, &LE);
+    *et = penman_leaf(press_pa, slope, lambda, rnet, vpd_pa, gh, gv, &LE);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
     gamma = CPAIR * MASS_AIR * press_pa / lambda; /* psychrometric constant */
@@ -1165,13 +1169,13 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     *Cs = Ca - f->anleaf / gbc;
     Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff;
-    *dleaf = et * press_pa / gv;
+    *dleaf = *et * press_pa / gv;
 
     return;
 }
 
 double penman_leaf(double press, double slope, double lambda, double rnet,
-                   double vpd, double gh, double gv);
+                   double vpd, double gh, double gv, double *LE) {
     /*
         Calculates evapotranspiration by leaves using the Penman-Monteith
         equation.
@@ -1198,7 +1202,7 @@ double penman_leaf(double press, double slope, double lambda, double rnet,
         et : float
             transpiration (mol H2O m-2 s-1)
     */
-    double et, gamma;
+    double et, gamma, arg1, arg2;
 
     gamma = CPAIR * MASS_AIR * press / lambda;
 
@@ -1206,7 +1210,7 @@ double penman_leaf(double press, double slope, double lambda, double rnet,
         arg1 = slope * rnet + vpd * gh * CPAIR * MASS_AIR;
         arg2 = slope + gamma * gh / gv;
         *LE = arg1 / arg2; /* W m-2 */
-        et = LE / lambda; /* mol H20 m-2 s-1 */
+        et = *LE / lambda; /* mol H20 m-2 s-1 */
     } else {
         et = 0.0;
     }
@@ -1231,7 +1235,7 @@ double calc_radiation_conductance(double tair) {
     double Tk;
 
     Tk = tair + DEG_TO_KELVIN;
-    grad = 4.0 * SIGMA * (TK * Tk * Tk) * LEAF_EMISSIVITY / (CPAIR * MASS_AIR);
+    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CPAIR * MASS_AIR);
 
     return (grad);
 }
@@ -1243,7 +1247,6 @@ double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
         (mol m-2 s-1)
         See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
     */
-    double SIGMA = 5.6704E-08;      /* Stefan-Boltzmann constant, (w m-2 k-4)*/
     double cmolar, Tk, gbh;
 
     Tk = tair + DEG_TO_KELVIN;
@@ -1260,7 +1263,6 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
         (mol m-2 s-1)
         See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
     */
-    double SIGMA = 5.6704E-08;      /* Stefan-Boltzmann constant, (w m-2 k-4)*/
     double cmolar, Tk, gbh, grashof, leaf_width_cubed;
     double tolerance = 1E-08;
 
@@ -1268,9 +1270,9 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
     cmolar = press / (RGAS * Tk);
     leaf_width_cubed = leaf_width * leaf_width * leaf_width;
 
-    if (float_eq((tleaf - tair), 0.0) {
+    if (float_eq((tleaf - tair), 0.0)) {
         grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
-        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / WLEAF * CMOLAR
+        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
     } else {
         gbh = 0.0;
     }
@@ -1284,5 +1286,5 @@ double calc_sat_water_vapour_press(double tac) {
         temperature TAC (Celsius). From Jones 1992 p 110 (note error in
         a - wrong units)
     */
-    return (613.75 * exp(17.502 * tac / (240.97 + tac));
+    return (613.75 * exp(17.502 * tac / (240.97 + tac)));
 }

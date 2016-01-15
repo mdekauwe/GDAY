@@ -16,6 +16,7 @@
 *
 * =========================================================================== */
 #include "plant_growth.h"
+#include "water_balance.h"
 
 
 
@@ -1306,7 +1307,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         Solve Cs, Vpd etc - loop over 2 leaves.
     */
 
-    double Cs, dleaf, new_tleaf;
+    double Cs, dleaf, tleaf, new_tleaf, et;
     int    iter = 0, itermax = 100;
 
     /* initialise values of leaf temp, surface CO2 and VPD */
@@ -1326,10 +1327,11 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         }
 
         /* Calculate new Tleaf, dleaf, Cs */
-        solve_leaf_energy_balance(f, m, p, tleaf, &Cs, &dleaf, &new_tleaf);
+        solve_leaf_energy_balance(f, m, p, project_day, tleaf, &Cs, &dleaf,
+                                  &new_tleaf, &et);
 
         if (iter >= itermax) {
-            frintf(stderr, "No convergence in canopy loop\n");
+            fprintf(stderr, "No convergence in canopy loop\n");
             exit(EXIT_FAILURE);
         }
 
@@ -1344,7 +1346,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
     }
 
     /* convert gs to conductance to water */
-    f->gsw = f->gsc * GSC_2_GSW;
+    f->gsw = f->gsc * GSVGSC;
 
     return;
 }

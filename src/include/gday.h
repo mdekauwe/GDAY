@@ -370,7 +370,7 @@ typedef struct {
     int    hurricane_doy;
     int    hurricane_yr;
     double root_exu_CUE;
-    double leaf_width;   
+    double leaf_width;
 } params;
 
 typedef struct {
@@ -447,6 +447,7 @@ typedef struct {
     double ga_mol_m2_sec;
     double omega;
     double gsc;             /* gs conductance to CO2 */
+    double gsw;             /* gs conductance to H2O */
 
     /* daily C production */
     double cpleaf;
