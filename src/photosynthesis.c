@@ -35,6 +35,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
     double A, B, C, arg1, arg2, Cic, Cij, Ac, Aj;
     double Rd25 = 2.0; /* make a paramater! */
+    int    qudratic_error = FALSE;
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
@@ -44,15 +45,15 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     */
     gamma_star = calc_co2_compensation_point(p, tleaf); /*  (umol mol-1) */
     km = calculate_michaelis_menten(p, tleaf);          /*  (umol mol-1) */
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &jmax);/*  (umol mol-1) */
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);/* (umol mol-1) */
     rd = calc_leaf_day_respiration(tleaf, Rd25);        /*  (umol mol-1) */
 
     /* actual rate of electron transport, a function of absorbed PAR */
     J = quad(p->theta, -(p->alpha_j * m->par[project_day] + jmax),
-             p->alpha_j * m->par[project_day] * jmax, FALSE);
+             p->alpha_j * m->par[project_day] * jmax, FALSE, &qudratic_error);
     /* ! RuBP-regen rate (umol m-2 s-1) */
     Vj = J / 4.0;
-
+    printf("%lf\n", gamma_star);
     /* Deal with extreme cases */
     if (jmax < 0.0 || vcmax <= 0.0) {
         f->anleaf = -rd;
@@ -78,9 +79,10 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         C = arg1 * arg2;
 
         /* intercellular CO2 concentration */
-        Cic = quad(A, B, C, TRUE);
+        qudratic_error = FALSE;
+        Cic = quad(A, B, C, TRUE, &qudratic_error);
 
-        if (Cic <= 0.0 || Cic > Cs) {
+        if (qudratic_error || Cic <= 0.0 || Cic > Cs) {
             Ac = 0.0;
         } else {
             Ac = vcmax * (Cic - gamma_star) / (Cic + km);
@@ -98,7 +100,8 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         C = arg1 - arg2;
 
         /* intercellular CO2 concentration */
-        Cij = quad(A, B, C, TRUE);
+        qudratic_error = FALSE;
+        Cij = quad(A, B, C, TRUE, &qudratic_error);
 
         Aj = Vj * (Cij - gamma_star) / (Cij + 2.0 * gamma_star);
         /* Below light compensation point? */
@@ -355,7 +358,7 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tr,
 }
 
 
-double quad(double a, double b, double c, int large) {
+double quad(double a, double b, double c, int large, int *error) {
     /* quadratic solution
 
     Parameters:
@@ -377,9 +380,9 @@ double quad(double a, double b, double c, int large) {
     /* discriminant */
     d = (b * b) - 4.0 * a * c;
     if (d < 0.0) {
-        fprintf(stderr, "imaginary root found\n");
-        exit(EXIT_FAILURE);
-
+        /*fprintf(stderr, "imaginary root found\n");
+        exit(EXIT_FAILURE);*/
+        *error = TRUE;
     }
 
     if (large) {
@@ -388,8 +391,9 @@ double quad(double a, double b, double c, int large) {
         } else if (a == 0.0 && b == 0.0) {
             root = 0.0;
             if (c != 0.0) {
-                fprintf(stderr, "Can't solve quadratic\n");
-                exit(EXIT_FAILURE);
+                /*fprintf(stderr, "Can't solve quadratic\n");
+                exit(EXIT_FAILURE);*/
+                *error = TRUE;
             }
         } else {
             root = (-b + sqrt(d)) / (2.0 * a);
@@ -401,8 +405,9 @@ double quad(double a, double b, double c, int large) {
         } else if (a == 0.0 && b == 0.0) {
             root = 0.0;
             if (c != 0.0) {
-                fprintf(stderr, "Can't solve quadratic\n");
-                exit(EXIT_FAILURE);
+                /*fprintf(stderr, "Can't solve quadratic\n");
+                exit(EXIT_FAILURE);*/
+                *error = TRUE;
             }
         } else {
             root = (-b - sqrt(d)) / (2.0 * a);
