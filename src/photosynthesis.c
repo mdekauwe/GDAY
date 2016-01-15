@@ -36,6 +36,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     double A, B, C, arg1, arg2, Cic, Cij, Ac, Aj;
     double Rd25 = 2.0; /* make a paramater! */
     int    qudratic_error = FALSE;
+    double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
@@ -57,7 +58,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     /* Deal with extreme cases */
     if (jmax < 0.0 || vcmax <= 0.0) {
         f->anleaf = -rd;
-        f->gsc = 1E-09;
+        f->gsc = g0_zero;
     } else {
         /* Hardwiring this for Medlyn gs model for the moment, till I figure
         out the best structure
@@ -65,7 +66,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         1.6 (from corrigendum to Medlyn et al 2011) is missing here,
         because we are calculating conductance to CO2! */
         gs_over_a = (1.0 + p->g1 / sqrt(dleaf)) / Cs;
-        g0 = 1E-09; /* numerical issues, don't use zero */
+        g0 = g0_zero; /* numerical issues, don't use zero */
 
         /* Solution when Rubisco activity is limiting */
         A = g0 + gs_over_a * (vcmax - rd);
