@@ -1156,14 +1156,14 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     et = penman_leaf(press_pa, slope, lambda, Rnet, vpd_pa, gh, gv, &LE);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
-    gamma = CPAIR * AIR_MASS * press_pa / lambda; /* psychrometric constant */
+    gamma = CPAIR * MASS_AIR * press_pa / lambda; /* psychrometric constant */
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
     /* calculate new TLEAF, DLEAF, RHLEAF & CS */
     gbc = gbh / GBHGBC;
     *Cs = Ca - f->anleaf / gbc;
-    Tdiff = (rnet - LE) / (CPAIR * AIR_MASS * gh);
+    Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff;
     *dleaf = et * press_pa / gv;
 
@@ -1200,10 +1200,10 @@ double penman_leaf(double press, double slope, double lambda, double rnet,
     */
     double et, gamma;
 
-    gamma = CPAIR * AIR_MASS * press / lambda;
+    gamma = CPAIR * MASS_AIR * press / lambda;
 
     if (gv > 0.0) {
-        arg1 = slope * rnet + vpd * gh * CPAIR * AIR_MASS;
+        arg1 = slope * rnet + vpd * gh * CPAIR * MASS_AIR;
         arg2 = slope + gamma * gh / gv;
         *LE = arg1 / arg2; /* W m-2 */
         et = LE / lambda; /* mol H20 m-2 s-1 */
@@ -1216,18 +1216,22 @@ double penman_leaf(double press, double slope, double lambda, double rnet,
 
 double calc_radiation_conductance(double tair) {
     /*  Returns the 'radiation conductance' at given temperature.
-        Formula from Ying-Ping's version of Maestro.
-        See also Jones (1992) p. 108.
+
+        Units: mol m-2 s-1
+
+        References:
+        -----------
+        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
+          1998, Table 1,
+        * See also Jones (1992) p. 108.
+        * And documented in Medlyn 2007, equation A3, although I think there
+          is a mistake. It should be Tk**3 not Tk**4, see W & L.
     */
-    double SIGMA = 5.6704E-08;      /* Stefan-Boltzmann constant, (w m-2 k-4)*/
     double grad;
     double Tk;
 
     Tk = tair + DEG_TO_KELVIN;
-    arg1 = 4.0 * SIGMA * (TK * Tk * Tk);
-    arg2 = RDFIPT / TDIPT * EMLEAF * (TDIPT + TUIPT);
-    arg3 = CPAIR * AIR_MASS;
-    grad = arg1 * arg2 / arg3;
+    grad = 4.0 * SIGMA * (TK * Tk * Tk) * LEAF_EMISSIVITY / (CPAIR * MASS_AIR);
 
     return (grad);
 }
