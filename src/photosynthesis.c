@@ -42,8 +42,6 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     /*
     ** Calculate photosynthetic parameters from leaf temperature.
     */
-
-
     gamma_star = calc_co2_compensation_point(p, tleaf); /*  (umol mol-1) */
     km = calculate_michaelis_menten(p, tleaf);          /*  (umol mol-1) */
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &jmax);/*  (umol mol-1) */
@@ -82,10 +80,11 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         /* intercellular CO2 concentration */
         Cic = quad(A, B, C, TRUE);
 
-        if (Cic <= 0.0 || Cic > Cs)
+        if (Cic <= 0.0 || Cic > Cs) {
             Ac = 0.0;
-        else
+        } else {
             Ac = vcmax * (Cic - gamma_star) / (Cic + km);
+        }
 
         /* Solution when electron transport rate is limiting */
         A = g0 + gs_over_a * (Vj - rd);
@@ -110,6 +109,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
         f->anleaf = MIN(Ac, Aj) - rd;
         f->gsc = MAX(g0, g0 + gs_over_a * f->anleaf);
+    }
 
     return;
 }
@@ -197,9 +197,9 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     double jmax25, vcmax25;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
+    double tref = p->measurement_temp;
     *vcmax = 0.0;
     *jmax = 0.0;
-    double tref = p->measurement_temp;
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
@@ -226,15 +226,15 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     *vcmax *= s->wtfac_root;
 
     /* Jmax/Vcmax forced linearly to zero at low T */
-    if (tleaf < lower_bound)
+    if (tleaf < lower_bound) {
         *jmax = 0.0;
         *vcmax = 0.0;
-    else if (tleaf < upper_bound)
+    } else if (tleaf < upper_bound) {
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
+    }
 
     return;
-
 }
 
 double calc_leaf_day_respiration(double tleaf, double Rd25) {
@@ -275,11 +275,11 @@ double calc_leaf_day_respiration(double tleaf, double Rd25) {
     if (tleaf >= tbelow)
         Rd = Rd25 * exp(q10f * (tleaf - rtemp)) * day_resp;
     else
-        Rd = 0.0
+        Rd = 0.0;
 
     return (Rd);
 }
-double arrhenius(double k25, double Ea, double T, double Tref) {
+double arrhenius(double k25, double Ea, double T, double Tr) {
     /*
         Temperature dependence of kinetic parameters is described by an
         Arrhenius function
@@ -307,7 +307,7 @@ double arrhenius(double k25, double Ea, double T, double Tref) {
     double Tk = T + DEG_TO_KELVIN;
     double Trk = Tr + DEG_TO_KELVIN;
 
-    return (k25 * exp(Ea * (T - Tr) / (RGAS * Tk * TrK)));
+    return (k25 * exp(Ea * (T - Tr) / (RGAS * Tk * Trk)));
 
 }
 
@@ -347,7 +347,7 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tr,
     double Tk = T + DEG_TO_KELVIN;
     double Trk = Tr + DEG_TO_KELVIN;
 
-    arg1 = arrhenius(k25, Ea, tleaf, tref);
+    arg1 = arrhenius(k25, Ea, T, Tr);
     arg2 = 1.0 + exp((deltaS * Trk - Hd) / (RGAS * Trk));
     arg3 = 1.0 + exp((deltaS * Tk - Hd) / (RGAS * Tk));
 
@@ -382,7 +382,7 @@ double quad(double a, double b, double c, int large) {
 
     }
 
-    if large {
+    if (large) {
         if (a == 0.0 && b > 0.0) {
             root = -c / b;
         } else if (a == 0.0 && b == 0.0) {
@@ -399,13 +399,13 @@ double quad(double a, double b, double c, int large) {
         if (a == 0.0 && b > 0.0) {
             root = -c / b;
         } else if (a == 0.0 && b == 0.0) {
-            root == 0.0;
+            root = 0.0;
             if (c != 0.0) {
                 fprintf(stderr, "Can't solve quadratic\n");
                 exit(EXIT_FAILURE);
             }
         } else {
-            root = (-b - np.sqrt(d)) / (2.0 * a);
+            root = (-b - sqrt(d)) / (2.0 * a);
         }
 
     }
