@@ -1363,7 +1363,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
 
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
-    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbw, gsw, gw;
+    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
     double gbc, gamma, epsilon, omega, Tdiff;
 
     /* unpack the met data and get the units right */
@@ -1396,9 +1396,11 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
     gh = 2.0 * (gbh + gradn);
 
     /* Total conductance for water vapour */
-    gbw = GBVGBH * gbh;
-    gsw = GSVGSC * f->gsc;
-    gw = (gbw * gsw) / (gbw + gsw);
+    gbv = GBVGBH * gbh;
+    gsv = GSVGSC * f->gsc;
+    gv = (gbv * gsv) / (gbv + gsv);
+
+    gbc = gbh / GBHGBC;
 
     /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
     ea = calc_sat_water_vapour_press(tair) - vpd;
@@ -1407,13 +1409,16 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
     rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
 
     /* Penman-Monteith equation */
-    *et = penman_leaf(press, rnet, vpd, tair, gh, gw, gbw, gsw, &LE);
+    *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
 
-    /* calculate new Cs, dleaf, Tleaf */
+    /* calculate new TLEAF, DLEAF, RHLEAF & CS */
+
     *Cs = Ca - f->anleaf / gbc;
     Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff / 4.;
-    *dleaf = *et * press / gw;
+    *dleaf = *et * press / gv;
+
+
 
     return;
 }

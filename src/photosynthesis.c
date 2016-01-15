@@ -206,6 +206,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     *vcmax = 0.0;
     *jmax = 0.0;
 
+
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
@@ -215,10 +216,10 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
     } else if (c->modeljm == 2) {
-        jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
-        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+        jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
+        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 3) {
         jmax25 = p->jmax;
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);

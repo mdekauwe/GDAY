@@ -1107,7 +1107,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 
 
 double penman_leaf(double press, double rnet, double vpd, double tair,
-                   double gh, double gw, double gbw, double gsw, double *LE) {
+                   double gh, double gv, double gbv, double gsv, double *LE) {
     /*
         Calculates evapotranspiration by leaves using the Penman-Monteith
         equation.
@@ -1127,7 +1127,7 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
         gh : float
             boundary layer conductance to heat (free & forced & radiative
             components), mol m-2 s-1.
-        gw : float
+        gv : float
             conductance to water vapour (stomatal & bdry layer components),
             mol m-2 s-1
 
@@ -1149,9 +1149,9 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
     arg2 = calc_sat_water_vapour_press(tair);
     slope = (arg1 - arg2) / 0.1;
 
-    if (gw > 0.0) {
+    if (gv > 0.0) {
         arg1 = slope * rnet + vpd * gh * CPAIR * MASS_AIR;
-        arg2 = slope + gamma * gh / gw;
+        arg2 = slope + gamma * gh / gv;
         *LE = arg1 / arg2; /* W m-2 */
         et = *LE / lambda; /* mol H20 m-2 s-1 */
     } else {
@@ -1160,7 +1160,7 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
     epsilon = slope / gamma;
-    omega = (1.0 + epsilon) / (1.0 + epsilon + gbw / gsw);
+    omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
     return (et);
 }
