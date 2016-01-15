@@ -17,10 +17,408 @@
 
 
 void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
-                            int project_day, double daylen, double ncontent) {
+                       int project_day, double ncontent, double tleaf,
+                       double Cs) {
+    /*
+        Calculate photosynthesis following Farquhar & von Caemmerer, this is an
+        implementation of the routinue in MAESTRA (ECOCRAFT-agreed formulation).
+
+        References:
+        -----------
+        * GD Farquhar, S Von Caemmerer (1982) Modelling of photosynthetic
+          response to environmental conditions. Encyclopedia of plant
+          physiology 12, 549-587.
+        * Medlyn, B. E. et al (2011) Global Change Biology, 17, 2134-2144.
+        * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
+    */
+
+    double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
+    double A, B, C, arg1, arg2, Cic, Cij, Ac, Aj;
+    double Rd25 = 2.0; /* make a paramater! */
+
+    /* Calculate mate params & account for temperature dependencies */
+    N0 = calculate_top_of_canopy_n(p, s, ncontent);
+
+    /*
+    ** Calculate photosynthetic parameters from leaf temperature.
+    */
+
+
+    gamma_star = calc_co2_compensation_point(p, tleaf); /*  (umol mol-1) */
+    km = calculate_michaelis_menten(p, tleaf);          /*  (umol mol-1) */
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &jmax);/*  (umol mol-1) */
+    rd = calc_leaf_day_respiration(tleaf, Rd25);        /*  (umol mol-1) */
+
+    /* actual rate of electron transport, a function of absorbed PAR */
+    J = quad(p->theta, -(p->alpha_j * m->par[project_day] + jmax),
+             p->alpha_j * m->par[project_day] * jmax, FALSE);
+    /* ! RuBP-regen rate (umol m-2 s-1) */
+    Vj = J / 4.0;
+
+    /* Deal with extreme cases */
+    if (jmax < 0.0 || vcmax <= 0.0) {
+        f->anleaf = -rd;
+        f->gsc = 1E-09;
+    } else {
+        /* Hardwiring this for Medlyn gs model for the moment, till I figure
+        out the best structure
+
+        1.6 (from corrigendum to Medlyn et al 2011) is missing here,
+        because we are calculating conductance to CO2! */
+        gs_over_a = (1.0 + p->g1 / sqrt(m->vpd[project_day])) / Cs;
+        g0 = 1E-09; /* numerical issues, don't use zero */
+
+        /* Solution when Rubisco activity is limiting */
+        A = g0 + gs_over_a * (vcmax - rd);
+
+        arg1 = (1.0 - Cs * gs_over_a) * (vcmax - rd) + g0;
+        arg2 = (km - Cs) - gs_over_a * (vcmax * gamma_star + km * rd);
+        B = arg1 * arg2;
+
+        arg1 = -(1.0 - Cs * gs_over_a);
+        arg2 = (vcmax * gamma_star + km * rd) - (g0 * km * Cs);
+        C = arg1 * arg2;
+
+        /* intercellular CO2 concentration */
+        Cic = quad(A, B, C, TRUE);
+
+        if (Cic <= 0.0 || Cic > Cs)
+            Ac = 0.0;
+        else
+            Ac = vcmax * (Cic - gamma_star) / (Cic + km);
+
+        /* Solution when electron transport rate is limiting */
+        A = g0 + gs_over_a * (Vj - rd);
+
+        arg1 = (1. - Cs * gs_over_a) * (Vj - rd) + g0 * (2. * gamma_star - Cs);
+        arg2 = gs_over_a * (Vj * gamma_star + 2.* gamma_star * rd);
+        B = arg1 - arg2;
+
+        arg1 = -(1.0 - Cs * gs_over_a) * gamma_star * (Vj + 2.0 * rd);
+        arg2 = g0 * 2. * gamma_star * Cs;
+        C = arg1 - arg2;
+
+        /* intercellular CO2 concentration */
+        Cij = quad(A, B, C, TRUE);
+
+        Aj = Vj * (Cij - gamma_star) / (Cij + 2.0 * gamma_star);
+        /* Below light compensation point? */
+        if (Aj - rd < 1E-6) {
+            Cij = Cs;
+            Aj = Vj * (Cij - gamma_star) / (Cij + 2.0 * gamma_star);
+        }
+
+        f->anleaf = MIN(Ac, Aj) - rd;
+        f->gsc = MAX(g0, g0 + gs_over_a * f->anleaf);
 
     return;
 }
+
+double calc_co2_compensation_point(params *p, double tleaf) {
+    /*
+        CO2 compensation point in the absence of non-photorespiratory
+        respiration.
+
+        Parameters:
+        ----------
+        tleaf : float
+            leaf temperature (deg C)
+
+        Returns:
+        -------
+        gamma_star : float
+            CO2 compensation point in the abscence of mitochondrial respiration
+            (umol mol-1)
+
+        References:
+        -----------
+        * Bernacchi et al 2001 PCE 24: 253-260
+    */
+    return (arrhenius(p->gamstar25, p->eag, tleaf, p->measurement_temp));
+}
+
+
+
+double calculate_michaelis_menten(params *p, double tleaf) {
+    /*
+        Effective Michaelis-Menten coefficent of Rubisco activity
+
+        Parameters:
+        ----------
+        tleaf : float
+            leaf temperature (deg C)
+
+        Returns:
+        -------
+        Km : float
+            Effective Michaelis-Menten constant for Rubisco catalytic activity
+            (umol mol-1)
+
+        References:
+        -----------
+        Rubisco kinetic parameter values are from:
+        * Bernacchi et al. (2001) PCE, 24, 253-259.
+        * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
+
+    */
+    double Kc, Ko;
+
+    /* Michaelis-Menten coefficents for carboxylation by Rubisco */
+    Kc = arrhenius(p->kc25, p->eac, tleaf, p->measurement_temp);
+
+    /* Michaelis-Menten coefficents for oxygenation by Rubisco */
+    Ko = arrhenius(p->ko25, p->eao, tleaf, p->measurement_temp);
+
+    /* return effective Michaelis-Menten coefficient for CO2 */
+    return (Kc * (1.0 + p->oi / Ko));
+
+}
+
+void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
+                            double N0, double *jmax, double *vcmax) {
+    /*
+        Calculate the potential electron transport rate (Jmax) and the
+        maximum Rubisco activity (Vcmax) at the leaf temperature.
+
+        For Jmax -> peaked arrhenius is well behaved for tleaf < 0.0
+
+        Parameters:
+        ----------
+        tleaf : float
+            air temperature (deg C)
+        N0 : float
+            leaf N
+        jmax : float
+            the potential electron transport rate at the leaf temperature
+            (umol m-2 s-1)
+        vcmax : float
+            the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
+    */
+    double jmax25, vcmax25;
+    double lower_bound = 0.0;
+    double upper_bound = 10.0;
+    *vcmax = 0.0;
+    *jmax = 0.0;
+    double tref = p->measurement_temp;
+
+    if (c->modeljm == 0) {
+        *jmax = p->jmax;
+        *vcmax = p->vcmax;
+    } else if (c->modeljm == 1) {
+        jmax25 = p->jmaxna * N0 + p->jmaxnb;
+        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    } else if (c->modeljm == 2) {
+        jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
+        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    } else if (c->modeljm == 3) {
+        jmax25 = p->jmax;
+        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+        vcmax25 = p->vcmax;
+        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    }
+
+    /* reduce photosynthetic capacity with moisture stress */
+    *jmax *= s->wtfac_root;
+    *vcmax *= s->wtfac_root;
+
+    /* Jmax/Vcmax forced linearly to zero at low T */
+    if (tleaf < lower_bound)
+        *jmax = 0.0;
+        *vcmax = 0.0;
+    else if (tleaf < upper_bound)
+        *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
+        *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
+
+    return;
+
+}
+
+double calc_leaf_day_respiration(double tleaf, double Rd25) {
+    /* Calculate leaf respiration in the light using a Q10 (exponential)
+    formulation
+
+    Parameters:
+    ----------
+    Rd25 : float
+        Estimate of respiration rate at the reference temperature 25 deg C
+        or or 298 K
+    Tleaf : float
+        leaf temperature
+
+    Returns:
+    -------
+    Rd : float
+        leaf respiration in the light
+
+    */
+    double Rd;
+    /* tbelow is the minimum temperature at which respiration occurs;
+       below this, Rd(T) is set to zero. */
+    double tbelow = -100.0;
+
+    /* day_resp determines the respiration in the light, relative to
+       respiration in the dark. For example, if DAYRESP = 0.7, respiration
+       in the light is 30% lower than in the dark. */
+    double day_resp = 1.0;  /* no effect of light */
+
+    /* Rd at zero degrees */
+    double rtemp = 25.0;
+
+    /* exponential coefficient of the temperature response of foliage
+       respiration */
+    double q10f = 0.067;
+
+    if (tleaf >= tbelow)
+        Rd = Rd25 * exp(q10f * (tleaf - rtemp)) * day_resp;
+    else
+        Rd = 0.0
+
+    return (Rd);
+}
+double arrhenius(double k25, double Ea, double T, double Tref) {
+    /*
+        Temperature dependence of kinetic parameters is described by an
+        Arrhenius function
+
+        Parameters:
+        ----------
+        k25 : float
+            rate parameter value at 25 degC
+        Ea : float
+            activation energy for the parameter [J mol-1]
+        T : float
+            temperature [deg C]
+        Tref : float
+            measurement temperature [deg C]
+
+        Returns:
+        -------
+        kt : float
+            temperature dependence on parameter
+
+        References:
+        -----------
+        * Medlyn et al. 2002, PCE, 25, 1167-1179.
+    */
+    double Tk = T + DEG_TO_KELVIN;
+    double Trk = Tr + DEG_TO_KELVIN;
+
+    return (k25 * exp(Ea * (T - Tr) / (RGAS * Tk * TrK)));
+
+}
+
+
+double peaked_arrhenius(double k25, double Ea, double T, double Tr,
+                        double deltaS, double Hd) {
+    /*
+        Temperature dependancy approximated by peaked Arrhenius eqn,
+        accounting for the rate of inhibition at higher temperatures.
+
+        Parameters:
+        ----------
+        k25 : float
+            rate parameter value at 25 degC
+        Ea : float
+            activation energy for the parameter [J mol-1]
+        T : float
+            temperature [deg C]
+        Tref : float
+            measurement temperature [deg C]
+        deltaS : float
+            entropy factor [J mol-1 K-1)
+        Hd : float
+            describes rate of decrease about the optimum temp [J mol-1]
+
+        Returns:
+        -------
+        kt : float
+            temperature dependence on parameter
+
+        References:
+        -----------
+        * Medlyn et al. 2002, PCE, 25, 1167-1179.
+
+    */
+    double arg1, arg2, arg3;
+    double Tk = T + DEG_TO_KELVIN;
+    double Trk = Tr + DEG_TO_KELVIN;
+
+    arg1 = arrhenius(k25, Ea, tleaf, tref);
+    arg2 = 1.0 + exp((deltaS * Trk - Hd) / (RGAS * Trk));
+    arg3 = 1.0 + exp((deltaS * Tk - Hd) / (RGAS * Tk));
+
+    return (arg1 * arg2 / arg3);
+}
+
+
+double quad(double a, double b, double c, int large) {
+    /* quadratic solution
+
+    Parameters:
+    ----------
+    a : float
+        co-efficient
+    b : float
+        co-efficient
+    c : float
+        co-efficient
+
+    Returns:
+    -------
+    root : float
+
+    */
+    double d, root;
+
+    /* discriminant */
+    d = (b * b) - 4.0 * a * c;
+    if (d < 0.0) {
+        fprintf(stderr, "imaginary root found\n");
+        exit(EXIT_FAILURE);
+
+    }
+
+    if large {
+        if (a == 0.0 && b > 0.0) {
+            root = -c / b;
+        } else if (a == 0.0 && b == 0.0) {
+            root = 0.0;
+            if (c != 0.0) {
+                fprintf(stderr, "Can't solve quadratic\n");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            root = (-b + sqrt(d)) / (2.0 * a);
+        }
+
+    } else {
+        if (a == 0.0 && b > 0.0) {
+            root = -c / b;
+        } else if (a == 0.0 && b == 0.0) {
+            root == 0.0;
+            if (c != 0.0) {
+                fprintf(stderr, "Can't solve quadratic\n");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            root = (-b - np.sqrt(d)) / (2.0 * a);
+        }
+
+    }
+
+    return (root);
+}
+
+
+
+
+
+
+
 
 void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
                             int project_day, double daylen, double ncontent) {

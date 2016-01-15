@@ -422,6 +422,7 @@ typedef struct {
     double hetero_resp;
     double retrans;
     double apar;
+    double anleaf;          /* net leaf photosynthesis */
 
     /* n */
     double nuptake;
@@ -444,6 +445,7 @@ typedef struct {
     double gs_mol_m2_sec;
     double ga_mol_m2_sec;
     double omega;
+    double gsc;             /* gs conductance to CO2 */
 
     /* daily C production */
     double cpleaf;

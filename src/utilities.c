@@ -214,7 +214,6 @@ double spitters(int doy, double zenith_angle, double par) {
 
 }
 
-
 double calculate_zenith_angle(params *p, double doy, double hod) {
 
     /*

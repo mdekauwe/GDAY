@@ -1191,7 +1191,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     -----------
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
-    double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation;
+    double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation, Cs;
+    double tleaf;
     long   offset;
     int    hod;
 
@@ -1252,16 +1253,16 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
                                         m->par[offset]);
 
         printf("%lf\n", diffuse_frac);
-        
+
         /* Is the sun up? If so calculate photosynthesis */
         if (elevation > 0.0) {
 
 
-            /*fprintf(stderr, "Sub-daily not implemented yet\n");
-            exit(EXIT_FAILURE); */
+            /* NEED 2-leaf loop */
 
             if (c->ps_pathway == C3) {
-                photosynthesis_C3(c, f, m, p, s, project_day, daylen, ncontent);
+                photosynthesis_C3(c, f, m, p, s, project_day, ncontent, tleaf,
+                                  Cs);
             } else {
                 /* Nothing implemented */
                 fprintf(stderr, "C4 photosynthesis not implemented\n");

@@ -7,10 +7,24 @@
 
 /* C3 */
 void   photosynthesis_C3(control *, fluxes *, met *, params *,
-                              state *, int, double, double);
+                        state *, int, double, double, double);
+double calc_co2_compensation_point(params *, double);
+double calculate_michaelis_menten(params *, double);
+void   calculate_jmaxt_vcmaxt(control *, params *, state *, double,
+                              double, double *, double *);
+double arrhenius(double, double, double, double);
+double peaked_arrhenius(double, double, double, double, double, double);
+double calc_leaf_day_respiration(double, double);
+double quad(double, double, double, int);
+
+
+
+
+
+
 void   mate_C3_photosynthesis(control *, fluxes *, met *, params *,
                               state *, int, double, double);
-                              
+
 double  calculate_top_of_canopy_n(params *, state *, double);
 void    get_met_stuff(met *, int, double *, double *, double *, double *,
                      double *, double *);

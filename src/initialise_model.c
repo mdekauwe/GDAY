@@ -94,10 +94,10 @@ void initialise_params(params *p) {
     p->displace_ratio = 0.78;
     p->disturbance_doy = 1.0;
     p->dz0v_dh = 0.075;
-    p->eac = 79430.0;
+    p->eac = 79430.0;   /* Temp. response of Kc (J mol-1) */
     p->eag = 37830.0;
     p->eaj = 43790.0;
-    p->eao = 36380.0;
+    p->eao = 36380.0;   /* Temp. response of Ko (J mol-1) */
     p->eav = 51560.0;
     p->edj = 200000.0;
     p->faecescn = 25.0;
@@ -124,7 +124,7 @@ void initialise_params(params *p) {
     p->jmaxnb = 0.0;
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
-    p->kc25 = 404.9;
+    p->kc25 = 404.9;    /* MM coefft of Rubisco for CO2 (umol mol-1) */
     p->kdec1 = 3.965571;
     p->kdec2 = 14.61;
     p->kdec3 = 4.904786;
@@ -134,7 +134,7 @@ void initialise_params(params *p) {
     p->kdec7 = 0.006783;
     p->kext = 0.5;
     p->knl = 0.01;
-    p->ko25 = 278400.0;
+    p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;
     p->kr = 0.5;
     p->lai_closed = 0.5;
@@ -168,7 +168,7 @@ void initialise_params(params *p) {
     p->ntheta_root = 3.0;
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
-    p->oi = 205000.0;
+    p->oi = 205000.0;       /* oxygen partial pressure (umol mol-1) */
     p->passivesoilnz = 1.0;
     p->passivesoilz = 1.0;
     p->passncmax = 0.142857;
