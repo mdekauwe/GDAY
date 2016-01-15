@@ -65,7 +65,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
         1.6 (from corrigendum to Medlyn et al 2011) is missing here,
         because we are calculating conductance to CO2! */
-        gs_over_a = (1.0 + p->g1 / sqrt(dleaf)) / Cs;
+        gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf)) / Cs;
         g0 = g0_zero; /* numerical issues, don't use zero */
 
         /* Solution when Rubisco activity is limiting */
@@ -114,6 +114,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         f->anleaf = MIN(Ac, Aj) - rd;
         f->gsc = MAX(g0, g0 + gs_over_a * f->anleaf);
     }
+
 
 
     return;
