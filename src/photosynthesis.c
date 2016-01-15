@@ -17,7 +17,7 @@
 
 
 void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
-                       int project_day, double ncontent, double tleaf,
+                       long offset, double ncontent, double tleaf,
                        double Cs, double dleaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
@@ -49,8 +49,8 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     rd = calc_leaf_day_respiration(tleaf, Rd25);        /*  (umol mol-1) */
 
     /* actual rate of electron transport, a function of absorbed PAR */
-    J = quad(p->theta, -(p->alpha_j * m->par[project_day] + jmax),
-             p->alpha_j * m->par[project_day] * jmax, FALSE, &qudratic_error);
+    J = quad(p->theta, -(p->alpha_j * m->par[offset] + jmax),
+             p->alpha_j * m->par[offset] * jmax, FALSE, &qudratic_error);
     /* ! RuBP-regen rate (umol m-2 s-1) */
     Vj = J / 4.0;
 
@@ -113,7 +113,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         f->anleaf = MIN(Ac, Aj) - rd;
         f->gsc = MAX(g0, g0 + gs_over_a * f->anleaf);
     }
-    
+
 
     return;
 }

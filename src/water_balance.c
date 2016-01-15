@@ -1104,7 +1104,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 }
 
 
-void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
+void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
                                double tleaf, double *Cs, double *dleaf,
                                double *new_tleaf, double *et) {
 
@@ -1114,25 +1114,28 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     double gbc, gamma, epsilon, omega, Tdiff;
 
     /* unpack the met data and get the units right */
-    double press = m->press[project_day] * KPA_2_PA;
-    double vpd = m->vpd[project_day] * KPA_2_PA;
-    double par = m->par[project_day];
-    double tair = m->tair[project_day];
-    double wind = m->wind[project_day];
-    double Ca = m->co2[project_day];
+    double press = m->press[offset] * KPA_2_PA;
+    double vpd = m->vpd[offset] * KPA_2_PA;
+    double par = m->par[offset];
+    double tair = m->tair[offset];
+    double wind = m->wind[offset];
+    double Ca = m->co2[offset];
 
     double rnet, ea, ema, Tk, sw_rad;
     double leaf_abs = 0.86; /*Leaf absorptance of solar radiation (0-1) */
 
     Tk = tair + DEG_TO_KELVIN;
 
-    /* These 4 calculations do not depend on Tleaf, therefore
+    /* These 5 calculations do not depend on Tleaf, therefore
        they don't need to be in this function as they will get recalculated
        withing the "iter" loop. Nevertheless, it is probably neater
        this way and likely wouldn't save any time anyway */
 
     /* Latent heat of water vapour at air temperature (J mol-1) */
     lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
+
+    /* psychrometric constant */
+    gamma = CPAIR * MASS_AIR * press / lambda;
 
     /* Const s in Penman-Monteith equation  (Pa K-1) */
     arg1 = calc_sat_water_vapour_press(tair + 0.1);
@@ -1167,10 +1170,10 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
 
     /* Penman-Monteith equation */
-    *et = penman_leaf(press, slope, lambda, rnet, vpd, gh, gv, &LE);
+    *et = penman_leaf(gamma, press, slope, lambda, rnet, vpd, gh, gv, &LE);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
-    gamma = CPAIR * MASS_AIR * press / lambda; /* psychrometric constant */
+
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
@@ -1184,14 +1187,16 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     return;
 }
 
-double penman_leaf(double press, double slope, double lambda, double rnet,
-                   double vpd, double gh, double gv, double *LE) {
+double penman_leaf(double gamma, double press, double slope, double lambda,
+                   double rnet, double vpd, double gh, double gv, double *LE) {
     /*
         Calculates evapotranspiration by leaves using the Penman-Monteith
         equation.
 
         Parameters:
         ----------
+        gamma : float
+            psychrometric constant
         press : float
             atmospheric pressure (Pa)
         lambda : float
@@ -1212,9 +1217,7 @@ double penman_leaf(double press, double slope, double lambda, double rnet,
         et : float
             transpiration (mol H2O m-2 s-1)
     */
-    double et, gamma, arg1, arg2;
-
-    gamma = CPAIR * MASS_AIR * press / lambda;
+    double et, arg1, arg2;
 
     if (gv > 0.0) {
         arg1 = slope * rnet + vpd * gh * CPAIR * MASS_AIR;

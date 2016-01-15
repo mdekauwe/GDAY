@@ -14,7 +14,7 @@
 #include "optimal_root_model.h"
 
 /* C stuff */
-void   canopy_wrapper(control *, fluxes *, met *, params *, state *, int,
+void   canopy_wrapper(control *, fluxes *, met *, params *, state *, long,
                       double);
 void   calc_day_growth(control *, fluxes *, met *, params *, state *, int,
                         double, int, double, double);

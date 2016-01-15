@@ -1257,8 +1257,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
         /* Is the sun up? If so calculate photosynthesis */
         if (elevation > 0.0) {
 
-            canopy_wrapper(c, f, m, p, s, project_day, ncontent);
-            printf("%lf\n", f->anleaf); 
+            canopy_wrapper(c, f, m, p, s, offset, ncontent);
+            printf("%lf\n", f->anleaf);
 
 
 
@@ -1302,7 +1302,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
 
 
 void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
-                       int project_day, double ncontent) {
+                    long offset, double ncontent) {
     /*
         Solve Cs, Vpd etc - loop over 2 leaves.
     */
@@ -1311,14 +1311,14 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
     int    iter = 0, itermax = 100;
 
     /* initialise values of leaf temp, surface CO2 and VPD */
-    tleaf = m->tair[project_day];   /* Leaf temperature */
-    dleaf = m->vpd[project_day] * KPA_2_PA;   /* VPD at the leaf suface */
-    Cs = m->co2[project_day];       /* CO2 concentration at the leaf suface */
+    tleaf = m->tair[offset];   /* Leaf temperature */
+    dleaf = m->vpd[offset] * KPA_2_PA;   /* VPD at the leaf suface */
+    Cs = m->co2[offset];       /* CO2 concentration at the leaf suface */
 
     while (TRUE) {
 
         if (c->ps_pathway == C3) {
-            photosynthesis_C3(c, f, m, p, s, project_day, ncontent, tleaf,
+            photosynthesis_C3(c, f, m, p, s, offset, ncontent, tleaf,
                               Cs, dleaf);
         } else {
             /* Nothing implemented */
@@ -1327,7 +1327,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         }
 
         /* Calculate new Tleaf, dleaf, Cs */
-        solve_leaf_energy_balance(f, m, p, project_day, tleaf, &Cs, &dleaf,
+        solve_leaf_energy_balance(f, m, p, offset, tleaf, &Cs, &dleaf,
                                   &new_tleaf, &et);
 
         if (iter >= itermax) {
