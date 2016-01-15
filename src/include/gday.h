@@ -13,11 +13,7 @@
 #define DEG2RAD(DEG) (DEG * M_PI / 180.0)
 #define RAD2DEG(RAD) (180.0 * RAD / M_PI)
 
-/* Solar radiaiton 1 W m-2 ~ 2.3 umol m-2 s-1 PAR
-   Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
-#define SW_2_PAR 2.3
-#define PAR_2_SW 1.0 / SW_2_PAR
-#define J_TO_MJ  1.0E-6
+
 
 #ifndef TRUE
 #define TRUE 1

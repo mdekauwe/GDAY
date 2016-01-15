@@ -1116,11 +1116,15 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     /* unpack the met data and get the units right */
     double press_pa = m->press[project_day] * KPA_2_PA;
     double vpd_pa = m->vpd[project_day] * KPA_2_PA;
+    double par = m->par[project_day];
     double tair = m->tair[project_day];
     double wind = m->wind[project_day];
     double Ca = m->co2[project_day];
 
-    double rnet = -9999.9; /* fix this */
+    double rnet, ea, ema, Tk, sw_rad;
+    double leaf_abs = 0.86; /*Leaf absorptance of solar radiation (0-1) */
+
+    Tk = tair + DEG_TO_KELVIN;
 
     /* These 4 calculations do not depend on Tleaf, therefore
        they don't need to be in this function as they will get recalculated
@@ -1155,6 +1159,12 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     gbv = GBVGBH * gbh;
     gsv = GSVGSC * f->gsc;
     gv = (gbv * gsv) / (gbv + gsv);
+
+    /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
+    ea = calc_sat_water_vapour_press(tair) - vpd_pa;
+    ema = 0.642 * pow((ea / Tk), (1.0 / 7.0));
+    sw_rad = par * PAR_2_SW; /* W m-2 */
+    rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
 
     /* Penman-Monteith equation */
     *et = penman_leaf(press_pa, slope, lambda, rnet, vpd_pa, gh, gv, &LE);
