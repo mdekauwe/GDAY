@@ -14,11 +14,16 @@
 #include "optimal_root_model.h"
 
 /* C stuff */
-void   canopy_wrapper(control *, fluxes *, met *, params *, state *, long,
-                      double);
-void   calc_day_growth(control *, fluxes *, met *, params *, state *, int,
+void    solve_leaf_energy_balance(fluxes *, met *, params *, long, double,
+                                  double *, double *, double *, double *);
+void    canopy_wrapper(control *, fluxes *, met *, params *, state *, long,
+                       double);
+void    calc_day_growth(control *, fluxes *, met *, params *, state *, int,
                         double, int, double, double);
-void   carbon_allocation(control *, fluxes *, params *, state *,
+double  calc_radiation_conductance(double);
+double  calc_bdn_layer_forced_conduct(double, double, double,double);
+double  calc_bdn_layer_free_conduct(double, double, double, double);
+void    carbon_allocation(control *, fluxes *, params *, state *,
                                                      double, int);
 void   calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,
                                     double);

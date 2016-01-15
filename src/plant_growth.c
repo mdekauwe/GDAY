@@ -1352,3 +1352,128 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
 
     return;
 }
+
+
+void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
+                               double tleaf, double *Cs, double *dleaf,
+                               double *new_tleaf, double *et) {
+
+    double LE; /* latent heat (W m-2) */
+    double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
+    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
+    double gbc, gamma, epsilon, omega, Tdiff;
+
+    /* unpack the met data and get the units right */
+    double press = m->press[offset] * KPA_2_PA;
+    double vpd = m->vpd[offset] * KPA_2_PA;
+    double par = m->par[offset];
+    double tair = m->tair[offset];
+    double wind = m->wind[offset];
+    double Ca = m->co2[offset];
+
+    double rnet, ea, ema, Tk, sw_rad;
+    double leaf_abs = 0.86; /*Leaf absorptance of solar radiation (0-1) */
+
+    Tk = tair + DEG_TO_KELVIN;
+
+    /* Radiation conductance (mol m-2 s-1) */
+    gradn = calc_radiation_conductance(tair);
+
+    /* Boundary layer conductance for heat - single sided, forced
+       convection (mol m-2 s-1) */
+    gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
+
+    /* Boundary layer conductance for heat - single sided, free convection */
+    gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
+
+    /* Total boundary layer conductance for heat */
+    gbh = gbhu + gbhf;
+
+    /* Total conductance for heat - two-sided */
+    gh = 2.0 * (gbh + gradn);
+
+    /* Total conductance for water vapour */
+    gbv = GBVGBH * gbh;
+    gsv = GSVGSC * f->gsc;
+    gv = (gbv * gsv) / (gbv + gsv);
+
+    /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
+    ea = calc_sat_water_vapour_press(tair) - vpd;
+    ema = 0.642 * pow((ea / Tk), (1.0 / 7.0));
+    sw_rad = par * PAR_2_SW; /* W m-2 */
+    rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
+
+    /* Penman-Monteith equation */
+    *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
+
+    /* calculate new TLEAF, DLEAF, RHLEAF & CS */
+    gbc = gbh / GBHGBC;
+    *Cs = Ca - f->anleaf / gbc;
+    Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
+    *new_tleaf = tair + Tdiff / 4.;
+    *dleaf = *et * press / gv;
+
+    return;
+}
+
+double calc_radiation_conductance(double tair) {
+    /*  Returns the 'radiation conductance' at given temperature.
+
+        Units: mol m-2 s-1
+
+        References:
+        -----------
+        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
+          1998, Table 1,
+        * See also Jones (1992) p. 108.
+        * And documented in Medlyn 2007, equation A3, although I think there
+          is a mistake. It should be Tk**3 not Tk**4, see W & L.
+    */
+    double grad;
+    double Tk;
+
+    Tk = tair + DEG_TO_KELVIN;
+    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CPAIR * MASS_AIR);
+
+    return (grad);
+}
+
+double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
+                                     double leaf_width) {
+    /*
+        Boundary layer conductance for heat - single sided, forced convection
+        (mol m-2 s-1)
+        See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
+    */
+    double cmolar, Tk, gbh;
+
+    Tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * Tk);
+    gbh = 0.003 * sqrt(wind / leaf_width) * cmolar;
+
+    return (gbh);
+}
+
+double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
+                                  double leaf_width) {
+    /*
+        Boundary layer conductance for heat - single sided, free convection
+        (mol m-2 s-1)
+        See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
+    */
+    double cmolar, Tk, gbh, grashof, leaf_width_cubed;
+    double tolerance = 1E-08;
+
+    Tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * Tk);
+    leaf_width_cubed = leaf_width * leaf_width * leaf_width;
+
+    if (float_eq((tleaf - tair), 0.0)) {
+        grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
+        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
+    } else {
+        gbh = 0.0;
+    }
+
+    return (gbh);
+}

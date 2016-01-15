@@ -5,13 +5,9 @@
 #include "constants.h"
 #include "utilities.h"
 
-void   solve_leaf_energy_balance(fluxes *, met *, params *, long, double,
-                                 double *, double *, double *, double *);
+
 double  penman_leaf(double, double, double, double, double, double, double,
                     double, double *);
-double  calc_radiation_conductance(double);
-double  calc_bdn_layer_forced_conduct(double, double, double,double);
-double  calc_bdn_layer_free_conduct(double, double, double, double);
 double  calc_sat_water_vapour_press(double);
 void    calculate_daily_water_balance(control *, fluxes *, met *, params *,
                                       state *, int, double);
