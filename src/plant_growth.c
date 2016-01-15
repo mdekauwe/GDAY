@@ -1195,6 +1195,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     double leafn, fc, ncontent, diffuse_frac, zenith_angle, elevation;
     long   offset;
     int    hod;
+    double gpp_gCm2_30_min;
+    double SEC_2_30min = 1800.;
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -1242,6 +1244,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
     f->auto_resp = 0.0;
     f->apar = 0.0;
 
+    gpp_gCm2_30_min = 0.0;
+
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         offset = project_day * c->num_days + hod;
 
@@ -1258,7 +1262,10 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
         if (elevation > 0.0) {
 
             canopy_wrapper(c, f, m, p, s, offset, ncontent);
-            printf("%lf\n", f->anleaf);
+
+            /* umol m-2 s-1 -> gC m-2 30 min-1 */
+            gpp_gCm2_30_min += f->anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_30min;
+            /*printf("%lf\n", gpp_gCm2_30_min); */
 
 
 
@@ -1326,7 +1333,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
             exit(EXIT_FAILURE);
         }
 
-        /* Calculate new Tleaf, dleaf, Cs */
+        /* Calculate new Cs, dleaf, Tleaf */
         solve_leaf_energy_balance(f, m, p, offset, tleaf, &Cs, &dleaf,
                                   &new_tleaf, &et);
 
@@ -1337,6 +1344,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
 
         /* stopping criteria */
         if (fabs(tleaf - new_tleaf) < 0.02) {
+
             break;
         }
 
@@ -1344,11 +1352,6 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         tleaf = new_tleaf;
         iter++;
     }
-
-    /* convert gs to conductance to water */
-    f->gsw = f->gsc * GSVGSC;
-
-
 
     return;
 }
@@ -1360,7 +1363,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
 
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
-    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
+    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbw, gsw, gw;
     double gbc, gamma, epsilon, omega, Tdiff;
 
     /* unpack the met data and get the units right */
@@ -1393,9 +1396,9 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
     gh = 2.0 * (gbh + gradn);
 
     /* Total conductance for water vapour */
-    gbv = GBVGBH * gbh;
-    gsv = GSVGSC * f->gsc;
-    gv = (gbv * gsv) / (gbv + gsv);
+    gbw = GBVGBH * gbh;
+    gsw = GSVGSC * f->gsc;
+    gw = (gbw * gsw) / (gbw + gsw);
 
     /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
     ea = calc_sat_water_vapour_press(tair) - vpd;
@@ -1404,14 +1407,13 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
     rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
 
     /* Penman-Monteith equation */
-    *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
+    *et = penman_leaf(press, rnet, vpd, tair, gh, gw, gbw, gsw, &LE);
 
-    /* calculate new TLEAF, DLEAF, RHLEAF & CS */
-    gbc = gbh / GBHGBC;
+    /* calculate new Cs, dleaf, Tleaf */
     *Cs = Ca - f->anleaf / gbc;
     Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff / 4.;
-    *dleaf = *et * press / gv;
+    *dleaf = *et * press / gw;
 
     return;
 }

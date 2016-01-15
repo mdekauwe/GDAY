@@ -279,7 +279,7 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
 
     /* Temperature sensitivity of Rd. */
     double Q10 = 2.0;
-    
+
     if (tleaf >= tbelow)
         /*Rd = Rd0 * Rd_frac * exp(q10f * (tleaf - rtemp));*/
         Rd = Rd0 * Rd_frac * pow(Q10, (tleaf - rtemp) / 10.0);

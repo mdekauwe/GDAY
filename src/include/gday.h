@@ -443,7 +443,6 @@ typedef struct {
     double ga_mol_m2_sec;
     double omega;
     double gsc;             /* gs conductance to CO2 */
-    double gsw;             /* gs conductance to H2O */
 
     /* daily C production */
     double cpleaf;
