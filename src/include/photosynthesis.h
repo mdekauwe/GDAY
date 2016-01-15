@@ -15,7 +15,7 @@ void   calculate_jmaxt_vcmaxt(control *, params *, state *, double,
 double arrhenius(double, double, double, double);
 double peaked_arrhenius(double, double, double, double, double, double);
 double calc_leaf_day_respiration(double, double);
-double quad(double, double, double, int, int *);
+double quad(double, double, double, bool, int *);
 
 
 

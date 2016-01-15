@@ -35,23 +35,23 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
     double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
     double A, B, C, arg1, arg2, Ci, Ac, Aj;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
-    int    qudratic_error = FALSE;
+    int    qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 
-    /*
-    ** Calculate photosynthetic parameters from leaf temperature.
-    */
+    /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
 
     /* actual electron transport rate */
+    qudratic_error = FALSE;
+    large_root = FALSE;
     J = quad(p->theta, -(p->alpha_j * m->par[offset] + jmax),
-             p->alpha_j * m->par[offset] * jmax, FALSE, &qudratic_error);
+             p->alpha_j * m->par[offset] * jmax, large_root, &qudratic_error);
     /* RuBP regeneration rate */
     Vj = J / 4.0;
 
@@ -66,7 +66,7 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
         1.6 (from corrigendum to Medlyn et al 2011) is missing here,
         because we are calculating conductance to CO2! */
         gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf)) / Cs;
-        g0 = g0_zero; /* numerical issues, don't use zero */
+        g0 = g0_zero;
 
         /* Solution when Rubisco activity is limiting */
         A = g0 + gs_over_a * (vcmax - rd);
@@ -81,7 +81,8 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
 
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
-        Ci = quad(A, B, C, TRUE, &qudratic_error);
+        large_root = TRUE;
+        Ci = quad(A, B, C, large_root, &qudratic_error);
 
         if (qudratic_error || Ci <= 0.0 || Ci > Cs) {
             Ac = 0.0;
@@ -102,7 +103,8 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
 
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
-        Ci = quad(A, B, C, TRUE, &qudratic_error);
+        large_root = TRUE;
+        Ci = quad(A, B, C, large_root, &qudratic_error);
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         /* Below light compensation point? */
@@ -364,7 +366,7 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tr,
 }
 
 
-double quad(double a, double b, double c, int large, int *error) {
+double quad(double a, double b, double c, bool large, int *error) {
     /* quadratic solution
 
     Parameters:

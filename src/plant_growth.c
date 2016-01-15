@@ -1265,7 +1265,7 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
 
             /* umol m-2 s-1 -> gC m-2 30 min-1 */
             gpp_gCm2_30_min += anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_30min;
-            /*printf("%lf\n", anleaf);*/
+            printf("%lf\n", anleaf);
 
 
 
