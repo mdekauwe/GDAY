@@ -113,6 +113,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
         f->anleaf = MIN(Ac, Aj) - rd;
         f->gsc = MAX(g0, g0 + gs_over_a * f->anleaf);
     }
+    
 
     return;
 }

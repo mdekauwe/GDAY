@@ -1114,8 +1114,8 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     double gbc, gamma, epsilon, omega, Tdiff;
 
     /* unpack the met data and get the units right */
-    double press_pa = m->press[project_day] * KPA_2_PA;
-    double vpd_pa = m->vpd[project_day] * KPA_2_PA;
+    double press = m->press[project_day] * KPA_2_PA;
+    double vpd = m->vpd[project_day] * KPA_2_PA;
     double par = m->par[project_day];
     double tair = m->tair[project_day];
     double wind = m->wind[project_day];
@@ -1144,10 +1144,10 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
 
     /* Boundary layer conductance for heat - single sided, forced
        convection (mol m-2 s-1) */
-    gbhu = calc_bdn_layer_forced_conduct(tair, press_pa, wind, p->leaf_width);
+    gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
 
     /* Boundary layer conductance for heat - single sided, free convection */
-    gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press_pa, p->leaf_width);
+    gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
 
     /* Total boundary layer conductance for heat */
     gbh = gbhu + gbhf;
@@ -1161,16 +1161,16 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     gv = (gbv * gsv) / (gbv + gsv);
 
     /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
-    ea = calc_sat_water_vapour_press(tair) - vpd_pa;
+    ea = calc_sat_water_vapour_press(tair) - vpd;
     ema = 0.642 * pow((ea / Tk), (1.0 / 7.0));
     sw_rad = par * PAR_2_SW; /* W m-2 */
     rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
 
     /* Penman-Monteith equation */
-    *et = penman_leaf(press_pa, slope, lambda, rnet, vpd_pa, gh, gv, &LE);
+    *et = penman_leaf(press, slope, lambda, rnet, vpd, gh, gv, &LE);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
-    gamma = CPAIR * MASS_AIR * press_pa / lambda; /* psychrometric constant */
+    gamma = CPAIR * MASS_AIR * press / lambda; /* psychrometric constant */
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
@@ -1178,8 +1178,8 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, int project_day,
     gbc = gbh / GBHGBC;
     *Cs = Ca - f->anleaf / gbc;
     Tdiff = (rnet - LE) / (CPAIR * MASS_AIR * gh);
-    *new_tleaf = tair + Tdiff;
-    *dleaf = *et * press_pa / gv;
+    *new_tleaf = tair + Tdiff / 4.;
+    *dleaf = *et * press / gv;
 
     return;
 }
