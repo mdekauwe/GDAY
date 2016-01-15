@@ -33,7 +33,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     */
 
     double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
-    double A, B, C, arg1, arg2, Cic, Cij, Ac, Aj;
+    double A, B, C, arg1, arg2, Ci, Ac, Aj;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
     int    qudratic_error = FALSE;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
@@ -44,19 +44,19 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     /*
     ** Calculate photosynthetic parameters from leaf temperature.
     */
-    gamma_star = calc_co2_compensation_point(p, tleaf); /*  (umol mol-1) */
-    km = calculate_michaelis_menten(p, tleaf);          /*  (umol mol-1) */
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);/* (umol mol-1) */
-    rd = calc_leaf_day_respiration(tleaf, Rd0);        /*  (umol mol-1) */
+    gamma_star = calc_co2_compensation_point(p, tleaf);
+    km = calculate_michaelis_menten(p, tleaf);
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
+    rd = calc_leaf_day_respiration(tleaf, Rd0);
 
-    /* actual rate of electron transport, a function of absorbed PAR */
+    /* actual electron transport rate */
     J = quad(p->theta, -(p->alpha_j * m->par[offset] + jmax),
              p->alpha_j * m->par[offset] * jmax, FALSE, &qudratic_error);
-    /* ! RuBP-regen rate (umol m-2 s-1) */
+    /* RuBP regeneration rate */
     Vj = J / 4.0;
 
     /* Deal with extreme cases */
-    if (jmax < 0.0 || vcmax <= 0.0) {
+    if (jmax <= 0.0 || vcmax <= 0.0) {
         f->anleaf = -rd;
         f->gsc = g0_zero;
     } else {
@@ -81,12 +81,12 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
-        Cic = quad(A, B, C, TRUE, &qudratic_error);
+        Ci = quad(A, B, C, TRUE, &qudratic_error);
 
-        if (qudratic_error || Cic <= 0.0 || Cic > Cs) {
+        if (qudratic_error || Ci <= 0.0 || Ci > Cs) {
             Ac = 0.0;
         } else {
-            Ac = vcmax * (Cic - gamma_star) / (Cic + km);
+            Ac = vcmax * (Ci - gamma_star) / (Ci + km);
         }
 
         /* Solution when electron transport rate is limiting */
@@ -102,13 +102,13 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
-        Cij = quad(A, B, C, TRUE, &qudratic_error);
+        Ci = quad(A, B, C, TRUE, &qudratic_error);
 
-        Aj = Vj * (Cij - gamma_star) / (Cij + 2.0 * gamma_star);
+        Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         /* Below light compensation point? */
         if (Aj - rd < 1E-6) {
-            Cij = Cs;
-            Aj = Vj * (Cij - gamma_star) / (Cij + 2.0 * gamma_star);
+            Ci = Cs;
+            Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         }
 
         f->anleaf = MIN(Ac, Aj) - rd;
