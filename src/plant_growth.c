@@ -1335,7 +1335,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
         }
 
         /* Calculate new Cs, dleaf, Tleaf */
-        solve_leaf_energy_balance(f, m, p, offset, tleaf, gsc, anleaf, &Cs,
+        solve_leaf_energy_balance(f, m, p, s, offset, tleaf, gsc, anleaf, &Cs,
                                   &dleaf, &new_tleaf, &et);
 
         if (iter >= itermax) {
@@ -1358,10 +1358,10 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
 }
 
 
-void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
-                               double tleaf, double *gsc, double *anleaf,
-                               double *Cs, double *dleaf, double *new_tleaf,
-                               double *et) {
+void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
+                               long offset, double tleaf, double *gsc,
+                               double *anleaf, double *Cs, double *dleaf,
+                               double *new_tleaf, double *et) {
 
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
@@ -1377,7 +1377,14 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
     double Ca = m->co2[offset];
 
     double rnet, ea, ema, Tk, sw_rad;
-    double leaf_abs = 0.86; /*Leaf absorptance of solar radiation (0-1) */
+
+    /* absorptance of solar radiation (0-1), typically 0.4-0.6 */
+    double leaf_abs = 0.5;
+    double emissivity_atm;
+
+    /* extinction coefficient for diffuse radiation and black leaves
+       m2 ground m2 leaf)*/
+    double kd = 0.8, net_lw_rad;
 
     Tk = tair + DEG_TO_KELVIN;
 
@@ -1406,9 +1413,15 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, long offset,
 
     /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
     ea = calc_sat_water_vapour_press(tair) - vpd;
-    ema = 0.642 * pow((ea / Tk), (1.0 / 7.0));
+
+    /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
+    emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
     sw_rad = par * PAR_2_SW; /* W m-2 */
-    rnet = leaf_abs * sw_rad - (1.0 - ema) * SIGMA * pow(Tk, 4.0);
+
+    /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
+       the canopy is 1 */
+    net_lw_rad = (1.0 - emissivity_atm) * SIGMA * pow(Tk, 4.0);
+    rnet = leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
 
     /* Penman-Monteith equation */
     *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);

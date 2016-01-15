@@ -15,9 +15,9 @@
 
 /* C stuff */
 
-void    solve_leaf_energy_balance(fluxes *, met *, params *, long, double,
-                                  double *, double *, double *, double *, double *,
-                                  double *);
+void    solve_leaf_energy_balance(fluxes *, met *, params *, state *s, long,
+                                  double, double *, double *, double *,
+                                  double *, double *, double *);
 void    canopy_wrapper(control *, fluxes *, met *, params *, state *, long,
                        double, double *, double *);
 void    calc_day_growth(control *, fluxes *, met *, params *, state *, int,
