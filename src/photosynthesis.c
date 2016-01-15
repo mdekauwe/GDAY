@@ -18,7 +18,7 @@
 
 void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
                        int project_day, double ncontent, double tleaf,
-                       double Cs) {
+                       double Cs, double dleaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA (ECOCRAFT-agreed formulation).
@@ -53,7 +53,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
              p->alpha_j * m->par[project_day] * jmax, FALSE, &qudratic_error);
     /* ! RuBP-regen rate (umol m-2 s-1) */
     Vj = J / 4.0;
-    printf("%lf\n", gamma_star);
+
     /* Deal with extreme cases */
     if (jmax < 0.0 || vcmax <= 0.0) {
         f->anleaf = -rd;
@@ -64,7 +64,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
         1.6 (from corrigendum to Medlyn et al 2011) is missing here,
         because we are calculating conductance to CO2! */
-        gs_over_a = (1.0 + p->g1 / sqrt(m->vpd[project_day])) / Cs;
+        gs_over_a = (1.0 + p->g1 / sqrt(dleaf)) / Cs;
         g0 = 1E-09; /* numerical issues, don't use zero */
 
         /* Solution when Rubisco activity is limiting */

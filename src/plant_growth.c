@@ -1312,14 +1312,14 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* initialise values of leaf temp, surface CO2 and VPD */
     tleaf = m->tair[project_day];   /* Leaf temperature */
-    dleaf = m->vpd[project_day];    /* VPD at the leaf suface */
+    dleaf = m->vpd[project_day] * KPA_2_PA;   /* VPD at the leaf suface */
     Cs = m->co2[project_day];       /* CO2 concentration at the leaf suface */
 
     while (TRUE) {
 
         if (c->ps_pathway == C3) {
             photosynthesis_C3(c, f, m, p, s, project_day, ncontent, tleaf,
-                              Cs);
+                              Cs, dleaf);
         } else {
             /* Nothing implemented */
             fprintf(stderr, "C4 photosynthesis not implemented\n");
@@ -1348,7 +1348,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
     /* convert gs to conductance to water */
     f->gsw = f->gsc * GSVGSC;
 
-    
+
 
     return;
 }
