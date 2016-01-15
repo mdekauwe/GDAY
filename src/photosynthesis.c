@@ -34,7 +34,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
 
     double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
     double A, B, C, arg1, arg2, Cic, Cij, Ac, Aj;
-    double Rd25 = 2.0; /* make a paramater! */
+    double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
     int    qudratic_error = FALSE;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
@@ -47,7 +47,7 @@ void photosynthesis_C3(control *c, fluxes *f, met *m, params *p, state *s,
     gamma_star = calc_co2_compensation_point(p, tleaf); /*  (umol mol-1) */
     km = calculate_michaelis_menten(p, tleaf);          /*  (umol mol-1) */
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);/* (umol mol-1) */
-    rd = calc_leaf_day_respiration(tleaf, Rd25);        /*  (umol mol-1) */
+    rd = calc_leaf_day_respiration(tleaf, Rd0);        /*  (umol mol-1) */
 
     /* actual rate of electron transport, a function of absorbed PAR */
     J = quad(p->theta, -(p->alpha_j * m->par[offset] + jmax),
@@ -242,13 +242,13 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     return;
 }
 
-double calc_leaf_day_respiration(double tleaf, double Rd25) {
+double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* Calculate leaf respiration in the light using a Q10 (exponential)
     formulation
 
     Parameters:
     ----------
-    Rd25 : float
+    Rd0 : float
         Estimate of respiration rate at the reference temperature 25 deg C
         or or 298 K
     Tleaf : float
@@ -265,10 +265,10 @@ double calc_leaf_day_respiration(double tleaf, double Rd25) {
        below this, Rd(T) is set to zero. */
     double tbelow = -100.0;
 
-    /* day_resp determines the respiration in the light, relative to
+    /* Determines the respiration in the light, relative to
        respiration in the dark. For example, if DAYRESP = 0.7, respiration
        in the light is 30% lower than in the dark. */
-    double day_resp = 1.0;  /* no effect of light */
+    double Rd_frac = 1.0;  /* no effect of light */
 
     /* Rd at zero degrees */
     double rtemp = 25.0;
@@ -277,8 +277,12 @@ double calc_leaf_day_respiration(double tleaf, double Rd25) {
        respiration */
     double q10f = 0.067;
 
+    /* Temperature sensitivity of Rd. */
+    double Q10 = 2.0;
+    
     if (tleaf >= tbelow)
-        Rd = Rd25 * exp(q10f * (tleaf - rtemp)) * day_resp;
+        /*Rd = Rd0 * Rd_frac * exp(q10f * (tleaf - rtemp));*/
+        Rd = Rd0 * Rd_frac * pow(Q10, (tleaf - rtemp) / 10.0);
     else
         Rd = 0.0;
 
