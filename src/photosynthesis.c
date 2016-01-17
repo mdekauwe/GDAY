@@ -171,7 +171,7 @@ double calculate_michaelis_menten(params *p, double tleaf) {
         * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
 
     */
-    double Kc, Ko;
+    double Kc, Ko, Km;
 
     /* Michaelis-Menten coefficents for carboxylation by Rubisco */
     Kc = arrhenius(p->kc25, p->eac, tleaf, p->measurement_temp);
@@ -180,7 +180,9 @@ double calculate_michaelis_menten(params *p, double tleaf) {
     Ko = arrhenius(p->ko25, p->eao, tleaf, p->measurement_temp);
 
     /* return effective Michaelis-Menten coefficient for CO2 */
-    return (Kc * (1.0 + p->oi / Ko));
+    Km = Kc * (1.0 + p->oi / Ko);
+
+    return (Km);
 
 }
 

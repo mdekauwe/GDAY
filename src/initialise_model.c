@@ -169,7 +169,7 @@ void initialise_params(params *p) {
     p->ntheta_root = 3.0;
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
-    p->oi = 205000.0;       /* oxygen partial pressure (umol mol-1) */
+    p->oi = 210000.0;       /* oxygen partial pressure (umol mol-1) */
     p->passivesoilnz = 1.0;
     p->passivesoilz = 1.0;
     p->passncmax = 0.142857;
