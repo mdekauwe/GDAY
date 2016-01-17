@@ -331,7 +331,7 @@ double arrhenius(double k25, double Ea, double T, double Tref) {
 }
 
 
-double peaked_arrhenius(double k25, double Ea, double T, double Tr,
+double peaked_arrhenius(double k25, double Ea, double T, double Tref,
                         double deltaS, double Hd) {
     /*
         Temperature dependancy approximated by peaked Arrhenius eqn,
@@ -363,11 +363,12 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tr,
 
     */
     double arg1, arg2, arg3;
-    double Tk = T + DEG_TO_KELVIN;
-    double Trk = Tr + DEG_TO_KELVIN;
+    double Tk, TrefK;
+    Tk = T + DEG_TO_KELVIN;
+    TrefK = Tref + DEG_TO_KELVIN;
 
-    arg1 = arrhenius(k25, Ea, T, Tr);
-    arg2 = 1.0 + exp((deltaS * Trk - Hd) / (RGAS * Trk));
+    arg1 = arrhenius(k25, Ea, T, Tref);
+    arg2 = 1.0 + exp((deltaS * TrefK - Hd) / (RGAS * TrefK));
     arg3 = 1.0 + exp((deltaS * Tk - Hd) / (RGAS * Tk));
 
     return (arg1 * arg2 / arg3);
