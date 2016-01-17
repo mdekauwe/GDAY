@@ -1323,6 +1323,7 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
     dleaf = m->vpd[offset] * KPA_2_PA;   /* VPD at the leaf suface */
     Cs = m->co2[offset];       /* CO2 concentration at the leaf suface */
 
+
     while (TRUE) {
 
         if (c->ps_pathway == C3) {
@@ -1382,8 +1383,10 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     double leaf_abs = 0.5;
     double emissivity_atm;
 
-    /* extinction coefficient for diffuse radiation and black leaves
-       m2 ground m2 leaf)*/
+    /*
+        extinction coefficient for diffuse radiation and black leaves
+        (m2 ground m2 leaf)
+    */
     double kd = 0.8, net_lw_rad;
 
     Tk = tair + DEG_TO_KELVIN;

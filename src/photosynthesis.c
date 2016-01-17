@@ -47,6 +47,10 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
 
+
+    printf("%lf %lf %lf %lf %lf\n", gamma_star, km, jmax, vcmax, rd);
+    exit(1);
+
     /* actual electron transport rate */
     qudratic_error = FALSE;
     large_root = FALSE;
@@ -290,7 +294,7 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
 
     return (Rd);
 }
-double arrhenius(double k25, double Ea, double T, double Tr) {
+double arrhenius(double k25, double Ea, double T, double Tref) {
     /*
         Temperature dependence of kinetic parameters is described by an
         Arrhenius function
@@ -315,10 +319,12 @@ double arrhenius(double k25, double Ea, double T, double Tr) {
         -----------
         * Medlyn et al. 2002, PCE, 25, 1167-1179.
     */
-    double Tk = T + DEG_TO_KELVIN;
-    double Trk = Tr + DEG_TO_KELVIN;
+    double Tk, TrefK;
+    Tk = T + DEG_TO_KELVIN;
+    TrefK = Tref + DEG_TO_KELVIN;
 
-    return (k25 * exp(Ea * (T - Tr) / (RGAS * Tk * Trk)));
+
+    return (k25 * exp(Ea * (T - Tref) / (RGAS * Tk * TrefK)));
 
 }
 
