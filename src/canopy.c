@@ -193,7 +193,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
     double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
-    double gbc, gamma, epsilon, omega, Tdiff;
+    double gbc, gamma, epsilon, omega, Tdiff, sensible_heat;
 
     /* unpack the met data and get the units right */
     double press = m->press[offset] * KPA_2_PA;
@@ -254,6 +254,9 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
 
     /* Penman-Monteith equation */
     *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
+
+    /* sensible heat exchanged between leaf and surroundings */
+    sensible_heat = (1.0 / (1.0 + gradn / gbh)) * (rnet - LE);
 
     /*
     ** calculate new dleaf, tleaf and Cs
