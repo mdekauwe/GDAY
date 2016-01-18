@@ -12,33 +12,25 @@
 #include "utilities.h"
 #include "photosynthesis.h"
 #include "optimal_root_model.h"
+#include "canopy.h"
 
 /* C stuff */
-
-void    solve_leaf_energy_balance(fluxes *, met *, params *, state *s, long,
-                                  double, double *, double *, double *,
-                                  double *, double *, double *);
-void    canopy_wrapper(control *, fluxes *, met *, params *, state *, long,
-                       double, double *, double *);
 void    calc_day_growth(control *, fluxes *, met *, params *, state *, int,
                         double, int, double, double);
-double  calc_radiation_conductance(double);
-double  calc_bdn_layer_forced_conduct(double, double, double,double);
-double  calc_bdn_layer_free_conduct(double, double, double, double);
 void    carbon_allocation(control *, fluxes *, params *, state *,
                                                      double, int);
-void   calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,
+void    calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,
                                     double);
-double alloc_goal_seek(double, double, double, double);
-void   update_plant_state(control *, fluxes *, params *, state *,
+double  alloc_goal_seek(double, double, double, double);
+void    update_plant_state(control *, fluxes *, params *, state *,
                                                         double, double, int);
-void   precision_control(fluxes *, state *);
-void   calculate_cn_store(fluxes *, state *);
-void   calculate_average_alloc_fractions(fluxes *, state *, int );
-void   allocate_stored_c_and_n(fluxes *f, params *p, state *s);
-void   carbon_daily_production(control *, fluxes *, met *m, params *, state *,
+void    precision_control(fluxes *, state *);
+void    calculate_cn_store(fluxes *, state *);
+void    calculate_average_alloc_fractions(fluxes *, state *, int );
+void    allocate_stored_c_and_n(fluxes *f, params *p, state *s);
+void    carbon_daily_production(control *, fluxes *, met *m, params *, state *,
                                int, double);
-void   calculate_subdaily_production(control *, fluxes *, met *m, params *,
+void    calculate_subdaily_production(control *, fluxes *, met *m, params *,
                                      state *, int, double);
 
 /* N stuff */

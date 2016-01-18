@@ -14,7 +14,7 @@ SOURCES  =  \
 $(PROGRAM).c version.c read_param_file.c read_met_file.c litter_production.c \
 utilities.c plant_growth.c photosynthesis.c water_balance.c \
 simple_moving_average.c soils.c optimal_root_model.c initialise_model.c \
-write_output_file.c phenology.c disturbance.c
+write_output_file.c phenology.c disturbance.c canopy.c
 
 OBJECTS = $(SOURCES:.c=.o)
 RM       =  rm -f

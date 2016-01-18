@@ -1142,7 +1142,7 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
     lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
 
     /* psychrometric constant */
-    gamma = CPAIR * MASS_AIR * press / lambda;
+    gamma = CP * MASS_AIR * press / lambda;
 
     /* Const s in Penman-Monteith equation  (Pa K-1) */
     arg1 = calc_sat_water_vapour_press(tair + 0.1);
@@ -1150,7 +1150,7 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
     slope = (arg1 - arg2) / 0.1;
 
     if (gv > 0.0) {
-        arg1 = slope * rnet + vpd * gh * CPAIR * MASS_AIR;
+        arg1 = slope * rnet + vpd * gh * CP * MASS_AIR;
         arg2 = slope + gamma * gh / gv;
         *LE = arg1 / arg2; /* W m-2 */
         et = *LE / lambda; /* mol H20 m-2 s-1 */
