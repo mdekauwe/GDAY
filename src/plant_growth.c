@@ -1265,8 +1265,8 @@ void calculate_subdaily_production(control *c, fluxes *f, met *m, params *p,
 
             /* umol m-2 s-1 -> gC m-2 30 min-1 */
             gpp_gCm2_30_min += anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_30min;
-            printf("%lf\n", anleaf);
-
+            printf("* %lf %lf\n", m->par[offset], anleaf);
+            exit(1);
 
 
             /* Calculate plant respiration */
@@ -1335,9 +1335,13 @@ void canopy_wrapper(control *c, fluxes *f, met *m, params *p, state *s,
             exit(EXIT_FAILURE);
         }
 
-        /* Calculate new Cs, dleaf, Tleaf */
-        solve_leaf_energy_balance(f, m, p, s, offset, tleaf, gsc, anleaf, &Cs,
-                                  &dleaf, &new_tleaf, &et);
+        if (*anleaf > 0.0) {
+            /* Calculate new Cs, dleaf, Tleaf */
+            solve_leaf_energy_balance(f, m, p, s, offset, tleaf, gsc, anleaf, &Cs,
+                                      &dleaf, &new_tleaf, &et);
+        } else {
+            et = 0.0;
+        }
 
         if (iter >= itermax) {
             fprintf(stderr, "No convergence in canopy loop\n");
@@ -1436,6 +1440,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     *new_tleaf = tair + Tdiff / 4.;
     *dleaf = *et * press / gv;
 
+    printf("** %lf %lf %lf %lf %lf %lf\n", *et, tleaf, *new_tleaf, *dleaf, *Cs, rnet);
 
 
     return;

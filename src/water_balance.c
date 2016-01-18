@@ -1158,6 +1158,9 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
         et = 0.0;
     }
 
+    /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
+    et = MAX(0.0, et);
+
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);

@@ -118,8 +118,6 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
         *anleaf = MIN(Ac, Aj) - rd;
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
 
-        printf("** %lf\n", *anleaf);
-
     }
 
     return;
