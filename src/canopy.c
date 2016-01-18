@@ -41,10 +41,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     long   offset;
     double gpp_gCm2_30_min, SEC_2_30min = 1800.;
 
-    /* initialise values of leaf temp, surface CO2 and VPD */
-    tleaf = m->tair[offset];   /* Leaf temperature */
-    dleaf = m->vpd[offset] * KPA_2_PA;   /* VPD at the leaf suface */
-    Cs = m->co2[offset];       /* CO2 concentration at the leaf suface */
+    /* initialise values of leaf temp, leaf surface CO2 and VPD from air space*/
+    tleaf = m->tair[offset];            /* Leaf temperature */
+    dleaf = m->vpd[offset] * KPA_2_PA;  /* VPD at the leaf suface */
+    Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -265,8 +265,8 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     /* Temperature difference between the leaf surface and the air */
     Tdiff = (rnet - LE) / (CP * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff / 4.;
-    *Cs = Ca - anleaf / gbc;
-    *dleaf = *et * press / gv;
+    *Cs = Ca - anleaf / gbc;                /* CO2 conc at the leaf surface */
+    *dleaf = *et * press / gv;              /* VPD at the leaf surface */
 
     printf("** %lf %lf %lf %lf %lf %lf\n", *et, tleaf, *new_tleaf, *dleaf, *Cs, rnet);
 
