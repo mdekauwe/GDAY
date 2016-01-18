@@ -33,7 +33,7 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
     */
 
     double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
-    double A, B, C, arg1, arg2, Ci, Ac, Aj;
+    double A, B, C, arg1, arg2, Ci, Ac, Aj, dleaf_kpa;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
     int    qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
@@ -46,10 +46,6 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
-
-
-    printf("%lf %lf %lf %lf %lf\n", gamma_star, km, jmax, vcmax, rd);
-    exit(1);
 
     /* actual electron transport rate */
     qudratic_error = FALSE;
@@ -65,19 +61,21 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
         *gsc = g0_zero;
     } else {
         /* Hardwiring this for Medlyn gs model for the moment, till I figure
-        out the best structure
+        out the best structure */
 
-        1.6 (from corrigendum to Medlyn et al 2011) is missing here,
-        because we are calculating conductance to CO2! */
-        gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf)) / Cs;
+        /* For the medlyn model this is already in conductance to CO2, so the
+           1.6 from the corrigendum to Medlyn et al 2011 is missing here */
+        dleaf_kpa = dleaf * PA_2_KPA;
+        gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
         g0 = g0_zero;
+
 
         /* Solution when Rubisco activity is limiting */
         A = g0 + gs_over_a * (vcmax - rd);
 
-        arg1 = (1.0 - Cs * gs_over_a) * (vcmax - rd) + g0;
-        arg2 = (km - Cs) - gs_over_a * (vcmax * gamma_star + km * rd);
-        B = arg1 * arg2;
+        arg1 = (1.0 - Cs * gs_over_a) * (vcmax - rd);
+        arg2 = g0 * (km - Cs) - gs_over_a * (vcmax * gamma_star + km * rd);
+        B = arg1 + arg2;
 
         arg1 = -(1.0 - Cs * gs_over_a);
         arg2 = (vcmax * gamma_star + km * rd) - (g0 * km * Cs);
@@ -119,6 +117,9 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
 
         *anleaf = MIN(Ac, Aj) - rd;
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
+
+        printf("** %lf\n", *anleaf);
+
     }
 
     return;

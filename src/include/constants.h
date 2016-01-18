@@ -41,6 +41,7 @@
 #define SIGMA 5.67e-8          /* Steffan Boltzman constant (W/m2/K4) */
 #define LEAF_EMISSIVITY 0.95   /* Emissivity of thermal radiation by leaf */
 #define KPA_2_PA 1000.
+#define PA_2_KPA 0.001
 /* Solar radiaiton 1 W m-2 ~ 2.3 umol m-2 s-1 PAR
    Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
 #define SW_2_PAR 2.3
