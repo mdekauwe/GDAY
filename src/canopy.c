@@ -94,7 +94,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         tleaf = m->tair[offset];                        /* Leaf temperature */
         dleaf = m->vpd[offset] * KPA_2_PA;        /* VPD at the leaf suface */
         Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
-
+        par = m->par[offset];  
         zenith_angle = calculate_zenith_angle(p, m->doy[project_day], hod);
         elevation = 90.0 - zenith_angle;
 
