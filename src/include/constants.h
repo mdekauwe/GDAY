@@ -29,6 +29,7 @@
 #define G_M2_2_TONNES_HA 0.01
 #define KG_M2_2_TONNES_HA 10.0
 #define KG_AS_TONNES 1E-3
+#define G_TO_KG 0.001
 #define TONNES_AS_KG 1.0 / KG_AS_TONNES
 #define CP 1010.0              /* specific heat of dry air (j kg-1 k-1) */
 #define MASS_AIR 29.0E-3       /* mol mass air (kg mol-1) */
@@ -49,5 +50,6 @@
 #define J_TO_MJ  1.0E-6
 #define UMOLPERJ 4.57           /* Conversion from J to umol quanta */
 #define SEC_2_HLFHR 1800.;
+#define MOLE_WATER_2_G_WATER 18.02 /* oxygen = 16g/mol, hydrogren = 1.01 g/mol*/
 
 #endif /* CONSTANTS */

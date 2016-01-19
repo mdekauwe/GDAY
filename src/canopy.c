@@ -160,6 +160,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
             }
 
             update_daily_carbon_fluxes(f, p, anleaf);
+            /* transpiration mol m-2 s-1 to mm 30 min-1 */
+            trans_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
             calculate_sub_daily_water_balance(c, f, m, p, s, offset,
                                               trans_hlf_hr, total_rnet);
 
