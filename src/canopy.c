@@ -106,9 +106,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle,
                                         m->par[offset]);
 
-        /*printf("%d %lf\n", hod, elevation); */
-
-        /* Is the sun up? If so calculate photosynthesis */
+        /* Is the sun up? */
         if (elevation > 0.0) {
 
             while (TRUE) {
