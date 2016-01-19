@@ -37,15 +37,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
            zenith_angle, elevation, anleaf, gsc, apar, anir, athermal,
-           direct_apar, diffuse_apar, total_rnet, diffuse_frac, rnet;
-    int    hod, iter = 0, itermax = 100, leaf;
+           direct_apar, diffuse_apar, total_rnet, diffuse_frac, rnet,
+           press, vpd, par, tair, wind, Ca;
+    int    hod, iter = 0, itermax = 100, ileaf;
     long   offset;
-
-
-    /* initialise values of leaf temp, leaf surface CO2 and VPD from air space*/
-    tleaf = m->tair[offset];            /* Leaf temperature */
-    dleaf = m->vpd[offset] * KPA_2_PA;  /* VPD at the leaf suface */
-    Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
 
 
     if (s->lai > 0.0) {
@@ -92,39 +87,39 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         offset = project_day * c->num_days + hod;
 
+        /*
+            initialise values of leaf temp, leaf surface CO2 and VPD from
+            air space
+        */
+        tleaf = m->tair[offset];                        /* Leaf temperature */
+        dleaf = m->vpd[offset] * KPA_2_PA;        /* VPD at the leaf suface */
+        Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
+
         zenith_angle = calculate_zenith_angle(p, m->doy[project_day], hod);
         elevation = 90.0 - zenith_angle;
 
         /* calculates diffuse frac from half-hourly incident radiation */
-        diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle,
-                                        m->par[offset]);
+        diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle, par);
 
         /* Is the sun up? */
         if (elevation > 0.0) {
 
-            while (TRUE) {
+            total_rnet = 0.0;
+            /* sunlit, shaded loop */
+            for (ileaf = 0; ileaf <= 1; ileaf++) {
 
-                calculate_absorbed_radiation(p, m->par[offset], diffuse_frac,
-                                             zenith_angle, &direct_apar,
-                                             &diffuse_apar);
+                while (TRUE) {
 
-                total_rnet = 0.0;
-
-                /* sunlit, shaded loop */
-                for (leaf = 0; leaf <= 1; leaf++) {
-
-
-
-
+                    calculate_absorbed_radiation(p, par, diffuse_frac,
+                                                 zenith_angle, &direct_apar,
+                                                 &diffuse_apar);
 
                     if (c->ps_pathway == C3) {
                         /* ********************************************
                             NEED TO PASS THE LEAF PAR NOT TOTAL PAR !!!
                             ********************************************
                         */
-
-                        photosynthesis_C3(c, p, s, ncontent, tleaf,
-                                          m->par[offset],
+                        photosynthesis_C3(c, p, s, ncontent, tleaf, par,
                                           Cs, dleaf, &gsc, &anleaf);
                     } else {
                         /* Nothing implemented */
@@ -155,18 +150,23 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                     /* Update temperature & do another iteration */
                     tleaf = new_tleaf;
                     iter++;
+
                 }
                 total_rnet += rnet;
+
+                update_daily_carbon_fluxes(f, p, anleaf);
+                /* transpiration mol m-2 s-1 to mm 30 min-1 */
+                trans_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+                calculate_sub_daily_water_balance(c, f, m, p, s, offset,
+                                                  trans_hlf_hr, total_rnet);
+                if (ileaf == 0)
+                    printf("* %lf %lf\n", m->par[offset], anleaf);
             }
 
-            update_daily_carbon_fluxes(f, p, anleaf);
-            /* transpiration mol m-2 s-1 to mm 30 min-1 */
-            trans_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-            calculate_sub_daily_water_balance(c, f, m, p, s, offset,
-                                              trans_hlf_hr, total_rnet);
 
-            printf("* %lf %lf\n", m->par[offset], anleaf);
-            exit(1);
+
+
+
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
@@ -222,8 +222,10 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     double wind = m->wind[offset];
     double Ca = m->co2[offset];
 
+
     double rnet, ea, ema, Tk, sw_rad;
     double emissivity_atm;
+
 
     /*
         extinction coefficient for diffuse radiation and black leaves
@@ -231,7 +233,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     */
     double kd = 0.8, net_lw_rad;
 
-    Tk = tair + DEG_TO_KELVIN;
+    Tk = m->tair[offset] + DEG_TO_KELVIN;
 
     /* Radiation conductance (mol m-2 s-1) */
     gradn = calc_radiation_conductance(tair);
@@ -285,8 +287,6 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     *new_tleaf = tair + Tdiff / 4.;
     *Cs = Ca - anleaf / gbc;                /* CO2 conc at the leaf surface */
     *dleaf = *et * press / gv;              /* VPD at the leaf surface */
-
-    printf("** %lf %lf %lf %lf %lf %lf\n", *et, tleaf, *new_tleaf, *dleaf, *Cs, rnet);
 
 
     return;
