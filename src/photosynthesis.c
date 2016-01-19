@@ -16,8 +16,8 @@
 #include "photosynthesis.h"
 
 
-void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
-                       double ncontent, double tleaf,  double Cs, double dleaf,
+void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
+                       double tleaf, double par, double Cs, double dleaf,
                        double *gsc, double *anleaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
@@ -50,8 +50,8 @@ void photosynthesis_C3(control *c, met *m, params *p, state *s, long offset,
     /* actual electron transport rate */
     qudratic_error = FALSE;
     large_root = FALSE;
-    J = quad(p->theta, -(p->alpha_j * m->par[offset] + jmax),
-             p->alpha_j * m->par[offset] * jmax, large_root, &qudratic_error);
+    J = quad(p->theta, -(p->alpha_j * par + jmax),
+             p->alpha_j * par * jmax, large_root, &qudratic_error);
     /* RuBP regeneration rate */
     Vj = J / 4.0;
 

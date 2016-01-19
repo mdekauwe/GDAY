@@ -6,8 +6,8 @@
 #include "utilities.h"
 
 /* C3 */
-void   photosynthesis_C3(control *, met *, params *, state *, long, double,
-                         double, double, double, double *, double *);
+void   photosynthesis_C3(control *, params *, state *,  double,
+                         double, double, double, double, double *, double *);
 double calc_co2_compensation_point(params *, double);
 double calculate_michaelis_menten(params *, double);
 void   calculate_jmaxt_vcmaxt(control *, params *, state *, double,

@@ -15,7 +15,7 @@
 /* C stuff */
 
 void    canopy(control *, fluxes *, met *, params *, state *, int);
-void    calculate_absorbed_radiation(params *, double, double *,
+void    calculate_absorbed_radiation(params *, double, double, double, double *,
                                      double *);
 
 void    solve_leaf_energy_balance(fluxes *, met *, params *, state *, long,

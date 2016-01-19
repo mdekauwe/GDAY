@@ -36,8 +36,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     */
 
     double Cs, dleaf, tleaf, new_tleaf, et, leafn, fc, ncontent, diffuse_frac,
-           zenith_angle, elevation, anleaf, gsc, apar, anir, athermal
-           direct_apar, diffuse_apar, arg1, arg2;
+           zenith_angle, elevation, anleaf, gsc, apar, anir, athermal,
+           direct_apar, diffuse_apar;
     int    hod, iter = 0, itermax = 100, leaf;
     long   offset;
     double gpp_gCm2_30_min, SEC_2_30min = 1800.;
@@ -113,7 +113,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
             while (TRUE) {
 
-                calculate_absorbed_radiation(p, diffuse_frac, &direct_apar,
+                calculate_absorbed_radiation(p, m->par[offset], diffuse_frac,
+                                             zenith_angle, &direct_apar,
                                              &diffuse_apar);
 
                 /* sunlit, shaded loop */
@@ -124,7 +125,13 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
 
                     if (c->ps_pathway == C3) {
-                        photosynthesis_C3(c, m, p, s, offset, ncontent, tleaf,
+                        /* ********************************************
+                            NEED TO PASS THE LEAF PAR NOT TOTAL PAR !!!
+                            ********************************************
+                        */
+
+                        photosynthesis_C3(c, p, s, ncontent, tleaf,
+                                          m->par[offset],
                                           Cs, dleaf, &gsc, &anleaf);
                     } else {
                         /* Nothing implemented */
@@ -195,19 +202,18 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
 }
 
-void calculate_absorbed_radiation(params *p, double diffuse_frac,
-                                  double *direct_apar, double *diffuse_apar) {
+void calculate_absorbed_radiation(params *p, double par, double diffuse_frac,
+                                  double zenith_angle, double *direct_apar,
+                                  double *diffuse_apar) {
     /*
         Calculate beam, diffuse and scattered radiation
     */
 
     /* Calculate beam radiation absorbed by sunlit leaf area. */
-    arg1 = m->par[offset] * (1.0 - diffuse_frac);
-    arg2 = cos(zenith_angle) * p->leaf_abs;
-    *direct_apar = arg1 / arg2;
+    *direct_apar = par * (1.0 - diffuse_frac) / cos(zenith_angle) * p->leaf_abs;
 
     /*  Calculate diffuse radiation absorbed directly. */
-    *diffuse_apar = m->par[offset] * diffuse_frac;
+    *diffuse_apar = par * diffuse_frac;
 
 
 
