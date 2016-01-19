@@ -36,8 +36,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     */
 
     double Cs, dleaf, tleaf, new_tleaf, et, leafn, fc, ncontent, diffuse_frac,
-           zenith_angle, elevation, anleaf, gsc;
-    int    hod, iter = 0, itermax = 100;
+           zenith_angle, elevation, anleaf, gsc, apar, anir, athermal;
+    int    hod, iter = 0, itermax = 100, leaf;
     long   offset;
     double gpp_gCm2_30_min, SEC_2_30min = 1800.;
 
@@ -111,37 +111,51 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
             while (TRUE) {
 
-                if (c->ps_pathway == C3) {
-                    photosynthesis_C3(c, m, p, s, offset, ncontent, tleaf,
-                                      Cs, dleaf, &gsc, &anleaf);
-                } else {
-                    /* Nothing implemented */
-                    fprintf(stderr, "C4 photosynthesis not implemented\n");
-                    exit(EXIT_FAILURE);
-                }
+                /* sunlit, shaded loop */
+                for (leaf = 0; leaf <= 1; leaf++) {
 
-                if (anleaf > 0.0) {
-                    /* Calculate new Cs, dleaf, Tleaf */
-                    solve_leaf_energy_balance(f, m, p, s, offset, tleaf, gsc,
-                                              anleaf, &Cs, &dleaf, &new_tleaf,
-                                              &et);
-                } else {
-                    et = 0.0;
-                }
 
-                if (iter >= itermax) {
-                    fprintf(stderr, "No convergence in canopy loop\n");
-                    exit(EXIT_FAILURE);
-                }
+                    if (leaf == 0) {    /* sunlit */
+                        continue;
+                    } else {            /* shaded */
+                        continue;
+                    }
 
-                /* stopping criteria */
-                if (fabs(tleaf - new_tleaf) < 0.02) {
-                    break;
-                }
 
-                /* Update temperature & do another iteration */
-                tleaf = new_tleaf;
-                iter++;
+
+                    if (c->ps_pathway == C3) {
+                        photosynthesis_C3(c, m, p, s, offset, ncontent, tleaf,
+                                          Cs, dleaf, &gsc, &anleaf);
+                    } else {
+                        /* Nothing implemented */
+                        fprintf(stderr, "C4 photosynthesis not implemented\n");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    if (anleaf > 0.0) {
+                        /* Calculate new Cs, dleaf, Tleaf */
+                        solve_leaf_energy_balance(f, m, p, s, offset, tleaf,
+                                                  gsc, anleaf, apar, anir,
+                                                  athermal, &Cs, &dleaf,
+                                                  &new_tleaf, &et);
+                    } else {
+                        et = 0.0;
+                    }
+
+                    if (iter >= itermax) {
+                        fprintf(stderr, "No convergence in canopy loop\n");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    /* stopping criteria */
+                    if (fabs(tleaf - new_tleaf) < 0.02) {
+                        break;
+                    }
+
+                    /* Update temperature & do another iteration */
+                    tleaf = new_tleaf;
+                    iter++;
+                }
             }
 
 
@@ -183,7 +197,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
 void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
                                long offset, double tleaf, double gsc,
-                               double anleaf, double *Cs, double *dleaf,
+                               double anleaf, double apar, double anir,
+                               double athermal, double *Cs, double *dleaf,
                                double *new_tleaf, double *et) {
     /*
         Coupled model wrapper to solve photosynthesis, stomtal conductance
@@ -251,6 +266,8 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
        the canopy is 1 */
     net_lw_rad = (1.0 - emissivity_atm) * SIGMA * pow(Tk, 4.0);
     rnet = leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
+
+    /*rnet = (apar / UMOLPERJ) + anir + athermal;*/
 
     /* Penman-Monteith equation */
     *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
