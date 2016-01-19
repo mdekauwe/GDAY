@@ -48,5 +48,6 @@
 #define PAR_2_SW 1.0 / SW_2_PAR
 #define J_TO_MJ  1.0E-6
 #define UMOLPERJ 4.57           /* Conversion from J to umol quanta */
+#define SEC_2_HLFHR 1800.;
 
 #endif /* CONSTANTS */

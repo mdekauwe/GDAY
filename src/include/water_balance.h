@@ -5,6 +5,16 @@
 #include "constants.h"
 #include "utilities.h"
 
+void   zero_water_day_fluxes(fluxes *);
+void   calculate_sub_daily_water_balance(control *, fluxes *, met *, params *,
+                                         state *, long, double, double);
+
+void   update_water_storage_subdaily(fluxes *, params *, state *, double,
+                                     double *, double *, double *, double *,
+                                     double *);
+
+double calc_soil_evaporation_subdaily(state *, double, double , double);
+double calc_infiltration_subdaily(params *, state*, double);
 
 double  penman_leaf(double, double, double, double, double, double, double,
                     double, double *);

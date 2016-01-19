@@ -35,12 +35,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         * Wang & Leuning (1998) Agricultural & Forest Meterorology, 91, 89-111.
     */
 
-    double Cs, dleaf, tleaf, new_tleaf, et, leafn, fc, ncontent, diffuse_frac,
+    double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
            zenith_angle, elevation, anleaf, gsc, apar, anir, athermal,
-           direct_apar, diffuse_apar;
+           direct_apar, diffuse_apar, total_rnet, diffuse_frac, rnet;
     int    hod, iter = 0, itermax = 100, leaf;
     long   offset;
-    double gpp_gCm2_30_min, SEC_2_30min = 1800.;
+
 
     /* initialise values of leaf temp, leaf surface CO2 and VPD from air space*/
     tleaf = m->tair[offset];            /* Leaf temperature */
@@ -86,15 +86,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         s->wtfac_root = 1.0;
     }
 
-    /* zero daily fluxes */
-    f->gpp_gCm2 = 0.0;
-    f->npp_gCm2 = 0.0;
-    f->gpp = 0.0;
-    f->npp = 0.0;
-    f->auto_resp = 0.0;
-    f->apar = 0.0;
-
-    gpp_gCm2_30_min = 0.0;
+    zero_carbon_day_fluxes(f);
+    zero_water_day_fluxes(f);
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         offset = project_day * c->num_days + hod;
@@ -114,6 +107,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                 calculate_absorbed_radiation(p, m->par[offset], diffuse_frac,
                                              zenith_angle, &direct_apar,
                                              &diffuse_apar);
+
+                total_rnet = 0.0;
 
                 /* sunlit, shaded loop */
                 for (leaf = 0; leaf <= 1; leaf++) {
@@ -142,9 +137,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                         solve_leaf_energy_balance(f, m, p, s, offset, tleaf,
                                                   gsc, anleaf, apar, anir,
                                                   athermal, &Cs, &dleaf,
-                                                  &new_tleaf, &et);
+                                                  &new_tleaf, &trans_hlf_hr);
                     } else {
-                        et = 0.0;
+                        trans_hlf_hr = 0.0;
                     }
 
                     if (iter >= itermax) {
@@ -161,31 +156,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                     tleaf = new_tleaf;
                     iter++;
                 }
+                total_rnet += rnet;
             }
 
+            update_daily_carbon_fluxes(f, p, anleaf);
+            calculate_sub_daily_water_balance(c, f, m, p, s, offset,
+                                              trans_hlf_hr, total_rnet);
 
-            /* umol m-2 s-1 -> gC m-2 30 min-1 */
-            gpp_gCm2_30_min += anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_30min;
             printf("* %lf %lf\n", m->par[offset], anleaf);
             exit(1);
-
-
-            /* Calculate plant respiration */
-            if (c->respiration_model == FIXED) {
-                /* Plant respiration assuming carbon-use efficiency. */
-                f->auto_resp += f->gpp * p->cue;
-            } else if(c->respiration_model == TEMPERATURE) {
-                fprintf(stderr, "Not implemented yet\n");
-                exit(EXIT_FAILURE);
-            } else if (c->respiration_model == BIOMASS) {
-                fprintf(stderr, "Not implemented yet\n");
-                exit(EXIT_FAILURE);
-            }
-
-            /* Calculate NPP */
-            f->npp_gCm2 = f->gpp_gCm2 * p->cue;
-            f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
-
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
@@ -371,4 +350,29 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
     }
 
     return (gbh);
+}
+
+
+void zero_carbon_day_fluxes(fluxes *f) {
+
+    f->gpp_gCm2 = 0.0;
+    f->npp_gCm2 = 0.0;
+    f->gpp = 0.0;
+    f->npp = 0.0;
+    f->auto_resp = 0.0;
+    f->apar = 0.0;
+
+    return;
+}
+
+void update_daily_carbon_fluxes(fluxes *f, params *p, double anleaf) {
+
+    /* umol m-2 s-1 -> gC m-2 30 min-1 */
+    f->gpp_gCm2 += anleaf * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
+    f->npp_gCm2 += f->gpp_gCm2 * p->cue;
+    f->gpp += f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->npp += f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->auto_resp += f->gpp - f->npp;
+
+    return;
 }

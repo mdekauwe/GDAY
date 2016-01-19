@@ -13,7 +13,8 @@
 #include "photosynthesis.h"
 
 /* C stuff */
-
+void    zero_carbon_day_fluxes(fluxes *);
+void    update_daily_carbon_fluxes(fluxes *, params *, double);
 void    canopy(control *, fluxes *, met *, params *, state *, int);
 void    calculate_absorbed_radiation(params *, double, double, double, double *,
                                      double *);

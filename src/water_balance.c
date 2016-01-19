@@ -1177,3 +1177,217 @@ double calc_sat_water_vapour_press(double tac) {
     */
     return (613.75 * exp(17.502 * tac / (240.97 + tac)));
 }
+
+
+
+
+void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
+                                       state *s, long offset, double rnet,
+                                       double transpiration_hlf_hr) {
+    /*
+
+    Calculate water balance
+
+    Parameters:
+    ----------
+    day : int
+        project day.
+    daylen : float
+        length of day in hours.
+    */
+    double soil_evap_hlf_hr, et_hlf_hr, interception_hlf_hr, runoff_hlf_hr;
+    double rain = m->rain[offset];
+
+    interception_hlf_hr = calc_infiltration_subdaily(p, s, rain);
+    soil_evap_hlf_hr = calc_soil_evaporation_subdaily(s, rnet, m->press[offset],
+                                                      m->tair[offset]);
+    et_hlf_hr = transpiration_hlf_hr + soil_evap_hlf_hr + interception_hlf_hr;
+    update_water_storage_subdaily(f, p, s, rain, &transpiration_hlf_hr,
+                                  &interception_hlf_hr, &soil_evap_hlf_hr, &
+                                  et_hlf_hr, &runoff_hlf_hr);
+    /* add half hour fluxes to day total store */
+    f->et += et_hlf_hr;
+    f->soil_evap += soil_evap_hlf_hr;
+    f->transpiration += transpiration_hlf_hr;
+    f->erain += (rain - interception_hlf_hr);
+    f->interception += interception_hlf_hr;
+    f->runoff += runoff_hlf_hr;
+
+    return;
+}
+
+void zero_water_day_fluxes(fluxes *f) {
+
+    f->et = 0.0;
+    f->soil_evap = 0.0;
+    f->transpiration = 0.0;
+    f->erain = 0.0;
+    f->interception = 0.0;
+    f->runoff = 0.0;
+
+    return;
+}
+
+double calc_infiltration_subdaily(params *p, state* s, double rain) {
+    /* Estimate "effective" rain, or infiltration I guess.
+
+    Simple assumption that infiltration relates to leaf area
+    and therefore canopy storage capacity (wetloss). Interception is
+    likely to be ("more") erroneous if a canopy is subject to frequent daily
+    rainfall I would suggest.
+
+    Parameters:
+    -------
+    rain : float
+        rainfall [mm d-1]
+
+    */
+    double interception;
+
+    if (s->lai > 0.0) {
+        interception = (rain * p->intercep_frac * \
+                        MIN(1.0, s->lai / p->max_intercep_lai));
+    } else {
+        interception = 0.0;
+    }
+
+    return (interception);
+}
+
+
+double calc_soil_evaporation_subdaily(state *s, double net_rad,
+                                      double press, double tair) {
+    /* Use Penman eqn to calculate top soil evaporation flux at the
+    potential rate.
+
+    Soil evaporation is dependent upon soil wetness and plant cover. The net
+    radiation term is scaled for the canopy cover passed to this func and
+    the impact of soil wetness is accounted for in the wtfac term. As the
+    soil dries the evaporation component reduces significantly.
+
+    Key assumptions from Ritchie...
+
+    * When plant provides shade for the soil surface, evaporation will not
+    be the same as bare soil evaporation. Wind speed, net radiation and VPD
+    will all belowered in proportion to the canopy density. Following
+    Ritchie role ofwind, VPD are assumed to be negligible and are therefore
+    ignored.
+
+    These assumptions are based on work with crops and whether this holds
+    for tree shading where the height from the soil to the base of the
+    crown is larger is questionable.
+
+    units = (mm/day)
+
+    References:
+    -----------
+    * Ritchie, 1972, Water Resources Research, 8, 1204-1213.
+
+    Parameters:
+    -----------
+    tavg : float
+        average daytime temp [degC]
+    net_rad : float
+        net radiation [mj m-2 day-1]
+    press : float
+        average daytime pressure [kPa]
+
+    Returns:
+    --------
+    soil_evap : float
+        soil evaporation [mm d-1]
+
+    */
+    double lambda, gamma, slope, arg1, arg2, soil_evap;
+
+    /* Latent heat of water vapour at air temperature (J mol-1) */
+    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
+
+    /* psychrometric constant */
+    gamma = CP * MASS_AIR * press / lambda;
+
+    /* Const s in Penman-Monteith equation  (Pa K-1) */
+    arg1 = calc_sat_water_vapour_press(tair + 0.1);
+    arg2 = calc_sat_water_vapour_press(tair);
+    slope = (arg1 - arg2) / 0.1;
+
+    soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda;
+
+    /*
+      Surface radiation is reduced by overstory LAI cover. This empirical
+      fit comes from Ritchie (1972) and is formed by a fit between the LAI
+      of 5 crops types and the fraction of observed net radiation at the
+      surface. Whilst the LAI does cover a large range, nominal 0–6, there
+      are only 12 measurements and only three from LAI > 3. So this might
+      not hold as well for a forest canopy?
+      Ritchie 1972, Water Resources Research, 8, 1204-1213.
+    */
+    if (s->lai > 0.0)
+        soil_evap *= exp(-0.398 * s->lai);
+
+    /* reduce soil evaporation if top soil is dry */
+    soil_evap *= s->wtfac_topsoil;
+
+    return (soil_evap);
+}
+
+
+void update_water_storage_subdaily(fluxes *f, params *p, state *s,
+                                   double rain, double *transpiration,
+                                   double *interception, double *soil_evap,
+                                   double *et, double *runoff) {
+    /* Calculate root and top soil plant available water and runoff.
+
+    Soil drainage is estimated using a "leaky-bucket" approach with two
+    soil layers. In reality this is a combined drainage and runoff
+    calculation, i.e. "outflow". There is no drainage out of the "bucket"
+    soil.
+
+    Returns:
+    --------
+    outflow : float
+        outflow [mm d-1]
+    */
+    double trans_frac, previous;
+
+    /* reduce transpiration from the top soil if it is dry */
+    trans_frac = p->fractup_soil * s->wtfac_topsoil;
+
+    /* Total soil layer */
+    s->pawater_topsoil += (rain - *interception) - \
+                          (*transpiration * trans_frac) - \
+                           *soil_evap;
+
+    if (s->pawater_topsoil < 0.0) {
+        s->pawater_topsoil = 0.0;
+    } else if (s->pawater_topsoil > p->wcapac_topsoil) {
+        s->pawater_topsoil = p->wcapac_topsoil;
+    }
+
+    /* Total root zone */
+    previous = s->pawater_root;
+    s->pawater_root += (rain - *interception) - *transpiration - *soil_evap;
+
+    /* calculate runoff and remove any excess from rootzone */
+    if (s->pawater_root > p->wcapac_root) {
+        *runoff = s->pawater_root - p->wcapac_root;
+        s->pawater_root -= *runoff;
+    } else {
+        *runoff = 0.0;
+    }
+
+    if (s->pawater_root < 0.0) {
+        *transpiration = 0.0;
+        *soil_evap = 0.0;
+        *et = *interception;
+    }
+
+    if (s->pawater_root < 0.0)
+        s->pawater_root = 0.0;
+    else if (s->pawater_root > p->wcapac_root)
+        s->pawater_root = p->wcapac_root;
+
+    s->delta_sw_store = s->pawater_root - previous;
+
+    return;
+}
