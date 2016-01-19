@@ -224,6 +224,8 @@ void initialise_params(params *p) {
     for (i = 0; i < 7; i++) {
         p->decayrate[i] = 0.0;
     }
+    /* absorptance of solar radiation (0-1), typically 0.4-0.6 */
+    p->leaf_abs = 0.5;
 }
 
 

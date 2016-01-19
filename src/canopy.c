@@ -36,7 +36,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     */
 
     double Cs, dleaf, tleaf, new_tleaf, et, leafn, fc, ncontent, diffuse_frac,
-           zenith_angle, elevation, anleaf, gsc, apar, anir, athermal;
+           zenith_angle, elevation, anleaf, gsc, apar, anir, athermal
+           direct_apar, diffuse_apar, arg1, arg2;
     int    hod, iter = 0, itermax = 100, leaf;
     long   offset;
     double gpp_gCm2_30_min, SEC_2_30min = 1800.;
@@ -45,6 +46,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     tleaf = m->tair[offset];            /* Leaf temperature */
     dleaf = m->vpd[offset] * KPA_2_PA;  /* VPD at the leaf suface */
     Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
+
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -111,15 +113,13 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
             while (TRUE) {
 
+                calculate_absorbed_radiation(p, diffuse_frac, &direct_apar,
+                                             &diffuse_apar);
+
                 /* sunlit, shaded loop */
                 for (leaf = 0; leaf <= 1; leaf++) {
 
 
-                    if (leaf == 0) {    /* sunlit */
-                        continue;
-                    } else {            /* shaded */
-                        continue;
-                    }
 
 
 
@@ -195,6 +195,25 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
 }
 
+void calculate_absorbed_radiation(params *p, double diffuse_frac,
+                                  double *direct_apar, double *diffuse_apar) {
+    /*
+        Calculate beam, diffuse and scattered radiation
+    */
+
+    /* Calculate beam radiation absorbed by sunlit leaf area. */
+    arg1 = m->par[offset] * (1.0 - diffuse_frac);
+    arg2 = cos(zenith_angle) * p->leaf_abs;
+    *direct_apar = arg1 / arg2;
+
+    /*  Calculate diffuse radiation absorbed directly. */
+    *diffuse_apar = m->par[offset] * diffuse_frac;
+
+
+
+    return;
+}
+
 void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
                                long offset, double tleaf, double gsc,
                                double anleaf, double apar, double anir,
@@ -219,9 +238,6 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     double Ca = m->co2[offset];
 
     double rnet, ea, ema, Tk, sw_rad;
-
-    /* absorptance of solar radiation (0-1), typically 0.4-0.6 */
-    double leaf_abs = 0.5;
     double emissivity_atm;
 
     /*
@@ -265,7 +281,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
        the canopy is 1 */
     net_lw_rad = (1.0 - emissivity_atm) * SIGMA * pow(Tk, 4.0);
-    rnet = leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
+    rnet = p->leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
 
     /*rnet = (apar / UMOLPERJ) + anir + athermal;*/
 
