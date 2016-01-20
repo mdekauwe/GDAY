@@ -186,14 +186,17 @@ void calculate_absorbed_radiation(params *p, double par, double diffuse_frac,
                                   double zenith_angle, double *direct_apar,
                                   double *diffuse_apar) {
     /*
-        Calculate beam, diffuse and scattered radiation
+        Calculate absorded direct (beam) and diffuse radiation
     */
+    double k = 0.5;
+
+    /*  Calculate diffuse radiation absorbed directly. */
+    *diffuse_apar = par * diffuse_frac * (1.0 - exp(k * s->lai));
 
     /* Calculate beam radiation absorbed by sunlit leaf area. */
     *direct_apar = par * (1.0 - diffuse_frac) / cos(zenith_angle) * p->leaf_abs;
+    *direct_apar += *diffuse_apar;
 
-    /*  Calculate diffuse radiation absorbed directly. */
-    *diffuse_apar = par * diffuse_frac;
 
 
 
