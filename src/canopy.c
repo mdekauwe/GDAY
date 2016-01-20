@@ -157,7 +157,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
             }
             /* scale leaf flux to canopy */
-            sunlit_frac = (1.0 - exp(p->kext * s->lai)) / p->kext;
+            sunlit_frac = (1.0 - exp(-p->kext * s->lai)) / p->kext;
             acanopy = sunlit_frac * anleaf[SUNLIT];
             acanopy += (s->lai - sunlit_frac) * anleaf[SHADED];
 
@@ -192,14 +192,13 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /*
         Calculate absorded direct (beam) and diffuse radiation
     */
-    double k = 0.5;
-
+    s->lai = 3.0;
     /*  Calculate diffuse radiation absorbed directly. */
-    apar[SHADED] = par * diffuse_frac * (1.0 - exp(k * s->lai));
+    *(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
     /* Calculate beam radiation absorbed by sunlit leaf area. */
-    apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos(zenith_angle) * p->leaf_abs;
-    apar[SUNLIT] += apar[SHADED];
+    *(apar+SUNLIT) = par * (1.0 - diffuse_frac) / cos(zenith_angle) * p->leaf_abs;
+    *(apar+SUNLIT) += *(apar+SHADED);
 
     return;
 }
