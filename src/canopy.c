@@ -192,7 +192,6 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /*
         Calculate absorded direct (beam) and diffuse radiation
     */
-    s->lai = 3.0;
     /*  Calculate diffuse radiation absorbed directly. */
     *(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
