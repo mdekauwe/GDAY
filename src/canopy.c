@@ -98,7 +98,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
         zenith_angle = calculate_zenith_angle(p, m->doy[project_day], hod);
         elevation = 90.0 - zenith_angle;
-        printf("* %lf %lf %lf\n", elevation, zenith_angle, cos(zenith_angle) );
+
         /* calculates diffuse frac from half-hourly incident radiation */
         diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle, par);
 
@@ -167,7 +167,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
             calculate_sub_daily_water_balance(c, f, m, p, s, offset,
                                               trans_hlf_hr, total_rnet);
 
-            /*printf("* %lf %lf %lf %lf\n", m->par[offset], acanopy, anleaf[SUNLIT], anleaf[SHADED]);*/
+            printf("* %lf %lf %lf %lf\n", m->par[offset], acanopy, anleaf[SUNLIT], anleaf[SHADED]);
 
 
 
@@ -192,14 +192,16 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /*
         Calculate absorded direct (beam) and diffuse radiation
     */
+    double cos_zenith = cos(DEG2RAD(zenith_angle));
+
     /*  Calculate diffuse radiation absorbed directly. */
     apar[SHADED] = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
     /* Calculate beam radiation absorbed by sunlit leaf area. */
-    apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos(zenith_angle) * p->leaf_abs;
+    apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
     apar[SUNLIT] += apar[SHADED];
 
-    /*printf("%lf %lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], cos(zenith_angle), zenith_angle ); */
+    /*printf("%lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], apar[SUNLIT]+ apar[SHADED]);*/
     return;
 }
 
