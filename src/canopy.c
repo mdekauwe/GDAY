@@ -106,9 +106,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     initialise values of leaf temp, leaf surface CO2 and VPD
                     from air space
                 */
-                tleaf = m->tair[c->hrly_idx];                  /* Leaf temperature */
-                dleaf = m->vpd[c->hrly_idx] * KPA_2_PA;  /* VPD at the leaf suface */
-                Cs = m->co2[c->hrly_idx];          /* CO2 conc. at the leaf suface */
+                tleaf = m->tair[c->hrly_idx];             /* Leaf temperature */
+                dleaf = m->vpd[c->hrly_idx] * KPA_2_PA; /* D at the leaf surf */
+                Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
 
                 while (TRUE) {
 
@@ -156,17 +156,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
             acanopy = sunlit_frac * anleaf[SUNLIT];
             acanopy += shaded_frac * anleaf[SHADED];
-            trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
-            trans_canopy += shaded_frac * leaf_trans[SHADED];
-            /* transpiration mol m-2 s-1 to mm 30 min-1 */
-            trans_canopy *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-
             gsc_canopy = sunlit_frac * gsc[SUNLIT];
             gsc_canopy += shaded_frac * gsc[SHADED];
+            trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
+            trans_canopy += shaded_frac * leaf_trans[SHADED];
+
 
             update_daily_carbon_fluxes(f, p, acanopy);
-            calculate_sub_daily_water_balance(c, f, m, p, s, c->hrly_idx,
-                                              trans_canopy, total_rnet);
+            calculate_sub_daily_water_balance(c, f, m, p, s, trans_canopy,
+                                              total_rnet);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we

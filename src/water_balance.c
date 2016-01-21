@@ -1182,7 +1182,7 @@ double calc_sat_water_vapour_press(double tac) {
 
 
 void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
-                                       state *s, long offset, double rnet,
+                                       state *s, double rnet,
                                        double transpiration_hlf_hr) {
     /*
 
@@ -1196,15 +1196,20 @@ void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
         length of day in hours.
     */
     double soil_evap_hlf_hr, et_hlf_hr, interception_hlf_hr, runoff_hlf_hr;
-    double rain = m->rain[offset];
+    double rain = m->rain[c->hrly_idx];
+
+    /* transpiration mol m-2 s-1 to mm 30 min-1 */
+    transpiration_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
     interception_hlf_hr = calc_infiltration_subdaily(p, s, rain);
-    soil_evap_hlf_hr = calc_soil_evaporation_subdaily(s, rnet, m->press[offset],
-                                                      m->tair[offset]);
+    soil_evap_hlf_hr = calc_soil_evaporation_subdaily(s, rnet,
+                                                      m->press[c->hrly_idx],
+                                                      m->tair[c->hrly_idx]);
     et_hlf_hr = transpiration_hlf_hr + soil_evap_hlf_hr + interception_hlf_hr;
     update_water_storage_subdaily(f, p, s, rain, &transpiration_hlf_hr,
-                                  &interception_hlf_hr, &soil_evap_hlf_hr, &
-                                  et_hlf_hr, &runoff_hlf_hr);
+                                  &interception_hlf_hr, &soil_evap_hlf_hr,
+                                  &et_hlf_hr, &runoff_hlf_hr);
+
     /* add half hour fluxes to day total store */
     f->et += et_hlf_hr;
     f->soil_evap += soil_evap_hlf_hr;
