@@ -36,9 +36,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     */
 
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
-           cos_zenith, elevation, anleaf[2], gsc, apar[2],
-           direct_apar, diffuse_apar, total_rnet, diffuse_frac, rnet,
-           press, vpd, par, tair, wind, Ca, sunlit_frac, acanopy;
+           cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
+           direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
+           press, vpd, par, tair, wind, Ca, sunlit_frac, acanopy, trans_canopy,
+           shaded_frac, gsc_canopy;
     int    hod, iter = 0, itermax = 100, ileaf;
     long   offset;
 
@@ -110,18 +111,16 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
             /* sunlit, shaded loop */
             acanopy = 0.0;
-            total_rnet = 0.0;
+            trans_canopy = 0.0;
+            gsc_canopy = 0.0;
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
                 while (TRUE) {
 
                     if (c->ps_pathway == C3) {
-                        /* ********************************************
-                            NEED TO PASS THE LEAF PAR NOT TOTAL PAR !!!
-                            ********************************************
-                        */
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
-                                          Cs, dleaf, &gsc, &anleaf[ileaf]);
+                                          Cs, dleaf, &gsc[ileaf],
+                                          &anleaf[ileaf]);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
@@ -131,10 +130,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                     if (anleaf[ileaf] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(f, m, p, s, offset, tleaf,
-                                                  gsc, anleaf[ileaf], apar[ileaf], &Cs, &dleaf,
-                                                  &new_tleaf, &trans_hlf_hr);
+                                                  gsc[ileaf], anleaf[ileaf],
+                                                  apar[ileaf], &Cs, &dleaf,
+                                                  &new_tleaf,
+                                                  &leaf_trans[ileaf]);
                     } else {
-                        trans_hlf_hr = 0.0;
+                        leaf_trans[ileaf] = 0.0;
                     }
 
                     if (iter >= itermax) {
@@ -153,25 +154,34 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
                 }
                 total_rnet += rnet;
-
-
             }
-            /* scale leaf flux to canopy */
+            /* scale leaf fluxes to the  canopy */
             sunlit_frac = (1.0 - exp(-p->kext * s->lai)) / p->kext;
+            shaded_frac = (s->lai - sunlit_frac);
+
             acanopy = sunlit_frac * anleaf[SUNLIT];
-            acanopy += (s->lai - sunlit_frac) * anleaf[SHADED];
+            acanopy += shaded_frac * anleaf[SHADED];
+            trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
+            trans_canopy += shaded_frac * leaf_trans[SHADED];
+            /* transpiration mol m-2 s-1 to mm 30 min-1 */
+            trans_canopy *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+
+            gsc_canopy = sunlit_frac * gsc[SUNLIT];
+            gsc_canopy += shaded_frac * gsc[SHADED];
 
             update_daily_carbon_fluxes(f, p, acanopy);
-            /* transpiration mol m-2 s-1 to mm 30 min-1 */
-            trans_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
             calculate_sub_daily_water_balance(c, f, m, p, s, offset,
-                                              trans_hlf_hr, total_rnet);
-
+                                              trans_canopy, total_rnet);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance */
-
+            acanopy = 0.0;
+            gsc_canopy = 0.0;
+            trans_canopy = 0.0;
+            update_daily_carbon_fluxes(f, p, acanopy);
+            calculate_sub_daily_water_balance(c, f, m, p, s, offset,
+                                              trans_canopy, total_rnet);
         }
 
     }
@@ -188,11 +198,11 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     */
 
     /*  Calculate diffuse radiation absorbed directly. */
-    apar[SHADED] = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
+    *(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
     /* Calculate beam radiation absorbed by sunlit leaf area. */
-    apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
-    apar[SUNLIT] += apar[SHADED];
+    *(apar+SUNLIT) = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
+    *(apar+SUNLIT)  += *(apar+SHADED);
 
     return;
 }
