@@ -161,7 +161,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
             trans_canopy += shaded_frac * leaf_trans[SHADED];
 
-
             update_daily_carbon_fluxes(f, p, acanopy);
             calculate_sub_daily_water_balance(c, f, m, p, s, trans_canopy,
                                               total_rnet);
