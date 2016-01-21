@@ -162,8 +162,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             trans_canopy += shaded_frac * leaf_trans[SHADED];
 
             update_daily_carbon_fluxes(f, p, acanopy);
-            calculate_sub_daily_water_balance(c, f, m, p, s, trans_canopy,
-                                              total_rnet);
+            calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
+                                              trans_canopy);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
@@ -172,8 +172,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = 0.0;
             trans_canopy = 0.0;
             update_daily_carbon_fluxes(f, p, acanopy);
-            calculate_sub_daily_water_balance(c, f, m, p, s, c->hrly_idx,
-                                              trans_canopy, total_rnet);
+            calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
+                                              trans_canopy);
         }
         c->hrly_idx++;
     }

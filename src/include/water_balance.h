@@ -7,7 +7,7 @@
 
 void   zero_water_day_fluxes(fluxes *);
 void   calculate_sub_daily_water_balance(control *, fluxes *, met *, params *,
-                                         state *, long, double, double);
+                                         state *, double, double);
 
 void   update_water_storage_subdaily(fluxes *, params *, state *, double,
                                      double *, double *, double *, double *,

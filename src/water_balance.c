@@ -1180,7 +1180,6 @@ double calc_sat_water_vapour_press(double tac) {
 
 
 
-
 void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
                                        state *s, double rnet,
                                        double transpiration_hlf_hr) {

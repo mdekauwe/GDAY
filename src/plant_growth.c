@@ -720,7 +720,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
-    /*printf("%f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);*/
+    printf("* %f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);
 
     /* Total allocation should be one, if not print warning */
     total_alloc = f->alroot + f->alleaf + f->albranch + f->alstem + f->alcroot;
