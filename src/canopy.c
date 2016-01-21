@@ -167,7 +167,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
             calculate_sub_daily_water_balance(c, f, m, p, s, offset,
                                               trans_hlf_hr, total_rnet);
 
-            printf("* %lf %lf %lf %lf\n", m->par[offset], acanopy, anleaf[SUNLIT], anleaf[SHADED]);
+            /*printf("* %lf %lf %lf %lf\n", m->par[offset], acanopy, anleaf[SUNLIT], anleaf[SHADED]);*/
 
 
 

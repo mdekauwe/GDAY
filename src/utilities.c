@@ -240,35 +240,64 @@ double calculate_zenith_angle(params *p, double doy, double hod) {
 
     */
 
-    double zenith_angle, dec, et, lc, t0, h, rlat, cos_zen;
-
+    double zenith_angle, dec, et, lc, t0, h, cos_zen, gamma;
+    double hour_angle, rlat, rlon, loc_hour_angle, cosz;
     /* need to convert 30 min data, 0-47 to 0-23.5 */
+
     hod /= 2.0;
 
-    dec = calculate_solar_declination(doy);
-    et = calculate_eqn_of_time(doy);
-    lc = calculate_longitudal_correction(p->longitude);
-    t0 = 12.0 - lc - et; /* time of solar noon (h) */
+    gamma = day_angle(doy);
+    dec = calculate_solar_declination(doy, gamma);
+    et = calculate_eqn_of_time(doy, gamma);
+    /*lc = (p->longitude - round_to_value(p->longitude, 15.)) / 15.0;  hrs */
+    lc = (p->longitude - round_to_value(p->longitude, 15.)) * 4.0; /* min */
+    t0 = 12.0 - (lc / 60.) - (et / 60.); /* time of solar noon (h) */
     h = DEG2RAD(15.0 * (hod - t0));
     rlat = DEG2RAD(p->latitude);
     cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
     if (cos_zen < 0.0)
         cos_zen = 0.0;
+    else if (cos_zen > 1.0)
+        cos_zen = 1.0;
 
     zenith_angle = RAD2DEG(acos(cos_zen));
+
+
+    printf("%lf %lf %lf %lf\n", hod, zenith_angle, 90.-zenith_angle, cos_zen);
 
     return (zenith_angle);
 }
 
+double day_angle(int doy) {
+    /* Calculation of day angle
 
-double calculate_solar_declination(int doy) {
+    Reference:
+    ----------
+    * J. W. Spencer (1971). Fourier series representation of the position of
+      the sun.
+
+    Returns:
+    ---------
+    gamma - day angle in radians.
+    */
+    double gamma;
+
+    gamma = (2.0 * M_PI * (doy - 1.0)) / 365;
+
+    return (gamma);
+}
+
+double calculate_solar_declination(int doy, double gamma) {
     /*
-    Solar Declination Angle
+    Solar Declination Angle is a function of day of year and is indepenent
+    of location, varying between 23deg45' to -23deg45'
 
     Arguments:
     ----------
     doy : int
         day of year, 1=jan 1
+    gamma : double
+        fractional year (radians)
 
     Returns:
     --------
@@ -277,17 +306,22 @@ double calculate_solar_declination(int doy) {
 
     Reference:
     ----------
-    Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
+    * Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
+    * J. W. Spencer (1971). Fourier series representation of the position of
+      the sun.
     */
-    double sindec;
+    double sindec, decl;
 
-    sindec = -sin(DEG2RAD(23.5)) * cos(2.0 * M_PI * (doy + 10.0) / 365.);
+    /* declination (radians) */
+    decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) - \
+           0.006758 * cos(2.0 * gamma) + 0.000907 * sin(2.0 * gamma) -\
+           0.002697 * cos(3.0 * gamma) + 0.00148 * sin(3.0 * gamma);
 
-    return (asin(sindec));
+    return (decl);
 
 }
 
-double calculate_eqn_of_time(int doy) {
+double calculate_eqn_of_time(int doy, double gamma) {
     /* Equation of time - correction for the difference btw solar time
     and the clock time.
 
@@ -295,54 +329,37 @@ double calculate_eqn_of_time(int doy) {
     ----------
     doy : int
         day of year
+    gamma : double
+        fractional year (radians)
 
     References:
     -----------
     * Campbell, G. S. and Norman, J. M. (1998) Introduction to environmental
       biophysics. Pg 169.
+    * J. W. Spencer (1971). Fourier series representation of the position of
+      the sun.
+    * Hughes, David W.; Yallop, B. D.; Hohenkerk, C. Y. (1989),
+      "The Equation of Time", Monthly Notices of the Royal Astronomical
+      Society 238: 1529–1535
     */
-    double f, arg1, arg2, arg3, et;
+    double et, f, A;
 
-    f = DEG2RAD(279.575 + 0.9856 * doy);
-    arg1 = -104.7 * sin(f) + 596.2 * sin(2.0 * f) + 4.3;
-    arg2 = sin(3.0 * f) - 12.7 * sin(4.0 * f) - 429.3;
-    arg3 = cos(f) - 2.0 * cos(2.0 * f) + 19.3 * cos(3.0 * f);
-    et = arg1 * arg2 * arg3;
+    /* radians */
+    et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
+         0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);
 
-    return (et / 3600.0);
-}
+    /* radians to minutes */
+    et *= 229.18;
 
-
-double calculate_longitudal_correction(double lon) {
     /*
-    Calculate the longitudal correction for travelling east and west.
-    +4 minutes (+1/15 hour) for every degree east of the standard meridian
-    and -4 mins for each degree west.
-
-    Arguments:
-    ----------
-    lon : double
-        day of year
-
+    f = 279.575 + 0.9856 * doy;
+    A = f * M_PI / 180.0;
+    et = (-104.7 * sin(A) + 596.2 * sin(2.0 * A) + 4.3 * sin(3.0 * A) -\
+            12.7 * sin(4.0 * A) - 429.3 * cos(A) - 2.0 * cos(2.0 * A) +\
+            19.3 * cos(3.0 * A)) / 3600.0;
     */
-    double merid, Ih, A, SM, lc;
 
-    merid = floor(lon / 15.0) * 15.0;
-    if (merid < 0.0)
-        merid += 15.0;
-
-    Ih = floor(lon / 15.0);
-    A = lon / 15.;
-    if (A > (Ih + 0.5)) {
-        SM = (Ih + 1.0) * 15.0;
-    } else {
-        SM = Ih * 15.0;
-    }
-
-    /* longitudinal correction */
-    lc = (lon - SM) * -4.0 / 60.0;
-
-    return (lc);
+    return (et);
 }
 
 
@@ -404,4 +421,8 @@ double estimate_clearness(double sw_rad, double So) {
     }
 
     return (tau);
+}
+
+double round_to_value(double number, double roundto) {
+    return (round(number / roundto) * roundto);
 }

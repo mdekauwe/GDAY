@@ -14,10 +14,11 @@
 
 
 /* utilities */
+double round_to_value(double, double);
+double day_angle(int);
 double calculate_zenith_angle(params *, double, double);
-double calculate_solar_declination(int);
-double calculate_eqn_of_time(int);
-double calculate_longitudal_correction(double);
+double calculate_solar_declination(int, double);
+double calculate_eqn_of_time(int, double);
 double get_diffuse_frac(int, double, double);
 double spitters(int, double, double);
 double calc_extra_terrestrial_irradiance(double, double);
