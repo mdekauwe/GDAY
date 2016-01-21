@@ -200,7 +200,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
     apar[SUNLIT] += apar[SHADED];
 
-    printf("%lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], apar[SUNLIT]+ apar[SHADED]);
+    /*printf("%lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], apar[SUNLIT]+ apar[SHADED]);*/
     return;
 }
 

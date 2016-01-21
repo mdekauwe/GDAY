@@ -246,14 +246,15 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     /* need to convert 30 min data, 0-47 to 0-23.5 */
 
     hod /= 2.0;
-
     gamma = day_angle(doy);
     dec = calculate_solar_declination(doy, gamma);
     et = calculate_eqn_of_time(doy, gamma);
+
+    /* longitudinal correction (hrs) */
     lc = (p->longitude - round_to_value(p->longitude, 15.)) / 15.0;
-    t0 = 12.0 - lc - et / 60.;
-    /*lc = (p->longitude - round_to_value(p->longitude, 15.)) * 4.0;
-    t0 = 12.0 - (lc / 60.) - (et / 60.); */
+
+    /* solar time  */
+    t0 = 12.0 - lc - et;
     h = DEG2RAD(15.0 * (hod - t0));
     rlat = DEG2RAD(p->latitude);
     *cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
@@ -265,7 +266,7 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     zenith_angle = RAD2DEG(acos(*cos_zen));
     *elevation = 90.0 - zenith_angle;
 
-    /*printf("%lf %lf %lf %lf\n", hod, zenith_angle, 90.-zenith_angle, cos_zen);*/
+    /*printf("%lf %lf\n", hod, *elevation);*/
 
     return;
 }
@@ -350,16 +351,19 @@ double calculate_eqn_of_time(int doy, double gamma) {
     et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
          0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);
 
+    /* radians to hours */
+    et *= 24.0 / (2.0 * M_PI);
+
     /* radians to minutes */
-    et *= 229.18;
+    /*et *= 229.18; */
 
-
+    /* Campbell & Norman (hrs)
     f = 279.575 + 0.9856 * doy;
     A = f * M_PI / 180.0;
     et = (-104.7 * sin(A) + 596.2 * sin(2.0 * A) + 4.3 * sin(3.0 * A) -\
             12.7 * sin(4.0 * A) - 429.3 * cos(A) - 2.0 * cos(2.0 * A) +\
             19.3 * cos(3.0 * A)) / 3600.0;
-
+    */
 
     return (et);
 }
