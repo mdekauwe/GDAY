@@ -10,16 +10,15 @@
 #include "constants.h"
 #include "water_balance.h"
 #include "utilities.h"
+#include "radiation.h"
 #include "photosynthesis.h"
 
 /* C stuff */
 void    zero_carbon_day_fluxes(fluxes *);
 void    update_daily_carbon_fluxes(fluxes *, params *, double);
-void    canopy(control *, fluxes *, met *, params *, state *, int);
-void    calculate_absorbed_radiation(params *, state *, double, double, double,
-                                     double *);
+void    canopy(control *, fluxes *, met *, params *, state *);
 
-void    solve_leaf_energy_balance(fluxes *, met *, params *, state *, long,
+void    solve_leaf_energy_balance(control *, fluxes *, met *, params *, state *,
                                   double, double, double, double, double *,
                                   double *, double *, double *);
 double  calc_radiation_conductance(double);

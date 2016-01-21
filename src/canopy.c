@@ -15,8 +15,7 @@
 #include "canopy.h"
 #include "water_balance.h"
 
-void canopy(control *c, fluxes *f, met *m, params *p, state *s,
-            int project_day) {
+void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     /*
         Two-leaf canopy module consists of two parts:
         (1) a radiation submodel to calculate PAR, NIR and thermal radiation
@@ -41,8 +40,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
            press, vpd, par, tair, wind, Ca, sunlit_frac, acanopy, trans_canopy,
            shaded_frac, gsc_canopy;
     int    hod, iter = 0, itermax = 100, ileaf;
-    long   offset;
-
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -86,34 +83,32 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     zero_water_day_fluxes(f);
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        offset = project_day * c->num_days + hod;
-
-        /*
-            initialise values of leaf temp, leaf surface CO2 and VPD from
-            air space
-        */
-        tleaf = m->tair[offset];                        /* Leaf temperature */
-        dleaf = m->vpd[offset] * KPA_2_PA;        /* VPD at the leaf suface */
-        Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
-        par = m->par[offset];
-
-        calculate_zenith_angle(p, m->doy[project_day], hod, &cos_zenith,
+        calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                &elevation);
 
         /* calculates diffuse frac from half-hourly incident radiation */
-        diffuse_frac = get_diffuse_frac(m->doy[offset], cos_zenith, par);
+        par = m->par[c->hrly_idx];
+        diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par);
 
         /* Is the sun up? */
         if (elevation > 0.0) {
-
-            calculate_absorbed_radiation(p, s, par, diffuse_frac,
-                                         cos_zenith, &(apar[0]));
 
             /* sunlit, shaded loop */
             acanopy = 0.0;
             trans_canopy = 0.0;
             gsc_canopy = 0.0;
+            calculate_absorbed_radiation(p, s, par, diffuse_frac,
+                                         cos_zenith, &(apar[0]));
+            printf("%ld %d : %lf %lf %lf %lf %lf %lf\n", c->hrly_idx, hod, par, apar[0], apar[1], s->lai, ncontent, s->shootnc);
             for (ileaf = 0; ileaf <= 1; ileaf++) {
+
+                /*
+                    initialise values of leaf temp, leaf surface CO2 and VPD
+                    from air space
+                */
+                tleaf = m->tair[c->hrly_idx];                  /* Leaf temperature */
+                dleaf = m->vpd[c->hrly_idx] * KPA_2_PA;  /* VPD at the leaf suface */
+                Cs = m->co2[c->hrly_idx];          /* CO2 conc. at the leaf suface */
 
                 while (TRUE) {
 
@@ -129,7 +124,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
                     if (anleaf[ileaf] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(f, m, p, s, offset, tleaf,
+                        solve_leaf_energy_balance(c, f, m, p, s, tleaf,
                                                   gsc[ileaf], anleaf[ileaf],
                                                   apar[ileaf], &Cs, &dleaf,
                                                   &new_tleaf,
@@ -170,45 +165,30 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
             gsc_canopy += shaded_frac * gsc[SHADED];
 
             update_daily_carbon_fluxes(f, p, acanopy);
-            calculate_sub_daily_water_balance(c, f, m, p, s, offset,
+            calculate_sub_daily_water_balance(c, f, m, p, s, c->hrly_idx,
                                               trans_canopy, total_rnet);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
-               still need to calc the full water balance */
+               still need to calc the full water balance, i.e. soil evap */
             acanopy = 0.0;
             gsc_canopy = 0.0;
             trans_canopy = 0.0;
             update_daily_carbon_fluxes(f, p, acanopy);
-            calculate_sub_daily_water_balance(c, f, m, p, s, offset,
+            calculate_sub_daily_water_balance(c, f, m, p, s, c->hrly_idx,
                                               trans_canopy, total_rnet);
         }
-
+        c->hrly_idx++;
     }
 
     return;
 
 }
 
-void calculate_absorbed_radiation(params *p, state *s, double par,
-                                  double diffuse_frac, double cos_zenith,
-                                  double *apar) {
-    /*
-        Calculate absorded direct (beam) and diffuse radiation
-    */
 
-    /*  Calculate diffuse radiation absorbed directly. */
-    *(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
-    /* Calculate beam radiation absorbed by sunlit leaf area. */
-    *(apar+SUNLIT) = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
-    *(apar+SUNLIT)  += *(apar+SHADED);
-
-    return;
-}
-
-void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
-                               long offset, double tleaf, double gsc,
+void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
+                               state *s, double tleaf, double gsc,
                                double anleaf, double apar, double *Cs,
                                double *dleaf, double *new_tleaf, double *et) {
     /*
@@ -222,11 +202,11 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     double gbc, gamma, epsilon, omega, Tdiff, sensible_heat;
 
     /* unpack the met data and get the units right */
-    double press = m->press[offset] * KPA_2_PA;
-    double vpd = m->vpd[offset] * KPA_2_PA;
-    double tair = m->tair[offset];
-    double wind = m->wind[offset];
-    double Ca = m->co2[offset];
+    double press = m->press[c->hrly_idx] * KPA_2_PA;
+    double vpd = m->vpd[c->hrly_idx] * KPA_2_PA;
+    double tair = m->tair[c->hrly_idx];
+    double wind = m->wind[c->hrly_idx];
+    double Ca = m->co2[c->hrly_idx];
 
 
     double rnet, ea, ema, Tk, sw_rad;
@@ -239,7 +219,7 @@ void solve_leaf_energy_balance(fluxes *f, met *m, params *p, state *s,
     */
     double kd = 0.8, net_lw_rad;
 
-    Tk = m->tair[offset] + DEG_TO_KELVIN;
+    Tk = m->tair[c->hrly_idx] + DEG_TO_KELVIN;
 
     /* Radiation conductance (mol m-2 s-1) */
     gradn = calc_radiation_conductance(tair);

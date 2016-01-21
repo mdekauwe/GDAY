@@ -15,14 +15,6 @@
 
 /* utilities */
 double round_to_value(double, double);
-double day_angle(int);
-void   calculate_zenith_angle(params *, double, double, double *, double *);
-double calculate_solar_declination(int, double);
-double calculate_eqn_of_time(int, double);
-double get_diffuse_frac(int, double, double);
-double spitters(int, double, double);
-double calc_extra_terrestrial_irradiance(double, double);
-double estimate_clearness(double, double);
 double day_length(int, int, double);
 void   calculate_daylength(int, double, double *);
 int    is_leap_year(int);

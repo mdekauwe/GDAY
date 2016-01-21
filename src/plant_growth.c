@@ -36,14 +36,14 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
     if (c->sub_daily) {
         /* calculate 30-min GPP/NPP, respiration and water fluxes */
-        canopy(c, f, m, p, s, project_day);
+        canopy(c, f, m, p, s);
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, project_day, day_length);
         calculate_daily_water_balance(c, f, m, p, s, project_day, day_length);
     }
 
-    printf("* %lf\n", f->gpp);
+    /*printf("* %lf\n", f->gpp);*/
 
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
@@ -97,17 +97,14 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
         if (c->sub_daily) {
             /* calculate 30-min GPP/NPP, respiration and water fluxes */
-            canopy(c, f, m, p, s, project_day);
+            canopy(c, f, m, p, s);
         } else {
             calculate_daily_water_balance(c, f, m, p, s, project_day,
                                           day_length);
         }
 
     }
-    printf("** %lf\n", f->gpp);
-    
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
-
     precision_control(f, s);
 
     return;
