@@ -129,20 +129,20 @@ char *strncpy0(char* dest, char* src, size_t size)
 }
 
 
-double get_diffuse_frac(int doy, double zenith_angle, double par) {
+double get_diffuse_frac(int doy, double cos_zenith, double par) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
         of a useless wrapper function.
 
     */
 
-    return spitters(doy, zenith_angle, par);
+    return spitters(doy, cos_zenith, par);
 }
 
 
 
 
-double spitters(int doy, double zenith_angle, double par) {
+double spitters(int doy, double cos_zenith, double par) {
 
     /*
 
@@ -153,8 +153,8 @@ double spitters(int doy, double zenith_angle, double par) {
     ----------
     doy : int
         day of year
-    zenith_angle : double
-        sun zenith angle [degrees]
+    cos_zenith : double
+        sun zenith angle [radians]
     par : double
         total par measured [umol m-2 s-1]
 
@@ -179,7 +179,7 @@ double spitters(int doy, double zenith_angle, double par) {
     sw_rad = par * PAR_2_SW;
 
     /* sine of the elevation of the sun above the horizon */
-    sin_beta = DEG2RAD(90.0) - DEG2RAD(zenith_angle);
+    sin_beta = DEG2RAD(90.0) - cos_zenith;
     So = calc_extra_terrestrial_irradiance(doy, sin_beta);
 
     /* atmospheric transmisivity */
@@ -214,7 +214,8 @@ double spitters(int doy, double zenith_angle, double par) {
 
 }
 
-double calculate_zenith_angle(params *p, double doy, double hod) {
+void calculate_zenith_angle(params *p, double doy, double hod,
+                            double *cos_zen, double *elevation) {
 
     /*
     Estimate the sun zenith angle (Degrees)
@@ -240,7 +241,7 @@ double calculate_zenith_angle(params *p, double doy, double hod) {
 
     */
 
-    double zenith_angle, dec, et, lc, t0, h, cos_zen, gamma;
+    double dec, et, lc, t0, h, gamma, zenith_angle;
     double hour_angle, rlat, rlon, loc_hour_angle, cosz;
     /* need to convert 30 min data, 0-47 to 0-23.5 */
 
@@ -249,23 +250,24 @@ double calculate_zenith_angle(params *p, double doy, double hod) {
     gamma = day_angle(doy);
     dec = calculate_solar_declination(doy, gamma);
     et = calculate_eqn_of_time(doy, gamma);
-    /*lc = (p->longitude - round_to_value(p->longitude, 15.)) / 15.0;  hrs */
-    lc = (p->longitude - round_to_value(p->longitude, 15.)) * 4.0; /* min */
-    t0 = 12.0 - (lc / 60.) - (et / 60.); /* time of solar noon (h) */
+    lc = (p->longitude - round_to_value(p->longitude, 15.)) / 15.0;
+    t0 = 12.0 - lc - et / 60.;
+    /*lc = (p->longitude - round_to_value(p->longitude, 15.)) * 4.0;
+    t0 = 12.0 - (lc / 60.) - (et / 60.); */
     h = DEG2RAD(15.0 * (hod - t0));
     rlat = DEG2RAD(p->latitude);
-    cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
-    if (cos_zen < 0.0)
-        cos_zen = 0.0;
-    else if (cos_zen > 1.0)
-        cos_zen = 1.0;
+    *cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
+    if (*cos_zen < 0.0)
+        *cos_zen = 0.0;
+    else if (*cos_zen > 1.0)
+        *cos_zen = 1.0;
 
-    zenith_angle = RAD2DEG(acos(cos_zen));
+    zenith_angle = RAD2DEG(acos(*cos_zen));
+    *elevation = 90.0 - zenith_angle;
 
+    /*printf("%lf %lf %lf %lf\n", hod, zenith_angle, 90.-zenith_angle, cos_zen);*/
 
-    printf("%lf %lf %lf %lf\n", hod, zenith_angle, 90.-zenith_angle, cos_zen);
-
-    return (zenith_angle);
+    return;
 }
 
 double day_angle(int doy) {
@@ -351,13 +353,13 @@ double calculate_eqn_of_time(int doy, double gamma) {
     /* radians to minutes */
     et *= 229.18;
 
-    /*
+
     f = 279.575 + 0.9856 * doy;
     A = f * M_PI / 180.0;
     et = (-104.7 * sin(A) + 596.2 * sin(2.0 * A) + 4.3 * sin(3.0 * A) -\
             12.7 * sin(4.0 * A) - 429.3 * cos(A) - 2.0 * cos(2.0 * A) +\
             19.3 * cos(3.0 * A)) / 3600.0;
-    */
+
 
     return (et);
 }

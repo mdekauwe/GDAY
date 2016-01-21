@@ -16,7 +16,7 @@
 /* utilities */
 double round_to_value(double, double);
 double day_angle(int);
-double calculate_zenith_angle(params *, double, double);
+void   calculate_zenith_angle(params *, double, double, double *, double *);
 double calculate_solar_declination(int, double);
 double calculate_eqn_of_time(int, double);
 double get_diffuse_frac(int, double, double);

@@ -36,7 +36,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     */
 
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
-           zenith_angle, elevation, anleaf[2], gsc, apar[2],
+           cos_zenith, elevation, anleaf[2], gsc, apar[2],
            direct_apar, diffuse_apar, total_rnet, diffuse_frac, rnet,
            press, vpd, par, tair, wind, Ca, sunlit_frac, acanopy;
     int    hod, iter = 0, itermax = 100, ileaf;
@@ -96,17 +96,17 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         Cs = m->co2[offset];                /* CO2 conc. at the leaf suface */
         par = m->par[offset];
 
-        zenith_angle = calculate_zenith_angle(p, m->doy[project_day], hod);
-        elevation = 90.0 - zenith_angle;
+        calculate_zenith_angle(p, m->doy[project_day], hod, &cos_zenith,
+                               &elevation);
 
         /* calculates diffuse frac from half-hourly incident radiation */
-        diffuse_frac = get_diffuse_frac(m->doy[offset], zenith_angle, par);
+        diffuse_frac = get_diffuse_frac(m->doy[offset], cos_zenith, par);
 
         /* Is the sun up? */
         if (elevation > 0.0) {
 
             calculate_absorbed_radiation(p, s, par, diffuse_frac,
-                                         zenith_angle, &(apar[0]));
+                                         cos_zenith, &(apar[0]));
 
             /* sunlit, shaded loop */
             acanopy = 0.0;
@@ -187,12 +187,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 }
 
 void calculate_absorbed_radiation(params *p, state *s, double par,
-                                  double diffuse_frac, double zenith_angle,
+                                  double diffuse_frac, double cos_zenith,
                                   double *apar) {
     /*
         Calculate absorded direct (beam) and diffuse radiation
     */
-    double cos_zenith = cos(DEG2RAD(zenith_angle));
 
     /*  Calculate diffuse radiation absorbed directly. */
     apar[SHADED] = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
@@ -201,7 +200,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
     apar[SUNLIT] += apar[SHADED];
 
-    /*printf("%lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], apar[SUNLIT]+ apar[SHADED]);*/
+    printf("%lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], apar[SUNLIT]+ apar[SHADED]);
     return;
 }
 
