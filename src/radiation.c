@@ -89,15 +89,16 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /*
         Calculate absorded direct (beam) and diffuse radiation
     */
-
+    double direct_frac = 1.0 - diffuse_frac;
+    printf("%lf %lf\n", direct_frac, diffuse_frac);
     /*  Calculate diffuse radiation absorbed directly. */
     *(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
     /* Calculate beam radiation absorbed by sunlit leaf area. */
-    *(apar+SUNLIT) = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
+    *(apar+SUNLIT) = par * direct_frac / cos_zenith * p->leaf_abs;
     *(apar+SUNLIT) += *(apar+SHADED);
 
-    
+
     return;
 }
 

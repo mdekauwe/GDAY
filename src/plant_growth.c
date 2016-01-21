@@ -720,7 +720,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
-    printf("* %f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);
+    /*printf("%f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);*/
 
     /* Total allocation should be one, if not print warning */
     total_alloc = f->alroot + f->alleaf + f->albranch + f->alstem + f->alcroot;
@@ -762,9 +762,6 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         f->cpstem = f->wrate * days_left;
         f->cproot = s->c_to_alloc_root * 1.0 / c->num_days;
         f->cpcroot = f->crate * days_left;
-
-
-
     } else {
         f->cpleaf = f->npp * f->alleaf;
         f->cproot = f->npp * f->alroot;
@@ -825,7 +822,6 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     ** Carbon pools
     */
     s->shoot += f->cpleaf - f->deadleaves - f->ceaten;
-
     s->root += f->cproot - f->deadroots;
     s->croot += f->cpcroot - f->deadcroots;
     s->branch += f->cpbranch - f->deadbranch;

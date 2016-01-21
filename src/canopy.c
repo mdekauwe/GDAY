@@ -81,7 +81,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
-
+    s->lai = 6.0;
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                &elevation);
@@ -99,7 +99,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = 0.0;
             calculate_absorbed_radiation(p, s, par, diffuse_frac,
                                          cos_zenith, &(apar[0]));
-            printf("%ld %d : %lf %lf %lf %lf %lf %lf\n", c->hrly_idx, hod, par, apar[0], apar[1], s->lai, ncontent, s->shootnc);
+            printf("%ld %d : %lf %lf %lf %lf %lf %lf\n", c->hrly_idx, hod, par, apar[SUNLIT], apar[SHADED], s->lai, ncontent, s->shootnc);
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
                 /*
