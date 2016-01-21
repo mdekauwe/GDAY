@@ -241,32 +241,33 @@ void calculate_zenith_angle(params *p, double doy, double hod,
 
     */
 
-    double dec, et, lc, t0, h, gamma, zenith_angle;
-    double hour_angle, rlat, rlon, loc_hour_angle, cosz;
-    /* need to convert 30 min data, 0-47 to 0-23.5 */
+    double dec, et, lc, t0, h, gamma, zenith_angle, hour_angle, rlat;
 
+    /* need to convert 30 min data, 0-47 to 0-23.5 */
     hod /= 2.0;
     gamma = day_angle(doy);
     dec = calculate_solar_declination(doy, gamma);
     et = calculate_eqn_of_time(doy, gamma);
 
-    /* longitudinal correction (hrs) */
+    /* longitudinal correction (hours) */
     lc = (p->longitude - round_to_value(p->longitude, 15.)) / 15.0;
 
-    /* solar time  */
+    /* solar noon (hours)  */
     t0 = 12.0 - lc - et;
+
+    /* hour angle (radians) */
     h = DEG2RAD(15.0 * (hod - t0));
     rlat = DEG2RAD(p->latitude);
     *cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
-    if (*cos_zen < 0.0)
-        *cos_zen = 0.0;
-    else if (*cos_zen > 1.0)
+    if (*cos_zen > 1.0)
         *cos_zen = 1.0;
+    else if (*cos_zen < -1.0)
+        *cos_zen = -1.0;
 
     zenith_angle = RAD2DEG(acos(*cos_zen));
     *elevation = 90.0 - zenith_angle;
 
-    /*printf("%lf %lf\n", hod, *elevation);*/
+    /*printf("%lf %lf\n", hod, *elevation); */
 
     return;
 }

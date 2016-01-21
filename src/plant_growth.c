@@ -43,6 +43,8 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
         calculate_daily_water_balance(c, f, m, p, s, project_day, day_length);
     }
 
+    printf("%lf\n", f->gpp_gCm2);
+
 
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
@@ -95,7 +97,7 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
         s->pawater_root = previous_rootzone_store;
 
         if (c->sub_daily) {
-            printf("PROBLEM YOU NEED TO IMPLEMENT SOMETHING");
+            printf("PROBLEM YOU NEED TO IMPLEMENT SOMETHING\n");
             exit(EXIT_FAILURE);
         } else {
             calculate_daily_water_balance(c, f, m, p, s, project_day,

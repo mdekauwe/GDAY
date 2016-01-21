@@ -167,11 +167,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
             calculate_sub_daily_water_balance(c, f, m, p, s, offset,
                                               trans_hlf_hr, total_rnet);
 
-            /*printf("* %lf %lf %lf %lf\n", m->par[offset], acanopy, anleaf[SUNLIT], anleaf[SHADED]);*/
-
-
-
-
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
@@ -180,7 +175,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         }
 
     }
-    exit(1);
 
     return;
 
@@ -200,7 +194,6 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     apar[SUNLIT] = par * (1.0 - diffuse_frac) / cos_zenith * p->leaf_abs;
     apar[SUNLIT] += apar[SHADED];
 
-    /*printf("%lf %lf %lf %lf\n", par, apar[SUNLIT], apar[SHADED], apar[SUNLIT]+ apar[SHADED]);*/
     return;
 }
 
