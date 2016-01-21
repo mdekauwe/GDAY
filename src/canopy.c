@@ -81,7 +81,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
-    s->lai = 6.0;
+    
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                &elevation);
