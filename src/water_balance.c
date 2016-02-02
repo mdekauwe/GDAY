@@ -1205,7 +1205,7 @@ void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
                                                       m->press[c->hrly_idx],
                                                       m->tair[c->hrly_idx]);
     et_hlf_hr = transpiration_hlf_hr + soil_evap_hlf_hr + interception_hlf_hr;
-    update_water_storage_subdaily(f, p, s, rain, &transpiration_hlf_hr,
+    update_water_storage_subdaily(c, f, p, s, rain, &transpiration_hlf_hr,
                                   &interception_hlf_hr, &soil_evap_hlf_hr,
                                   &et_hlf_hr, &runoff_hlf_hr);
 
@@ -1336,7 +1336,7 @@ double calc_soil_evaporation_subdaily(state *s, double net_rad,
 }
 
 
-void update_water_storage_subdaily(fluxes *f, params *p, state *s,
+void update_water_storage_subdaily(control *c, fluxes *f, params *p, state *s,
                                    double rain, double *transpiration,
                                    double *interception, double *soil_evap,
                                    double *et, double *runoff) {
@@ -1393,5 +1393,15 @@ void update_water_storage_subdaily(fluxes *f, params *p, state *s,
 
     s->delta_sw_store = s->pawater_root - previous;
 
+    if (c->water_stress) {
+        /* Calculate the soil moisture availability factors [0,1] in the
+           topsoil and the entire root zone */
+        calculate_soil_water_fac(c, p, s);
+    } else {
+        /* really this should only be a debugging option! */
+        s->wtfac_topsoil = 1.0;
+        s->wtfac_root = 1.0;
+    }
+    
     return;
 }

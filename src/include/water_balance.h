@@ -9,9 +9,9 @@ void   zero_water_day_fluxes(fluxes *);
 void   calculate_sub_daily_water_balance(control *, fluxes *, met *, params *,
                                          state *, double, double);
 
-void   update_water_storage_subdaily(fluxes *, params *, state *, double,
-                                     double *, double *, double *, double *,
-                                     double *);
+void   update_water_storage_subdaily(control *, fluxes *, params *, state *,
+                                     double, double *, double *, double *,
+                                     double *, double *);
 
 double calc_soil_evaporation_subdaily(state *, double, double , double);
 double calc_infiltration_subdaily(params *, state*, double);

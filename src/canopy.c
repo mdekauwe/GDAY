@@ -69,19 +69,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     else
         s->fipar = 0.0;
 
-    if (c->water_stress) {
-        /* Calculate the soil moisture availability factors [0,1] in the
-           topsoil and the entire root zone */
-        calculate_soil_water_fac(c, p, s);
-    } else {
-        /* really this should only be a debugging option! */
-        s->wtfac_topsoil = 1.0;
-        s->wtfac_root = 1.0;
-    }
+
 
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
-    
+
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                &elevation);
@@ -99,7 +91,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = 0.0;
             calculate_absorbed_radiation(p, s, par, diffuse_frac,
                                          cos_zenith, &(apar[0]));
-            printf("%ld %d : %lf %lf %lf %lf %lf %lf\n", c->hrly_idx, hod, par, apar[SUNLIT], apar[SHADED], s->lai, ncontent, s->shootnc);
+
+            /* debugging purposes */
+            /*apar[0] = par;
+            apar[1] = par;*/
+
+
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
                 /*
@@ -111,6 +108,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
 
                 while (TRUE) {
+
 
                     if (c->ps_pathway == C3) {
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
@@ -160,7 +158,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy += shaded_frac * gsc[SHADED];
             trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
             trans_canopy += shaded_frac * leaf_trans[SHADED];
-
+            
             update_daily_carbon_fluxes(f, p, acanopy);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);

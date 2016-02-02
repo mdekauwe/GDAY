@@ -46,7 +46,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
-    
+
+
     /* actual electron transport rate */
     qudratic_error = FALSE;
     large_root = FALSE;
@@ -66,20 +67,18 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         /* For the medlyn model this is already in conductance to CO2, so the
            1.6 from the corrigendum to Medlyn et al 2011 is missing here */
         dleaf_kpa = dleaf * PA_2_KPA;
+        if (dleaf_kpa < 0.05) {
+            dleaf_kpa = 0.05;
+        }
         gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
         g0 = g0_zero;
 
-
         /* Solution when Rubisco activity is limiting */
         A = g0 + gs_over_a * (vcmax - rd);
-
-        arg1 = (1.0 - Cs * gs_over_a) * (vcmax - rd);
-        arg2 = g0 * (km - Cs) - gs_over_a * (vcmax * gamma_star + km * rd);
-        B = arg1 + arg2;
-
-        arg1 = -(1.0 - Cs * gs_over_a);
-        arg2 = (vcmax * gamma_star + km * rd) - (g0 * km * Cs);
-        C = arg1 * arg2;
+        B = ( (1.0 - Cs * gs_over_a) * (vcmax - rd) + g0 * (km - Cs) -
+               gs_over_a * (vcmax * gamma_star + km * rd) );
+        C = ( -(1.0 - Cs * gs_over_a) * (vcmax * gamma_star + km * rd) -
+               g0 * km * Cs );
 
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
@@ -94,19 +93,17 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
 
         /* Solution when electron transport rate is limiting */
         A = g0 + gs_over_a * (Vj - rd);
-
-        arg1 = (1. - Cs * gs_over_a) * (Vj - rd) + g0 * (2. * gamma_star - Cs);
-        arg2 = gs_over_a * (Vj * gamma_star + 2.0 * gamma_star * rd);
-        B = arg1 - arg2;
-
-        arg1 = -(1.0 - Cs * gs_over_a) * gamma_star * (Vj + 2.0 * rd);
-        arg2 = g0 * 2.0 * gamma_star * Cs;
-        C = arg1 - arg2;
+        B = ( (1. - Cs * gs_over_a) * (Vj - rd) + g0 *
+              (2. * gamma_star - Cs) - gs_over_a *
+              (Vj * gamma_star + 2.0 * gamma_star * rd) );
+        C = ( -(1.0 - Cs * gs_over_a) * gamma_star * (Vj + 2.0 * rd) -
+               g0 * 2.0 * gamma_star * Cs );
 
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
+
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         /* Below light compensation point? */
@@ -119,7 +116,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
 
     }
-
+    printf("%lf %lf %lf %lf %lf %lf %lf %lf\n", *anleaf, Ac, Aj, rd, gs_over_a, tleaf, par, Cs);
     return;
 }
 
@@ -288,8 +285,7 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
     double Q10 = 2.0;
 
     if (tleaf >= tbelow)
-        /*Rd = Rd0 * Rd_frac * exp(q10f * (tleaf - rtemp));*/
-        Rd = Rd0 * Rd_frac * pow(Q10, (tleaf - rtemp) / 10.0);
+        Rd = Rd0 * Rd_frac * exp(q10f * (tleaf - rtemp));
     else
         Rd = 0.0;
 
