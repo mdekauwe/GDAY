@@ -52,25 +52,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         ncontent = 0.0;
     }
 
-    /* When canopy is not closed, canopy light interception is reduced
-        - calculate the fractional ground cover */
-    if (s->lai < p->lai_closed) {
-        /* discontinuous canopies */
-        fc = s->lai / p->lai_closed;
-    } else {
-        fc = 1.0;
-    }
-
-    /* fIPAR - the fraction of intercepted PAR = IPAR/PAR incident at the
-       top of the canopy, accounting for partial closure based on Jackson
-       and Palmer (1979). */
-    if (s->lai > 0.0)
-        s->fipar = ((1.0 - exp(-p->kext * s->lai / fc)) * fc);
-    else
-        s->fipar = 0.0;
-
-
-
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
 
@@ -91,11 +72,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = 0.0;
             calculate_absorbed_radiation(p, s, par, diffuse_frac,
                                          cos_zenith, &(apar[0]));
-
-            /* debugging purposes */
-            /*apar[0] = par;
-            apar[1] = par;*/
-
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
@@ -158,7 +134,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy += shaded_frac * gsc[SHADED];
             trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
             trans_canopy += shaded_frac * leaf_trans[SHADED];
-            
+
             update_daily_carbon_fluxes(f, p, acanopy);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
