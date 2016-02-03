@@ -37,8 +37,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
-           press, vpd, par, tair, wind, Ca, sunlit_frac, acanopy, trans_canopy,
-           shaded_frac, gsc_canopy;
+           press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
+           shaded_lai, gsc_canopy;
     int    hod, iter = 0, itermax = 100, ileaf;
 
     if (s->lai > 0.0) {
@@ -125,23 +125,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 total_rnet += rnet;
             }
             /* scale leaf fluxes to the  canopy */
+            sunlit_lai = (1.0 - exp(-p->kext * s->lai)) / p->kext;
+            shaded_lai = s->lai - sunlit_frac;
 
-            /*
-                assume that sunlit leaves absorb all types of radiation while
-                shaded leaves only absorb diffuse radiation
-            */
-            sunlit_frac = exp(-p->kext * s->lai);
-            shaded_frac = 1.0 - sunlit_frac;
-
-            /*sunlit_frac = (1.0 - exp(-p->kext * s->lai)) / p->kext;
-            shaded_frac = (s->lai - sunlit_frac);*/
-
-            acanopy = sunlit_frac * anleaf[SUNLIT];
-            acanopy += shaded_frac * anleaf[SHADED];
-            gsc_canopy = sunlit_frac * gsc[SUNLIT];
-            gsc_canopy += shaded_frac * gsc[SHADED];
-            trans_canopy = sunlit_frac * leaf_trans[SUNLIT];
-            trans_canopy += shaded_frac * leaf_trans[SHADED];
+            acanopy = sunlit_lai * anleaf[SUNLIT];
+            acanopy += shaded_lai * anleaf[SHADED];
+            gsc_canopy = sunlit_lai * gsc[SUNLIT];
+            gsc_canopy += shaded_lai * gsc[SHADED];
+            trans_canopy = sunlit_lai * leaf_trans[SUNLIT];
+            trans_canopy += shaded_lai * leaf_trans[SHADED];
 
             update_daily_carbon_fluxes(f, p, acanopy);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
