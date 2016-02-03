@@ -39,7 +39,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
-           shaded_lai, gsc_canopy, psi_1, psi_2, Gross, kb;
+           shaded_lai, gsc_canopy, phi_1, phi_2, Gross, kb;
     int    hod, iter = 0, itermax = 100, ileaf;
 
     /*
@@ -145,10 +145,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             /*
                 The extinction coefficient for beam radiation and black leaves,
                 kb, i - Dai et al 2004, eqn 2. */
-            psi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
-            psi_2 = 0.877 * (1.0 - 2.0 * psi_1);
-            Gross = psi_1 + psi_2 * RAD2DEG(cos_zenith);
+            phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
+            phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
+            Gross = phi_1 + (phi_2 * cos_zenith);
             kb = Gross / cos_zenith;
+            /*printf("%lf %lf\n", Gross, kb);
+            exit(1);*/
 
             /*sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
             shaded_lai = s->lai - sunlit_lai;*/
