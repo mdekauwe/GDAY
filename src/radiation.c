@@ -123,15 +123,6 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     kd = 0.718;
 
 
-    /*  Calculate diffuse radiation absorbed directly. */
-    /**(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));*/
-
-    /* Calculate beam radiation absorbed by sunlit leaf area. */
-    /*
-    *(apar+SUNLIT) = par * direct_frac / cos_zenith * p->leaf_abs;
-    *(apar+SUNLIT) += *(apar+SHADED);
-    */
-    
 
     /*psi = (1.0 - exp(-cos_zenith * lai)) / cos_zenith;*/
     /**(apar+SUNLIT) = ( (par * diffuse_frac * p->leaf_abs * kd * psi) +
@@ -169,21 +160,6 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
 
 
-
-
-    /*
-    *(apar+SUNLIT) = (par * direct_frac * p->leaf_abs * (1.0 - exp(-*kb * lai)) /
-                      cos_zenith);*/
-    /**(apar+SHADED) = (par * diffuse_frac * (lai + (exp(-kd * lai) / k)) /
-                      cos_zenith);*/
-
-    /*
-    *(apar+SHADED) = 0.0;
-    for (i = 0; i < 90; i++) {
-        czen = cos( DEG2RAD( (float)i ) );
-        integral = (1.0 - exp(-kd * lai)) / czen;
-        *(apar+SHADED) += par * diffuse_frac * p->leaf_abs * integral;
-    }*/
     printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
     exit(1);
     return;
