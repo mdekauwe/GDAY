@@ -90,7 +90,9 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
         Calculate absorded direct (beam) and diffuse radiation
     */
     double direct_frac = 1.0 - diffuse_frac;
-    
+    double k = p->kext;
+    double lai = s->lai;
+
     /*  Calculate diffuse radiation absorbed directly. */
     *(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));
 
@@ -98,7 +100,12 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *(apar+SUNLIT) = par * direct_frac / cos_zenith * p->leaf_abs;
     *(apar+SUNLIT) += *(apar+SHADED);
 
-
+    /*
+    *(apar+SUNLIT) = (par * direct_frac * p->leaf_abs * (1.0 - exp(-k * lai)) /
+                      cos_zenith);
+    *(apar+SHADED) = (par * diffuse_frac * (lai + (exp(-k * lai) / k)) /
+                      cos_zenith);
+    */
     return;
 }
 

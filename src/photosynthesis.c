@@ -41,12 +41,34 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 
+    /* *************** */
+    tleaf = 17.0751858;
+    par = 43.4729500;
+    /* *************** */
+
+
+
+
+
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
+
+    /* *************** */
+    jmax = 122.285072;
+    vcmax = 46.4675255;
+    p->alpha_j = 0.324000001;
+    /* *************** */
+
     rd = calc_leaf_day_respiration(tleaf, Rd0);
 
+    /* *************** */
+    rd = 0.656652451;
+    Cs = 380;
+    dleaf = 0.664151847 * KPA_2_PA;
+    p->g1 = 6.90000010 ;
+    /* *************** */
 
     /* actual electron transport rate */
     qudratic_error = FALSE;
@@ -72,6 +94,11 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         }
         gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
         g0 = g0_zero;
+
+        /* *************** */
+        g0 = 1.0E-03;
+        /* *************** */
+
 
         /* Solution when Rubisco activity is limiting */
         A = g0 + gs_over_a * (vcmax - rd);
@@ -116,7 +143,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
 
     }
-    printf("%lf %lf %lf %lf %lf %lf %lf %lf\n", *anleaf, Ac, Aj, rd, gs_over_a, tleaf, par, Cs);
     return;
 }
 
@@ -272,10 +298,10 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* Determines the respiration in the light, relative to
        respiration in the dark. For example, if DAYRESP = 0.7, respiration
        in the light is 30% lower than in the dark. */
-    double Rd_frac = 1.0;  /* no effect of light */
+    double day_resp = 1.0;  /* no effect of light */
 
-    /* Rd at zero degrees */
-    double rtemp = 25.0;
+    /* Default temp at which maint resp specified */
+    double rtemp = 0.0;
 
     /* exponential coefficient of the temperature response of foliage
        respiration */
@@ -285,7 +311,7 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
     double Q10 = 2.0;
 
     if (tleaf >= tbelow)
-        Rd = Rd0 * Rd_frac * exp(q10f * (tleaf - rtemp));
+        Rd = Rd0 * day_resp * exp(q10f * (tleaf - rtemp));
     else
         Rd = 0.0;
 

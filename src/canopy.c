@@ -183,6 +183,13 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     double rnet, ea, ema, Tk, sw_rad;
     double emissivity_atm;
 
+    /* *************** */
+    tair = 17.0751858;
+    tleaf = tair;
+    press = 87300.0000 ;
+    p->leaf_width = 1.99999996E-02 ;
+    wind =  0.617070556  ;
+    /* *************** */
 
     /*
         extinction coefficient for diffuse radiation and black leaves
@@ -199,6 +206,13 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
        convection (mol m-2 s-1) */
     gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
 
+
+    /* *************** */
+    gradn = 0.135759488;
+    /* *************** */
+
+    printf("%lf\n",tleaf);
+    tleaf = 13.0;
     /* Boundary layer conductance for heat - single sided, free convection */
     gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
 
@@ -207,6 +221,11 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     /* Total conductance for heat - two-sided */
     gh = 2.0 * (gbh + gradn);
+
+    printf("%lf %lf %lf\n", gbhf, gbh, gh);
+    exit(1);
+
+
 
     /* Total conductance for water vapour */
     gbv = GBVGBH * gbh;
@@ -286,7 +305,7 @@ double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
 }
 
 double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
-                                  double leaf_width) {
+                                   double leaf_width) {
     /*
         Boundary layer conductance for heat - single sided, free convection
         (mol m-2 s-1)
@@ -300,10 +319,10 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
     leaf_width_cubed = leaf_width * leaf_width * leaf_width;
 
     if (float_eq((tleaf - tair), 0.0)) {
+        gbh = 0.0;
+    } else {
         grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
         gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
-    } else {
-        gbh = 0.0;
     }
 
     return (gbh);
