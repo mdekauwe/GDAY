@@ -149,6 +149,12 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
                        (1.0 - exp(-*kb * lai)) / cos_zenith );
     *(apar+SUNLIT) += *(apar+SHADED);
 
+
+
+
+
+
+
     /* Direct beam irradiance */
     double Ib = par * direct_frac;
 
@@ -161,7 +167,11 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
     double rho_can = 0.036;
-    *(apar+SHADED) = Id * (1.0 - rho_can) * (1.0 - exp(- (kd + *kb) * lai)) * (kd / (kd + *kb));
+    *(apar+SHADED) = ( Id * (1.0 - rho_can) * (1.0 - exp(- (kd + *kb) * lai)) *
+                       (kd / (kd + *kb)) );
+
+
+
 
 
     /*
