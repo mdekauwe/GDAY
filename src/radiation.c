@@ -190,8 +190,8 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     *cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
     if (*cos_zen > 1.0)
         *cos_zen = 1.0;
-    else if (*cos_zen < -1.0)
-        *cos_zen = -1.0;
+    else if (*cos_zen < 0.0)
+        *cos_zen = 0.0;
 
     zenith_angle = RAD2DEG(acos(*cos_zen));
     *elevation = 90.0 - zenith_angle;
