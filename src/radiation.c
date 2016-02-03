@@ -131,10 +131,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *(apar+SUNLIT) = par * direct_frac / cos_zenith * p->leaf_abs;
     *(apar+SUNLIT) += *(apar+SHADED);
     */
-    kd = 0.5;
-    *kb = 0.5;
-    diffuse_frac = 0.5;
-    direct_frac = 0.5;
+    
 
     /*psi = (1.0 - exp(-cos_zenith * lai)) / cos_zenith;*/
     /**(apar+SUNLIT) = ( (par * diffuse_frac * p->leaf_abs * kd * psi) +
