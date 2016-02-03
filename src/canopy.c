@@ -125,8 +125,16 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 total_rnet += rnet;
             }
             /* scale leaf fluxes to the  canopy */
-            sunlit_frac = (1.0 - exp(-p->kext * s->lai)) / p->kext;
-            shaded_frac = (s->lai - sunlit_frac);
+
+            /*
+                assume that sunlit leaves absorb all types of radiation while
+                shaded leaves only absorb diffuse radiation
+            */
+            sunlit_frac = exp(-p->kext * s->lai);
+            shaded_frac = 1.0 - sunlit_frac;
+
+            /*sunlit_frac = (1.0 - exp(-p->kext * s->lai)) / p->kext;
+            shaded_frac = (s->lai - sunlit_frac);*/
 
             acanopy = sunlit_frac * anleaf[SUNLIT];
             acanopy += shaded_frac * anleaf[SHADED];
