@@ -97,7 +97,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     double direct_frac = 1.0 - diffuse_frac;
     double k = p->kext;
     double lai = s->lai;
-    int i;
+    int    i;
     double czen, integral, kd, phi_1, phi_2, Gross;
     /*
        0  = spherical leaf angle distribution
@@ -122,33 +122,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /* diffuse PAR extinction coefficent - de Pury & Farquhar (1997). */
     kd = 0.718;
 
-
-    /*  Calculate diffuse radiation absorbed directly. */
-    /**(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));*/
-
-    /* Calculate beam radiation absorbed by sunlit leaf area. */
-    /*
-    *(apar+SUNLIT) = par * direct_frac / cos_zenith * p->leaf_abs;
-    *(apar+SUNLIT) += *(apar+SHADED);
-    */
-    
-
-    /*psi = (1.0 - exp(-cos_zenith * lai)) / cos_zenith;*/
-    /**(apar+SUNLIT) = ( (par * diffuse_frac * p->leaf_abs * kd * psi) +
-                       (par * direct_frac * p->leaf_abs * *kb * psi) );
-
-    *(apar+SHADED) = ( (par * diffuse_frac * p->leaf_abs * (kd * psi - psi * *kb)) +
-                       (par * direct_frac * p->leaf_abs * (kd * psi - psi * *kb)) );
-    */
-    *(apar+SHADED) = ( par * diffuse_frac * p->leaf_abs *
-                       (1.0 - exp(-kd * lai)) / cos_zenith );
-    *(apar+SUNLIT) = ( par * direct_frac * p->leaf_abs *
-                       (1.0 - exp(-*kb * lai)) / cos_zenith );
-    *(apar+SUNLIT) += *(apar+SHADED);
-
-
-
-
+    kb = 0.5;
 
 
 
@@ -158,32 +132,16 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /* Diffuse beam irradiance */
     double Id = par * diffuse_frac;
 
+    /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
+    double rho_can = 0.036;
+    *(apar+SHADED) = ( Id * (1.0 - rho_can) * (1.0 - exp(-(kd + *kb) * lai)) *
+                       (kd / (kd + *kb)) );
+
     /* leaf scattering coefficient of PAR; de Pury & Farquhar, 1997 */
     double omega_PAR = 0.15;
     *(apar+SUNLIT) = Ib * (1.0 - omega_PAR) * (1.0 - exp(-*kb * lai));
+    *(apar+SUNLIT) += *(apar+SHADED);
 
-    /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
-    double rho_can = 0.036;
-    *(apar+SHADED) = ( Id * (1.0 - rho_can) * (1.0 - exp(- (kd + *kb) * lai)) *
-                       (kd / (kd + *kb)) );
-
-
-
-
-
-    /*
-    *(apar+SUNLIT) = (par * direct_frac * p->leaf_abs * (1.0 - exp(-*kb * lai)) /
-                      cos_zenith);*/
-    /**(apar+SHADED) = (par * diffuse_frac * (lai + (exp(-kd * lai) / k)) /
-                      cos_zenith);*/
-
-    /*
-    *(apar+SHADED) = 0.0;
-    for (i = 0; i < 90; i++) {
-        czen = cos( DEG2RAD( (float)i ) );
-        integral = (1.0 - exp(-kd * lai)) / czen;
-        *(apar+SHADED) += par * diffuse_frac * p->leaf_abs * integral;
-    }*/
     printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
     exit(1);
     return;
