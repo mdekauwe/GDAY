@@ -1402,6 +1402,6 @@ void update_water_storage_subdaily(control *c, fluxes *f, params *p, state *s,
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
-    
+
     return;
 }

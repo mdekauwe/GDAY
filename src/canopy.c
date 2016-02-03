@@ -170,7 +170,8 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     double LE; /* latent heat (W m-2) */
     double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
     double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
-    double gbc, gamma, epsilon, omega, Tdiff, sensible_heat;
+    double gbc, gamma, epsilon, omega, Tdiff, sensible_heat, rnet, ea, ema, Tk;
+    double emissivity_atm, sw_rad;
 
     /* unpack the met data and get the units right */
     double press = m->press[c->hrly_idx] * KPA_2_PA;
@@ -178,18 +179,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     double tair = m->tair[c->hrly_idx];
     double wind = m->wind[c->hrly_idx];
     double Ca = m->co2[c->hrly_idx];
-
-
-    double rnet, ea, ema, Tk, sw_rad;
-    double emissivity_atm;
-
-    /* *************** */
-    tair = 17.0751858;
-    tleaf = tair;
-    press = 87300.0000 ;
-    p->leaf_width = 1.99999996E-02 ;
-    wind =  0.617070556  ;
-    /* *************** */
 
     /*
         extinction coefficient for diffuse radiation and black leaves
@@ -206,13 +195,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
        convection (mol m-2 s-1) */
     gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
 
-
-    /* *************** */
-    gradn = 0.135759488;
-    /* *************** */
-
-    printf("%lf\n",tleaf);
-    tleaf = 13.0;
     /* Boundary layer conductance for heat - single sided, free convection */
     gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
 
@@ -221,11 +203,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     /* Total conductance for heat - two-sided */
     gh = 2.0 * (gbh + gradn);
-
-    printf("%lf %lf %lf\n", gbhf, gbh, gh);
-    exit(1);
-
-
 
     /* Total conductance for water vapour */
     gbv = GBVGBH * gbh;
@@ -261,7 +238,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     *new_tleaf = tair + Tdiff / 4.;
     *Cs = Ca - anleaf / gbc;                /* CO2 conc at the leaf surface */
     *dleaf = *et * press / gv;              /* VPD at the leaf surface */
-
 
     return;
 }

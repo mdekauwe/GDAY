@@ -41,34 +41,11 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 
-    /* *************** */
-    tleaf = 17.0751858;
-    par = 43.4729500;
-    /* *************** */
-
-
-
-
-
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
-
-    /* *************** */
-    jmax = 122.285072;
-    vcmax = 46.4675255;
-    p->alpha_j = 0.324000001;
-    /* *************** */
-
     rd = calc_leaf_day_respiration(tleaf, Rd0);
-
-    /* *************** */
-    rd = 0.656652451;
-    Cs = 380;
-    dleaf = 0.664151847 * KPA_2_PA;
-    p->g1 = 6.90000010 ;
-    /* *************** */
 
     /* actual electron transport rate */
     qudratic_error = FALSE;
@@ -94,11 +71,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         }
         gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
         g0 = g0_zero;
-
-        /* *************** */
-        g0 = 1.0E-03;
-        /* *************** */
-
 
         /* Solution when Rubisco activity is limiting */
         A = g0 + gs_over_a * (vcmax - rd);
@@ -130,7 +102,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         qudratic_error = FALSE;
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
-
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         /* Below light compensation point? */
