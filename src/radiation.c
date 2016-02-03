@@ -109,9 +109,10 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     int i;
     double czen, integral;
     *(apar+SHADED) = 0.0;
-    for (i = 0; i <= 90; i++) {
+    for (i = 0; i < 90; i++) {
         czen = cos( DEG2RAD( (float)i ) );
         integral = (1.0 - exp(-k * lai)) / czen;
+        printf("%d %lf %lf %lf\n", i, integral, par, par * diffuse_frac * integral);
         /**(apar+SHADED) += (par * diffuse_frac * (lai + (exp(-k * lai) / k)) / czen );*/
         *(apar+SHADED) += par * diffuse_frac * integral;
     }
