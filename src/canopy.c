@@ -39,8 +39,17 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
-           shaded_lai, gsc_canopy;
+           shaded_lai, gsc_canopy, psi_1, psi_2, Gross, kb;
     int    hod, iter = 0, itermax = 100, ileaf;
+
+    /*
+       0  = spherical leaf angle distribution
+       1  = horizontal leaves
+       -1 = vertical leaves
+
+       Should turn into a paramater :)
+    */
+   double lad = 0.0;
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -126,14 +135,27 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 total_rnet += rnet;
             }
             /*
-                Scale leaf fluxes to the  canopyL
+                Scale leaf fluxes to the  canopy
                 - Fractional area decreases exponentialy with LAI from the top
                   of the canopy. Integrating sunlit/shaded fraction over the
                   canopy to calculate leaf area index of sunlit/shaded fractions
                   of the canopy.
             */
+
+            /*
+                The extinction coefficient for beam radiation and black leaves,
+                kb, i - Dai et al 2004, eqn 2. */
+            psi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
+            psi_2 = 0.877 * (1.0 - 2.0 * psi_1);
+            Gross = psi_1 + psi_2 * RAD2DEG(cos_zenith);
+            kb = Gross / cos_zenith;
+
+            /*sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
+            shaded_lai = s->lai - sunlit_lai;*/
+
             sunlit_lai = (1.0 - exp(-p->kext * s->lai)) / p->kext;
             shaded_lai = s->lai - sunlit_lai;
+
 
             acanopy = sunlit_lai * anleaf[SUNLIT];
             acanopy += shaded_lai * anleaf[SHADED];
