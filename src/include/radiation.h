@@ -23,7 +23,7 @@ double spitters(int, double, double);
 double calc_extra_terrestrial_irradiance(double, double);
 double estimate_clearness(double, double);
 void   calculate_absorbed_radiation(params *, state *, double, double, double,
-                                     double *);
+                                    double, double *, double *);
 
 
 #endif /* RADIATION_H */

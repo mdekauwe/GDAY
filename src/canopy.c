@@ -39,17 +39,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
-           shaded_lai, gsc_canopy, phi_1, phi_2, Gross, kb;
+           shaded_lai, gsc_canopy, kb;
     int    hod, iter = 0, itermax = 100, ileaf;
 
-    /*
-       0  = spherical leaf angle distribution
-       1  = horizontal leaves
-       -1 = vertical leaves
 
-       Should turn into a paramater :)
-    */
-   double lad = 0.0;
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -80,8 +73,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             acanopy = 0.0;
             trans_canopy = 0.0;
             gsc_canopy = 0.0;
-            calculate_absorbed_radiation(p, s, par, diffuse_frac,
-                                         cos_zenith, &(apar[0]));
+            calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
+                                         cos_zenith, &(apar[0]), &kb);
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
@@ -142,21 +135,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                   of the canopy.
             */
 
-            /*
-                The extinction coefficient for beam radiation and black leaves,
-                kb, i - Dai et al 2004, eqn 2. */
-            phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
-            phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
-            Gross = phi_1 + (phi_2 * cos_zenith);
-            kb = Gross / cos_zenith;
-            /*printf("%lf %lf\n", Gross, kb);
-            exit(1);*/
 
-            /*sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
-            shaded_lai = s->lai - sunlit_lai;*/
-
-            sunlit_lai = (1.0 - exp(-p->kext * s->lai)) / p->kext;
+            sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
             shaded_lai = s->lai - sunlit_lai;
+
+            /*sunlit_lai = (1.0 - exp(-p->kext * s->lai)) / p->kext;
+            shaded_lai = s->lai - sunlit_lai; */
 
 
             acanopy = sunlit_lai * anleaf[SUNLIT];

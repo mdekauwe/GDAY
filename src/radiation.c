@@ -84,16 +84,44 @@ double spitters(int doy, double cos_zenith, double par) {
 }
 
 void calculate_absorbed_radiation(params *p, state *s, double par,
-                                  double diffuse_frac, double cos_zenith,
-                                  double *apar) {
+                                  double diffuse_frac, double elevation,
+                                  double cos_zenith, double *apar, double *kb) {
     /*
         Calculate absorded direct (beam) and diffuse radiation
+
+
+        References:
+        -----------
+        * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     double direct_frac = 1.0 - diffuse_frac;
     double k = p->kext;
     double lai = s->lai;
     int i;
-    double czen, integral;
+    double czen, integral, kd, phi_1, phi_2, Gross;
+    /*
+       0  = spherical leaf angle distribution
+       1  = horizontal leaves
+       -1 = vertical leaves
+
+       Should turn into a paramater :)
+    */
+    double lad = 0.0, psi;
+
+    /* direct PAR extinction coefficent - de Pury & Farquhar (1997). */
+    *kb = 0.46 / sin(DEG2RAD(elevation));
+
+    /* alternative - not sure I have it quite right, i.e. doesn't match above */
+    /* direct PAR extinction coefficent - Dai et al 2004, eqn 2. */
+    /*phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
+    phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
+    Gross = phi_1 + (phi_2 * cos_zenith);
+    *kb = Gross / cos_zenith;
+    printf("%lf\n", *kb);*/
+
+    /* diffuse PAR extinction coefficent - de Pury & Farquhar (1997). */
+    kd = 0.718;
+
 
     /*  Calculate diffuse radiation absorbed directly. */
     /**(apar+SHADED) = par * diffuse_frac * (1.0 - exp(-p->kext * s->lai));*/
@@ -103,19 +131,42 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *(apar+SUNLIT) = par * direct_frac / cos_zenith * p->leaf_abs;
     *(apar+SUNLIT) += *(apar+SHADED);
     */
+    kd = 0.5;
+    *kb = 0.5;
+    diffuse_frac = 0.5;
+    direct_frac = 0.5;
 
-    *(apar+SUNLIT) = (par * direct_frac * p->leaf_abs * (1.0 - exp(-k * lai)) /
-                      cos_zenith);
-    /**(apar+SHADED) = (par * diffuse_frac * (lai + (exp(-k * lai) / k)) /
+    /*psi = (1.0 - exp(-cos_zenith * lai)) / cos_zenith;*/
+    /**(apar+SUNLIT) = ( (par * diffuse_frac * p->leaf_abs * kd * psi) +
+                       (par * direct_frac * p->leaf_abs * *kb * psi) );
+
+    *(apar+SHADED) = ( (par * diffuse_frac * p->leaf_abs * (kd * psi - psi * *kb)) +
+                       (par * direct_frac * p->leaf_abs * (kd * psi - psi * *kb)) );
+    */
+    *(apar+SHADED) = ( par * direct_frac * p->leaf_abs *
+                       (1.0 - exp(-kd * lai)) / cos_zenith );
+    *(apar+SUNLIT) = ( par * diffuse_frac * p->leaf_abs *
+                       (1.0 - exp(-*kb * lai)) / cos_zenith );
+    *(apar+SUNLIT) += *(apar+SHADED);
+
+
+
+
+    /*
+    *(apar+SUNLIT) = (par * direct_frac * p->leaf_abs * (1.0 - exp(-*kb * lai)) /
+                      cos_zenith);*/
+    /**(apar+SHADED) = (par * diffuse_frac * (lai + (exp(-kd * lai) / k)) /
                       cos_zenith);*/
 
+    /*
     *(apar+SHADED) = 0.0;
     for (i = 0; i < 90; i++) {
         czen = cos( DEG2RAD( (float)i ) );
-        integral = (1.0 - exp(-k * lai)) / czen;
+        integral = (1.0 - exp(-kd * lai)) / czen;
         *(apar+SHADED) += par * diffuse_frac * p->leaf_abs * integral;
-    }
-    /*printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));*/
+    }*/
+    printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
+    exit(1);
     return;
 }
 
