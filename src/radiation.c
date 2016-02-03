@@ -109,22 +109,18 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     double lad = 0.0, psi;
 
     /* direct PAR extinction coefficent - de Pury & Farquhar (1997). */
-    *kb = 0.46 / sin(DEG2RAD(elevation));
+    /**kb = 0.46 / sin(DEG2RAD(elevation)); */
 
     /* alternative - not sure I have it quite right, i.e. doesn't match above */
     /* direct PAR extinction coefficent - Dai et al 2004, eqn 2. */
-    /*phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
+    phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
     phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
     Gross = phi_1 + (phi_2 * cos_zenith);
     *kb = Gross / cos_zenith;
-    printf("%lf\n", *kb);*/
+
 
     /* diffuse PAR extinction coefficent - de Pury & Farquhar (1997). */
     kd = 0.718;
-
-    kb = 0.5;
-
-
 
     /* Direct beam irradiance */
     double Ib = par * direct_frac;
@@ -142,7 +138,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *(apar+SUNLIT) = Ib * (1.0 - omega_PAR) * (1.0 - exp(-*kb * lai));
     *(apar+SUNLIT) += *(apar+SHADED);
 
-    printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
+    printf("%lf %lf %lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED), RAD2DEG(acos(cos_zenith)), cos_zenith);
     exit(1);
     return;
 }
