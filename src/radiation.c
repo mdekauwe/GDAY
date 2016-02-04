@@ -85,7 +85,8 @@ double spitters(int doy, double cos_zenith, double par) {
 
 void calculate_absorbed_radiation(params *p, state *s, double par,
                                   double diffuse_frac, double elevation,
-                                  double cos_zenith, double *apar, double *kb) {
+                                  double cos_zenith, double *apar,
+                                  double *sunlit_lai, double *shaded_lai) {
     /*
         Calculate absorded irradiance of sunlit and shaded fractions of
         the canopy
@@ -100,7 +101,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     */
 
     int    i;
-    double czen, integral, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
+    double czen, integral, kb, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
            k_dash_b, k_dash_d, scattered, shaded, direct_beam;
     double direct_frac = 1.0 - diffuse_frac;
     double lai = s->lai;
@@ -131,7 +132,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     */
 
     /* beam radiation extinction coefficent of canopy - de Pury & Farquhar'97 */
-    *kb = 0.5 / sin(DEG2RAD(elevation));
+    kb = 0.5 / sin(DEG2RAD(elevation));
 
     /* beam & scattered PAR extinction coefficent - de Pury & Farquhar '97. */
     k_dash_b = 0.46 / sin(DEG2RAD(elevation));
@@ -142,17 +143,17 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
     Id = par * diffuse_frac;
     direct_beam = ( Id * (1.0 - rho_cd) *
-                    (1.0 - exp(-(k_dash_d + *kb) * lai)) *
-                    (k_dash_d / (k_dash_d + *kb)) );
+                    (1.0 - exp(-(k_dash_d + kb) * lai)) *
+                    (k_dash_d / (k_dash_d + kb)) );
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * direct_frac;
-    shaded = Ib * (1.0 - omega_PAR) * (1.0 - exp(-*kb * lai));
+    shaded = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
-    scattered = Ib * ( (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + *kb) * lai)) *
-                        k_dash_b / (k_dash_b + *kb) - (1.0 - omega_PAR) *
-                        (1.0 - exp(-2.0 * *kb * lai)) / 2.0 );
+    scattered = Ib * ( (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
+                        k_dash_b / (k_dash_b + kb) - (1.0 - omega_PAR) *
+                        (1.0 - exp(-2.0 * kb * lai)) / 2.0 );
 
     /* Irradiance absorbed by the canopy - de Pury & Farquhar (1997), eqn 13 */
     Ic = ( (1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
@@ -172,6 +173,17 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
         sunlit leaf area
     */
     *(apar+SHADED) = Ic - *(apar+SUNLIT);
+
+    /*
+        Scale leaf fluxes to the canopy
+        - Fractional area decreases exponentialy with LAI from the top
+          of the canopy. Integrating sunlit/shaded fraction over the
+          canopy to calculate leaf area index of sunlit/shaded fractions
+          of the canopy. De Pury & Farquhar 1997, eqn 18.
+    */
+    *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
+    *shaded_lai = s->lai - *sunlit_lai;
+
 
     /*printf("%lf %lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED), *(apar+SUNLIT) + *(apar+SHADED));
     exit(1);*/

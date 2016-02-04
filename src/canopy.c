@@ -41,7 +41,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
-           shaded_lai, gsc_canopy, kb;
+           shaded_lai, gsc_canopy;
     int    hod, iter = 0, itermax = 100, ileaf;
 
 
@@ -76,7 +76,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             trans_canopy = 0.0;
             gsc_canopy = 0.0;
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
-                                         cos_zenith, &(apar[0]), &kb);
+                                         cos_zenith, &(apar[0]), &sunlit_lai,
+                                         &shaded_lai);
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
@@ -126,21 +127,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     tleaf = new_tleaf;
                     iter++;
 
-                }
+                } /* end of leaf temperature stability loop */
                 total_rnet += rnet;
-            }
 
-            /*
-                Scale leaf fluxes to the  canopy
-                - Fractional area decreases exponentialy with LAI from the top
-                  of the canopy. Integrating sunlit/shaded fraction over the
-                  canopy to calculate leaf area index of sunlit/shaded fractions
-                  of the canopy.
-                - De Pury & Farquhar 1997, eqn 18.
-            */
-            sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
-            shaded_lai = s->lai - sunlit_lai;
+            } /* end of sunlit/shaded leaf loop */
 
+            /* Scale leaf fluxes to the canopy */
             acanopy = sunlit_lai * anleaf[SUNLIT];
             acanopy += shaded_lai * anleaf[SHADED];
             gsc_canopy = sunlit_lai * gsc[SUNLIT];
