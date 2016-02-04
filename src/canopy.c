@@ -44,8 +44,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, ileaf;
 
-
-
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
         leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
@@ -56,6 +54,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     } else {
         ncontent = 0.0;
     }
+
 
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
@@ -69,7 +68,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par);
 
         /* Is the sun up? */
-        if (elevation > 0.0) {
+        if (par > 50.0) {
 
             /* sunlit, shaded loop */
             acanopy = 0.0;
@@ -89,10 +88,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 tleaf = m->tair[c->hrly_idx];             /* Leaf temperature */
                 dleaf = m->vpd[c->hrly_idx] * KPA_2_PA; /* D at the leaf surf */
                 Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
-
                 while (TRUE) {
 
-
+                    printf("%lf %lf %lf %lf %lf\n", hod/2., par, apar[0], apar[1], s->lai);
                     if (c->ps_pathway == C3) {
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
                                           Cs, dleaf, &gsc[ileaf],
@@ -112,7 +110,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                                   &leaf_trans[ileaf]);
                     } else {
                         leaf_trans[ileaf] = 0.0;
+                        break;
                     }
+
+
 
                     if (iter >= itermax) {
                         fprintf(stderr, "No convergence in canopy loop\n");
@@ -143,6 +144,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             trans_canopy += shaded_lai * leaf_trans[SHADED];
 
 
+
             update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
@@ -158,10 +160,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
         }
-        printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, total_apar, apar[0], apar[1]);
+
+        /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, acanopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
-    printf("** %lf %lf\n", f->gpp, f->apar);
+
+
     return;
 
 }

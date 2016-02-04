@@ -55,8 +55,13 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     /* RuBP regeneration rate */
     Vj = J / 4.0;
 
+    if (isnan(J)) {
+        printf("%lf %lf %d\n", par, jmax, qudratic_error);
+        exit(1);
+    }
+
     /* Deal with extreme cases */
-    if (jmax <= 0.0 || vcmax <= 0.0) {
+    if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
         *anleaf = -rd;
         *gsc = g0_zero;
     } else {
@@ -103,6 +108,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
 
+
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         /* Below light compensation point? */
         if (Aj - rd < 1E-6) {
@@ -112,8 +118,12 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
 
         *anleaf = MIN(Ac, Aj) - rd;
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
+        /*if (isnan(Aj)) {
+            printf("YES %lf %lf %lf %lf \n", Ci, Ac, Aj, Vj);
+        }*/
 
     }
+
     return;
 }
 
@@ -205,7 +215,6 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     double tref = p->measurement_temp;
     *vcmax = 0.0;
     *jmax = 0.0;
-
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;

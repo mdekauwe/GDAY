@@ -253,7 +253,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         figure_out_years_with_disturbances(c, m, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
-    
+
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
@@ -308,7 +308,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay);
-            /*printf("***%lf\n\n", f->gpp);*/
+            printf("%d %lf\n", doy, f->gpp_gCm2);
 
             calculate_csoil_flows(c, f, p, s, m->tsoil[project_day], doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep[project_day], doy);
