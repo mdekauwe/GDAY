@@ -134,13 +134,13 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
     Id = par * diffuse_frac;
-    direct_beam = ( Id * (1.0 - rho_cd) *
+    shaded = ( Id * (1.0 - rho_cd) *
                     (1.0 - exp(-(k_dash_d + kb) * lai)) *
                     (k_dash_d / (k_dash_d + kb)) );
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * direct_frac;
-    shaded = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
+    direct_beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
     scattered = Ib * ( (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
