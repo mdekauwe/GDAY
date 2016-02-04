@@ -101,7 +101,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         exit(EXIT_FAILURE);
                     }
 
-                    printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[ileaf], anleaf[ileaf], ileaf);
+                    /*printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[ileaf], anleaf[ileaf], ileaf);*/
 
                     if (anleaf[ileaf] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -150,8 +150,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
-            printf("** %lf %.10lf %.10lf\n\n", hod/2., acanopy, f->gpp);
-
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance, i.e. soil evap */
@@ -167,7 +165,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, acanopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
-
+    printf("END %lf\n\n", f->gpp);
 
     return;
 
@@ -339,10 +337,10 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
 
     /* umol m-2 s-1 -> gC m-2 30 min-1 */
     f->gpp_gCm2 += acanopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
-    f->npp_gCm2 += f->gpp_gCm2 * p->cue;
-    f->gpp += f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
-    f->npp += f->npp_gCm2 * GRAM_C_2_TONNES_HA;
-    f->auto_resp += f->gpp - f->npp;
+    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
+    f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->auto_resp = f->gpp - f->npp;
     f->apar += total_apar;
 
     return;

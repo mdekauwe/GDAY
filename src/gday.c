@@ -345,9 +345,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            printf("**** %d %lf %lf\n", doy, f->gpp_gCm2, s->lai);
-            exit(1);
+            printf("**** %d %lf %lf\n", doy, f->gpp, s->lai);
             
+
             if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
