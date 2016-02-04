@@ -102,7 +102,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     int    i;
     double czen, integral, kb, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
-           k_dash_b, k_dash_d, scattered, shaded, direct_beam;
+           k_dash_b, k_dash_d, scattered, shaded, beam;
     double direct_frac = 1.0 - diffuse_frac;
     double lai = s->lai;
     double lad = p->lad;
@@ -140,7 +140,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * direct_frac;
-    direct_beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
+    beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
     scattered = Ib * ( (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
@@ -155,7 +155,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
         Irradiance absorbed by the sunlit fraction of the canopy is the sum of
         direct-beam, diffuse and scattered-beam components
     */
-    *(apar+SUNLIT) = direct_beam + scattered + shaded;
+    *(apar+SUNLIT) = beam + scattered + shaded;
 
     /*
         Irradiance absorbed by the shaded leaf area of the canopy is the
