@@ -68,7 +68,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par);
 
         /* Is the sun up? */
-        if (par > 50.0) {
+        if (elevation > 0.0 && par > 50.0) {
 
             /* sunlit, shaded loop */
             acanopy = 0.0;
