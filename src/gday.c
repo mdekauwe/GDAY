@@ -308,7 +308,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay);
-            printf("%d %lf\n", doy, f->gpp_gCm2);
+
 
             calculate_csoil_flows(c, f, p, s, m->tsoil[project_day], doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep[project_day], doy);
@@ -344,6 +344,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
+
+            printf("**** %d %lf %lf\n", doy, f->gpp_gCm2, s->lai);
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
