@@ -225,7 +225,10 @@ void calculate_zenith_angle(params *p, double doy, double hod,
                           cos(dec) * cos(h))));
     zenith_angle = 90.0 - *elevation;
     *cos_zen = cos(DEG2RAD(zenith_angle));
-
+    if (*cos_zen > 1.0)
+        *cos_zen = 1.0;
+    else if (*cos_zen < 0.0)
+        *cos_zen = 0.0;
 
     return;
 }
@@ -279,11 +282,8 @@ double day_angle(int doy) {
     ---------
     gamma - day angle in radians.
     */
-    double gamma;
 
-    gamma = 2.0 * M_PI * (doy - 1.0) / 365.0;
-
-    return (gamma);
+    return (2.0 * M_PI * (doy - 1.0) / 365.0);
 }
 
 double calculate_solar_declination(int doy, double gamma) {
@@ -313,9 +313,9 @@ double calculate_solar_declination(int doy, double gamma) {
     double sindec, decl;
 
     /* declination (radians) */
-    decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) - \
+    /*decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) - \
            0.006758 * cos(2.0 * gamma) + 0.000907 * sin(2.0 * gamma) -\
-           0.002697 * cos(3.0 * gamma) + 0.00148 * sin(3.0 * gamma);
+           0.002697 * cos(3.0 * gamma) + 0.00148 * sin(3.0 * gamma);*/
 
 
     /* (radians) A14 - De Pury & Farquhar  */
@@ -350,14 +350,14 @@ double calculate_eqn_of_time(double gamma) {
     double et, f, A;
 
     /* radians */
-    et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
-         0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);
+    /*et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
+         0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);*/
 
     /* radians to minutes */
     /*et *= 229.18; */
 
     /* radians to hours */
-    et *= 24.0 / (2.0 * M_PI);
+    /*et *= 24.0 / (2.0 * M_PI);*/
 
     /* minutes - de Pury and Farquhar, 1997 - A17 */
     et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *

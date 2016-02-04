@@ -64,6 +64,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                &elevation);
 
+        printf("%lf %lf\n", hod/2., elevation);
+
+    }
+
+    exit(1);
+    for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+        calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
+                               &elevation);
+
         /* calculates diffuse frac from half-hourly incident radiation */
         par = m->par[c->hrly_idx];
         diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par);
