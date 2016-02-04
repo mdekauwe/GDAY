@@ -32,7 +32,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         References
         ----------
         * Wang & Leuning (1998) Agricultural & Forest Meterorology, 91, 89-111.
-        * Dai et al. (2004) Journal of Climate,
+        * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
+        * De Pury & Farquhar (1997) PCE, 20, 537-557.
+
     */
 
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
@@ -127,21 +129,17 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 }
                 total_rnet += rnet;
             }
+
             /*
                 Scale leaf fluxes to the  canopy
                 - Fractional area decreases exponentialy with LAI from the top
                   of the canopy. Integrating sunlit/shaded fraction over the
                   canopy to calculate leaf area index of sunlit/shaded fractions
                   of the canopy.
+                - De Pury & Farquhar 1997, eqn 18.
             */
-
-
             sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
             shaded_lai = s->lai - sunlit_lai;
-
-            /*sunlit_lai = (1.0 - exp(-p->kext * s->lai)) / p->kext;
-            shaded_lai = s->lai - sunlit_lai; */
-
 
             acanopy = sunlit_lai * anleaf[SUNLIT];
             acanopy += shaded_lai * anleaf[SHADED];
