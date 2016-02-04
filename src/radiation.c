@@ -89,57 +89,75 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /*
         Calculate absorded direct (beam) and diffuse radiation
 
-
         References:
         -----------
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
-    double direct_frac = 1.0 - diffuse_frac;
-    double k = p->kext;
-    double lai = s->lai;
+
     int    i;
-    double czen, integral, kd, phi_1, phi_2, Gross;
+    double czen, integral, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
+           k_dash_b, k_dash_d, scattered, shaded, direct_beam;
+    double direct_frac = 1.0 - diffuse_frac;
+    double lai = s->lai;
     /*
-       0  = spherical leaf angle distribution
-       1  = horizontal leaves
+        0 = spherical leaf angle distribution
+        1 = horizontal leaves
        -1 = vertical leaves
 
        Should turn into a paramater :)
     */
-    double lad = 0.0, psi;
-
-    /* direct PAR extinction coefficent - de Pury & Farquhar (1997). */
-    /**kb = 0.46 / sin(DEG2RAD(elevation)); */
-
-    /* alternative - not sure I have it quite right, i.e. doesn't match above */
-    /* direct PAR extinction coefficent - Dai et al 2004, eqn 2. */
-    phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
-    phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
-    Gross = phi_1 + (phi_2 * cos_zenith);
-    *kb = Gross / cos_zenith;
-
-
-    /* diffuse PAR extinction coefficent - de Pury & Farquhar (1997). */
-    kd = 0.718;
-
-    /* Direct beam irradiance */
-    double Ib = par * direct_frac;
-
-    /* Diffuse beam irradiance */
-    double Id = par * diffuse_frac;
+    double lad = 0.0;
 
     /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
-    double rho_can = 0.036;
-    *(apar+SHADED) = ( Id * (1.0 - rho_can) * (1.0 - exp(-(kd + *kb) * lai)) *
-                       (kd / (kd + *kb)) );
+    double rho_cd = 0.036;
+
+    /* canopy reflection coeffcient for direct PAR; de Pury & Farquhar, 1997 */
+    double rho_cb = 0.029;
+
 
     /* leaf scattering coefficient of PAR; de Pury & Farquhar, 1997 */
     double omega_PAR = 0.15;
-    *(apar+SUNLIT) = Ib * (1.0 - omega_PAR) * (1.0 - exp(-*kb * lai));
-    *(apar+SUNLIT) += *(apar+SHADED);
 
-    printf("%lf %lf %lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED), RAD2DEG(acos(cos_zenith)), cos_zenith);
-    exit(1);
+    /* direct PAR extinction coefficent - Dai et al 2004, eqn 2. */
+    /*phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
+    phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
+    Gross = phi_1 + (phi_2 * cos_zenith);
+    *kb = Gross / cos_zenith;
+    */
+
+    /* beam radiation extinction coefficent of canopy - de Pury & Farquhar'97 */
+    *kb = 0.5 / sin(DEG2RAD(elevation));
+
+    /* beam & scattered PAR extinction coefficent - de Pury & Farquhar '97. */
+    k_dash_b = 0.46 / sin(DEG2RAD(elevation));
+
+    /* diffuse & scattered PAR extinction coeff - de Pury & Farquhar (1997). */
+    k_dash_d = 0.718;
+
+    /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
+    Id = par * diffuse_frac;
+    direct_beam = ( Id * (1.0 - rho_cd) *
+                    (1.0 - exp(-(k_dash_d + *kb) * lai)) *
+                    (k_dash_d / (k_dash_d + *kb)) );
+
+    /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
+    Ib = par * direct_frac;
+    shaded = Ib * (1.0 - omega_PAR) * (1.0 - exp(-*kb * lai));
+
+    /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
+    scattered = Ib * ( (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + *kb) * lai)) *
+                        k_dash_b / (k_dash_b + *kb) - (1.0 - omega_PAR) *
+                        (1.0 - exp(-2.0 * *kb * lai)) / 2.0 );
+
+    /* Irradiance absorbed by the canopy - de Pury & Farquhar (1997), eqn 13 */
+    Ic = ( (1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
+           (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)) );
+
+    *(apar+SUNLIT) = direct_beam + scattered + shaded;
+    *(apar+SHADED) = Ic - *(apar+SUNLIT);
+
+    /*printf("%lf %lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED), *(apar+SUNLIT) + *(apar+SHADED));
+    exit(1);*/
     return;
 }
 
