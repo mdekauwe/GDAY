@@ -90,7 +90,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
                 while (TRUE) {
 
-                    printf("%lf %lf %lf %lf %lf\n", hod/2., par, apar[0], apar[1], s->lai);
+
                     if (c->ps_pathway == C3) {
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
                                           Cs, dleaf, &gsc[ileaf],
@@ -100,6 +100,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
                     }
+
+                    printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[ileaf], anleaf[ileaf], ileaf);
 
                     if (anleaf[ileaf] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -148,6 +150,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
+            printf("** %lf %.10lf %.10lf\n\n", hod/2., acanopy, f->gpp_gCm2);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
