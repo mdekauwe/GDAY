@@ -106,7 +106,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     double direct_frac = 1.0 - diffuse_frac;
     double lai = s->lai;
     double lad = p->lad;
-    
+
     /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
     double rho_cd = 0.036;
 
@@ -177,7 +177,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *shaded_lai = s->lai - *sunlit_lai;
 
 
-    /*printf("%lf %lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED), *(apar+SUNLIT) + *(apar+SHADED));
+    /*printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
     exit(1);*/
     return;
 }
