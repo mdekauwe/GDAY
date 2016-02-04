@@ -87,11 +87,16 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
                                   double diffuse_frac, double elevation,
                                   double cos_zenith, double *apar, double *kb) {
     /*
-        Calculate absorded direct (beam) and diffuse radiation
+        Calculate absorded irradiance of sunlit and shaded fractions of
+        the canopy
 
         References:
         -----------
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
+
+        but see also:
+        * Wang and Leuning (1998) AFm, 91, 89-111.
+        * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
     */
 
     int    i;
@@ -153,7 +158,19 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     Ic = ( (1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
            (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)) );
 
+    /*
+        Irradiance absorbed by the sunlit fraction of the canopy is the sum of
+        direct-beam, diffuse and scattered-beam components
+    */
     *(apar+SUNLIT) = direct_beam + scattered + shaded;
+
+    /*
+        Irradiance absorbed by the shaded leaf area of the canopy is the
+        integral of absorbed irradiance in the shade (Eqn A7) and the shdaded
+        leaf area fraction. Or simply, the difference between the total
+        irradiacne absorbed by the canopy and the irradiance absorbed by the
+        sunlit leaf area
+    */
     *(apar+SHADED) = Ic - *(apar+SUNLIT);
 
     /*printf("%lf %lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED), *(apar+SUNLIT) + *(apar+SHADED));
