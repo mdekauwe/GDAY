@@ -41,7 +41,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
-           shaded_lai, gsc_canopy;
+           shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, ileaf;
 
 
@@ -73,6 +73,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
             /* sunlit, shaded loop */
             acanopy = 0.0;
+            total_apar = 0.0;
             trans_canopy = 0.0;
             gsc_canopy = 0.0;
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
@@ -129,6 +130,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
                 } /* end of leaf temperature stability loop */
                 total_rnet += rnet;
+                total_apar += apar[ileaf];
 
             } /* end of sunlit/shaded leaf loop */
 
@@ -140,7 +142,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             trans_canopy = sunlit_lai * leaf_trans[SUNLIT];
             trans_canopy += shaded_lai * leaf_trans[SHADED];
 
-            update_daily_carbon_fluxes(f, p, acanopy);
+
+            update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
 
@@ -150,13 +153,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             acanopy = 0.0;
             gsc_canopy = 0.0;
             trans_canopy = 0.0;
-            update_daily_carbon_fluxes(f, p, acanopy);
+            total_apar = apar[SUNLIT] + apar[SHADED];
+            update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
         }
+        printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, total_apar, apar[0], apar[1]);
         c->hrly_idx++;
     }
-
+    printf("** %lf %lf\n", f->gpp, f->apar);
     return;
 
 }
@@ -322,7 +327,8 @@ void zero_carbon_day_fluxes(fluxes *f) {
     return;
 }
 
-void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy) {
+void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
+                                double total_apar) {
 
     /* umol m-2 s-1 -> gC m-2 30 min-1 */
     f->gpp_gCm2 += acanopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
@@ -330,6 +336,7 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy) {
     f->gpp += f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
     f->npp += f->npp_gCm2 * GRAM_C_2_TONNES_HA;
     f->auto_resp += f->gpp - f->npp;
+    f->apar += total_apar;
 
     return;
 }
