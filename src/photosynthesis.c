@@ -132,7 +132,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         /*if (isnan(Aj)) {
             printf("YES %lf %lf %lf %lf \n", Ci, Ac, Aj, Vj);
         }*/
-        printf("PS %lf %lf %lf\n", Ac, Aj, MIN(Ac, Aj));
+
+        /*printf("PS %lf %lf %lf: %lf %lf %lf %lf\n", Ac, Aj, MIN(Ac, Aj), tleaf, par, Cs, dleaf);*/
     }
 
     return;

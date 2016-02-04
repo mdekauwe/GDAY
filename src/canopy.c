@@ -92,6 +92,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 
                     if (c->ps_pathway == C3) {
+
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
                                           Cs, dleaf, &gsc[ileaf],
                                           &anleaf[ileaf]);
@@ -150,6 +151,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
+
+            /*printf("GOOD %.10lf %.10lf %.10lf %.10lf\n", acanopy, f->gpp, sunlit_lai, shaded_lai);*/
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance, i.e. soil evap */
