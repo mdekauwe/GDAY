@@ -277,6 +277,7 @@ typedef struct {
     double ko25;                            /* Base rate for oxygenation by Rubisco at 25degC [umol mol-1]. Note value in Bernacchie 2001 is in mmol!! */
     double kq10;                            /* exponential coefficient for Rm vs T */
     double kr;                              /* N uptake coefficent (0.05 kg C m-2 to 0.5 tonnes/ha) see Silvia's PhD, Dewar and McM, 96. */
+    double lad;                             /* Leaf angle distribution: 0 = spherical leaf angle distribution; 1 = horizontal leaves; -1 = vertical leaves */
     double lai_closed;                      /* LAI of closed canopy (max cover fraction is reached (m2 (leaf) m-2 (ground) ~ 2.5) */
     double latitude;                        /* latitude (degrees, negative for south) */
     double longitude;                       /* longitude (degrees, negative for west) */

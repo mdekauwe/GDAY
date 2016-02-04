@@ -105,21 +105,13 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
            k_dash_b, k_dash_d, scattered, shaded, direct_beam;
     double direct_frac = 1.0 - diffuse_frac;
     double lai = s->lai;
-    /*
-        0 = spherical leaf angle distribution
-        1 = horizontal leaves
-       -1 = vertical leaves
-
-       Should turn into a paramater :)
-    */
-    double lad = 0.0;
-
+    double lad = p->lad;
+    
     /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
     double rho_cd = 0.036;
 
     /* canopy reflection coeffcient for direct PAR; de Pury & Farquhar, 1997 */
     double rho_cb = 0.029;
-
 
     /* leaf scattering coefficient of PAR; de Pury & Farquhar, 1997 */
     double omega_PAR = 0.15;

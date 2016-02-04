@@ -665,6 +665,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->kq10 = atof(value);
     } else if (MATCH("params", "kr")) {
         p->kr = atof(value);
+    } else if (MATCH("params", "lad")) {
+        p->lad = atof(value);
     } else if (MATCH("params", "lai_closed")) {
         p->lai_closed = atof(value);
     } else if (MATCH("params", "latitude")) {

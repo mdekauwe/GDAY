@@ -220,6 +220,7 @@ void initialise_params(params *p) {
     p->fmroot = 0.0;
     p->fmfaeces = 0.0;
     p->growing_seas_len = 0;
+    p->lad = 0.0; /* spherical leaf angle distribution */
 
     for (i = 0; i < 7; i++) {
         p->decayrate[i] = 0.0;
