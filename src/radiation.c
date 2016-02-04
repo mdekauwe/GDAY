@@ -204,8 +204,7 @@ void calculate_zenith_angle(params *p, double doy, double hod,
 
     References:
     -----------
-    * Campbell, G. S. and Norman, J. M. (1998) Introduction to environmental
-      biophysics. Pg 168.
+    * De Pury & Farquhar (1997) PCE, 20, 537-557.
 
     */
 
@@ -213,38 +212,66 @@ void calculate_zenith_angle(params *p, double doy, double hod,
 
     /* need to convert 30 min data, 0-47 to 0-23.5 */
     hod /= 2.0;
+
     gamma = day_angle(doy);
     dec = calculate_solar_declination(doy, gamma);
-    et = calculate_eqn_of_time(doy, gamma);
-
-    /* longitudinal correction (hours) */
-    lc = (p->longitude - round_to_value(p->longitude, 15.)) / 15.0;
-
-    /* solar noon (hours)  */
-    t0 = 12.0 - lc - et;
-
-    /* hour angle (radians) */
-    h = DEG2RAD(15.0 * (hod - t0));
+    et = calculate_eqn_of_time(gamma);
+    t0 = calculate_solar_noon(et, p->longitude);
+    h = calculate_hour_angle(hod, t0);
     rlat = DEG2RAD(p->latitude);
-    *cos_zen = (sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h));
-    if (*cos_zen > 1.0)
-        *cos_zen = 1.0;
-    else if (*cos_zen < 0.0)
-        *cos_zen = 0.0;
 
-    zenith_angle = RAD2DEG(acos(*cos_zen));
-    *elevation = 90.0 - zenith_angle;
+    /* solar elevation angle (degrees) A13 - De Pury & Farquhar  */
+    *elevation = (RAD2DEG(asin(sin(rlat) * sin(dec) + cos(rlat) *
+                          cos(dec) * cos(h))));
+    zenith_angle = 90.0 - *elevation;
+    *cos_zen = cos(DEG2RAD(zenith_angle));
 
-    /*printf("%lf %lf\n", hod, *elevation); */
 
     return;
 }
 
-double day_angle(int doy) {
-    /* Calculation of day angle
+double calculate_solar_noon(double et, double longitude) {
+    /* Calculation solar noon - De Pury & Farquhar, '97: eqn A16
 
     Reference:
     ----------
+    * De Pury & Farquhar (1997) PCE, 20, 537-557.
+
+    Returns:
+    ---------
+    t0 - solar noon (hours).
+    */
+    double t0, Ls;
+
+    /* all international standard meridians are multiples of 15deg east/west of
+       greenwich */
+    Ls = round_to_value(longitude, 15.);
+    t0 = 12.0 + (4.0 * (Ls - longitude) - et) / 60.0;
+
+    return (t0);
+}
+
+double calculate_hour_angle(double t, double t0) {
+    /* Calculation solar noon - De Pury & Farquhar, '97: eqn A15
+
+    Reference:
+    ----------
+    * De Pury & Farquhar (1997) PCE, 20, 537-557.
+
+    Returns:
+    ---------
+    h - hour angle (radians).
+    */
+    return (M_PI * (t - t0) / 12.0);
+
+}
+
+double day_angle(int doy) {
+    /* Calculation of day angle - De Pury & Farquhar, '97: eqn A18
+
+    Reference:
+    ----------
+    * De Pury & Farquhar (1997) PCE, 20, 537-557.
     * J. W. Spencer (1971). Fourier series representation of the position of
       the sun.
 
@@ -254,7 +281,7 @@ double day_angle(int doy) {
     */
     double gamma;
 
-    gamma = (2.0 * M_PI * (doy - 1.0)) / 365;
+    gamma = 2.0 * M_PI * (doy - 1.0) / 365.0;
 
     return (gamma);
 }
@@ -278,6 +305,7 @@ double calculate_solar_declination(int doy, double gamma) {
 
     Reference:
     ----------
+    * De Pury & Farquhar (1997) PCE, 20, 537-557.
     * Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
     * J. W. Spencer (1971). Fourier series representation of the position of
       the sun.
@@ -289,11 +317,15 @@ double calculate_solar_declination(int doy, double gamma) {
            0.006758 * cos(2.0 * gamma) + 0.000907 * sin(2.0 * gamma) -\
            0.002697 * cos(3.0 * gamma) + 0.00148 * sin(3.0 * gamma);
 
+
+    /* (radians) A14 - De Pury & Farquhar  */
+    decl = -23.4 * (M_PI / 180.) * cos(2.0 * M_PI * (doy + 10) / 365);
+
     return (decl);
 
 }
 
-double calculate_eqn_of_time(int doy, double gamma) {
+double calculate_eqn_of_time(double gamma) {
     /* Equation of time - correction for the difference btw solar time
     and the clock time.
 
@@ -306,6 +338,7 @@ double calculate_eqn_of_time(int doy, double gamma) {
 
     References:
     -----------
+    * De Pury & Farquhar (1997) PCE, 20, 537-557.
     * Campbell, G. S. and Norman, J. M. (1998) Introduction to environmental
       biophysics. Pg 169.
     * J. W. Spencer (1971). Fourier series representation of the position of
@@ -320,19 +353,15 @@ double calculate_eqn_of_time(int doy, double gamma) {
     et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
          0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);
 
-    /* radians to hours */
-    et *= 24.0 / (2.0 * M_PI);
-
     /* radians to minutes */
     /*et *= 229.18; */
 
-    /* Campbell & Norman (hrs)
-    f = 279.575 + 0.9856 * doy;
-    A = f * M_PI / 180.0;
-    et = (-104.7 * sin(A) + 596.2 * sin(2.0 * A) + 4.3 * sin(3.0 * A) -\
-            12.7 * sin(4.0 * A) - 429.3 * cos(A) - 2.0 * cos(2.0 * A) +\
-            19.3 * cos(3.0 * A)) / 3600.0;
-    */
+    /* radians to hours */
+    et *= 24.0 / (2.0 * M_PI);
+
+    /* minutes - de Pury and Farquhar, 1997 - A17 */
+    et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *
+          cos(2.0 * gamma) - 9.731  * sin(gamma));
 
     return (et);
 }
