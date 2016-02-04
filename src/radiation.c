@@ -176,7 +176,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
     *shaded_lai = s->lai - *sunlit_lai;
 
-    printf("%.10lf %.10lf %.10lf %.10lf %lf\n", s->lai, *sunlit_lai, *shaded_lai, kb, elevation);
+    
     /*printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
     exit(1);*/
     return;
