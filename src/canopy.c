@@ -150,7 +150,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
-            printf("** %lf %.10lf %.10lf\n\n", hod/2., acanopy, f->gpp_gCm2);
+            printf("** %lf %.10lf %.10lf\n\n", hod/2., acanopy, f->gpp);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we

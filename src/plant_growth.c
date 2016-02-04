@@ -822,6 +822,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     ** Carbon pools
     */
     s->shoot += f->cpleaf - f->deadleaves - f->ceaten;
+    printf("%lf %lf %lf %lf\n", f->npp*2, f->gpp, f->npp, f->gpp*p->cue);
     s->root += f->cproot - f->deadroots;
     s->croot += f->cpcroot - f->deadcroots;
     s->branch += f->cpbranch - f->deadbranch;
