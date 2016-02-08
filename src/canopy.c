@@ -375,7 +375,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
 
     if (s->lai > 0.0) {
 
-        /* the total amount of leaf nitrogen  (gN m-2 leaf) */
+        /* the total amount of leaf nitrogen  (gN m-2) */
         Ntot_sun = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * sunlit_lai;
         Ntot_sha = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * shaded_lai;
 
