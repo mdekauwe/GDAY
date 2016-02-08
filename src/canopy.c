@@ -74,10 +74,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
-                /*
-                    initialise values of leaf temp, leaf surface CO2 and VPD at
-                    the leaf surface using air space values
-                */
+                /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 tleaf = m->tair[c->hrly_idx];
                 dleaf = m->vpd[c->hrly_idx] * KPA_2_PA;
                 Cs = m->co2[c->hrly_idx];
