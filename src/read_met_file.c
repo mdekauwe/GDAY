@@ -190,12 +190,12 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
 {
     FILE  *fp;
     char   line[STRING_LENGTH];
-    int    file_len = 0;
     int    i = 0;
     int    nvars = 12;
     int    skipped_lines = 0;
     double current_yr, temp_HOD;
-
+    long   num_timesteps;
+    double hod_dummy;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
@@ -204,67 +204,67 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
 	 }
 
     /* work out how big the file is */
+    num_timesteps = 0;
     while (fgets(line, STRING_LENGTH, fp) != NULL) {
         /* ignore comment line */
         if (*line == '#')
             continue;
-        file_len++;
+        num_timesteps++;
     }
     rewind(fp);
-    c->num_days = file_len;
 
     /* allocate memory for meteorological arrays */
-    if ((m->year = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->year = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for year array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->doy = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->doy = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for doy array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->rain = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->rain = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for rain array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->par = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->par = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for par array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tair = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->tair = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tair array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tsoil = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->tsoil = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tsoil array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->vpd = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->vpd = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for vpd array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->co2 = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->co2 = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for co2 array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->ndep = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->ndep = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for ndep array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->wind = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->wind = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->press = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((m->press = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for press array\n");
 		exit(EXIT_FAILURE);
     }
@@ -281,8 +281,6 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
             skipped_lines++;
             continue;
         }
-
-
 
         if (sscanf(line, "%lf,%lf,%lf,\
                           %lf,%lf,%lf,\
