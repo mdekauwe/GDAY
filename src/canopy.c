@@ -362,17 +362,18 @@ void calculate_sunlit_shaded_leaf_N(params *p, state *s, double sunlit_lai,
 
     if (s->lai > 0.0) {
 
-        /* area-based leaf nitrogen concentration (gN m-2 one-sided leaf area)*/
+        /* area-based leaf N (gN m-2 one-sided leaf area)*/
         Na_sun = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * sunlit_lai;
         Na_sha = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * shaded_lai;
 
-        /* calculation for canopy N content at the top of the canopy */
+        /* calculation for leaf N at the top of the canopy */
         *(N0+SUNLIT) = Na_sun * k / (1.0 - exp(-k * sunlit_lai));
         *(N0+SHADED) = Na_sha * k / (1.0 - exp(-k * shaded_lai));
     } else {
         *(N0+SUNLIT) = 0.0;
         *(N0+SHADED) = 0.0;
     }
+
 
     return;
 }

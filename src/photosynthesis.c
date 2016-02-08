@@ -16,7 +16,7 @@
 #include "photosynthesis.h"
 
 
-void photosynthesis_C3(control *c, params *p, state *s, double N0_leaf,
+void photosynthesis_C3(control *c, params *p, state *s, double N0,
                        double tleaf, double par, double Cs, double dleaf,
                        double *gsc, double *anleaf) {
     /*
@@ -32,7 +32,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0_leaf,
         * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
     */
 
-    double gamma_star, N0, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
+    double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
     double A, B, C, arg1, arg2, Ci, Ac, Aj, dleaf_kpa;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
     int    qudratic_error = FALSE, large_root;
@@ -44,7 +44,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0_leaf,
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0_leaf, &jmax, &vcmax);
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
     rd = 0.0;
 
@@ -227,7 +227,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         tleaf : float
             air temperature (deg C)
         N0 : float
-            leaf N
+            leaf N at the top of the canopy
         jmax : float
             the potential electron transport rate at the leaf temperature
             (umol m-2 s-1)
