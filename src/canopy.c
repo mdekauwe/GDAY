@@ -92,7 +92,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 
                     if (c->ps_pathway == C3) {
-
+                        printf("PS-PRE %lf %lf %lf %lf\n", tleaf, apar[ileaf], Cs, dleaf);
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
                                           Cs, dleaf, &gsc[ileaf],
                                           &anleaf[ileaf]);
@@ -152,7 +152,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
 
-
+            /*printf("GOOD %.10lf %.10lf %.10lf %.10lf\n", acanopy, f->gpp, sunlit_lai, shaded_lai);*/
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance, i.e. soil evap */
@@ -165,10 +165,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                               trans_canopy);
         }
 
-        /*printf("* %lf %lf: %lf %lf  %lf %lf\n", hod/2., s->lai, acanopy, par, apar[SUNLIT], apar[SHADED]);*/
+        /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, acanopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
-
+    printf("END %lf\n\n", f->gpp);
 
     return;
 
@@ -212,7 +212,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     /* Boundary layer conductance for heat - single sided, forced
        convection (mol m-2 s-1) */
     gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
-
+    printf("%lf %lf %lf\n", tair, press, wind);
 
     /* Boundary layer conductance for heat - single sided, free convection */
     gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
@@ -251,14 +251,14 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     /*
     ** calculate new dleaf, tleaf and Cs
     */
-
+    printf("EB1 %lf %lf\n", *Cs, *dleaf);
     /* Temperature difference between the leaf surface and the air */
     Tdiff = (rnet - LE) / (CP * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff / 4.;
     *Cs = Ca - anleaf / gbc;                /* CO2 conc at the leaf surface */
     *dleaf = *et * press / gv;              /* VPD at the leaf surface */
 
-
+    printf("EB2 %lf %lf : %lf %lf %lf : %.10lf %.10lf\n", *Cs, *dleaf, Ca, anleaf , Ca - anleaf / gbc, gbhu, gbhf);
     return;
 }
 

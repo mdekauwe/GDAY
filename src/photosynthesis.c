@@ -48,6 +48,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     rd = calc_leaf_day_respiration(tleaf, Rd0);
     rd = 0.0;
 
+
     /* actual electron transport rate */
     qudratic_error = FALSE;
     large_root = FALSE;
@@ -132,7 +133,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
             printf("YES %lf %lf %lf %lf \n", Ci, Ac, Aj, Vj);
         }*/
 
-        /*printf("PS %lf %lf %lf: %lf %lf %lf %lf\n", Ac, Aj, MIN(Ac, Aj), tleaf, par, Cs, dleaf);*/
+        printf("PS %lf %lf %lf: %lf %lf %lf %lf\n", Ac, Aj, MIN(Ac, Aj), tleaf, par, Cs, dleaf);
     }
 
     return;
