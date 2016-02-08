@@ -24,7 +24,8 @@ void    solve_leaf_energy_balance(control *, fluxes *, met *, params *, state *,
 double  calc_radiation_conductance(double);
 double  calc_bdn_layer_forced_conduct(double, double, double,double);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
-void    calculate_leaf_N(params *, state *, double, double, double *);
+void    calculate_top_of_canopy_leafn(params *, state *, double, double,
+                                      double *);
 
 
 #endif /* CANOPY_H */

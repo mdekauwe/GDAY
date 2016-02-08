@@ -68,7 +68,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
-            calculate_leaf_N(p, s, sunlit_lai, shaded_lai, &(N0[0]));
+            calculate_top_of_canopy_leafn(p, s, sunlit_lai, shaded_lai,
+                                          &(N0[0]));
 
             /* sunlit/shaded loop */
             for (i = 0; i < NUM_LEAVES; i++) {
@@ -341,8 +342,8 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double an_canopy,
 }
 
 
-void calculate_leaf_N(params *p, state *s, double sunlit_lai, double shaded_lai,
-                      double *N0)  {
+void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
+                                   double shaded_lai, double *N0)  {
 
     /*
     Calculate the N at the top of the canopy (g N m-2), N0.
@@ -362,7 +363,7 @@ void calculate_leaf_N(params *p, state *s, double sunlit_lai, double shaded_lai,
     Returns:
     -------
     N0 : float (g N m-2)
-        Top of the canopy N
+        leaf nitrogen content at the top of the canopy
 
     References:
     -----------
