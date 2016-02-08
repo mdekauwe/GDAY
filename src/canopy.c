@@ -37,12 +37,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     */
 
-    double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, N0[2],
+    double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, N0[2],
            cos_zenith, elevation, an_leaf[2], gsc[2], apar[2], trans_leaf[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet=0.0, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
-    int    hod, iter = 0, itermax = 100, ileaf;
+    int    hod, iter = 0, itermax = 100, i;
 
 
 
@@ -70,7 +70,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          &shaded_lai);
             calculate_leaf_N(p, s, sunlit_lai, shaded_lai, &(N0[0]));
 
-            for (ileaf = 0; ileaf <= 1; ileaf++) {
+            for (i = 0; i <= 1; i++) {
 
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 tleaf = m->tair[c->hrly_idx];
@@ -79,29 +79,25 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
                 while (TRUE) { /* Stability loop */
 
-
                     if (c->ps_pathway == C3) {
-
-                        photosynthesis_C3(c, p, s, N0[ileaf], tleaf,
-                                          apar[ileaf], Cs, dleaf, &gsc[ileaf],
-                                          &an_leaf[ileaf]);
+                        photosynthesis_C3(c, p, s, N0[i], tleaf, apar[i], Cs,
+                                          dleaf, &gsc[i], &an_leaf[i]);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
                     }
 
-                    /*printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[ileaf], an_leaf[ileaf], ileaf);*/
+                    /*printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[i], an_leaf[i], i);*/
 
-                    if (an_leaf[ileaf] > 0.0) {
+                    if (an_leaf[i] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, f, m, p, s, tleaf,
-                                                  gsc[ileaf], an_leaf[ileaf],
-                                                  apar[ileaf], &Cs, &dleaf,
-                                                  &new_tleaf,
-                                                  &trans_leaf[ileaf]);
+                        solve_leaf_energy_balance(c, f, m, p, s, tleaf, gsc[i],
+                                                  an_leaf[i], apar[i], &Cs,
+                                                  &dleaf, &tleaf_new,
+                                                  &trans_leaf[i]);
                     } else {
-                        trans_leaf[ileaf] = 0.0;
+                        trans_leaf[i] = 0.0;
                         break;
                     }
 
@@ -109,10 +105,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     if (iter >= itermax) {
                         fprintf(stderr, "No convergence in canopy loop\n");
                         exit(EXIT_FAILURE);
-                    } else if (fabs(tleaf - new_tleaf) < 0.02) {
+                    } else if (fabs(tleaf - tleaf_new) < 0.02) {
                         break;  /* stopping criteria */
                     } else {    /* Update temperature & do another iteration */
-                        tleaf = new_tleaf;
+                        tleaf = tleaf_new;
                         iter++;
                     }
 
@@ -123,7 +119,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                    this later. I'm not sure the canopy rnet is what should
                    be passed to the soil evap calculation anyway */
                 total_rnet += rnet;
-                total_apar += apar[ileaf];
+                total_apar += apar[i];
 
             } /* end of sunlit/shaded leaf loop */
 
@@ -174,7 +170,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double gsc,
                                double an_leaf, double apar, double *Cs,
-                               double *dleaf, double *new_tleaf, double *et) {
+                               double *dleaf, double *tleaf_new, double *et) {
     /*
         Coupled model wrapper to solve photosynthesis, stomtal conductance
         and radiation paritioning.
@@ -246,7 +242,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     */
     /* Temperature difference between the leaf surface and the air */
     Tdiff = (rnet - LE) / (CP * MASS_AIR * gh);
-    *new_tleaf = tair + Tdiff / 4.;
+    *tleaf_new = tair + Tdiff / 4.;
     *Cs = Ca - an_leaf / gbc;                /* CO2 conc at the leaf surface */
     *dleaf = *et * press / gv;              /* VPD at the leaf surface */
 
