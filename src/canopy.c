@@ -345,26 +345,42 @@ void calculate_leaf_N(params *p, state *s, double sunlit_lai, double shaded_lai,
                       double *N0)  {
 
     /*
-    Calculate the canopy N at the top of the canopy (g N m-2), N0.
-    See notes and Chen et al 93, Oecologia, 93,63-69.
+    Calculate the N at the top of the canopy (g N m-2), N0.
+
+    Assuming an exponentially decreasing N distribution within the canopy:
+
+    N(i) = N0 x exp(-K x LAI)
+
+    Intgrating:
+
+    Ntot = N0 x (1 - exp (k x LAI)) / k
+
+    Rearranging to get N0:
+
+    N0 = (Ntot * K) / (1.0 - exp(-k x LAI)
 
     Returns:
     -------
     N0 : float (g N m-2)
         Top of the canopy N
+
+    References:
+    -----------
+    * Chen et al 93, Oecologia, 93,63-69.
+
     */
-    double Na_sun, Na_sha;
+    double Ntot_sun, Ntot_sha;
     double k = p->kext;
 
     if (s->lai > 0.0) {
 
         /* area-based leaf N (gN m-2 one-sided leaf area)*/
-        Na_sun = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * sunlit_lai;
-        Na_sha = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * shaded_lai;
+        Ntot_sun = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * sunlit_lai;
+        Ntot_sha = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * shaded_lai;
 
         /* calculation for leaf N at the top of the canopy */
-        *(N0+SUNLIT) = Na_sun * k / (1.0 - exp(-k * sunlit_lai));
-        *(N0+SHADED) = Na_sha * k / (1.0 - exp(-k * shaded_lai));
+        *(N0+SUNLIT) = Ntot_sun * k / (1.0 - exp(-k * sunlit_lai));
+        *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
     } else {
         *(N0+SUNLIT) = 0.0;
         *(N0+SHADED) = 0.0;
