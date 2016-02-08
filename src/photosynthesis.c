@@ -38,9 +38,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     int    qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
-
-
-
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
@@ -50,11 +47,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
     /******* TO GET AROUND N0 not being right ******/
 
-
-
-
-    jmax = 60.0;
-    vcmax = 30.0;
+    /*jmax = 60.0;
+    vcmax = 30.0;*/
 
 
 
