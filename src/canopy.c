@@ -171,7 +171,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double gsc,
                                double an_leaf, double apar, double *Cs,
-                               double *dleaf, double *tleaf_new, double *et) {
+                               double *dleaf, double *tleaf_new,
+                               double *transpiration) {
     /*
         Coupled model wrapper to solve photosynthesis, stomtal conductance
         and radiation paritioning.
@@ -233,7 +234,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     rnet = p->leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
 
     /* Penman-Monteith equation */
-    *et = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
+    *transpiration = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
 
     /* sensible heat exchanged between leaf and surroundings */
     sensible_heat = (1.0 / (1.0 + gradn / gbh)) * (rnet - LE);
@@ -245,7 +246,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     Tdiff = (rnet - LE) / (CP * MASS_AIR * gh);
     *tleaf_new = tair + Tdiff / 4.;
     *Cs = Ca - an_leaf / gbc;                /* CO2 conc at the leaf surface */
-    *dleaf = *et * press / gv;              /* VPD at the leaf surface */
+    *dleaf = *transpiration * press / gv;         /* VPD at the leaf surface */
 
     return;
 }
