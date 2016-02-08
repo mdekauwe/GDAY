@@ -92,7 +92,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 
                     if (c->ps_pathway == C3) {
-                        printf("PS-PRE %lf %lf %lf %lf\n", tleaf, apar[ileaf], Cs, dleaf);
+                        
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
                                           Cs, dleaf, &gsc[ileaf],
                                           &anleaf[ileaf]);
