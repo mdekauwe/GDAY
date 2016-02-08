@@ -380,7 +380,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
 
     if (s->lai > 0.0) {
 
-        /* the total amount of leaf nitrogen in sunlit/shaded parts of canopy */
+        /* the total amount of nitrogen in sunlit/shaded parts of canopy */
         Ntot_sun = (s->shootnc * LMA) * sunlit_lai;
         Ntot_sha = (s->shootnc * LMA) * shaded_lai;
 
