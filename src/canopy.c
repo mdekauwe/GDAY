@@ -69,7 +69,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
 
-            calculate_sunlit_shaded_leaf_N(p, s, sunlit_lai, shaded_lai,
+            calculate_leaf_N(p, s, sunlit_lai, shaded_lai,
                                            &(N0[0]));
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
@@ -345,8 +345,8 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
 }
 
 
-void calculate_sunlit_shaded_leaf_N(params *p, state *s, double sunlit_lai,
-                                    double shaded_lai, double *N0)  {
+void calculate_leaf_N(params *p, state *s, double sunlit_lai, double shaded_lai,
+                      double *N0)  {
 
     /*
     Calculate the canopy N at the top of the canopy (g N m-2), N0.
