@@ -390,7 +390,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         f->npcroot = f->npp * f->alcroot * nccnew;
 
         /* If we have allocated more N than we have available
-            - cut back N prodn */
+            - cut back C prodn */
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
         if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
