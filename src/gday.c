@@ -253,7 +253,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         figure_out_years_with_disturbances(c, m, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
-    s->lai = 5.0;
+
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
