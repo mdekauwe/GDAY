@@ -147,12 +147,18 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             } /* end of sunlit/shaded leaf loop */
 
             /* Scale leaf fluxes to the canopy */
+            acanopy = anleaf[SUNLIT] + anleaf[SHADED];
+            gsc_canopy = gsc[SUNLIT] + gsc[SHADED];
+            trans_canopy = leaf_trans[SUNLIT] + leaf_trans[SHADED];
+
+            /*
             acanopy = sunlit_lai * anleaf[SUNLIT];
             acanopy += shaded_lai * anleaf[SHADED];
             gsc_canopy = sunlit_lai * gsc[SUNLIT];
             gsc_canopy += shaded_lai * gsc[SHADED];
             trans_canopy = sunlit_lai * leaf_trans[SUNLIT];
             trans_canopy += shaded_lai * leaf_trans[SHADED];
+            */
 
 
 
@@ -167,6 +173,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = 0.0;
             trans_canopy = 0.0;
             total_apar = apar[SUNLIT] + apar[SHADED];
+
             update_daily_carbon_fluxes(f, p, acanopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
@@ -193,7 +200,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double LE; /* latent heat (W m-2) */
-    double Rspecifc_dry_air = 287.058; /* J kg-1 K-1 */
     double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
     double gbc, gamma, epsilon, omega, Tdiff, sensible_heat, rnet, ea, ema, Tk;
     double emissivity_atm, sw_rad;
@@ -353,27 +359,4 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
     f->apar += total_apar;
 
     return;
-}
-
-double calc_top_of_canopy_n(params *p, state *s, double ncontent)  {
-
-    /*
-    Calculate the canopy N at the top of the canopy (g N m-2), N0.
-    See notes and Chen et al 93, Oecologia, 93,63-69.
-
-    Returns:
-    -------
-    N0 : float (g N m-2)
-        Top of the canopy N
-    */
-    double N0;
-
-    if (s->lai > 0.0) {
-        /* calculation for canopy N content at the top of the canopy */
-        N0 = ncontent * p->kext / (1.0 - exp(-p->kext * s->lai));
-    } else {
-        N0 = 0.0;
-    }
-
-    return (N0);
 }

@@ -38,15 +38,26 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     int    qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
+    /* NOT RIGHT */
+
+
+
     /* Calculate mate params & account for temperature dependencies */
-    N0 = calculate_top_of_canopy_n(p, s, ncontent);
+    N0 = calculate_top_of_canopy_n(p, s, ncontent); /* NOT RIGHT */
+
+
+
+
+    /* NOT RIGHT */
+
+
 
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
-    /*rd = 0.0;*/
+    rd = 0.0;
 
     /******* TO GET AROUND N0 not being right ******/
 
@@ -81,8 +92,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
 
         /* SEE WHAT IVE DONE HERE */
 
-        *anleaf = -rd;
-        /**anleaf = 0.0;*/
+        /**anleaf = -rd;*/
+        *anleaf = 0.0;
 
 
         /* SEE WHAT IVE DONE HERE */
@@ -147,7 +158,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
             printf("YES %lf %lf %lf %lf \n", Ci, Ac, Aj, Vj);
         }*/
 
-        /*printf("PS %lf %lf %lf: %lf %lf %lf %lf\n", Ac, Aj, MIN(Ac, Aj), tleaf, par, Cs, dleaf);*/
     }
 
     return;
