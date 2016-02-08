@@ -40,7 +40,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, N0[2],
            cos_zenith, elevation, an_leaf[2], gsc[2], apar[2], trans_leaf[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet=0.0, total_rnet,
-           press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
+           press, vpd, par, tair, wind, Ca, sunlit_lai, an_canopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, i;
 
@@ -61,7 +61,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         if (elevation > 0.0 && par > 50.0) {
 
             /* sunlit, shaded loop */
-            acanopy = 0.0;
+            an_canopy = 0.0;
             total_apar = 0.0;
             trans_canopy = 0.0;
             gsc_canopy = 0.0;
@@ -125,13 +125,13 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             } /* end of sunlit/shaded leaf loop */
 
             /* Scale leaf fluxes to the canopy */
-            acanopy = an_leaf[SUNLIT] + an_leaf[SHADED];
+            an_canopy = an_leaf[SUNLIT] + an_leaf[SHADED];
             gsc_canopy = gsc[SUNLIT] + gsc[SHADED];
             trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
 
             /*
-            acanopy = sunlit_lai * an_leaf[SUNLIT];
-            acanopy += shaded_lai * an_leaf[SHADED];
+            an_canopy = sunlit_lai * an_leaf[SUNLIT];
+            an_canopy += shaded_lai * an_leaf[SHADED];
             gsc_canopy = sunlit_lai * gsc[SUNLIT];
             gsc_canopy += shaded_lai * gsc[SHADED];
             trans_canopy = sunlit_lai * trans_leaf[SUNLIT];
@@ -140,24 +140,24 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 
 
-            update_daily_carbon_fluxes(f, p, acanopy, total_apar);
+            update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance, i.e. soil evap */
-            acanopy = 0.0;
+            an_canopy = 0.0;
             gsc_canopy = 0.0;
             trans_canopy = 0.0;
             total_apar = apar[SUNLIT] + apar[SHADED];
 
-            update_daily_carbon_fluxes(f, p, acanopy, total_apar);
+            update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
             calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
                                               trans_canopy);
         }
 
-        /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, acanopy, apar[SUNLIT], apar[SHADED]);*/
+        /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, an_canopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
 
@@ -326,11 +326,11 @@ void zero_carbon_day_fluxes(fluxes *f) {
     return;
 }
 
-void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
+void update_daily_carbon_fluxes(fluxes *f, params *p, double an_canopy,
                                 double total_apar) {
 
     /* umol m-2 s-1 -> gC m-2 30 min-1 */
-    f->gpp_gCm2 += acanopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
+    f->gpp_gCm2 += an_canopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
     f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
