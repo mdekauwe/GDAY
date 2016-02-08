@@ -37,23 +37,13 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     */
 
-    double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent,
+    double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent[2],
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, ileaf;
 
-    if (s->lai > 0.0) {
-        /* average leaf nitrogen content (g N m-2 leaf) */
-        leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
-
-        /* total nitrogen content of the canopy */
-        ncontent = leafn * s->lai;
-
-    } else {
-        ncontent = 0.0;
-    }
 
 
     zero_carbon_day_fluxes(f);
@@ -79,6 +69,20 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
 
+            if (s->lai > 0.0) {
+                /* average leaf nitrogen content (g N m-2 leaf) */
+                leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
+
+                /* total nitrogen content of the canopy */
+                ncontent[SUNLIT] = leafn * sunlit_lai;
+                ncontent[SHADED] = leafn * shaded_lai;
+
+            } else {
+                ncontent[SUNLIT] = 0.0;
+                ncontent[SHADED] = 0.0;
+            }
+
+
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
                 /*
@@ -90,11 +94,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
                 while (TRUE) {
 
-                    printf("* %lf %lf %lf %lf %lf %d\n", tleaf, new_tleaf, dleaf, Cs, apar[ileaf], ileaf);
+
                     if (c->ps_pathway == C3) {
 
-                        photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
-                                          Cs, dleaf, &gsc[ileaf],
+                        photosynthesis_C3(c, p, s, ncontent[ileaf], tleaf,
+                                          apar[ileaf], Cs, dleaf, &gsc[ileaf],
                                           &anleaf[ileaf]);
                     } else {
                         /* Nothing implemented */
@@ -115,7 +119,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         leaf_trans[ileaf] = 0.0;
                         break;
                     }
-                    printf("** %lf %lf %lf %lf %lf %d\n", tleaf, new_tleaf, dleaf, Cs, apar[ileaf], ileaf);
 
 
                     if (iter >= itermax) {

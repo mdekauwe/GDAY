@@ -46,8 +46,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
-    rd = 0.0;
-
+    /*rd = 0.0;*/
 
     /* actual electron transport rate */
     qudratic_error = FALSE;
@@ -68,7 +67,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
         /* SEE WHAT IVE DONE HERE */
 
         *anleaf = -rd;
-        *anleaf = 0.0;
+        /**anleaf = 0.0;*/
 
 
         /* SEE WHAT IVE DONE HERE */
