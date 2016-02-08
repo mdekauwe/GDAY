@@ -38,7 +38,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     */
 
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, N0[2],
-           cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
+           cos_zenith, elevation, an_leaf[2], gsc[2], apar[2], trans_leaf[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet=0.0, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
@@ -84,24 +84,24 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
                         photosynthesis_C3(c, p, s, N0[ileaf], tleaf,
                                           apar[ileaf], Cs, dleaf, &gsc[ileaf],
-                                          &anleaf[ileaf]);
+                                          &an_leaf[ileaf]);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
                     }
 
-                    /*printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[ileaf], anleaf[ileaf], ileaf);*/
+                    /*printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[ileaf], an_leaf[ileaf], ileaf);*/
 
-                    if (anleaf[ileaf] > 0.0) {
+                    if (an_leaf[ileaf] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf,
-                                                  gsc[ileaf], anleaf[ileaf],
+                                                  gsc[ileaf], an_leaf[ileaf],
                                                   apar[ileaf], &Cs, &dleaf,
                                                   &new_tleaf,
-                                                  &leaf_trans[ileaf]);
+                                                  &trans_leaf[ileaf]);
                     } else {
-                        leaf_trans[ileaf] = 0.0;
+                        trans_leaf[ileaf] = 0.0;
                         break;
                     }
 
@@ -128,17 +128,17 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             } /* end of sunlit/shaded leaf loop */
 
             /* Scale leaf fluxes to the canopy */
-            acanopy = anleaf[SUNLIT] + anleaf[SHADED];
+            acanopy = an_leaf[SUNLIT] + an_leaf[SHADED];
             gsc_canopy = gsc[SUNLIT] + gsc[SHADED];
-            trans_canopy = leaf_trans[SUNLIT] + leaf_trans[SHADED];
+            trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
 
             /*
-            acanopy = sunlit_lai * anleaf[SUNLIT];
-            acanopy += shaded_lai * anleaf[SHADED];
+            acanopy = sunlit_lai * an_leaf[SUNLIT];
+            acanopy += shaded_lai * an_leaf[SHADED];
             gsc_canopy = sunlit_lai * gsc[SUNLIT];
             gsc_canopy += shaded_lai * gsc[SHADED];
-            trans_canopy = sunlit_lai * leaf_trans[SUNLIT];
-            trans_canopy += shaded_lai * leaf_trans[SHADED];
+            trans_canopy = sunlit_lai * trans_leaf[SUNLIT];
+            trans_canopy += shaded_lai * trans_leaf[SHADED];
             */
 
 
@@ -173,7 +173,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double gsc,
-                               double anleaf, double apar, double *Cs,
+                               double an_leaf, double apar, double *Cs,
                                double *dleaf, double *new_tleaf, double *et) {
     /*
         Coupled model wrapper to solve photosynthesis, stomtal conductance
@@ -247,7 +247,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     /* Temperature difference between the leaf surface and the air */
     Tdiff = (rnet - LE) / (CP * MASS_AIR * gh);
     *new_tleaf = tair + Tdiff / 4.;
-    *Cs = Ca - anleaf / gbc;                /* CO2 conc at the leaf surface */
+    *Cs = Ca - an_leaf / gbc;                /* CO2 conc at the leaf surface */
     *dleaf = *et * press / gv;              /* VPD at the leaf surface */
 
     return;
