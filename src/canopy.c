@@ -68,9 +68,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
-
-            calculate_leaf_N(p, s, sunlit_lai, shaded_lai,
-                                           &(N0[0]));
+            calculate_leaf_N(p, s, sunlit_lai, shaded_lai, &(N0[0]));
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
