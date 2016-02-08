@@ -90,7 +90,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
                 while (TRUE) {
 
-
+                    printf("* %lf %lf %lf %lf %lf %d\n", tleaf, new_tleaf, dleaf, Cs, apar[ileaf], ileaf);
                     if (c->ps_pathway == C3) {
 
                         photosynthesis_C3(c, p, s, ncontent, tleaf, apar[ileaf],
@@ -115,22 +115,19 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         leaf_trans[ileaf] = 0.0;
                         break;
                     }
-
+                    printf("** %lf %lf %lf %lf %lf %d\n", tleaf, new_tleaf, dleaf, Cs, apar[ileaf], ileaf);
 
 
                     if (iter >= itermax) {
                         fprintf(stderr, "No convergence in canopy loop\n");
                         exit(EXIT_FAILURE);
+                    } else if (fabs(tleaf - new_tleaf) < 0.02) {
+                        break; /* stopping criteria */
+                    } else {
+                        /* Update temperature & do another iteration */
+                        tleaf = new_tleaf;
+                        iter++;
                     }
-
-                    /* stopping criteria */
-                    if (fabs(tleaf - new_tleaf) < 0.02) {
-                        break;
-                    }
-
-                    /* Update temperature & do another iteration */
-                    tleaf = new_tleaf;
-                    iter++;
 
                 } /* end of leaf temperature stability loop */
                 total_rnet += rnet;

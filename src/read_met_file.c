@@ -142,7 +142,6 @@ void read_daily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    current_yr = m->year[0];
 
     i = 0;
     c->num_years = 0;
@@ -303,6 +302,7 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
         }
         i++;
     }
+
     fclose(fp);
     return;
 }

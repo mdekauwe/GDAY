@@ -253,7 +253,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         figure_out_years_with_disturbances(c, m, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
-    
+
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
@@ -345,7 +345,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            printf("**** %d %lf %lf\n", doy, f->gpp, s->lai);
+            /*printf("**** %d %lf %lf\n", doy, f->gpp, s->lai);*/
 
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
