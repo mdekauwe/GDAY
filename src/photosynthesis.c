@@ -48,6 +48,21 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     rd = calc_leaf_day_respiration(tleaf, Rd0);
     /*rd = 0.0;*/
 
+    /******* TO GET AROUND N0 not being right ******/
+
+
+
+
+    jmax = 60.0;
+    vcmax = 30.0;
+
+
+
+
+    /******* TO GET AROUND N0 not being right ******/
+
+
+
     /* actual electron transport rate */
     qudratic_error = FALSE;
     large_root = FALSE;

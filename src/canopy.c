@@ -39,7 +39,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent[2],
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
-           direct_apar, diffuse_apar, diffuse_frac, rnet, total_rnet,
+           direct_apar, diffuse_apar, diffuse_frac, rnet=0.0, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, ileaf;
@@ -69,6 +69,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
 
+            /* THIS BIT IS WRONG< BUT IVE TURNED OFF this feedback */
+
+
             if (s->lai > 0.0) {
                 /* average leaf nitrogen content (g N m-2 leaf) */
                 leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
@@ -86,13 +89,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
                 /*
-                    initialise values of leaf temp, leaf surface CO2 and VPD
-                    from air space
+                    initialise values of leaf temp, leaf surface CO2 and VPD at
+                    the leaf surface using air space values
                 */
-                tleaf = m->tair[c->hrly_idx];             /* Leaf temperature */
-                dleaf = m->vpd[c->hrly_idx] * KPA_2_PA; /* D at the leaf surf */
-                Cs = m->co2[c->hrly_idx];       /* CO2 conc. at the leaf surf */
-                while (TRUE) {
+                tleaf = m->tair[c->hrly_idx];
+                dleaf = m->vpd[c->hrly_idx] * KPA_2_PA;
+                Cs = m->co2[c->hrly_idx];
+
+                while (TRUE) { /* Stability loop */
 
 
                     if (c->ps_pathway == C3) {
@@ -125,14 +129,18 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         fprintf(stderr, "No convergence in canopy loop\n");
                         exit(EXIT_FAILURE);
                     } else if (fabs(tleaf - new_tleaf) < 0.02) {
-                        break; /* stopping criteria */
-                    } else {
-                        /* Update temperature & do another iteration */
+                        break;  /* stopping criteria */
+                    } else {    /* Update temperature & do another iteration */
                         tleaf = new_tleaf;
                         iter++;
                     }
 
                 } /* end of leaf temperature stability loop */
+
+
+                /* This is wrong as rnet isn't being changed, however fix
+                   this later. I'm not sure the canopy rnet is what should
+                   be passed to the soil evap calculation anyway */
                 total_rnet += rnet;
                 total_apar += apar[ileaf];
 
@@ -345,4 +353,27 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
     f->apar += total_apar;
 
     return;
+}
+
+double calc_top_of_canopy_n(params *p, state *s, double ncontent)  {
+
+    /*
+    Calculate the canopy N at the top of the canopy (g N m-2), N0.
+    See notes and Chen et al 93, Oecologia, 93,63-69.
+
+    Returns:
+    -------
+    N0 : float (g N m-2)
+        Top of the canopy N
+    */
+    double N0;
+
+    if (s->lai > 0.0) {
+        /* calculation for canopy N content at the top of the canopy */
+        N0 = ncontent * p->kext / (1.0 - exp(-p->kext * s->lai));
+    } else {
+        N0 = 0.0;
+    }
+
+    return (N0);
 }
