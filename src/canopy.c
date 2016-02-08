@@ -68,6 +68,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
+
+            /* Not sure if this quite makes sense for shaded bit? */
             calculate_top_of_canopy_leafn(p, s, sunlit_lai, shaded_lai,
                                           &(N0[0]));
 
