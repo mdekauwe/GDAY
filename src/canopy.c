@@ -70,7 +70,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          &shaded_lai);
             calculate_leaf_N(p, s, sunlit_lai, shaded_lai, &(N0[0]));
 
-            for (i = 0; i <= 1; i++) {
+            /* sunlit/shaded loop */
+            for (i = 0; i < NUM_LEAVES; i++) {
 
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 tleaf = m->tair[c->hrly_idx];

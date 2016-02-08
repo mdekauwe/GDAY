@@ -53,6 +53,6 @@
 #define MOLE_WATER_2_G_WATER 18.02 /* oxygen = 16g/mol, hydrogren = 1.01 g/mol*/
 #define SUNLIT 0
 #define SHADED 1
-
+#define NUM_LEAVES 2
 
 #endif /* CONSTANTS */
