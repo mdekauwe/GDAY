@@ -16,7 +16,7 @@
 #include "photosynthesis.h"
 
 
-void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
+void photosynthesis_C3(control *c, params *p, state *s, double N0_leaf,
                        double tleaf, double par, double Cs, double dleaf,
                        double *gsc, double *anleaf) {
     /*
@@ -38,24 +38,13 @@ void photosynthesis_C3(control *c, params *p, state *s, double ncontent,
     int    qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
-    /* NOT RIGHT */
-
-
-
-    /* Calculate mate params & account for temperature dependencies */
-    N0 = calculate_top_of_canopy_n(p, s, ncontent); /* NOT RIGHT */
-
-
-
-
-    /* NOT RIGHT */
 
 
 
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0_leaf, &jmax, &vcmax);
     rd = calc_leaf_day_respiration(tleaf, Rd0);
     rd = 0.0;
 

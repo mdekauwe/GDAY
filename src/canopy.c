@@ -37,7 +37,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     */
 
-    double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, ncontent[2],
+    double Cs, dleaf, tleaf, new_tleaf, trans_hlf_hr, leafn, fc, N0[2],
            cos_zenith, elevation, anleaf[2], gsc[2], apar[2], leaf_trans[2],
            direct_apar, diffuse_apar, diffuse_frac, rnet=0.0, total_rnet,
            press, vpd, par, tair, wind, Ca, sunlit_lai, acanopy, trans_canopy,
@@ -69,22 +69,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          cos_zenith, &(apar[0]), &sunlit_lai,
                                          &shaded_lai);
 
-            /* THIS BIT IS WRONG< BUT IVE TURNED OFF this feedback */
-
-
-            if (s->lai > 0.0) {
-                /* average leaf nitrogen content (g N m-2 leaf) */
-                leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
-
-                /* total nitrogen content of the canopy */
-                ncontent[SUNLIT] = leafn * sunlit_lai;
-                ncontent[SHADED] = leafn * shaded_lai;
-
-            } else {
-                ncontent[SUNLIT] = 0.0;
-                ncontent[SHADED] = 0.0;
-            }
-
+            calculate_sunlit_shaded_leaf_N(p, s, sunlit_lai, shaded_lai,
+                                           &(N0[0]));
 
             for (ileaf = 0; ileaf <= 1; ileaf++) {
 
@@ -101,7 +87,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
                     if (c->ps_pathway == C3) {
 
-                        photosynthesis_C3(c, p, s, ncontent[ileaf], tleaf,
+                        photosynthesis_C3(c, p, s, N0[ileaf], tleaf,
                                           apar[ileaf], Cs, dleaf, &gsc[ileaf],
                                           &anleaf[ileaf]);
                     } else {
@@ -357,6 +343,41 @@ void update_daily_carbon_fluxes(fluxes *f, params *p, double acanopy,
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
     f->auto_resp = f->gpp - f->npp;
     f->apar += total_apar;
+
+    return;
+}
+
+
+void calculate_sunlit_shaded_leaf_N(params *p, state *s, double sunlit_lai,
+                                    double shaded_lai, double *N0)  {
+
+    /*
+    Calculate the canopy N at the top of the canopy (g N m-2), N0.
+    See notes and Chen et al 93, Oecologia, 93,63-69.
+
+    Returns:
+    -------
+    N0 : float (g N m-2)
+        Top of the canopy N
+    */
+    double leafn, ncontent_sun, ncontent_sha;
+    double k = p->kext;
+
+    if (s->lai > 0.0) {
+        /* leaf nitrogen content (g N m-2 leaf) */
+        leafn = s->shootnc * p->cfracts / p->sla * KG_AS_G;
+
+        /* leaf nitrogen concentration */
+        ncontent_sun = leafn * sunlit_lai;
+        ncontent_sha = leafn * shaded_lai;
+
+        /* calculation for canopy N content at the top of the canopy */
+        *(N0+SUNLIT) = ncontent_sun * k / (1.0 - exp(-k * sunlit_lai));
+        *(N0+SHADED) = ncontent_sha * k / (1.0 - exp(-k * shaded_lai));
+    } else {
+        *(N0+SUNLIT) = 0.0;
+        *(N0+SHADED) = 0.0;
+    }
 
     return;
 }
