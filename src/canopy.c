@@ -362,7 +362,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
 
     Returns:
     -------
-    N0 : float (g N m-2)
+    N0 : float (gN m-2)
         leaf nitrogen content at the top of the canopy
 
     References:
@@ -375,7 +375,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
 
     if (s->lai > 0.0) {
 
-        /* the total amount of nitrogen in the leaf (gN m-2 leaf area) */
+        /* the total amount of nitrogen in the leaf (gN m-2) */
         Ntot_sun = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * sunlit_lai;
         Ntot_sha = (s->shootnc * p->cfracts / p->sla * KG_AS_G) * shaded_lai;
 

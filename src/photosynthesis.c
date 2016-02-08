@@ -598,12 +598,27 @@ double calculate_top_of_canopy_n(params *p, state *s, double ncontent)  {
 
     /*
     Calculate the canopy N at the top of the canopy (g N m-2), N0.
-    See notes and Chen et al 93, Oecologia, 93,63-69.
+    Assuming an exponentially decreasing N distribution within the canopy:
+
+    N(i) = N0 x exp(-K x LAI)
+
+    Intgrating:
+
+    Ntot = N0 x (1 - exp (k x LAI)) / k
+
+    Rearranging to get N0:
+
+    N0 = (Ntot * K) / (1.0 - exp(-k x LAI)
 
     Returns:
     -------
     N0 : float (g N m-2)
         Top of the canopy N
+
+    References:
+    -----------
+    * Chen et al 93, Oecologia, 93,63-69.
+
     */
     double N0;
 
