@@ -164,6 +164,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         c->hrly_idx++;
     }
 
+    /* on final iteration we have incremented one too far in the array index */
+    c->hrly_idx--;
 
     return;
 
@@ -377,7 +379,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
 
     /* leaf mass per area (g C m-2 leaf) */
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
-    
+
     if (s->lai > 0.0) {
 
         /* the total amount of nitrogen in sunlit/shaded parts of canopy */

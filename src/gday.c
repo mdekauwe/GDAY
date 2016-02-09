@@ -260,7 +260,12 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     project_day = 0;
     c->hrly_idx = 0;
     for (nyr = 0; nyr < c->num_years; nyr++) {
-        year = m->year[project_day];
+
+        if (c->sub_daily) {
+            year = m->year[c->hrly_idx];
+        } else {
+            year = m->year[project_day];
+        }
         if (is_leap_year(year))
             c->num_days = 366;
         else
@@ -286,6 +291,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         ** =================== */
 
         for (doy = 0; doy < c->num_days; doy++) {
+
+
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
             if (c->disturbance && p->disturbance_doy == doy+1) {
@@ -345,7 +352,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            /*printf("**** %d %lf %lf\n", doy, f->gpp*100, s->lai);*/
+            /*printf("**** %d/%d %d/%d : %lf %lf\n", nyr, c->num_years, doy, c->num_days, f->gpp*100, s->lai);*/
 
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
