@@ -1317,11 +1317,12 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
     slope = (arg1 - arg2) / 0.1;
 
     /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
-    net_lw = 107.0 - 0.3 * tair;
+    net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
 
     /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
         - note the minus net_lw is correct as eqn 4.17 is reversed in
           eqn 4.21, i.e Lu-Ld vs. Ld-Lu
+        - units: W m-2
     */
     net_rad = (1.0 - p->albedo) * sw_rad * - net_lw;
 
