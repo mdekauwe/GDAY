@@ -103,7 +103,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     int    i;
     double czen, integral, kb, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
            k_dash_b, k_dash_d, scattered, shaded, beam;
-    double direct_frac = 1.0 - diffuse_frac;
+    double beam_frac = 1.0 - diffuse_frac;
     double lai = s->lai;
     double lad = p->lad;
 
@@ -139,7 +139,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
                     (k_dash_d / (k_dash_d + kb)) );
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
-    Ib = par * direct_frac;
+    Ib = par * beam_frac;
     beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
@@ -176,7 +176,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
     *shaded_lai = s->lai - *sunlit_lai;
 
-    
+
     /*printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
     exit(1);*/
     return;
