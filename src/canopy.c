@@ -24,11 +24,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             the leaf energy balance to solve the leaf temperature and partition
             absorbed net radiation between sensible and latent heat.
 
-        The coupled model has two leaves: sunlit & shaded under the assumption
-        that the sunlit and shaded leaf is representative of all respective
-        sunlit or shaded leaves within a canopy. Clearly for dense canopies this
-        assumption will not hold due, but as fluxes from canopy elements at the
-        base of the canopy are small, it is likely to be an acceptable error.
+        The canopy is represented by a single layer with two big leaves
+        (sunlit & shaded).
+
+        Future improvements:
+        - Add a two-stream approximation.
+        - Add a clumping term to the extinction coefficients for apar calcs
 
         References
         ----------
