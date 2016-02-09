@@ -33,24 +33,26 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         The canopy is represented by a single layer with two big leaves
         (sunlit & shaded).
 
+        - The logic broadly follows MAESTRA code, with some restructuring.
+
         References
         ----------
         * Wang & Leuning (1998) Agricultural & Forest Meterorology, 91, 89-111.
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
-
     */
 
-    double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, N0[2],
-           cos_zenith, elevation, an_leaf[2], gsc[2], apar[2], trans_leaf[2],
-           direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
+    double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
+           elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
            press, vpd, par, tair, wind, Ca, sunlit_lai, an_canopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
+    double an_leaf[2], gsc[2], apar[2], trans_leaf[2], N0[2];
     int    hod, iter = 0, itermax = 100, i;
 
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
 
+    /* loop through the day */
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                &elevation);
@@ -158,8 +160,14 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                double *dleaf, double *tleaf_new,
                                double *transpiration) {
     /*
-        Coupled model wrapper to solve photosynthesis, stomtal conductance
-        and radiation paritioning.
+        Wrapper to solve conductances, transpiration and calculate a new
+        leaf temperautre, vpd and Cs at the leaf surface.
+
+        - The logic broadly follows MAESTRA code, with some restructuring.
+
+        References
+        ----------
+        * Wang & Leuning (1998) Agricultural & Forest Meterorology, 91, 89-111.
 
     */
     double LE; /* latent heat (W m-2) */
