@@ -1181,7 +1181,7 @@ double calc_sat_water_vapour_press(double tac) {
 
 
 void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
-                                       state *s, double rnet,
+                                       state *s, double par,
                                        double transpiration_hlf_hr) {
     /*
 
@@ -1201,7 +1201,7 @@ void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
     transpiration_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
     interception_hlf_hr = calc_infiltration_subdaily(p, s, rain);
-    soil_evap_hlf_hr = calc_soil_evaporation_subdaily(s, rnet,
+    soil_evap_hlf_hr = calc_soil_evaporation_subdaily(p, s, par,
                                                       m->press[c->hrly_idx],
                                                       m->tair[c->hrly_idx]);
     et_hlf_hr = transpiration_hlf_hr + soil_evap_hlf_hr + interception_hlf_hr;
@@ -1259,7 +1259,7 @@ double calc_infiltration_subdaily(params *p, state* s, double rain) {
 }
 
 
-double calc_soil_evaporation_subdaily(state *s, double net_rad,
+double calc_soil_evaporation_subdaily(params *p, state *s, double par,
                                       double press, double tair) {
     /* Use Penman eqn to calculate top soil evaporation flux at the
     potential rate.
@@ -1291,8 +1291,8 @@ double calc_soil_evaporation_subdaily(state *s, double net_rad,
     -----------
     tavg : float
         average daytime temp [degC]
-    net_rad : float
-        net radiation [mj m-2 day-1]
+    par : float
+        PAR [umol m-2 day-1]
     press : float
         average daytime pressure [kPa]
 
@@ -1302,7 +1302,8 @@ double calc_soil_evaporation_subdaily(state *s, double net_rad,
         soil evaporation [mm d-1]
 
     */
-    double lambda, gamma, slope, arg1, arg2, soil_evap;
+    double lambda, gamma, slope, arg1, arg2, soil_evap, net_lw, net_rad;
+    double sw_rad = par * PAR_2_SW; /* W m-2 */
 
     /* Latent heat of water vapour at air temperature (J mol-1) */
     lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
@@ -1314,6 +1315,15 @@ double calc_soil_evaporation_subdaily(state *s, double net_rad,
     arg1 = calc_sat_water_vapour_press(tair + 0.1);
     arg2 = calc_sat_water_vapour_press(tair);
     slope = (arg1 - arg2) / 0.1;
+
+    /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
+    net_lw = 107.0 - 0.3 * tair;
+
+    /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
+        - note the minus net_lw is correct as eqn 4.17 is reversed in
+          eqn 4.21, i.e Lu-Ld vs. Ld-Lu
+    */
+    net_rad = (1.0 - p->albedo) * sw_rad * - net_lw;
 
     soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda;
 

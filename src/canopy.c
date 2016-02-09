@@ -39,7 +39,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, N0[2],
            cos_zenith, elevation, an_leaf[2], gsc[2], apar[2], trans_leaf[2],
-           direct_apar, diffuse_apar, diffuse_frac, rnet=0.0, total_rnet,
+           direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
            press, vpd, par, tair, wind, Ca, sunlit_lai, an_canopy, trans_canopy,
            shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, i;
@@ -119,10 +119,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 } /* end of leaf temperature stability loop */
 
 
-                /* This is wrong as rnet isn't being changed, however fix
-                   this later. I'm not sure the canopy rnet is what should
-                   be passed to the soil evap calculation anyway */
-                total_rnet += rnet;
                 total_apar += apar[i];
 
             } /* end of sunlit/shaded leaf loop */
@@ -144,8 +140,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 
             update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
-            calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
-                                              trans_canopy);
+            calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
 
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
@@ -156,15 +151,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             total_apar = apar[SUNLIT] + apar[SHADED];
 
             update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
-            calculate_sub_daily_water_balance(c, f, m, p, s, total_rnet,
-                                              trans_canopy);
+            calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
         }
 
         /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, an_canopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
 
-    
+
 
     return;
 

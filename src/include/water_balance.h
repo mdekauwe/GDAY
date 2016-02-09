@@ -13,7 +13,7 @@ void   update_water_storage_subdaily(control *, fluxes *, params *, state *,
                                      double, double *, double *, double *,
                                      double *, double *);
 
-double calc_soil_evaporation_subdaily(state *, double, double , double);
+double calc_soil_evaporation_subdaily(params*, state *, double, double , double);
 double calc_infiltration_subdaily(params *, state*, double);
 
 double  penman_leaf(double, double, double, double, double, double, double,
