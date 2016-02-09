@@ -44,8 +44,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            shaded_lai, gsc_canopy, total_apar;
     int    hod, iter = 0, itermax = 100, i;
 
-
-
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
 
@@ -81,7 +79,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 dleaf = m->vpd[c->hrly_idx] * KPA_2_PA;
                 Cs = m->co2[c->hrly_idx];
 
-                while (TRUE) { /* Stability loop */
+                /* Leaf temperature stability loop */
+                while (TRUE) {
 
                     if (c->ps_pathway == C3) {
                         photosynthesis_C3(c, p, s, N0[i], tleaf, apar[i], Cs,
@@ -91,8 +90,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
                     }
-
-                    /*printf("%lf %lf %lf %lf %d\n", hod/2., par, apar[i], an_leaf[i], i);*/
 
                     if (an_leaf[i] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -105,7 +102,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         break;
                     }
 
-
                     if (iter >= itermax) {
                         fprintf(stderr, "No convergence in canopy loop\n");
                         exit(EXIT_FAILURE);
@@ -117,6 +113,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     }
 
                 } /* end of leaf temperature stability loop */
+
             } /* end of sunlit/shaded leaf loop */
 
             /* Scale leaf fluxes to the canopy */
