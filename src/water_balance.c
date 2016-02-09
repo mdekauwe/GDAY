@@ -1322,6 +1322,7 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
     /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
         - note the minus net_lw is correct as eqn 4.17 is reversed in
           eqn 4.21, i.e Lu-Ld vs. Ld-Lu
+        - NB: this formula only really holds for cloudless skies!
         - units: W m-2
     */
     net_rad = (1.0 - p->albedo) * sw_rad * - net_lw;

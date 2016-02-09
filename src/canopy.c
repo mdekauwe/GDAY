@@ -117,17 +117,13 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     }
 
                 } /* end of leaf temperature stability loop */
-
-
-                total_apar += apar[i];
-
             } /* end of sunlit/shaded leaf loop */
 
             /* Scale leaf fluxes to the canopy */
             an_canopy = an_leaf[SUNLIT] + an_leaf[SHADED];
             gsc_canopy = gsc[SUNLIT] + gsc[SHADED];
             trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
-
+            total_apar = apar[SUNLIT] + apar[SHADED];
             /*
             an_canopy = sunlit_lai * an_leaf[SUNLIT];
             an_canopy += shaded_lai * an_leaf[SHADED];
@@ -135,13 +131,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy += shaded_lai * gsc[SHADED];
             trans_canopy = sunlit_lai * trans_leaf[SUNLIT];
             trans_canopy += shaded_lai * trans_leaf[SHADED];
+            total_apar = apar[SUNLIT] + apar[SHADED];
             */
-
-
-
-            update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
-            calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
-
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance, i.e. soil evap */
@@ -149,19 +140,13 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = 0.0;
             trans_canopy = 0.0;
             total_apar = apar[SUNLIT] + apar[SHADED];
-
-            update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
-            calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
         }
-
+        update_daily_carbon_fluxes(f, p, an_canopy, total_apar);
+        calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
         /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, an_canopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
-
-
-
     return;
-
 }
 
 
