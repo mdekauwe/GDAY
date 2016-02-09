@@ -121,7 +121,6 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
 
 
     /* time stuff */
-    printf("%.10f,%.10f\n", (double)year, (double)doy);
     fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
 
     /*
