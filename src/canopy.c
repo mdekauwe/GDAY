@@ -18,10 +18,11 @@
 void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     /*
         Two-leaf canopy module consists of two parts:
-        (1) a radiation submodel to calculate PAR, NIR and thermal radiation
+        (1) a radiation sub-model to calculate apar of sunlit/shaded leaves
+            - this is all handled in radiation.c
         (2) a coupled model of stomatal conductance, photosynthesis and
-            partitioning between absorbed net radiation into sensible and
-            latent heat.
+            the leaf energy balance to solve the leaf temperature and partition
+            absorbed net radiation between sensible and latent heat.
 
         The coupled model has two leaves: sunlit & shaded under the assumption
         that the sunlit and shaded leaf is representative of all respective
