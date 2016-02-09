@@ -164,8 +164,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         c->hrly_idx++;
     }
 
-    /* on final iteration we have incremented one too far in the array index */
-    c->hrly_idx--;
+    
 
     return;
 
