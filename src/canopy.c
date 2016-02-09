@@ -3,13 +3,19 @@
 *
 *
 * NOTES:
+*   - Should resturcure the code so that MATE is called from within the canopy
+*     space, rather than via plant growth
+*
+*   Future improvements:
+*    - Add a two-stream approximation.
+*    - Add a clumping term to the extinction coefficients for apar calcs
 *
 *
 * AUTHOR:
 *   Martin De Kauwe
 *
 * DATE:
-*   17.02.2015
+*   09.02.2016
 *
 * =========================================================================== */
 #include "canopy.h"
@@ -26,10 +32,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
         The canopy is represented by a single layer with two big leaves
         (sunlit & shaded).
-
-        Future improvements:
-        - Add a two-stream approximation.
-        - Add a clumping term to the extinction coefficients for apar calcs
 
         References
         ----------
