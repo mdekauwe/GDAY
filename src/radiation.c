@@ -1,18 +1,17 @@
 
 #include "radiation.h"
 
-double get_diffuse_frac(int doy, double cos_zenith, double par,
-                        double sin_beta) {
+double get_diffuse_frac(int doy, double cos_zenith, double par) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
         of a useless wrapper function.
 
     */
 
-    return spitters(doy, cos_zenith, par, sin_beta);
+    return spitters(doy, cos_zenith, par);
 }
 
-double spitters(int doy, double cos_zenith, double par, double sin_beta) {
+double spitters(int doy, double cos_zenith, double par) {
 
     /*
 
@@ -48,18 +47,21 @@ double spitters(int doy, double cos_zenith, double par, double sin_beta) {
     /* SW_down [W/m2] = [J m-2 s-1] */
     sw_rad = par * PAR_2_SW;
 
-    /*sin_beta = sin(DEG2RAD(90.0 - RAD2DEG(acos(cos_zenith))));*/
-
-    So = calc_extra_terrestrial_irradiance(doy, sin_beta);
+    So = calc_extra_terrestrial_irradiance(doy, cos_zenith);
 
     /* atmospheric transmisivity */
     tau = estimate_clearness(sw_rad, So);
 
+    /*
+        remember sin_beta = cos_zenith; trig funcs are cofuncs of each other
+        sin(x) = cos(90-x) and cos(x) = sin(90-x). So I'm swapping them below
+    */
+
     /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
-    if (sin_beta > 0.17) {
+    if (cos_zenith > 0.17) {
         /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
         /*R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith); */
-        R = 0.847 - 1.61 * sin_beta + 1.04 * (sin_beta * sin_beta);
+        R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith);
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
             diffuse_frac = 1.0;
@@ -183,8 +185,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     return;
 }
 
-void calculate_zenith_angle(params *p, double doy, double hod,
-                            double *cos_zen, double *sin_beta,
+void calculate_zenith_angle(params *p, double doy, double hod, double *cos_zen,
                             double *elevation) {
 
     /*
@@ -220,7 +221,7 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     et = calculate_eqn_of_time(gamma);
     t0 = calculate_solar_noon(et, p->longitude);
     h = calculate_hour_angle(hod, t0);
-    calculation_solar_elevation(p->latitude, dec, h, sin_beta, elevation);
+    *elevation = calculation_solar_elevation(p->latitude, dec, h);
     zenith_angle = 90.0 - *elevation;
     if (zenith_angle > 90.0)
         zenith_angle = 90.0;
@@ -233,7 +234,7 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     else if (*cos_zen < 0.0)
         *cos_zen = 0.0;
 
-    return;
+    return ;
 }
 
 double calculate_solar_noon(double et, double longitude) {
@@ -371,7 +372,7 @@ double calculate_eqn_of_time(double gamma) {
 
 
 
-double calc_extra_terrestrial_irradiance(double doy, double sin_beta) {
+double calc_extra_terrestrial_irradiance(double doy, double cos_zenith) {
     /* Solar radiation incident outside the earth's atmosphere, e.g.
     extra-terrestrial radiation. The value varies a little with the earths
     orbit.
@@ -382,8 +383,8 @@ double calc_extra_terrestrial_irradiance(double doy, double sin_beta) {
     ----------
     doy : double
         day of year
-    sin_beta : double
-        sine of the elevation of the sun above the horizon (radians)
+    cos_zenith : double
+        cosine of zenith angle (radians)
 
     Returns:
     --------
@@ -398,7 +399,10 @@ double calc_extra_terrestrial_irradiance(double doy, double sin_beta) {
     */
     double So, Sc = 1370.0; /* W m-2 */
 
-    So = Sc * (1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI)) * sin_beta;
+    /* remember sin_beta = cos_zenith; trig funcs are cofuncs of each other
+       sin(x) = cos(90-x) and cos(x) = sin(90-x). */
+    So = Sc * (1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI)) * cos_zenith;
+
     return (So);
 
     /*return (Sc * (1.0 + 0.033 * cos(2.0 * M_PI * (doy - 10.0) / 365.0)));*/
@@ -428,8 +432,7 @@ double estimate_clearness(double sw_rad, double So) {
     return (tau);
 }
 
-void calculation_solar_elevation(double latitude, double dec, double h,
-                                 double *sin_beta, double *solar_elevation) {
+double calculation_solar_elevation(double latitude, double dec, double h) {
     /*  solar elevation angle (degrees)
         - A13 - De Pury & Farquhar
 
@@ -449,9 +452,10 @@ void calculation_solar_elevation(double latitude, double dec, double h,
 
     */
     double rlat = DEG2RAD(latitude);
+    double sin_beta, solar_elevation;
 
-    *sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
-    *solar_elevation = RAD2DEG(asin(*sin_beta));
+    sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
+    solar_elevation = RAD2DEG(asin(sin_beta));
 
-    return;
+    return (solar_elevation);
 }

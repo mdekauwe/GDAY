@@ -45,7 +45,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
            press, vpd, par, tair, wind, Ca, sunlit_lai, an_canopy, trans_canopy,
-           shaded_lai, gsc_canopy, total_apar, sin_beta;
+           shaded_lai, gsc_canopy, total_apar;
     double an_leaf[2], gsc[2], apar[2], trans_leaf[2], N0[2];
     int    hod, iter = 0, itermax = 100, i;
 
@@ -55,12 +55,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     /* loop through the day */
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
-                               &sin_beta, &elevation);
+                               &elevation);
 
         /* calculates diffuse frac from half-hourly incident radiation */
         par = m->par[c->hrly_idx];
-        diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par,
-                                        sin_beta);
+        diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par);
 
         /*printf("%lf %lf %lf\n", hod/2.0, par, 1.0 - diffuse_frac);*/
 
