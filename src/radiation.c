@@ -208,7 +208,7 @@ void calculate_zenith_angle(params *p, double doy, double hod,
 
     */
 
-    double dec, et, lc, t0, h, gamma, zenith_angle, hour_angle, rlat;
+    double dec, et, lc, t0, h, gamma, zenith_angle, hour_angle;
 
     /* need to convert 30 min data, 0-47 to 0-23.5 */
     hod /= 2.0;
@@ -218,11 +218,7 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     et = calculate_eqn_of_time(gamma);
     t0 = calculate_solar_noon(et, p->longitude);
     h = calculate_hour_angle(hod, t0);
-    rlat = DEG2RAD(p->latitude);
-
-    /* solar elevation angle (degrees) A13 - De Pury & Farquhar  */
-    *elevation = (RAD2DEG(asin(sin(rlat) * sin(dec) + cos(rlat) *
-                          cos(dec) * cos(h))));
+    *elevation = calculation_solar_elevation(p->latitude, dec, h);
     zenith_angle = 90.0 - *elevation;
     *cos_zen = cos(DEG2RAD(zenith_angle));
     if (*cos_zen > 1.0)
@@ -425,4 +421,32 @@ double estimate_clearness(double sw_rad, double So) {
     }
 
     return (tau);
+}
+
+double calculation_solar_elevation(double latitude, double dec, double h) {
+    /*  solar elevation angle (degrees)
+        - A13 - De Pury & Farquhar
+
+        Arguments:
+        ----------
+        latitude : double
+            latitude (degrees)
+        dec : double
+            solar declination (radians)
+        h : double:
+            hour angle of the sun
+
+        Returns:
+        --------
+        solar_elevation : float
+            solar elevation (degrees)
+
+    */
+    double rlat = DEG2RAD(latitude);
+    double sin_beta, solar_elevation;
+
+    sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
+    solar_elevation = RAD2DEG(asin(sin_beta));
+
+    return (solar_elevation);
 }

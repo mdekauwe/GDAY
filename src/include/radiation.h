@@ -26,5 +26,6 @@ void   calculate_absorbed_radiation(params *, state *, double, double, double,
                                     double, double *, double *, double *);
 double calculate_solar_noon(double, double);
 double calculate_hour_angle(double, double);
+double calculation_solar_elevation(double, double, double);
 
 #endif /* RADIATION_H */
