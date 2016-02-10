@@ -45,7 +45,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
            press, vpd, par, tair, wind, Ca, sunlit_lai, an_canopy, trans_canopy,
-           shaded_lai, gsc_canopy, total_apar;
+           shaded_lai, gsc_canopy, total_apar, sw_rad;
     double an_leaf[2], gsc[2], apar[2], trans_leaf[2], N0[2];
     int    hod, iter = 0, itermax = 100, i;
 
@@ -59,7 +59,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
         /* calculates diffuse frac from half-hourly incident radiation */
         par = m->par[c->hrly_idx];
-        diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith, par);
+
+        /* SW_down [W/m2] = [J m-2 s-1] */
+        sw_rad = par * PAR_2_SW;
+
+        diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith,
+                                        sw_rad);
 
         /*printf("%lf %lf %lf\n", hod/2.0, par, 1.0 - diffuse_frac);*/
 
@@ -102,8 +107,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     if (an_leaf[i] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf, gsc[i],
-                                                  an_leaf[i], apar[i], &Cs,
-                                                  &dleaf, &tleaf_new,
+                                                  an_leaf[i], apar[i], sw_rad,
+                                                  &Cs, &dleaf, &tleaf_new,
                                                   &trans_leaf[i]);
                     } else {
                         trans_leaf[i] = 0.0;
@@ -151,7 +156,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, an_canopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
-    
+
     return;
 }
 
@@ -159,8 +164,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double gsc,
-                               double an_leaf, double apar, double *Cs,
-                               double *dleaf, double *tleaf_new,
+                               double an_leaf, double apar, double sw_rad,
+                               double *Cs, double *dleaf, double *tleaf_new,
                                double *transpiration) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
@@ -176,7 +181,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     double LE; /* latent heat (W m-2) */
     double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
     double gbc, gamma, epsilon, omega, Tdiff, sensible_heat, rnet, ea, ema, Tk;
-    double emissivity_atm, sw_rad;
+    double emissivity_atm;
 
     /* unpack the met data and get the units right */
     double press = m->press[c->hrly_idx] * KPA_2_PA;
@@ -221,7 +226,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
     emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
-    sw_rad = apar * PAR_2_SW; /* W m-2 */
 
     /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
        the canopy is 1 */

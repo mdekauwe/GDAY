@@ -1,17 +1,17 @@
 
 #include "radiation.h"
 
-double get_diffuse_frac(int doy, double cos_zenith, double par) {
+double get_diffuse_frac(int doy, double cos_zenith, double sw_rad) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
         of a useless wrapper function.
 
     */
 
-    return spitters(doy, cos_zenith, par);
+    return spitters(doy, cos_zenith, sw_rad);
 }
 
-double spitters(int doy, double cos_zenith, double par) {
+double spitters(int doy, double cos_zenith, double sw_rad) {
 
     /*
 
@@ -40,12 +40,9 @@ double spitters(int doy, double cos_zenith, double par) {
       incoming radiation. Agricultural Forest Meteorol., 38:217-229.
     */
 
-    double sw_rad, So, tau, R, K, diffuse_frac;
+    double So, tau, R, K, diffuse_frac;
     double SEC_TO_HFHR = 60.0 * 30.0;
     double solar_constant;
-
-    /* SW_down [W/m2] = [J m-2 s-1] */
-    sw_rad = par * PAR_2_SW;
 
     So = calc_extra_terrestrial_irradiance(doy, cos_zenith);
 
