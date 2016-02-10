@@ -376,7 +376,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
         /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
         *(N0+SUNLIT) = Ntot_sun * k / (1.0 - exp(-k * sunlit_lai));
         *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
-
+        
         /*printf("%.10lf %.10lf %.10lf %.10lf\n", Ntot_sun, Ntot_sha, *(N0+SUNLIT), *(N0+SHADED));
         exit(1);*/
 

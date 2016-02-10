@@ -42,8 +42,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
-    rd = calc_leaf_day_respiration(tleaf, Rd0);
-    rd = 0.0;
+    /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
+    rd = 0.015 * vcmax;
 
     /******* TO GET AROUND N0 not being right ******/
 
