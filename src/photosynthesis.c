@@ -42,8 +42,10 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
-    /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
+
+    /* leaf respiration in the light, Collatz et al. 1991 */
     rd = 0.015 * vcmax;
+    /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
 
     /******* TO GET AROUND N0 not being right ******/
 
@@ -67,16 +69,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
-
-        /* SEE WHAT IVE DONE HERE */
-
         *anleaf = -rd;
-        /**anleaf = 0.0;*/
-
-
-        /* SEE WHAT IVE DONE HERE */
-
-
         *gsc = g0_zero;
     } else {
         /* Hardwiring this for Medlyn gs model for the moment, till I figure
