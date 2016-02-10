@@ -352,9 +352,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            /*printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
+            printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
                                                   c->num_days, f->gpp*100,
-                                                  s->lai, s->shootnc);*/
+                                                  s->lai, s->shootnc);
 
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {

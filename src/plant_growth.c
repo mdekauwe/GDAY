@@ -401,7 +401,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD == FALSE) {
 
             /* arbitarily keep 10% for leaves/roots */
-            double leaf_root_N = 0.5 * ntot;
+            double leaf_root_N = 0.1 * ntot;
 
             /* Rescale allocated N to the amount we actually have available */
             total_req = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;

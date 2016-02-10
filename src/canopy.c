@@ -361,7 +361,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
     * Chen et al 93, Oecologia, 93,63-69.
 
     */
-    double Ntot_sun, Ntot_sha, Ntot, N0x;
+    double Ntot_sun, Ntot_sha, Ntot;
     double k = p->kext;
 
     /* leaf mass per area (g C m-2 leaf) */
@@ -370,19 +370,15 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
     if (s->lai > 0.0) {
 
         /* the total amount of nitrogen in sunlit/shaded parts of canopy */
-        Ntot = (s->shootnc * LMA) * s->lai;
-        Ntot_sun = (s->shootnc * LMA) * sunlit_lai;
-        /*Ntot_sha = (s->shootnc * LMA) * shaded_lai; */
-        Ntot_sha = Ntot - Ntot_sun;
+        Ntot_sun = s->shootnc * LMA * sunlit_lai;
+        Ntot_sha = s->shootnc * LMA * shaded_lai;
 
         /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
         *(N0+SUNLIT) = Ntot_sun * k / (1.0 - exp(-k * sunlit_lai));
-        /**(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));*/
+        *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
 
-        N0x = Ntot * k / (1.0 - exp(-k * s->lai));
-        *(N0+SHADED) = N0x - *(N0+SUNLIT);
 
-        /*printf("%.10lf %.10lf %.10lf %.10lf\n", Ntot_sun, Ntot_sha, *(N0+SUNLIT), *(N0+SHADED));
+        /*printf("%.10lf %.10lf %.10lf %.10lf %.10lf\n", Ntot_sun, Ntot_sha, Ntot, *(N0+SUNLIT), *(N0+SHADED));
         exit(1);*/
 
     } else {
