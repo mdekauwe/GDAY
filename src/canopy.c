@@ -59,14 +59,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
         /* calculates diffuse frac from half-hourly incident radiation */
         par = m->par[c->hrly_idx];
-
-        /* SW_down [W/m2] = [J m-2 s-1] */
-        sw_rad = par * PAR_2_SW;
-
+        sw_rad = par * PAR_2_SW; /* SW_down [W/m2] = [J m-2 s-1] */
         diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith,
                                         sw_rad);
-
-        /*printf("%lf %lf %lf\n", hod/2.0, par, 1.0 - diffuse_frac);*/
 
         /* Is the sun up? */
         if (elevation > 0.0 && par > 50.0) {
