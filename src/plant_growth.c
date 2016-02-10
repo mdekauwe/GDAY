@@ -97,7 +97,12 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
         if (c->sub_daily) {
             /* calculate 30-min GPP/NPP, respiration and water fluxes */
-            canopy(c, f, m, p, s);
+            /* DONT WANT TO DO THIScanopy(c, f, m, p, s);*/
+
+            /* need to fix */
+            double blah = 0.0;
+
+
         } else {
             calculate_daily_water_balance(c, f, m, p, s, project_day,
                                           day_length);
@@ -320,7 +325,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
 
     int    recalc_wb;
     double nsupply, rtot, ntot, arg, lai_inc = 0.0, conv;
-    double depth_guess = 1.0;
+    double depth_guess = 1.0, total_req;
     int    OLD = FALSE;
 
     /* default is we don't need to recalculate the water balance,
@@ -392,12 +397,19 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         /* If we have allocated more N than we have available
             - cut back C prodn */
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
-        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD == FALSE) {
-            f->npstemimm = 0.0;
-            f->npstemmob = 0.0;
-            f->npbranch = 0.0;
-            f->npcroot = 0.0;
 
+        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD == FALSE) {
+
+            /* arbitarily keep 10% for leaves/roots */
+            double leaf_root_N = 0.5 * ntot;
+
+            /* Rescale allocated N to the amount we actually have available */
+            total_req = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
+
+            f->npstemimm = (f->npstemimm / total_req) * (ntot - leaf_root_N);
+            f->npstemmob = (f->npstemmob / total_req) * (ntot - leaf_root_N);
+            f->npbranch = (f->npbranch / total_req) * (ntot - leaf_root_N);
+            f->npcroot = (f->npcroot / total_req) * (ntot - leaf_root_N);
 
         } else if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD) {
 
@@ -413,7 +425,11 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                            (f->deadleaves + f->ceaten) * s->lai / s->shoot);
             }
 
-            f->npp *= ntot / (f->npstemimm + f->npstemmob + f->npbranch);
+            f->npp *= ntot / (f->npstemimm + f->npstemmob + f->npbranch+ f->npcroot);
+
+
+
+
 
             /* need to adjust growth values accordingly as well */
             f->cpleaf = f->npp * f->alleaf;
@@ -462,16 +478,16 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
                 }
             }
+
         }
-        printf("%.10lf\n", ntot);
+
         ntot -= f->npbranch + f->npstemimm + f->npstemmob + f->npcroot;
         ntot = MAX(0.0, ntot);
-        printf("%.10lf\n", ntot);
+
         /* allocate remaining N to flexible-ratio pools */
         f->npleaf = ntot * f->alleaf / (f->alleaf + f->alroot * p->ncrfac);
         f->nproot = ntot - f->npleaf;
-        printf("%.10lf %.10lf %.10lf\n", ntot, f->npleaf, f->nproot);
-        exit(1);
+
     }
     return (recalc_wb);
 }
