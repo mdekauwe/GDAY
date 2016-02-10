@@ -57,7 +57,6 @@ double spitters(int doy, double cos_zenith, double sw_rad) {
     /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
     if (cos_zenith > 0.17) {
         /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
-        /*R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith); */
         R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith);
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
