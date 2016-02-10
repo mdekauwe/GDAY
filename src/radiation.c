@@ -1,17 +1,18 @@
 
 #include "radiation.h"
 
-double get_diffuse_frac(int doy, double cos_zenith, double par) {
+double get_diffuse_frac(int doy, double cos_zenith, double par,
+                        double sin_beta) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
         of a useless wrapper function.
 
     */
 
-    return spitters(doy, cos_zenith, par);
+    return spitters(doy, cos_zenith, par, sin_beta);
 }
 
-double spitters(int doy, double cos_zenith, double par) {
+double spitters(int doy, double cos_zenith, double par, double sin_beta) {
 
     /*
 
@@ -40,15 +41,15 @@ double spitters(int doy, double cos_zenith, double par) {
       incoming radiation. Agricultural Forest Meteorol., 38:217-229.
     */
 
-    double sw_rad, sin_beta, So, tau, R, K, diffuse_frac;
+    double sw_rad, So, tau, R, K, diffuse_frac;
     double SEC_TO_HFHR = 60.0 * 30.0;
     double solar_constant;
 
     /* SW_down [W/m2] = [J m-2 s-1] */
     sw_rad = par * PAR_2_SW;
 
-    /* sine of the elevation of the sun above the horizon */
-    sin_beta = DEG2RAD(90.0) - cos_zenith;
+    /*sin_beta = sin(DEG2RAD(90.0 - RAD2DEG(acos(cos_zenith))));*/
+
     So = calc_extra_terrestrial_irradiance(doy, sin_beta);
 
     /* atmospheric transmisivity */
@@ -62,9 +63,9 @@ double spitters(int doy, double cos_zenith, double par) {
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
             diffuse_frac = 1.0;
-        } else if (tau <= 0.35) {
+        } else if (tau > 0.22 && tau <= 0.35) {
             diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
-        } else if (tau <= K) {
+        } else if (tau > 0.35 && tau <= K) {
             diffuse_frac = 1.47 - 1.66 * tau;
         } else {
             diffuse_frac = R;
@@ -183,7 +184,8 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 }
 
 void calculate_zenith_angle(params *p, double doy, double hod,
-                            double *cos_zen, double *elevation) {
+                            double *cos_zen, double *sin_beta,
+                            double *elevation) {
 
     /*
     Estimate the sun zenith angle (Degrees)
@@ -218,8 +220,13 @@ void calculate_zenith_angle(params *p, double doy, double hod,
     et = calculate_eqn_of_time(gamma);
     t0 = calculate_solar_noon(et, p->longitude);
     h = calculate_hour_angle(hod, t0);
-    *elevation = calculation_solar_elevation(p->latitude, dec, h);
+    calculation_solar_elevation(p->latitude, dec, h, sin_beta, elevation);
     zenith_angle = 90.0 - *elevation;
+    if (zenith_angle > 90.0)
+        zenith_angle = 90.0;
+    else if (zenith_angle < 0.0)
+        zenith_angle = 0.0;
+
     *cos_zen = cos(DEG2RAD(zenith_angle));
     if (*cos_zen > 1.0)
         *cos_zen = 1.0;
@@ -389,14 +396,12 @@ double calc_extra_terrestrial_irradiance(double doy, double sin_beta) {
     * Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
     * Spitters et al. (1986) AFM, 38, 217-229.
     */
-    double Sc = 1370.0; /* W m-2 */
-    double orbit_correction;
+    double So, Sc = 1370.0; /* W m-2 */
 
-    /* correct the solar constant for the eccentricity of the sun's orbit */
-    orbit_correction = 1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI);
+    So = Sc * (1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI)) * sin_beta;
+    return (So);
 
-    return (1367.0 * orbit_correction * sin_beta);
-
+    /*return (Sc * (1.0 + 0.033 * cos(2.0 * M_PI * (doy - 10.0) / 365.0)));*/
 }
 
 
@@ -423,7 +428,8 @@ double estimate_clearness(double sw_rad, double So) {
     return (tau);
 }
 
-double calculation_solar_elevation(double latitude, double dec, double h) {
+void calculation_solar_elevation(double latitude, double dec, double h,
+                                 double *sin_beta, double *solar_elevation) {
     /*  solar elevation angle (degrees)
         - A13 - De Pury & Farquhar
 
@@ -443,10 +449,9 @@ double calculation_solar_elevation(double latitude, double dec, double h) {
 
     */
     double rlat = DEG2RAD(latitude);
-    double sin_beta, solar_elevation;
 
-    sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
-    solar_elevation = RAD2DEG(asin(sin_beta));
+    *sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
+    *solar_elevation = RAD2DEG(asin(*sin_beta));
 
-    return (solar_elevation);
+    return;
 }
