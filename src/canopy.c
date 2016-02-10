@@ -342,18 +342,6 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
     /*
     Calculate the N at the top of the canopy (g N m-2), N0.
 
-    Assuming an exponentially decreasing N distribution within the canopy:
-
-    N(i) = N0 x exp(-K x LAI)
-
-    Intgrating:
-
-    Ntot = N0 x (1 - exp (k x LAI)) / k
-
-    Rearranging to get N0:
-
-    N0 = (Ntot * K) / (1.0 - exp(-k x LAI)
-
     Returns:
     -------
     N0 : float (gN m-2)

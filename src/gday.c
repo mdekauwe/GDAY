@@ -383,7 +383,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
-    printf("%.10lf %.10lf\n", s->lai, s->shootnc);
     correct_rate_constants(p, TRUE);
 
     if (c->print_options == END && c->spin_up == FALSE) {
