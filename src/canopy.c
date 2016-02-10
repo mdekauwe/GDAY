@@ -107,8 +107,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     if (an_leaf[i] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf, gsc[i],
-                                                  an_leaf[i], apar[i], sw_rad,
-                                                  &Cs, &dleaf, &tleaf_new,
+                                                  an_leaf[i], apar[i], &Cs,
+                                                  &dleaf, &tleaf_new,
                                                   &trans_leaf[i]);
                     } else {
                         trans_leaf[i] = 0.0;
@@ -164,8 +164,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double gsc,
-                               double an_leaf, double apar, double sw_rad,
-                               double *Cs, double *dleaf, double *tleaf_new,
+                               double an_leaf, double apar, double *Cs,
+                               double *dleaf, double *tleaf_new,
                                double *transpiration) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
@@ -181,7 +181,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     double LE; /* latent heat (W m-2) */
     double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
     double gbc, gamma, epsilon, omega, Tdiff, sensible_heat, rnet, ea, ema, Tk;
-    double emissivity_atm;
+    double emissivity_atm, sw_rad;
 
     /* unpack the met data and get the units right */
     double press = m->press[c->hrly_idx] * KPA_2_PA;
@@ -226,6 +226,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
     emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
+    sw_rad = apar * PAR_2_SW; /* W m-2 */
 
     /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
        the canopy is 1 */
