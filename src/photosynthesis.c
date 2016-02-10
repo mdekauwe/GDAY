@@ -21,7 +21,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
                        double *gsc, double *anleaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
-        implementation of the routinue in MAESTRA (ECOCRAFT-agreed formulation).
+        implementation of the routinue in MAESTRA
 
         References:
         -----------
@@ -65,18 +65,13 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     /* RuBP regeneration rate */
     Vj = J / 4.0;
 
-    if (isnan(J)) {
-        printf("%lf %lf %d\n", par, jmax, qudratic_error);
-        exit(1);
-    }
-
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
 
         /* SEE WHAT IVE DONE HERE */
 
-        /**anleaf = -rd;*/
-        *anleaf = 0.0;
+        *anleaf = -rd;
+        /**anleaf = 0.0;*/
 
 
         /* SEE WHAT IVE DONE HERE */
@@ -127,7 +122,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
 
-
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         /* Below light compensation point? */
         if (Aj - rd < 1E-6) {
@@ -137,10 +131,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
         *anleaf = MIN(Ac, Aj) - rd;
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
-        /*if (isnan(Aj)) {
-            printf("YES %lf %lf %lf %lf \n", Ci, Ac, Aj, Vj);
-        }*/
-
     }
 
     return;
