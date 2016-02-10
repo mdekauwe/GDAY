@@ -167,10 +167,10 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     /*
         Scale leaf fluxes to the canopy
-        - Fractional area decreases exponentialy with LAI from the top
-          of the canopy. Integrating sunlit/shaded fraction over the
-          canopy to calculate leaf area index of sunlit/shaded fractions
-          of the canopy. De Pury & Farquhar 1997, eqn 18.
+        - The direct radiation on sunlit leaves is assumed to be equal at
+          all canopy depths but with the fraction of sunlit leaves
+          decreasing with canopy depth.
+        - De Pury & Farquhar 1997, eqn 18.
     */
     *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
     *shaded_lai = s->lai - *sunlit_lai;
