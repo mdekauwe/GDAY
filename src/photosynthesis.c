@@ -18,7 +18,7 @@
 
 void photosynthesis_C3(control *c, params *p, state *s, double N0,
                        double tleaf, double par, double Cs, double dleaf,
-                       double *gsc, double *anleaf) {
+                       double *anleaf, double *gsc) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA

@@ -59,13 +59,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         sw_rad = par * PAR_2_SW; /* SW_down [W/m2] = [J m-2 s-1] */
         diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith,
                                         sw_rad);
+        zero_hourly_fluxes(&an_canopy, &gsc_canopy, &trans_canopy,
+                           &apar_canopy);
 
         /* Is the sun up? */
         if (elevation > 0.0 && par > 50.0) {
-
-            /* sunlit, shaded loop */
-            zero_hourly_fluxes(&an_canopy, &gsc_canopy, &trans_canopy,
-                               &apar_canopy);
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
                                          cos_zenith, &(apar_leaf[0]),
                                          &sunlit_lai, &shaded_lai);
@@ -74,7 +72,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             calculate_top_of_canopy_leafn(p, s, sunlit_lai, shaded_lai,
                                           &(N0[0]));
 
-            /* sunlit/shaded loop */
+            /* sunlit / shaded loop */
             for (i = 0; i < NUM_LEAVES; i++) {
 
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
@@ -87,7 +85,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
                     if (c->ps_pathway == C3) {
                         photosynthesis_C3(c, p, s, N0[i], tleaf, apar_leaf[i],
-                                          Cs, dleaf, &gsc_leaf[i], &an_leaf[i]);
+                                          Cs, dleaf, &an_leaf[i], &gsc_leaf[i]);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
@@ -97,7 +95,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     if (an_leaf[i] > 0.0) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf,
-                                                  gsc_leaf[i], an_leaf[i],
+                                                  an_leaf[i], gsc_leaf[i],
                                                   apar_leaf[i], &Cs, &dleaf,
                                                   &tleaf_new, &trans_leaf[i]);
                     } else {
@@ -109,11 +107,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         fprintf(stderr, "No convergence in canopy loop\n");
                         exit(EXIT_FAILURE);
                     } else if (fabs(tleaf - tleaf_new) < 0.02) {
-                        break;  /* stopping criteria */
-                    } else {    /* Update temperature & do another iteration */
+                        /* stop loop */
+                        break;
+                    } else {
+                        /* Update temperature & do another iteration */
                         tleaf = tleaf_new;
                         iter++;
                     }
+
                 } /* end of leaf temperature stability loop */
                 sum_hourly_fluxes(an_leaf[i], gsc_leaf[i], trans_leaf[i],
                                   apar_leaf[i], &an_canopy, &gsc_canopy,
@@ -123,10 +124,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         } else {
             sum_hourly_fluxes(0.0, 0.0, 0.0, 0.0, &an_canopy, &gsc_canopy,
                               &trans_canopy, &apar_canopy);
-        }
+        } /* end of hour loop */
         update_daily_carbon_fluxes(f, p, an_canopy, apar_canopy);
         calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
-        /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, an_canopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
 
@@ -136,8 +136,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
 
 void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
-                               state *s, double tleaf, double gsc_leaf,
-                               double an_leaf, double apar_leaf, double *Cs,
+                               state *s, double tleaf, double an_leaf,
+                               double gsc_leaf, double apar_leaf, double *Cs,
                                double *dleaf, double *tleaf_new,
                                double *transpiration) {
     /*
