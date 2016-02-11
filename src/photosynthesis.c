@@ -57,7 +57,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
 
     /* leaf respiration in the light, Collatz et al. 1991 */
-    rd = 0.015 * vcmax;
+    /*rd = 0.015 * vcmax;*/
+    rd = 0.0;
     /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
 
 
@@ -73,7 +74,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
-        *anleaf = -rd;
+        *anleaf = 0.0;
+        /**anleaf = -rd;*/
         *gsc = g0_zero;
     } else {
         /* Hardwiring this for Medlyn gs model for the moment, till I figure

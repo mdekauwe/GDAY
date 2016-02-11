@@ -358,7 +358,7 @@ double calculate_eqn_of_time(double gamma) {
     /* minutes - de Pury and Farquhar, 1997 - A17 */
     et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *
           cos(2.0 * gamma) - 9.731  * sin(gamma));
-
+        
     return (et);
 }
 

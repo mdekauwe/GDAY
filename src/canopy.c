@@ -136,8 +136,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy += shaded_lai * gsc[SHADED];
             trans_canopy = sunlit_lai * trans_leaf[SUNLIT];
             trans_canopy += shaded_lai * trans_leaf[SHADED];
-            total_apar = apar[SUNLIT] + apar[SHADED];
-            */
+            total_apar = apar[SUNLIT] + apar[SHADED];*/
+
         } else {
             /* set time slot photosynthesis/respiration to be zero, but we
                still need to calc the full water balance, i.e. soil evap */
@@ -151,7 +151,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         /*printf("* %lf %lf: %lf %lf %lf  %lf\n", hod/2., elevation, par, an_canopy, apar[SUNLIT], apar[SHADED]);*/
         c->hrly_idx++;
     }
-
     return;
 }
 
@@ -366,9 +365,9 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
         /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
         N0_canopy = Ntot * k / (1.0 - exp(-k * s->lai));
         *(N0+SUNLIT) = Ntot_sun * k / (1.0 - exp(-k * sunlit_lai));
-        /**(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));*/
+        *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
 
-        *(N0+SHADED) = N0_canopy - *(N0+SUNLIT);
+        /**(N0+SHADED) = N0_canopy - *(N0+SUNLIT);*/
         /*
         printf("%.10lf %.10lf %.10lf : %.10lf %.10lf %.10lf %.10lf\n",
               Ntot_sun, Ntot_sha, Ntot,
