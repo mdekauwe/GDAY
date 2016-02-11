@@ -124,14 +124,14 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
     k_dash_d = 0.718;
 
+    /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
+    Ib = par * beam_frac;
+    beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
+
     /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
     Id = par * diffuse_frac;
     shaded = (Id * (1.0 - rho_cd) * (1.0 - exp(-(k_dash_d + kb) * lai)) *
               (k_dash_d / (k_dash_d + kb)));
-
-    /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
-    Ib = par * beam_frac;
-    beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
     scattered = (Ib * ((1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
@@ -140,13 +140,14 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     /* Irradiance absorbed by the canopy - de Pury & Farquhar (1997), eqn 13 */
     Ic = ((1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
-           (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)));
+          (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)));
 
     /*
         Irradiance absorbed by the sunlit fraction of the canopy is the sum of
         direct-beam, diffuse and scattered-beam components
     */
     *(apar+SUNLIT) = beam + scattered + shaded;
+
 
     /*
         Irradiance absorbed by the shaded leaf area of the canopy is the
@@ -167,9 +168,6 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
     *shaded_lai = s->lai - *sunlit_lai;
 
-
-    /*printf("%lf %lf %lf\n", par, *(apar+SUNLIT), *(apar+SHADED));
-    exit(1);*/
     return;
 }
 
@@ -358,7 +356,7 @@ double calculate_eqn_of_time(double gamma) {
     /* minutes - de Pury and Farquhar, 1997 - A17 */
     et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *
           cos(2.0 * gamma) - 9.731  * sin(gamma));
-        
+
     return (et);
 }
 

@@ -26,6 +26,7 @@ double  calc_bdn_layer_forced_conduct(double, double, double,double);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 void    calculate_top_of_canopy_leafn(params *, state *, double, double,
                                       double *);
-
-
+void    zero_hourly_fluxes(double *, double *, double *, double *);
+void    sum_hourly_fluxes(double, double, double, double , double *, double *,
+                          double *, double *);
 #endif /* CANOPY_H */
