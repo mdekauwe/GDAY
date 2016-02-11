@@ -123,10 +123,10 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     */
 
     /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cos_zenith); /* sin_beta == cos_zenith */
+    kb = 0.5 / cos_zenith; /* sin_beta == cos_zenith */
 
     /* beam & scattered PAR extinction coefficent - de P & Farq '97, Table 3*/
-    k_dash_b = 0.46 / cos_zenith); /* sin_beta == cos_zenith */
+    k_dash_b = 0.46 / cos_zenith; /* sin_beta == cos_zenith */
 
     /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
     k_dash_d = 0.718;
