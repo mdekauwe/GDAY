@@ -326,7 +326,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
     int    recalc_wb;
     double nsupply, rtot, ntot, arg, lai_inc = 0.0, conv;
     double depth_guess = 1.0, total_req;
-    int    OLD = TRUE;
+    int    OLD = FALSE;
 
     /* default is we don't need to recalculate the water balance,
        however if we cut back on NPP due to available N below then we do
