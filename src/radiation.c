@@ -41,8 +41,6 @@ double spitters(int doy, double cos_zenith, double sw_rad) {
     */
 
     double So, tau, R, K, diffuse_frac;
-    double SEC_TO_HFHR = 60.0 * 30.0;
-    double solar_constant;
 
     So = calc_extra_terrestrial_irradiance(doy, cos_zenith);
 
@@ -133,22 +131,21 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
 
     /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
     Id = par * diffuse_frac;
-    shaded = ( Id * (1.0 - rho_cd) *
-                    (1.0 - exp(-(k_dash_d + kb) * lai)) *
-                    (k_dash_d / (k_dash_d + kb)) );
+    shaded = (Id * (1.0 - rho_cd) * (1.0 - exp(-(k_dash_d + kb) * lai)) *
+              (k_dash_d / (k_dash_d + kb)));
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * beam_frac;
     beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
-    scattered = Ib * ( (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
+    scattered = (Ib * ((1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
                         k_dash_b / (k_dash_b + kb) - (1.0 - omega_PAR) *
-                        (1.0 - exp(-2.0 * kb * lai)) / 2.0 );
+                        (1.0 - exp(-2.0 * kb * lai)) / 2.0));
 
     /* Irradiance absorbed by the canopy - de Pury & Farquhar (1997), eqn 13 */
-    Ic = ( (1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
-           (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)) );
+    Ic = ((1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
+           (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)));
 
     /*
         Irradiance absorbed by the sunlit fraction of the canopy is the sum of

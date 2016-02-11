@@ -1136,7 +1136,7 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
         et : float
             transpiration (mol H2O m-2 s-1)
     */
-    double et, arg1, arg2, lambda, gamma, slope, omega, epsilon;
+    double transpiration, arg1, arg2, lambda, gamma, slope, omega, epsilon;
 
     /* Latent heat of water vapour at air temperature (J mol-1) */
     lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
@@ -1153,19 +1153,19 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
         arg1 = slope * rnet + vpd * gh * CP * MASS_AIR;
         arg2 = slope + gamma * gh / gv;
         *LE = arg1 / arg2; /* W m-2 */
-        et = *LE / lambda; /* mol H20 m-2 s-1 */
+        transpiration = *LE / lambda; /* mol H20 m-2 s-1 */
     } else {
-        et = 0.0;
+        transpiration = 0.0;
     }
 
     /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
-    et = MAX(0.0, et);
+    transpiration = MAX(0.0, transpiration);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
-    return (et);
+    return (transpiration);
 }
 
 

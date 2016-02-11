@@ -125,11 +125,9 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
             Ci = Cs;
             Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         }
-
         *anleaf = MIN(Ac, Aj) - rd;
         *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
     }
-
     return;
 }
 
@@ -155,8 +153,6 @@ double calc_co2_compensation_point(params *p, double tleaf) {
     */
     return (arrhenius(p->gamstar25, p->eag, tleaf, p->measurement_temp));
 }
-
-
 
 double calculate_michaelis_menten(params *p, double tleaf) {
     /*
@@ -192,7 +188,6 @@ double calculate_michaelis_menten(params *p, double tleaf) {
     Km = Kc * (1.0 + p->oi / Ko);
 
     return (Km);
-
 }
 
 void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
@@ -254,7 +249,6 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
     }
-
     return;
 }
 
@@ -303,6 +297,7 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
 
     return (Rd);
 }
+
 double arrhenius(double k25, double Ea, double T, double Tref) {
     /*
         Temperature dependence of kinetic parameters is described by an
@@ -332,11 +327,8 @@ double arrhenius(double k25, double Ea, double T, double Tref) {
     Tk = T + DEG_TO_KELVIN;
     TrefK = Tref + DEG_TO_KELVIN;
 
-
     return (k25 * exp(Ea * (T - Tref) / (RGAS * Tk * TrefK)));
-
 }
-
 
 double peaked_arrhenius(double k25, double Ea, double T, double Tref,
                         double deltaS, double Hd) {
@@ -436,9 +428,7 @@ double quad(double a, double b, double c, bool large, int *error) {
         } else {
             root = (-b - sqrt(d)) / (2.0 * a);
         }
-
     }
-
     return (root);
 }
 

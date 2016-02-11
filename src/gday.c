@@ -103,7 +103,6 @@ int main(int argc, char **argv)
     else
         read_daily_met_data(argv, c, m);
 
-
     if (c->spin_up)
         spin_up_pools(c, f, m, p, s);
     else
@@ -291,8 +290,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         ** =================== */
 
         for (doy = 0; doy < c->num_days; doy++) {
-
-
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
             if (c->disturbance && p->disturbance_doy == doy+1) {
@@ -315,7 +312,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay);
-
 
             calculate_csoil_flows(c, f, p, s, m->tsoil[project_day], doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep[project_day], doy);
@@ -352,9 +348,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            /*printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
+            printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
                                                   c->num_days, f->gpp*100,
-                                                  s->lai, s->shootnc);*/
+                                                  s->lai, s->shootnc);
 
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {

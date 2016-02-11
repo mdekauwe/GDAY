@@ -23,15 +23,14 @@
 
 void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     /*
-        Two-leaf canopy module consists of two parts:
+        Canopy module consists of two parts:
         (1) a radiation sub-model to calculate apar of sunlit/shaded leaves
             - this is all handled in radiation.c
         (2) a coupled model of stomatal conductance, photosynthesis and
             the leaf energy balance to solve the leaf temperature and partition
             absorbed net radiation between sensible and latent heat.
-
-        The canopy is represented by a single layer with two big leaves
-        (sunlit & shaded).
+        - The canopy is represented by a single layer with two big leaves
+          (sunlit & shaded).
 
         - The logic broadly follows MAESTRA code, with some restructuring.
 
@@ -177,7 +176,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     double LE; /* latent heat (W m-2) */
     double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
     double gbc, gamma, epsilon, omega, Tdiff, sensible_heat, rnet, ea, ema, Tk;
-    double emissivity_atm, sw_rad;
+    double emissivity_atm, sw_rad, net_lw_rad;
 
     /* unpack the met data and get the units right */
     double press = m->press[c->hrly_idx] * KPA_2_PA;
@@ -190,8 +189,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
         extinction coefficient for diffuse radiation and black leaves
         (m2 ground m2 leaf)
     */
-    double kd = 0.8, net_lw_rad;
-
+    double kd = 0.8;
     Tk = m->tair[c->hrly_idx] + DEG_TO_KELVIN;
 
     /* Radiation conductance (mol m-2 s-1) */
@@ -214,7 +212,6 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     gbv = GBVGBH * gbh;
     gsv = GSVGSC * gsc;
     gv = (gbv * gsv) / (gbv + gsv);
-
     gbc = gbh / GBHGBC;
 
     /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
