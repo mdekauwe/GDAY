@@ -383,6 +383,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
+    /*printf("%lf\n", s->lai);*/
     correct_rate_constants(p, TRUE);
 
     if (c->print_options == END && c->spin_up == FALSE) {

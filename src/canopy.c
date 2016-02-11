@@ -129,6 +129,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             gsc_canopy = gsc[SUNLIT] + gsc[SHADED];
             trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
             total_apar = apar[SUNLIT] + apar[SHADED];
+
             /*
             an_canopy = sunlit_lai * an_leaf[SUNLIT];
             an_canopy += shaded_lai * an_leaf[SHADED];
