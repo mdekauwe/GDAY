@@ -47,15 +47,10 @@ double spitters(int doy, double cos_zenith, double sw_rad) {
     /* atmospheric transmisivity */
     tau = estimate_clearness(sw_rad, So);
 
-    /*
-        remember sin_beta = cos_zenith; trig funcs are cofuncs of each other
-        sin(x) = cos(90-x) and cos(x) = sin(90-x). So I'm swapping them below
-    */
-
     /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
     if (cos_zenith > 0.17) {
         /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
-        R = 0.847 - 1.61 * cos_zenith + 1.04 * (cos_zenith * cos_zenith);
+        R = 0.847 - 1.61 * cos_zenith + 1.04 * cos_zenith * cos_zenith;
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
             diffuse_frac = 1.0;
@@ -178,33 +173,37 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     return;
 }
 
-void calculate_zenith_angle(params *p, double doy, double hod, double *cos_zen,
-                            double *elevation) {
+void calculate_solar_geometry(params *p, double doy, double hod,
+                              double *cos_zen, double *elevation) {
 
     /*
-    Estimate the sun zenith angle (Degrees)
+        The solar zenith angle is the angle between the zenith and the centre
+        of the sun's disc. The solar elevation angle is the altitude of the
+        sun, the angle between the horizon and the centre of the sun's disc.
+        Since these two angles are complementary, the cosine of either one of
+        them equals the sine of the other, i.e. cos theta = sin beta. I will
+        use cos_zen throughout code for simplicity.
 
-    Arguments:
-    ----------
-    hour -- [0.5 to 24]
-    lat -- latitude in degrees
-    lon -- longitude in degrees
-    doy -- day of year
+        Arguments:
+        ----------
+        params : p
+            params structure
+        doy : double
+            day of year
+        hod : double:
+            hour of the day [0.5 to 24]
+        cos_zen : double
+            cosine of the zenith angle of the sun in degrees (returned)
+        elevation : double
+            solar elevation (degrees) (returned)
 
-    Returns:
-    --------
-    zen_angle : float
-        zenith angle of the sun in degrees
-    cos_zen : float
-        cosine of zenith angle
-
-    References:
-    -----------
-    * De Pury & Farquhar (1997) PCE, 20, 537-557.
+        References:
+        -----------
+        * De Pury & Farquhar (1997) PCE, 20, 537-557.
 
     */
 
-    double dec, et, lc, t0, h, gamma, zenith_angle, hour_angle;
+    double dec, et, lc, t0, h, gamma, zenith_angle, hour_angle, rlat, sin_beta;
 
     /* need to convert 30 min data, 0-47 to 0-23.5 */
     hod /= 2.0;
@@ -214,20 +213,20 @@ void calculate_zenith_angle(params *p, double doy, double hod, double *cos_zen,
     et = calculate_eqn_of_time(gamma);
     t0 = calculate_solar_noon(et, p->longitude);
     h = calculate_hour_angle(hod, t0);
-    *elevation = calculation_solar_elevation(p->latitude, dec, h);
-    zenith_angle = 90.0 - *elevation;
-    if (zenith_angle > 90.0)
-        zenith_angle = 90.0;
-    else if (zenith_angle < 0.0)
-        zenith_angle = 0.0;
+    rlat = DEG2RAD(p->latitude);
 
-    *cos_zen = cos(DEG2RAD(zenith_angle));
+    /* A13 - De Pury & Farquhar */
+    sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
+    *cos_zen = sin_beta; /* The same thing, going to use cos_zen throughout */
     if (*cos_zen > 1.0)
         *cos_zen = 1.0;
     else if (*cos_zen < 0.0)
         *cos_zen = 0.0;
 
-    return ;
+    zenith_angle = RAD2DEG(acos(*cos_zen));
+    *elevation = 90.0 - zenith_angle;
+
+    return;
 }
 
 double calculate_solar_noon(double et, double longitude) {
@@ -307,7 +306,7 @@ double calculate_solar_declination(int doy, double gamma) {
     * J. W. Spencer (1971). Fourier series representation of the position of
       the sun.
     */
-    double sindec, decl;
+    double decl;
 
     /* declination (radians) */
     /*decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) - \
@@ -387,8 +386,7 @@ double calc_extra_terrestrial_irradiance(double doy, double cos_zenith) {
 
     Reference:
     ----------
-    * Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
-    * Spitters et al. (1986) AFM, 38, 217-229.
+    * Spitters et al. (1986) AFM, 38, 217-229, equation 1.
     */
     double So, Sc = 1370.0; /* W m-2 */
 
@@ -398,7 +396,6 @@ double calc_extra_terrestrial_irradiance(double doy, double cos_zenith) {
 
     return (So);
 
-    /*return (Sc * (1.0 + 0.033 * cos(2.0 * M_PI * (doy - 10.0) / 365.0)));*/
 }
 
 
@@ -423,32 +420,4 @@ double estimate_clearness(double sw_rad, double So) {
     }
 
     return (tau);
-}
-
-double calculation_solar_elevation(double latitude, double dec, double h) {
-    /*  solar elevation angle (degrees)
-        - A13 - De Pury & Farquhar
-
-        Arguments:
-        ----------
-        latitude : double
-            latitude (degrees)
-        dec : double
-            solar declination (radians)
-        h : double:
-            hour angle of the sun
-
-        Returns:
-        --------
-        solar_elevation : float
-            solar elevation (degrees)
-
-    */
-    double rlat = DEG2RAD(latitude);
-    double sin_beta, solar_elevation;
-
-    sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
-    solar_elevation = RAD2DEG(asin(sin_beta));
-
-    return (solar_elevation);
 }

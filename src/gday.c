@@ -348,9 +348,10 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
+            /*
             printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
                                                   c->num_days, f->gpp*100,
-                                                  s->lai, s->shootnc);
+                                                  s->lai, s->shootnc);*/
 
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
@@ -368,7 +369,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-
+        
 
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
@@ -376,6 +377,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             allocate_stored_c_and_n(f, p, s);
         }
     }
+
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */

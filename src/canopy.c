@@ -53,8 +53,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     /* loop through the day */
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        calculate_zenith_angle(p, m->doy[c->hrly_idx], hod, &cos_zenith,
-                               &elevation);
+        calculate_solar_geometry(p, m->doy[c->hrly_idx], hod, &cos_zenith,
+                                 &elevation);
 
         /* calculates diffuse frac from half-hourly incident radiation */
         par = m->par[c->hrly_idx];
