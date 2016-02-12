@@ -359,17 +359,17 @@ void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
     return;
 }
 
-void sum_hourly_carbon_fluxes(fluxes *f, params *p, double an_leaf[],
-                              double gsc_leaf[], double apar_leaf[]) {
+void sum_hourly_carbon_fluxes(fluxes *f, params *p, double *an_leaf,
+                              double *gsc_leaf, double *apar_leaf) {
 
     double an_canopy = 0.0, gsc_canopy = 0.0, apar_canopy = 0.0;;
     int    i;
 
     /* scale to canopy */
     for (i = 0; i < NUM_LEAVES; i++) {
-        an_canopy += an_leaf[i];
-        gsc_canopy += gsc_leaf[i];
-        apar_canopy += apar_leaf[i];
+        an_canopy += *(an_leaf+i);
+        gsc_canopy += *(gsc_leaf+i);
+        apar_canopy += *(apar_leaf+i);
     }
 
     /* umol m-2 s-1 -> gC m-2 30 min-1 */

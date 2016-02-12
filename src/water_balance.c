@@ -1183,7 +1183,7 @@ double calc_sat_water_vapour_press(double tac) {
 
 void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
                                        state *s, double par,
-                                       double trans_leaf[]) {
+                                       double *trans_leaf) {
     /*
 
     Calculate water balance
@@ -1197,7 +1197,7 @@ void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
     */
     double soil_evap_hlf_hr, et_hlf_hr, interception_hlf_hr, runoff_hlf_hr;
     double rain = m->rain[c->hrly_idx];
-    double transpiration_hlf_hr = trans_leaf[SUNLIT] + trans_leaf[SHADED];
+    double transpiration_hlf_hr = *(trans_leaf+SUNLIT) + *(trans_leaf+SHADED);
     /* transpiration mol m-2 s-1 to mm 30 min-1 */
     transpiration_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
