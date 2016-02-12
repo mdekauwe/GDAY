@@ -114,13 +114,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     /* Update temperature & do another iteration */
                     tleaf = tleaf_new;
                     iter++;
-                    
+
                 } /* end of leaf temperature stability loop */
                 sum_hourly_fluxes(an_leaf[i], gsc_leaf[i], trans_leaf[i],
                                   apar_leaf[i], &an_canopy, &gsc_canopy,
                                   &trans_canopy, &apar_canopy);
 
             } /* end of sunlit/shaded leaf loop */
+            /*printf("%lf %lf %lf\n", apar_leaf[0]+apar_leaf[1], an_leaf[0], an_leaf[1]);*/
         } /* sun up? if block */
         update_daily_carbon_fluxes(f, p, an_canopy, apar_canopy);
         calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);

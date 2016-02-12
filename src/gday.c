@@ -243,8 +243,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
     s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                         p->cfracts * s->shoot));
-    printf("*** %lf\n", s->lai);
-    
+
     if (c->disturbance) {
         if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
             fprintf(stderr,"Error allocating space for disturbance_yrs\n");
@@ -383,8 +382,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
-    printf("*** %lf\n", s->lai);
-
     correct_rate_constants(p, TRUE);
 
     if (c->print_options == END && c->spin_up == FALSE) {
