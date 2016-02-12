@@ -322,18 +322,22 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
         Ntot_sun = s->shootnc * LMA * sunlit_lai;
         Ntot_sha = s->shootnc * LMA * shaded_lai;
 
+        printf("%.10lf %.10lf %.10lf\n", Ntot, Ntot_sun , Ntot_sha);
+
         /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
         N0_canopy = Ntot * k / (1.0 - exp(-k * s->lai));
         *(N0+SUNLIT) = Ntot_sun * k / (1.0 - exp(-k * sunlit_lai));
         *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
 
+
+        /* I think this should be integral 0 -> Ltot Na(x) * fsun (all divided
+           by Lsun or Lsha cf. Thornton 2007 */
+
         /**(N0+SHADED) = N0_canopy - *(N0+SUNLIT);*/
-        /*
-        printf("%.10lf %.10lf %.10lf : %.10lf %.10lf %.10lf %.10lf\n",
-              Ntot_sun, Ntot_sha, Ntot,
-              *(N0+SUNLIT), *(N0+SHADED), *(N0+SHADED)+ *(N0+SUNLIT),
-              N0x);
-        exit(1);*/
+
+        printf("%.10lf %.10lf %.10lf\n", N0_canopy, *(N0+SUNLIT) , *(N0+SHADED));
+        exit(1);
+        
 
     } else {
         *(N0+SUNLIT) = 0.0;

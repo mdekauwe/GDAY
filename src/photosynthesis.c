@@ -45,11 +45,6 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
 
 
-
-
-
-
-
     /******* TO GET AROUND N0 not being right ******/
 
     /*jmax = 60.0;
@@ -218,7 +213,6 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     *vcmax = 0.0;
     *jmax = 0.0;
 
-
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
@@ -239,6 +233,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
     }
 
+
     /* reduce photosynthetic capacity with moisture stress */
     *jmax *= s->wtfac_root;
     *vcmax *= s->wtfac_root;
@@ -251,7 +246,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
     }
-    
+
     return;
 }
 
@@ -573,16 +568,6 @@ double calculate_top_of_canopy_n(params *p, state *s, double ncontent)  {
     /*
     Calculate the canopy N at the top of the canopy (g N m-2), N0.
     Assuming an exponentially decreasing N distribution within the canopy:
-
-    N(i) = N0 x exp(-K x LAI)
-
-    Intgrating:
-
-    Ntot = N0 x (1 - exp (k x LAI)) / k
-
-    Rearranging to get N0:
-
-    N0 = (Ntot * K) / (1.0 - exp(-k x LAI)
 
     Returns:
     -------
