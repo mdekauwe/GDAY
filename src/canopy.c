@@ -330,14 +330,18 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
         *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
 
 
-        /* I think this should be integral 0 -> Ltot Na(x) * fsun (all divided
-           by Lsun or Lsha cf. Thornton 2007 */
+        /*
+        Is this meant to be eqn 9a in Thornton 2007. Although this doesn't
+        make sense to me as it is the integratl of Ntot * fsun all over Lsun.
+        But Lsun is the integral of fsun, so doesn't that just cancel? Clearly
+        not - work it out.. */
+        
 
         /**(N0+SHADED) = N0_canopy - *(N0+SUNLIT);*/
 
         printf("%.10lf %.10lf %.10lf\n", N0_canopy, *(N0+SUNLIT) , *(N0+SHADED));
         exit(1);
-        
+
 
     } else {
         *(N0+SUNLIT) = 0.0;
