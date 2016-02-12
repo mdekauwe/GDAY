@@ -117,7 +117,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         } else {
             zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]));
         }
-        sum_hourly_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
+        sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
         calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_leaf);
 
         c->hrly_idx++;
@@ -359,8 +359,8 @@ void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
     return;
 }
 
-void sum_hourly_fluxes(fluxes *f, params *p, double an_leaf[],
-                       double gsc_leaf[], double apar_leaf[]) {
+void sum_hourly_carbon_fluxes(fluxes *f, params *p, double an_leaf[],
+                              double gsc_leaf[], double apar_leaf[]) {
 
     double an_canopy = 0.0, gsc_canopy = 0.0, apar_canopy = 0.0;;
     int    i;
