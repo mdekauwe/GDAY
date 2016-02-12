@@ -53,7 +53,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     /******* TO GET AROUND N0 not being right ******/
 
     jmax = 60.0;
-    vcmax = 30.0; 
+    vcmax = 30.0;
     /******* TO GET AROUND N0 not being right ******/
 
     /* leaf respiration in the light, Collatz et al. 1991 */

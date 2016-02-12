@@ -51,6 +51,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+        zero_hourly_fluxes(&an_canopy, &gsc_canopy, &trans_canopy,
+                           &apar_canopy);
+
         calculate_solar_geometry(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                  &elevation);
 
@@ -59,8 +62,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         sw_rad = par * PAR_2_SW; /* SW_down [W/m2] = [J m-2 s-1] */
         diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith,
                                         sw_rad);
-        zero_hourly_fluxes(&an_canopy, &gsc_canopy, &trans_canopy,
-                           &apar_canopy);
 
         /* Is the sun up? */
         if (elevation > 0.0 && par > 50.0) {
@@ -107,28 +108,24 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         fprintf(stderr, "No convergence in canopy loop\n");
                         exit(EXIT_FAILURE);
                     } else if (fabs(tleaf - tleaf_new) < 0.02) {
-                        /* stop loop */
                         break;
-                    } else {
-                        /* Update temperature & do another iteration */
-                        tleaf = tleaf_new;
-                        iter++;
                     }
 
+                    /* Update temperature & do another iteration */
+                    tleaf = tleaf_new;
+                    iter++;
+                    
                 } /* end of leaf temperature stability loop */
                 sum_hourly_fluxes(an_leaf[i], gsc_leaf[i], trans_leaf[i],
                                   apar_leaf[i], &an_canopy, &gsc_canopy,
                                   &trans_canopy, &apar_canopy);
 
             } /* end of sunlit/shaded leaf loop */
-        } else {
-            sum_hourly_fluxes(0.0, 0.0, 0.0, 0.0, &an_canopy, &gsc_canopy,
-                              &trans_canopy, &apar_canopy);
-        } /* end of hour loop */
+        } /* sun up? if block */
         update_daily_carbon_fluxes(f, p, an_canopy, apar_canopy);
         calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
         c->hrly_idx++;
-    }
+    } /* end of hour loop */
 
     return;
 }
