@@ -42,8 +42,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     */
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
-           press, vpd, par, tair, wind, Ca, sunlit_lai, an_canopy, trans_canopy,
-           shaded_lai, gsc_canopy, apar_canopy, sw_rad;
+           press, vpd, par, tair, wind, Ca, sunlit_lai, shaded_lai, sw_rad;
     double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0[2];
     int    hod, iter = 0, itermax = 100, i;
 
@@ -51,8 +50,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        zero_hourly_fluxes(&an_canopy, &gsc_canopy, &trans_canopy,
-                           &apar_canopy);
 
         calculate_solar_geometry(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                  &elevation);
@@ -100,7 +97,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                                   apar_leaf[i], &Cs, &dleaf,
                                                   &tleaf_new, &trans_leaf[i]);
                     } else {
-                        trans_leaf[i] = 0.0;
                         break;
                     }
 
@@ -116,15 +112,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     iter++;
 
                 } /* end of leaf temperature stability loop */
-                sum_hourly_fluxes(an_leaf[i], gsc_leaf[i], trans_leaf[i],
-                                  apar_leaf[i], &an_canopy, &gsc_canopy,
-                                  &trans_canopy, &apar_canopy);
 
             } /* end of sunlit/shaded leaf loop */
-            /*printf("%lf %lf %lf\n", apar_leaf[0]+apar_leaf[1], an_leaf[0], an_leaf[1]);*/
-        } /* sun up? if block */
-        update_daily_carbon_fluxes(f, p, an_canopy, apar_canopy);
-        calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_canopy);
+        } else {
+            zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]));
+        }
+        sum_hourly_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
+        calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_leaf);
+
         c->hrly_idx++;
     } /* end of hour loop */
 
@@ -295,19 +290,7 @@ void zero_carbon_day_fluxes(fluxes *f) {
     return;
 }
 
-void update_daily_carbon_fluxes(fluxes *f, params *p, double an_canopy,
-                                double apar_canopy) {
 
-    /* umol m-2 s-1 -> gC m-2 30 min-1 */
-    f->gpp_gCm2 += an_canopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
-    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
-    f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
-    f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
-    f->auto_resp = f->gpp - f->npp;
-    f->apar += apar_canopy;
-
-    return;
-}
 
 
 void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
@@ -359,24 +342,44 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
     return;
 }
 
-void zero_hourly_fluxes(double *an_canopy, double *gsc_canopy,
-                        double *trans_canopy, double *total_apar) {
-    *an_canopy = 0.0;
-    *gsc_canopy = 0.0;
-    *trans_canopy = 0.0;
-    *total_apar = 0.0;
+
+
+void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
+                        double *trans_leaf) {
+
+    int i;
+
+    /* sunlit / shaded loop */
+    for (i = 0; i < NUM_LEAVES; i++) {
+        *(an_leaf+i) = 0.0;
+        *(gsc_leaf+i) = 0.0;
+        *(trans_leaf+i) = 0.0;
+    }
 
     return;
 }
 
-void sum_hourly_fluxes(double an_leaf, double gsc_leaf, double trans_leaf,
-                       double apar_leaf, double *an_canopy, double * gsc_canopy,
-                       double *trans_canopy, double *total_apar) {
+void sum_hourly_fluxes(fluxes *f, params *p, double an_leaf[],
+                       double gsc_leaf[], double apar_leaf[]) {
 
-    *an_canopy += an_leaf;
-    *gsc_canopy += gsc_leaf;
-    *trans_canopy += trans_leaf;
-    *total_apar += apar_leaf;
+    double an_canopy = 0.0, gsc_canopy = 0.0, apar_canopy = 0.0;;
+    int    i;
+
+    /* scale to canopy */
+    for (i = 0; i < NUM_LEAVES; i++) {
+        an_canopy += an_leaf[i];
+        gsc_canopy += gsc_leaf[i];
+        apar_canopy += apar_leaf[i];
+    }
+
+    /* umol m-2 s-1 -> gC m-2 30 min-1 */
+    f->gpp_gCm2 += an_canopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
+    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
+    f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->auto_resp = f->gpp - f->npp;
+    f->apar += apar_canopy;
+    f->gs_mol_m2_sec += gsc_canopy;
 
     return;
 }

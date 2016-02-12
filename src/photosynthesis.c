@@ -52,8 +52,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
     /******* TO GET AROUND N0 not being right ******/
 
-    jmax = 60.0;
-    vcmax = 30.0;
+    /*jmax = 60.0;
+    vcmax = 30.0;*/
     /******* TO GET AROUND N0 not being right ******/
 
     /* leaf respiration in the light, Collatz et al. 1991 */
@@ -218,6 +218,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     *vcmax = 0.0;
     *jmax = 0.0;
 
+
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
@@ -250,6 +251,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
     }
+    
     return;
 }
 

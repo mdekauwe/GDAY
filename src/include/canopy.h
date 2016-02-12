@@ -15,6 +15,7 @@
 
 /* C stuff */
 void    zero_carbon_day_fluxes(fluxes *);
+void    zero_hourly_fluxes(double *, double *, double *);
 void    update_daily_carbon_fluxes(fluxes *, params *, double, double);
 void    canopy(control *, fluxes *, met *, params *, state *);
 
@@ -26,7 +27,5 @@ double  calc_bdn_layer_forced_conduct(double, double, double,double);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 void    calculate_top_of_canopy_leafn(params *, state *, double, double,
                                       double *);
-void    zero_hourly_fluxes(double *, double *, double *, double *);
-void    sum_hourly_fluxes(double, double, double, double , double *, double *,
-                          double *, double *);
+void    sum_hourly_fluxes(fluxes *, params *, double [], double [], double []);
 #endif /* CANOPY_H */

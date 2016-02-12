@@ -1057,6 +1057,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         s->wtfac_topsoil = calc_sw_modifier(smc_topsoil, p->ctheta_topsoil,
                                             p->ntheta_topsoil);
 
+
         s->wtfac_root = calc_sw_modifier(smc_root, p->ctheta_root,
                                          p->ntheta_root);
 
@@ -1182,7 +1183,7 @@ double calc_sat_water_vapour_press(double tac) {
 
 void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
                                        state *s, double par,
-                                       double transpiration_hlf_hr) {
+                                       double trans_leaf[]) {
     /*
 
     Calculate water balance
@@ -1196,7 +1197,7 @@ void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
     */
     double soil_evap_hlf_hr, et_hlf_hr, interception_hlf_hr, runoff_hlf_hr;
     double rain = m->rain[c->hrly_idx];
-
+    double transpiration_hlf_hr = trans_leaf[SUNLIT] + trans_leaf[SHADED];
     /* transpiration mol m-2 s-1 to mm 30 min-1 */
     transpiration_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
@@ -1228,6 +1229,7 @@ void zero_water_day_fluxes(fluxes *f) {
     f->erain = 0.0;
     f->interception = 0.0;
     f->runoff = 0.0;
+    f->gs_mol_m2_sec = 0.0;
 
     return;
 }
@@ -1325,7 +1327,7 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
         - NB: this formula only really holds for cloudless skies!
         - units: W m-2
     */
-    net_rad = (1.0 - p->albedo) * sw_rad * - net_lw;
+    net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad * - net_lw);
 
     soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda;
 
@@ -1343,6 +1345,8 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
 
     /* reduce soil evaporation if top soil is dry */
     soil_evap *= s->wtfac_topsoil;
+
+    soil_evap = MAX(0.0, soil_evap);
 
     return (soil_evap);
 }

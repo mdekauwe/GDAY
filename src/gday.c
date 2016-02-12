@@ -354,7 +354,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                                                   s->lai, s->shootnc);*/
 
 
-
             if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
