@@ -51,4 +51,6 @@ void    get_soil_params(char *, double *, double *);
 void    calc_soil_params(double *, double *, double *,
                         double *, double *, double *);
 void    calculate_soil_water_fac(control *, params *, state *);
+void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
+                                double, double);
 #endif /* WATER_BALANCE */

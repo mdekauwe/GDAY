@@ -1210,11 +1210,25 @@ void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
                                   &interception_hlf_hr, &soil_evap_hlf_hr,
                                   &et_hlf_hr, &runoff_hlf_hr);
 
+    
+    sum_hourly_water_fluxes(f, soil_evap_hlf_hr, transpiration_hlf_hr,
+                            et_hlf_hr, rain, interception_hlf_hr,
+                            runoff_hlf_hr);
+
+    return;
+}
+
+
+void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
+                             double transpiration_hlf_hr, double et_hlf_hr,
+                             double rain, double interception_hlf_hr,
+                             double runoff_hlf_hr) {
+
     /* add half hour fluxes to day total store */
-    f->et += et_hlf_hr;
     f->soil_evap += soil_evap_hlf_hr;
     f->transpiration += transpiration_hlf_hr;
-    f->erain += (rain - interception_hlf_hr);
+    f->et += et_hlf_hr;
+    f->erain += rain - interception_hlf_hr;
     f->interception += interception_hlf_hr;
     f->runoff += runoff_hlf_hr;
 
