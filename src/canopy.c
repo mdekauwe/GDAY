@@ -123,7 +123,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         c->hrly_idx++;
     } /* end of hour loop */
 
-    exit(1);
 
     return;
 }

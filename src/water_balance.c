@@ -1304,7 +1304,7 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
         soil evaporation [mm d-1]
 
     */
-    double lambda, gamma, slope, arg1, arg2, soil_evap, net_lw, net_rad, conv;
+    double lambda, gamma, slope, arg1, arg2, soil_evap, net_lw, net_rad;
     double sw_rad = par * PAR_2_SW; /* W m-2 */
 
     /* Latent heat of water vapour at air temperature (J mol-1) */
@@ -1325,10 +1325,11 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
         - note the minus net_lw is correct as eqn 4.17 is reversed in
           eqn 4.21, i.e Lu-Ld vs. Ld-Lu
         - NB: this formula only really holds for cloudless skies!
+        - Bounding to zero, as we can't have negative soil evaporation, but you
+          can have negative net radiation.
         - units: W m-2
     */
-    /*net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad * - net_lw);*/
-    net_rad = (1.0 - p->albedo) * sw_rad - net_lw;
+    net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad - net_lw);
 
     /* W/m-2 */
     soil_evap = ((slope / (slope + gamma)) * net_rad) ;
@@ -1349,17 +1350,12 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
     soil_evap *= s->wtfac_topsoil;
 
     /*
-        W/m2       = 1000 (kg/m3) * 2.45 * 10^6 (J/kg) * 1 mm/day * \
-                     (1/86400) (day/s) * (1/1000) (mm/m)
-                   = 1000.0 * 2.501 * 1E6 * 1 * (1./86400.) * (1.0 / 1000.)
-       28.947 W/m2 = 1 mm/day
+         W/m2 = 1000 (kg/m3) * 2.45 * 10^6 (J/kg) * 1 mm/day * \
+                (1/1800.0) (30 min/s) * (1/1000) (mm/m)
+              = 1000.0 * 2.501 * 1E6 * 1 * (1./86400.) * (1.0 / 1000.) mm/30 min
+              = 1.0 / 1389.44 mm/30 min
     */
-
-    /* W/m2 -> mm/30 min */
-    conv = 1000.0 * 2.501 * 1E6 * 1 * (1./1800.) * (1.0 / 1000.);
-    soil_evap /= conv;
-
-    soil_evap = MAX(0.0, soil_evap);
+    soil_evap /= 1389.44;
 
     return (soil_evap);
 }
