@@ -15,8 +15,11 @@ void   update_water_storage(control *, fluxes *, params *, state *,
 double  calc_soil_evaporation(params*, state *, double, double , double);
 double  calc_infiltration(params *, state*, double);
 
-double  penman_leaf(double, double, double, double, double, double, double,
-                    double, double *);
+/*double  penman_leaf(double, double, double, double, double, double, double,
+                    double, double *); */
+void penman_leaf(params *p, state *s, double, double, double, double, double,
+                 double, double, double *, double *, double *, double *,
+                 double *);
 double  calc_sat_water_vapour_press(double);
 void    calculate_daily_water_balance(control *, fluxes *, met *, params *,
                                       state *, int, double);
@@ -49,6 +52,10 @@ void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
                                 double);
 void    update_daily_water_struct(fluxes *, double, double, double, double,
                                   double);
-
+double  calc_radiation_conductance(double);
+double  calc_bdn_layer_forced_conduct(double, double, double,double);
+double  calc_bdn_layer_free_conduct(double, double, double, double);
+void    calculate_top_of_canopy_leafn(params *, state *, double, double,
+                                      double *);
 
 #endif /* WATER_BALANCE */

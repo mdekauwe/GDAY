@@ -125,7 +125,6 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         c->hrly_idx++;
     } /* end of hour loop */
 
-
     return;
 }
 
@@ -148,63 +147,19 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double LE; /* latent heat (W m-2) */
-    double lambda, arg1, arg2, slope, gradn, gbhu, gbhf, gbh, gh, gbv, gsv, gv;
-    double gbc, gamma, epsilon, omega, Tdiff, sensible_heat, rnet, ea, ema, Tk;
-    double emissivity_atm, sw_rad, net_lw_rad;
+    double Tdiff, press, vpd, tair, wind, Ca, gv, gbc, gh, rnet, Tk, sw_rad;
 
     /* unpack the met data and get the units right */
-    double press = m->press[c->hrly_idx] * KPA_2_PA;
-    double vpd = m->vpd[c->hrly_idx] * KPA_2_PA;
-    double tair = m->tair[c->hrly_idx];
-    double wind = m->wind[c->hrly_idx];
-    double Ca = m->co2[c->hrly_idx];
-
-    /*
-        extinction coefficient for diffuse radiation and black leaves
-        (m2 ground m2 leaf)
-    */
-    double kd = 0.8;
-    Tk = m->tair[c->hrly_idx] + DEG_TO_KELVIN;
-
-    /* Radiation conductance (mol m-2 s-1) */
-    gradn = calc_radiation_conductance(tair);
-
-    /* Boundary layer conductance for heat - single sided, forced
-       convection (mol m-2 s-1) */
-    gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
-
-    /* Boundary layer conductance for heat - single sided, free convection */
-    gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
-
-    /* Total boundary layer conductance for heat */
-    gbh = gbhu + gbhf;
-
-    /* Total conductance for heat - two-sided */
-    gh = 2.0 * (gbh + gradn);
-
-    /* Total conductance for water vapour */
-    gbv = GBVGBH * gbh;
-    gsv = GSVGSC * gsc_leaf;
-    gv = (gbv * gsv) / (gbv + gsv);
-    gbc = gbh / GBHGBC;
-
-    /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
-    ea = calc_sat_water_vapour_press(tair) - vpd;
-
-    /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
-    emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
+    press = m->press[c->hrly_idx] * KPA_2_PA;
+    vpd = m->vpd[c->hrly_idx] * KPA_2_PA;
+    tair = m->tair[c->hrly_idx];
+    wind = m->wind[c->hrly_idx];
+    Ca = m->co2[c->hrly_idx];
     sw_rad = apar_leaf * PAR_2_SW; /* W m-2 */
 
-    /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
-       the canopy is 1 */
-    net_lw_rad = (1.0 - emissivity_atm) * SIGMA * pow(Tk, 4.0);
-    rnet = p->leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
-
-    /* Penman-Monteith equation */
-    *transpiration = penman_leaf(press, rnet, vpd, tair, gh, gv, gbv, gsv, &LE);
-
-    /* sensible heat exchanged between leaf and surroundings */
-    sensible_heat = (1.0 / (1.0 + gradn / gbh)) * (rnet - LE);
+    rnet = calc_canopy_net_rad(p, s, tair, vpd, sw_rad);
+    penman_leaf(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
+                transpiration, &LE, &gbc, &gh, &gv);
 
     /*
     ** calculate new dleaf, tleaf and Cs
@@ -218,68 +173,31 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     return;
 }
 
-double calc_radiation_conductance(double tair) {
-    /*  Returns the 'radiation conductance' at given temperature.
+double calc_canopy_net_rad(params *p, state *s, double tair, double vpd,
+                           double sw_rad) {
 
-        Units: mol m-2 s-1
-
-        References:
-        -----------
-        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
-          1998, Table 1,
-        * See also Jones (1992) p. 108.
-        * And documented in Medlyn 2007, equation A3, although I think there
-          is a mistake. It should be Tk**3 not Tk**4, see W & L.
-    */
-    double grad;
-    double Tk;
-
-    Tk = tair + DEG_TO_KELVIN;
-    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CP * MASS_AIR);
-
-    return (grad);
-}
-
-double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
-                                     double leaf_width) {
+    double rnet, Tk, ea, emissivity_atm, net_lw_rad;
     /*
-        Boundary layer conductance for heat - single sided, forced convection
-        (mol m-2 s-1)
-        See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
+        extinction coefficient for diffuse radiation and black leaves
+        (m2 ground m2 leaf)
     */
-    double cmolar, Tk, gbh;
+    double kd = 0.8;
 
+    /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
+       the canopy is 1 */
     Tk = tair + DEG_TO_KELVIN;
-    cmolar = press / (RGAS * Tk);
-    gbh = 0.003 * sqrt(wind / leaf_width) * cmolar;
 
-    return (gbh);
+    /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
+    ea = calc_sat_water_vapour_press(tair) - vpd;
+
+    /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
+    emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
+
+    net_lw_rad = (1.0 - emissivity_atm) * SIGMA * pow(Tk, 4.0);
+    rnet = p->leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
+
+    return (rnet);
 }
-
-double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
-                                   double leaf_width) {
-    /*
-        Boundary layer conductance for heat - single sided, free convection
-        (mol m-2 s-1)
-        See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
-    */
-    double cmolar, Tk, gbh, grashof, leaf_width_cubed;
-    double tolerance = 1E-08;
-
-    Tk = tair + DEG_TO_KELVIN;
-    cmolar = press / (RGAS * Tk);
-    leaf_width_cubed = leaf_width * leaf_width * leaf_width;
-
-    if (float_eq((tleaf - tair), 0.0)) {
-        gbh = 0.0;
-    } else {
-        grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
-        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
-    }
-
-    return (gbh);
-}
-
 
 void zero_carbon_day_fluxes(fluxes *f) {
 

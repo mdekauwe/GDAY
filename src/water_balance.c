@@ -43,10 +43,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         sw_rad = m->par[c->hrly_idx] * PAR_2_SW; /* W m-2 */
     } else {
         ca = m->co2[day_idx];
-        tair_day = m->tair[day_idx];
+        tair = m->tair[day_idx];
         tair_am = m->tam[day_idx];
         tair_pm = m->tpm[day_idx];
-        sw_rad_day = m->sw_rad[day_idx];
+        sw_rad = m->sw_rad[day_idx];
         sw_rad_am = m->sw_rad_am[day_idx];
         sw_rad_pm = m->sw_rad_pm[day_idx];
         rain = m->rain[day_idx];
@@ -68,16 +68,18 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
                  = 1.0 / 1389.44 mm/30 min
         */
-        soil_evap /= 1389.44;
+        /*soil_evap /= 1389.44;*/
 
+        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
     } else {
         /*
             W/m2 = 1000 (kg/m3) * 2.501 * 10^6 (J/kg) * 1 mm/day * \
                     (1/86400.0) (day/s) * (1/1000) (mm/day)
         */
-        conv = 1000.0 * 2.501 * 1E6 * \
+        /*conv = 1000.0 * 2.501 * 1E6 * \
                  (1. / (60.0 * 60.0 * daylen)) * (1.0 / 1000.);
-        soil_evap /= conv;
+        soil_evap /= conv;*/
+        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
     }
 
 
@@ -305,9 +307,8 @@ double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
     */
     net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad - net_lw);
 
-    /* W/m-2 */
-    /*soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda; */
-    soil_evap = ((slope / (slope + gamma)) * net_rad);
+    /* mol H20 m-2 s-1 */
+    soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda;
 
     /*
       Surface radiation is reduced by overstory LAI cover. This empirical
@@ -327,40 +328,54 @@ double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
     return (soil_evap);
 }
 
-
-
-
-double penman_leaf(double press, double rnet, double vpd, double tair,
-                   double gh, double gv, double gbv, double gsv, double *LE) {
+void penman_leaf(params *p, state *s, double press, double vpd,
+                 double tair, double tleaf, double wind, double rnet,
+                 double gsc, double *transpiration, double *LE, double *gbc,
+                 double *gh, double *gv) {
     /*
-        Calculates evapotranspiration by leaves using the Penman-Monteith
-        equation.
+        Calculates transpiration by leaves using the Penman-Monteith
 
         Parameters:
         ----------
-        gamma : float
-            psychrometric constant
         press : float
             atmospheric pressure (Pa)
-        lambda : float
-            latent heat of water at air T (J mol-1)
         rnet : float
             net radiation (J m-2 s-1)
         vpd : float
             vapour pressure deficit of air (Pa)
-        gh : float
-            boundary layer conductance to heat (free & forced & radiative
-            components), mol m-2 s-1.
-        gv : float
-            conductance to water vapour (stomatal & bdry layer components),
-            mol m-2 s-1
+        tair : float
+            air temperature (deg C)
+        transpiration : float
+            transpiration (mol H2O m-2 s-1) (returned)
+        LE : float
+            latent heat flux, W m-2 (returned)
 
-        Returns:
-        -------
-        et : float
-            transpiration (mol H2O m-2 s-1)
+
     */
-    double transpiration, arg1, arg2, lambda, gamma, slope, omega, epsilon;
+    double slope, omega, epsilon, lambda, arg1, arg2, gradn, gbhu, gbhf, gbh,
+           gbv, gsv, gamma, Tdiff, sensible_heat, ema, Tk;
+
+    /* Radiation conductance (mol m-2 s-1) */
+    gradn = calc_radiation_conductance(tair);
+
+    /* Boundary layer conductance for heat - single sided, forced
+       convection (mol m-2 s-1) */
+    gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
+
+    /* Boundary layer conductance for heat - single sided, free convection */
+    gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
+
+    /* Total boundary layer conductance for heat */
+    gbh = gbhu + gbhf;
+
+    /* Total conductance for heat - two-sided */
+    *gh = 2.0 * (gbh + gradn);
+
+    /* Total conductance for water vapour */
+    gbv = GBVGBH * gbh;
+    gsv = GSVGSC * gsc;
+    *gv = (gbv * gsv) / (gbv + gsv);
+    *gbc = gbh / GBHGBC;
 
     /* Latent heat of water vapour at air temperature (J mol-1) */
     lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
@@ -373,23 +388,27 @@ double penman_leaf(double press, double rnet, double vpd, double tair,
     arg2 = calc_sat_water_vapour_press(tair);
     slope = (arg1 - arg2) / 0.1;
 
-    if (gv > 0.0) {
-        arg1 = slope * rnet + vpd * gh * CP * MASS_AIR;
-        arg2 = slope + gamma * gh / gv;
+    if (*gv > 0.0) {
+        arg1 = slope * rnet + vpd * *gh * CP * MASS_AIR;
+        arg2 = slope + gamma * *gh / *gv;
         *LE = arg1 / arg2; /* W m-2 */
-        transpiration = *LE / lambda; /* mol H20 m-2 s-1 */
+        *transpiration = *LE / lambda; /* mol H20 m-2 s-1 */
     } else {
-        transpiration = 0.0;
+        *transpiration = 0.0;
     }
 
     /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
-    transpiration = MAX(0.0, transpiration);
+    *transpiration = MAX(0.0, *transpiration);
+
+    /*
+    ** Move to canopy as it makes little sense here at the leaf scale...
+    */
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
     epsilon = slope / gamma;
     omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
-    return (transpiration);
+    return;
 }
 
 
@@ -1182,4 +1201,66 @@ void zero_water_day_fluxes(fluxes *f) {
     f->gs_mol_m2_sec = 0.0;
 
     return;
+}
+
+double calc_radiation_conductance(double tair) {
+    /*  Returns the 'radiation conductance' at given temperature.
+
+        Units: mol m-2 s-1
+
+        References:
+        -----------
+        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
+          1998, Table 1,
+        * See also Jones (1992) p. 108.
+        * And documented in Medlyn 2007, equation A3, although I think there
+          is a mistake. It should be Tk**3 not Tk**4, see W & L.
+    */
+    double grad;
+    double Tk;
+
+    Tk = tair + DEG_TO_KELVIN;
+    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CP * MASS_AIR);
+
+    return (grad);
+}
+
+double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
+                                     double leaf_width) {
+    /*
+        Boundary layer conductance for heat - single sided, forced convection
+        (mol m-2 s-1)
+        See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
+    */
+    double cmolar, Tk, gbh;
+
+    Tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * Tk);
+    gbh = 0.003 * sqrt(wind / leaf_width) * cmolar;
+
+    return (gbh);
+}
+
+double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
+                                   double leaf_width) {
+    /*
+        Boundary layer conductance for heat - single sided, free convection
+        (mol m-2 s-1)
+        See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
+    */
+    double cmolar, Tk, gbh, grashof, leaf_width_cubed;
+    double tolerance = 1E-08;
+
+    Tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * Tk);
+    leaf_width_cubed = leaf_width * leaf_width * leaf_width;
+
+    if (float_eq((tleaf - tair), 0.0)) {
+        gbh = 0.0;
+    } else {
+        grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
+        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
+    }
+
+    return (gbh);
 }
