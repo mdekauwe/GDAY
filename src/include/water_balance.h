@@ -5,36 +5,30 @@
 #include "constants.h"
 #include "utilities.h"
 
+void   calculate_water_balance(control *, fluxes *, met *, params *,
+                              state *, int, int, double);
 void   zero_water_day_fluxes(fluxes *);
-void   calculate_sub_daily_water_balance(control *, fluxes *, met *, params *,
-                                         state *, double, double *);
+void   update_water_storage(control *, fluxes *, params *, state *,
+                            double, double, double *, double *, double *,
+                            double *);
 
-void   update_water_storage_subdaily(control *, fluxes *, params *, state *,
-                                     double, double *, double *, double *,
-                                     double *, double *);
-
-double calc_soil_evaporation_subdaily(params*, state *, double, double , double);
-double calc_infiltration_subdaily(params *, state*, double);
+double  calc_soil_evaporation(params*, state *, double, double , double);
+double  calc_infiltration(params *, state*, double);
 
 double  penman_leaf(double, double, double, double, double, double, double,
                     double, double *);
 double  calc_sat_water_vapour_press(double);
 void    calculate_daily_water_balance(control *, fluxes *, met *, params *,
                                       state *, int, double);
-void    get_met_data(met *, int , double *, double *, double *, double *,
-                    double *, double *, double *, double *, double *, double *,
-                    double *, double *, double *, double *, double *);
-void    calc_infiltration(fluxes *, params *, state*, double);
+
 double  calc_stomatal_conductance(double, double, double, double, double,
                                  double);
 double  calc_radiation(params *, double, double, double);
-double  update_water_storage(fluxes *, params *, state *);
 void    calc_transpiration_penmon(fluxes *, params *, state *, double, double,
                                double, double, double, double, double);
 void    calc_transpiration_penmon_am_pm(params *, state *, double, double, double,
                                        double, double, double, double, double,
                                        double *, double *, double *, double *);
-double  calc_soil_evaporation(state*, double, double, double, double);
 double  calc_density_of_air(double);
 double  calc_latent_heat_of_vapourisation(double);
 double  calc_atmos_pressure();
@@ -52,5 +46,9 @@ void    calc_soil_params(double *, double *, double *,
                         double *, double *, double *);
 void    calculate_soil_water_fac(control *, params *, state *);
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
-                                double, double);
+                                double);
+void    update_daily_water_struct(fluxes *, double, double, double, double,
+                                  double);
+
+
 #endif /* WATER_BALANCE */

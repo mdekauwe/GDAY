@@ -25,7 +25,7 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
                      int project_day, double day_length, int doy, double fdecay,
                      double rdecay)
 {
-    double previous_topsoil_store,
+    double previous_topsoil_store, dummy,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
@@ -40,7 +40,7 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, project_day, day_length);
-        calculate_daily_water_balance(c, f, m, p, s, project_day, day_length);
+        calculate_water_balance(c, f, m, p, s, project_day, day_length, dummy);
     }
 
     /*printf("* %lf\n", f->gpp);*/
@@ -104,8 +104,8 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
 
         } else {
-            calculate_daily_water_balance(c, f, m, p, s, project_day,
-                                          day_length);
+            calculate_water_balance(c, f, m, p, s, project_day, day_length,
+                                    dummy);
         }
 
     }

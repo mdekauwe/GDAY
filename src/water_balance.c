@@ -1,221 +1,413 @@
-/* ============================================================================
-* Water Balance
-*
-* All of the water flux calculations and a few extra routinues related to
-# MATE
-*
-* NOTES:
-*   I'm essentially transfering the python to C here...
-*
-* AUTHOR:
-*   Martin De Kauwe
-*
-* DATE:
-*   19.02.2015
-*
-* References:
-* ===========
-* - McMurtrie, R. (1990) Water/nutrient interactions affecting the
-*   productivity of stands of Pinus radiata. Forest Ecology and Management,
-*   30, 415-423.
-* =========================================================================== */
 #include "water_balance.h"
 
-void calculate_daily_water_balance(control *c, fluxes *f, met *m, params *p,
-                                   state *s, int day, double daylen) {
+
+void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
+                             state *s, int day_idx, int daylen,
+                             double trans_leaf) {
     /*
 
-    Calculate water balance
+    Calculate the water balance (including all water fluxes).
 
     Parameters:
     ----------
+    control : structure
+        control structure
+    fluxes : structure
+        fluxes structure
+    met : structure
+        meteorological drivers structure
+    params : structure
+        parameters structure
     day : int
-        project day.
-    daylen : float
-        length of day in hours.
+        project day. (Dummy argument, only passed for daily model)
+    daylen : double
+        length of day in hours. (Dummy argument, only passed for daily model)
+    trans_leaf : double
+        leaf transpiration (Dummy argument, only passed for sub-daily model)
+
     */
-    double half_day, net_rad_day, net_rad_am, net_rad_pm, trans_am, omega_am,
+    double soil_evap, et, interception, runoff, rain, press, sw_rad, conv,
+           tair, transpiration;
+
+    double net_rad_day, net_rad_am, net_rad_pm, trans_am, omega_am,
            gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm, tair_day,
-           rain, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
-           wind_am, wind_pm, wind_day, ca, press, gpp_am, gpp_pm, trans_pm,
+           sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
+           wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
            omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, DAY_2_SEC;
 
-    half_day = daylen / 2.0;
-
-    /* met forcing */
-    get_met_data(m, day, &tair_am, &tair_pm, &tair_day, &rain, &sw_rad_am,
-                 &sw_rad_pm, &sw_rad_day, &vpd_am, &vpd_pm, &vpd_day,
-                 &wind_am, &wind_pm, &wind_day, &ca, &press);
-
-    net_rad_day = calc_radiation(p, tair_day, sw_rad_day, daylen);
-    net_rad_am = calc_radiation(p, tair_am, sw_rad_am, half_day);
-    net_rad_pm = calc_radiation(p, tair_pm, sw_rad_pm, half_day);
-
-
-    /* calculate water fluxes */
-    if (c->trans_model == 0) {
-        /* transpiration calculated from WUE  (mm/day) */
-        if (f->wue > 0.0) {
-            f->transpiration = f->gpp_gCm2 / f->wue;
-        } else {
-            f->transpiration = 0.0;
-        }
-    } else if (c->trans_model == 1) {
-
-        /*
-          Whilst the AM and PM response to CO2 are proportional, because
-          we sum AM and PM values within the code it results in a larger
-          than proportional WUE response to CO2. Currently as I see it the
-          best way to minimise this is to calculate gs at the daily time
-          scale to reduce the influence of AM/PM VPD. I think the only
-          correct fix would be to replace MATE with a daily time step GPP
-          calculation.
-        */
-        /*
-        self.calc_transpiration_penmon(vpd_day, net_rad_day, tair_day,
-                                        wind_day, ca, daylen, press)
-        */
-        if (c->assim_model == BEWDY) {
-
-            fprintf(stderr, "Don't use this option BEWDY isn't coded in\n");
-            exit(EXIT_FAILURE);
-            calc_transpiration_penmon(f, p, s, vpd_day, net_rad_day, tair_day, wind_day,
-                                      ca, daylen, press);
-
-        } else if (c->assim_model == MATE) {
-            /* local vars for readability */
-            gpp_am = f->gpp_am;
-            gpp_pm = f->gpp_pm;
-
-            calc_transpiration_penmon_am_pm(p, s, net_rad_am, wind_am, ca, daylen,
-                                            press, vpd_am, tair_am, gpp_am,
-                                            &trans_am, &omega_am,
-                                            &gs_mol_m2_hfday_am,
-                                            &ga_mol_m2_hfday_am);
-
-            calc_transpiration_penmon_am_pm(p, s, net_rad_pm, wind_pm, ca, daylen,
-                                            press, vpd_pm, tair_pm, gpp_pm,
-                                            &trans_pm, &omega_pm,
-                                            &gs_mol_m2_hfday_pm,
-                                            &ga_mol_m2_hfday_pm);
-
-            /* Unit conversions... */
-            DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
-            f->omega = (omega_am + omega_pm) / 2.0;
-
-            /* output in mol H20 m-2 s-1 */
-            f->gs_mol_m2_sec = ((gs_mol_m2_hfday_am +
-                                 gs_mol_m2_hfday_pm) * DAY_2_SEC);
-            f->ga_mol_m2_sec = ((ga_mol_m2_hfday_am +
-                                 ga_mol_m2_hfday_pm) * DAY_2_SEC);
-
-            /* mm day-1 */
-            f->transpiration = trans_am + trans_pm;
-        }
+    /* unpack met forcing */
+    if (c->sub_daily) {
+        rain = m->rain[c->hrly_idx];
+        press = m->press[c->hrly_idx] * KPA_2_PA;
+        tair = m->tair[c->hrly_idx];
+        sw_rad = m->par[c->hrly_idx] * PAR_2_SW; /* W m-2 */
+    } else {
+        ca = m->co2[day_idx];
+        tair_day = m->tair[day_idx];
+        tair_am = m->tam[day_idx];
+        tair_pm = m->tpm[day_idx];
+        sw_rad_day = m->sw_rad[day_idx];
+        sw_rad_am = m->sw_rad_am[day_idx];
+        sw_rad_pm = m->sw_rad_pm[day_idx];
+        rain = m->rain[day_idx];
+        vpd_day = m->vpd_avg[day_idx];
+        vpd_am = m->vpd_am[day_idx];
+        vpd_pm = m->vpd_pm[day_idx];
+        wind_am = m->wind_am[day_idx];
+        wind_pm = m->wind_pm[day_idx];
+        wind_day = m->wind[day_idx];
+        press = m->press[day_idx] * KPA_2_PA;
     }
-    calc_infiltration(f, p, s, rain);
-    f->soil_evap = calc_soil_evaporation(s, tair_day, net_rad_day, press,
-                                         daylen);
-    f->et = f->transpiration + f->soil_evap + f->interception;
-    f->runoff = update_water_storage(f, p, s);
 
+    interception = calc_infiltration(p, s, rain);
+    soil_evap = calc_soil_evaporation(p, s, sw_rad, press, tair);
+    if (c->sub_daily) {
+        /*
+            W/m2 = 1000 (kg/m3) * 2.501 * 10^6 (J/kg) * 1 mm/day * \
+                    (1/1800.0) (30 min/s) * (1/1000) (mm/30min)
+
+                 = 1.0 / 1389.44 mm/30 min
+        */
+        soil_evap /= 1389.44;
+
+    } else {
+        /*
+            W/m2 = 1000 (kg/m3) * 2.501 * 10^6 (J/kg) * 1 mm/day * \
+                    (1/86400.0) (day/s) * (1/1000) (mm/day)
+        */
+        conv = 1000.0 * 2.501 * 1E6 * \
+                 (1. / (60.0 * 60.0 * daylen)) * (1.0 / 1000.);
+        soil_evap /= conv;
+    }
+
+
+    if (c->sub_daily) {
+
+        /* mol m-2 s-1 to mm/30 min */
+        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
+                        SEC_2_HLFHR;
+
+    } else {
+        /* local vars for readability */
+        gpp_am = f->gpp_am;
+        gpp_pm = f->gpp_pm;
+
+        calc_transpiration_penmon_am_pm(p, s, net_rad_am, wind_am, ca, daylen,
+                                        press, vpd_am, tair_am, gpp_am,
+                                        &trans_am, &omega_am,
+                                        &gs_mol_m2_hfday_am,
+                                        &ga_mol_m2_hfday_am);
+
+        calc_transpiration_penmon_am_pm(p, s, net_rad_pm, wind_pm, ca, daylen,
+                                        press, vpd_pm, tair_pm, gpp_pm,
+                                        &trans_pm, &omega_pm,
+                                        &gs_mol_m2_hfday_pm,
+                                        &ga_mol_m2_hfday_pm);
+
+        /* Unit conversions... */
+        DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
+        f->omega = (omega_am + omega_pm) / 2.0;
+
+        /* output in mol H20 m-2 s-1 */
+        f->gs_mol_m2_sec = ((gs_mol_m2_hfday_am +
+                             gs_mol_m2_hfday_pm) * DAY_2_SEC);
+        f->ga_mol_m2_sec = ((ga_mol_m2_hfday_am +
+                             ga_mol_m2_hfday_pm) * DAY_2_SEC);
+
+        /* mm day-1 */
+        transpiration = trans_am + trans_pm;
+
+
+    }
+
+
+    et = transpiration + soil_evap + interception;
+    update_water_storage(c, f, p, s, rain, interception, &transpiration,
+                         &soil_evap, &et, &runoff);
+
+
+    if (c->sub_daily) {
+        sum_hourly_water_fluxes(f, soil_evap, transpiration, et,
+                                interception, runoff);
+    } else {
+        update_daily_water_struct(f, soil_evap, transpiration, et,
+                                  interception, runoff);
+
+    }
 
     return;
 }
 
+void update_water_storage(control *c, fluxes *f, params *p, state *s,
+                          double rain, double interception,
+                          double *transpiration, double *soil_evap,
+                          double *et, double *runoff) {
+    /* Calculate root and top soil plant available water and runoff.
 
-
-void get_met_data(met *m, int project_day, double *tair_am,
-                  double *tair_pm, double *tair_day, double *rain,
-                  double *sw_rad_am, double *sw_rad_pm, double *sw_rad_day,
-                  double *vpd_am, double *vpd_pm, double *vpd_day,
-                  double *wind_am, double *wind_pm, double *wind_day,
-                  double *ca, double *press) {
-    /*
-    Grab the days met data out of the structure and return day values.
-
-    Parameters:
-    ----------
-    project_day : int
-        project day.
-    daylen : float
-        length of day in hours.
+    Soil drainage is estimated using a "leaky-bucket" approach with two
+    soil layers. In reality this is a combined drainage and runoff
+    calculation, i.e. "outflow". There is no drainage out of the "bucket"
+    soil.
 
     Returns:
-    -------
-    tavg : float
-        average daytime temperature [degC]
-    rain : float
-        rainfall [mm d-1]
-    sw_rad : float
-        sw down radiation [mj m-2 day-1]
-    vpd : float
-        average daily vpd [kPa]
-    ca : float
-        atmospheric co2 [umol mol-1]
-    wind : float
-        average daily wind speed [mm s-1]
-    press : float
-        average daytime pressure [kPa]
-
+    --------
+    outflow : float
+        outflow [mm d-1]
     */
-    *ca = m->co2[project_day];
-    *tair_day = m->tair[project_day];
-    *tair_am = m->tam[project_day];
-    *tair_pm = m->tpm[project_day];
-    *sw_rad_day = m->sw_rad[project_day];
-    *sw_rad_am = m->sw_rad_am[project_day];
-    *sw_rad_pm = m->sw_rad_pm[project_day];
-    *rain = m->rain[project_day];
-    *vpd_day = m->vpd_avg[project_day];
-    *vpd_am = m->vpd_am[project_day];
-    *vpd_pm = m->vpd_pm[project_day];
-    *wind_am = m->wind_am[project_day];
-    *wind_pm = m->wind_pm[project_day];
-    *wind_day = m->wind[project_day];
-    *press = m->press[project_day];
+    double trans_frac, previous;
+
+    /* reduce transpiration from the top soil if it is dry */
+    trans_frac = p->fractup_soil * s->wtfac_topsoil;
+
+    /* Total soil layer */
+    s->pawater_topsoil += (rain - interception) - \
+                          (*transpiration * trans_frac) - \
+                           *soil_evap;
+
+    if (s->pawater_topsoil < 0.0) {
+        s->pawater_topsoil = 0.0;
+    } else if (s->pawater_topsoil > p->wcapac_topsoil) {
+        s->pawater_topsoil = p->wcapac_topsoil;
+    }
+
+    /* Total root zone */
+    previous = s->pawater_root;
+    s->pawater_root += (rain - interception) - *transpiration - *soil_evap;
+
+    /* calculate runoff and remove any excess from rootzone */
+    if (s->pawater_root > p->wcapac_root) {
+        *runoff = s->pawater_root - p->wcapac_root;
+        s->pawater_root -= *runoff;
+    } else {
+        *runoff = 0.0;
+    }
+
+    if (s->pawater_root < 0.0) {
+        *transpiration = 0.0;
+        *soil_evap = 0.0;
+        *et = interception;
+    }
+
+    if (s->pawater_root < 0.0)
+        s->pawater_root = 0.0;
+    else if (s->pawater_root > p->wcapac_root)
+        s->pawater_root = p->wcapac_root;
+
+    s->delta_sw_store = s->pawater_root - previous;
+
+    if (c->water_stress) {
+        /* Calculate the soil moisture availability factors [0,1] in the
+           topsoil and the entire root zone */
+        calculate_soil_water_fac(c, p, s);
+    } else {
+        /* really this should only be a debugging option! */
+        s->wtfac_topsoil = 1.0;
+        s->wtfac_root = 1.0;
+    }
 
     return;
 }
 
-double calc_radiation(params *p, double tavg, double sw_rad, double daylen) {
-    /*
-    Estimate net radiation assuming 'clear' skies...
+
+
+double calc_infiltration(params *p, state* s, double rain) {
+    /* Estimate "effective" rain, or infiltration I guess.
+
+    Simple assumption that infiltration relates to leaf area
+    and therefore canopy storage capacity (wetloss). Interception is
+    likely to be ("more") erroneous if a canopy is subject to frequent daily
+    rainfall I would suggest.
+
+    Parameters:
+    -------
+    rain : float
+        rainfall [mm d-1]
+
+    */
+    double interception;
+
+    if (s->lai > 0.0) {
+        interception = (rain * p->intercep_frac * \
+                        MIN(1.0, s->lai / p->max_intercep_lai));
+    } else {
+        interception = 0.0;
+    }
+
+    return (interception);
+}
+
+double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
+                             double tair) {
+    /* Use Penman eqn to calculate top soil evaporation flux at the
+    potential rate.
+
+    Soil evaporation is dependent upon soil wetness and plant cover. The net
+    radiation term is scaled for the canopy cover passed to this func and
+    the impact of soil wetness is accounted for in the wtfac term. As the
+    soil dries the evaporation component reduces significantly.
+
+    Key assumptions from Ritchie...
+
+    * When plant provides shade for the soil surface, evaporation will not
+    be the same as bare soil evaporation. Wind speed, net radiation and VPD
+    will all belowered in proportion to the canopy density. Following
+    Ritchie role ofwind, VPD are assumed to be negligible and are therefore
+    ignored.
+
+    These assumptions are based on work with crops and whether this holds
+    for tree shading where the height from the soil to the base of the
+    crown is larger is questionable.
+
+    units = (mm/day)
 
     References:
     -----------
     * Ritchie, 1972, Water Resources Research, 8, 1204-1213.
-    * Monteith and Unsworth (1990) Principles of Environmental Physics.
 
     Parameters:
     -----------
-    tavg : float
-        average daytime temp [degC]
+    tair : float
+        temperature [degC]
     sw_rad : float
-        sw down radiation [mj m-2 d-1]
-    daylen : float
-        daylength in hours
+        shortwave radiation [W m-2]
+    press : float
+        air pressure [kPa]
 
     Returns:
     --------
-    net_rad : float
-        net radiation [mj m-2 s-1]
+    soil_evap : float
+        soil evaporation [mm d-1]
 
     */
-    /* Net loss of longwave radiation
-       Monteith and Unsworth '90, pg. 52, 54. */
-    double net_lw, net_rad, tconv;
+    double lambda, gamma, slope, arg1, arg2, soil_evap, net_lw, net_rad;
 
-    net_lw = (107.0 - 0.3 * tavg) * daylen * WATT_HR_TO_MJ;
-    net_rad = MAX(0.0, sw_rad * (1.0 - p->albedo) - net_lw);
+    /* Latent heat of water vapour at air temperature (J mol-1) */
+    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
 
-    /* convert units for met data
-       day-1 to seconds-1 */
-    tconv = 1.0 / (60.0 * 60.0 * daylen);
+    /* psychrometric constant */
+    gamma = CP * MASS_AIR * press / lambda;
 
-    /* MJ m-2 s-1 */
-    return (net_rad * tconv);
+    /* Const s in Penman-Monteith equation  (Pa K-1) */
+    arg1 = calc_sat_water_vapour_press(tair + 0.1);
+    arg2 = calc_sat_water_vapour_press(tair);
+    slope = (arg1 - arg2) / 0.1;
+
+    /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
+    net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
+
+    /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
+        - note the minus net_lw is correct as eqn 4.17 is reversed in
+          eqn 4.21, i.e Lu-Ld vs. Ld-Lu
+        - NB: this formula only really holds for cloudless skies!
+        - Bounding to zero, as we can't have negative soil evaporation, but you
+          can have negative net radiation.
+        - units: W m-2
+    */
+    net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad - net_lw);
+
+    /* W/m-2 */
+    /*soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda; */
+    soil_evap = ((slope / (slope + gamma)) * net_rad);
+
+    /*
+      Surface radiation is reduced by overstory LAI cover. This empirical
+      fit comes from Ritchie (1972) and is formed by a fit between the LAI
+      of 5 crops types and the fraction of observed net radiation at the
+      surface. Whilst the LAI does cover a large range, nominal 0–6, there
+      are only 12 measurements and only three from LAI > 3. So this might
+      not hold as well for a forest canopy?
+      Ritchie 1972, Water Resources Research, 8, 1204-1213.
+    */
+    if (s->lai > 0.0)
+        soil_evap *= exp(-0.398 * s->lai);
+
+    /* reduce soil evaporation if top soil is dry */
+    soil_evap *= s->wtfac_topsoil;
+
+    return (soil_evap);
 }
+
+
+
+
+double penman_leaf(double press, double rnet, double vpd, double tair,
+                   double gh, double gv, double gbv, double gsv, double *LE) {
+    /*
+        Calculates evapotranspiration by leaves using the Penman-Monteith
+        equation.
+
+        Parameters:
+        ----------
+        gamma : float
+            psychrometric constant
+        press : float
+            atmospheric pressure (Pa)
+        lambda : float
+            latent heat of water at air T (J mol-1)
+        rnet : float
+            net radiation (J m-2 s-1)
+        vpd : float
+            vapour pressure deficit of air (Pa)
+        gh : float
+            boundary layer conductance to heat (free & forced & radiative
+            components), mol m-2 s-1.
+        gv : float
+            conductance to water vapour (stomatal & bdry layer components),
+            mol m-2 s-1
+
+        Returns:
+        -------
+        et : float
+            transpiration (mol H2O m-2 s-1)
+    */
+    double transpiration, arg1, arg2, lambda, gamma, slope, omega, epsilon;
+
+    /* Latent heat of water vapour at air temperature (J mol-1) */
+    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
+
+    /* psychrometric constant */
+    gamma = CP * MASS_AIR * press / lambda;
+
+    /* Const s in Penman-Monteith equation  (Pa K-1) */
+    arg1 = calc_sat_water_vapour_press(tair + 0.1);
+    arg2 = calc_sat_water_vapour_press(tair);
+    slope = (arg1 - arg2) / 0.1;
+
+    if (gv > 0.0) {
+        arg1 = slope * rnet + vpd * gh * CP * MASS_AIR;
+        arg2 = slope + gamma * gh / gv;
+        *LE = arg1 / arg2; /* W m-2 */
+        transpiration = *LE / lambda; /* mol H20 m-2 s-1 */
+    } else {
+        transpiration = 0.0;
+    }
+
+    /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
+    transpiration = MAX(0.0, transpiration);
+
+    /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
+    epsilon = slope / gamma;
+    omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
+
+    return (transpiration);
+}
+
+
+double calc_sat_water_vapour_press(double tac) {
+    /*
+        Calculate saturated water vapour pressure (Pa) at
+        temperature TAC (Celsius). From Jones 1992 p 110 (note error in
+        a - wrong units)
+    */
+    return (613.75 * exp(17.502 * tac / (240.97 + tac)));
+}
+
+
+
+
+
+
+
 
 
 void calc_transpiration_penmon(fluxes *f, params *p, state *s, double vpd, double net_rad,
@@ -623,161 +815,8 @@ double calc_density_of_air(double tavg) {
     return (1.292 - (0.00428 * tavg));
 }
 
-double calc_soil_evaporation(state *s, double tavg, double net_rad,
-                             double press, double daylen) {
-    /* Use Penman eqn to calculate top soil evaporation flux at the
-    potential rate.
-
-    Soil evaporation is dependent upon soil wetness and plant cover. The net
-    radiation term is scaled for the canopy cover passed to this func and
-    the impact of soil wetness is accounted for in the wtfac term. As the
-    soil dries the evaporation component reduces significantly.
-
-    Key assumptions from Ritchie...
-
-    * When plant provides shade for the soil surface, evaporation will not
-    be the same as bare soil evaporation. Wind speed, net radiation and VPD
-    will all belowered in proportion to the canopy density. Following
-    Ritchie role ofwind, VPD are assumed to be negligible and are therefore
-    ignored.
-
-    These assumptions are based on work with crops and whether this holds
-    for tree shading where the height from the soil to the base of the
-    crown is larger is questionable.
-
-    units = (mm/day)
-
-    References:
-    -----------
-    * Ritchie, 1972, Water Resources Research, 8, 1204-1213.
-
-    Parameters:
-    -----------
-    tavg : float
-        average daytime temp [degC]
-    net_rad : float
-        net radiation [mj m-2 day-1]
-    press : float
-        average daytime pressure [kPa]
-
-    Returns:
-    --------
-    soil_evap : float
-        soil evaporation [mm d-1]
-
-    */
-    double soil_evap, tconv, lambdax, gamma, slope;
-
-    lambdax = calc_latent_heat_of_vapourisation(tavg);
-    gamma = calc_pyschrometric_constant(lambdax, press);
-    slope = calc_slope_of_saturation_vapour_pressure_curve(tavg);
-    soil_evap = ((slope / (slope + gamma)) * net_rad) / lambdax;
-
-    /*
-      Surface radiation is reduced by overstory LAI cover. This empirical
-      fit comes from Ritchie (1972) and is formed by a fit between the LAI
-      of 5 crops types and the fraction of observed net radiation at the
-      surface. Whilst the LAI does cover a large range, nominal 0–6, there
-      are only 12 measurements and only three from LAI > 3. So this might
-      not hold as well for a forest canopy?
-      Ritchie 1972, Water Resources Research, 8, 1204-1213.
-    */
-    if (s->lai > 0.0)
-        soil_evap *= exp(-0.398 * s->lai);
-
-    /* reduce soil evaporation if top soil is dry */
-    soil_evap *= s->wtfac_topsoil;
-
-    /* seconds to day */
-    tconv = 60.0 * 60.0 * daylen;
-
-    return (soil_evap * tconv);
-}
 
 
-void calc_infiltration(fluxes *f, params *p, state*s, double rain) {
-    /* Estimate "effective" rain, or infiltration I guess.
-
-    Simple assumption that infiltration relates to leaf area
-    and therefore canopy storage capacity (wetloss). Interception is
-    likely to be ("more") erroneous if a canopy is subject to frequent daily
-    rainfall I would suggest.
-
-    Parameters:
-    -------
-    rain : float
-        rainfall [mm d-1]
-
-    */
-    if (s->lai > 0.0) {
-        /*
-        f->erain = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
-        f->interception = (rain * p->rfmult - f->erain);
-        */
-        f->interception = (rain * p->intercep_frac *MIN(1.0, s->lai / p->max_intercep_lai));
-        f->erain = rain - f->interception;
-    } else {
-        f->erain = MAX(0.0, rain);
-        f->interception = 0.0;
-    }
-
-    return;
-}
-
-
-double update_water_storage(fluxes *f, params *p, state *s) {
-    /* Calculate root and top soil plant available water and runoff.
-
-    Soil drainage is estimated using a "leaky-bucket" approach with two
-    soil layers. In reality this is a combined drainage and runoff
-    calculation, i.e. "outflow". There is no drainage out of the "bucket"
-    soil.
-
-    Returns:
-    --------
-    outflow : float
-        outflow [mm d-1]
-    */
-    double trans_frac, previous, runoff;
-
-    /* reduce transpiration from the top soil if it is dry */
-    trans_frac = p->fractup_soil * s->wtfac_topsoil;
-
-    /* Total soil layer */
-    s->pawater_topsoil += f->erain - (f->transpiration * trans_frac) - f->soil_evap;
-
-    if (s->pawater_topsoil < 0.0)
-        s->pawater_topsoil = 0.0;
-    else if (s->pawater_topsoil > p->wcapac_topsoil)
-        s->pawater_topsoil = p->wcapac_topsoil;
-
-    /* Total root zone */
-    previous = s->pawater_root;
-    s->pawater_root += f->erain - f->transpiration - f->soil_evap;
-
-    /* calculate runoff and remove any excess from rootzone */
-    if (s->pawater_root > p->wcapac_root) {
-        runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= runoff;
-    } else {
-        runoff = 0.0;
-    }
-
-    if (s->pawater_root < 0.0) {
-        f->transpiration = 0.0;
-        f->soil_evap = 0.0;
-        f->et = f->interception;
-    }
-
-    if (s->pawater_root < 0.0)
-        s->pawater_root = 0.0;
-    else if (s->pawater_root > p->wcapac_root)
-        s->pawater_root = p->wcapac_root;
-
-    s->delta_sw_store = s->pawater_root - previous;
-
-    return (runoff);
-}
 
 
 
@@ -1104,133 +1143,31 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
     return (1.0  / (1.0 + pow(((1.0 - theta) / c_theta), n_theta)));
 }
 
-
-
-
-double penman_leaf(double press, double rnet, double vpd, double tair,
-                   double gh, double gv, double gbv, double gsv, double *LE) {
-    /*
-        Calculates evapotranspiration by leaves using the Penman-Monteith
-        equation.
-
-        Parameters:
-        ----------
-        gamma : float
-            psychrometric constant
-        press : float
-            atmospheric pressure (Pa)
-        lambda : float
-            latent heat of water at air T (J mol-1)
-        rnet : float
-            net radiation (J m-2 s-1)
-        vpd : float
-            vapour pressure deficit of air (Pa)
-        gh : float
-            boundary layer conductance to heat (free & forced & radiative
-            components), mol m-2 s-1.
-        gv : float
-            conductance to water vapour (stomatal & bdry layer components),
-            mol m-2 s-1
-
-        Returns:
-        -------
-        et : float
-            transpiration (mol H2O m-2 s-1)
-    */
-    double transpiration, arg1, arg2, lambda, gamma, slope, omega, epsilon;
-
-    /* Latent heat of water vapour at air temperature (J mol-1) */
-    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
-
-    /* psychrometric constant */
-    gamma = CP * MASS_AIR * press / lambda;
-
-    /* Const s in Penman-Monteith equation  (Pa K-1) */
-    arg1 = calc_sat_water_vapour_press(tair + 0.1);
-    arg2 = calc_sat_water_vapour_press(tair);
-    slope = (arg1 - arg2) / 0.1;
-
-    if (gv > 0.0) {
-        arg1 = slope * rnet + vpd * gh * CP * MASS_AIR;
-        arg2 = slope + gamma * gh / gv;
-        *LE = arg1 / arg2; /* W m-2 */
-        transpiration = *LE / lambda; /* mol H20 m-2 s-1 */
-    } else {
-        transpiration = 0.0;
-    }
-
-    /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
-    transpiration = MAX(0.0, transpiration);
-
-    /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
-    epsilon = slope / gamma;
-    omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
-
-    return (transpiration);
-}
-
-
-double calc_sat_water_vapour_press(double tac) {
-    /*
-        Calculate saturated water vapour pressure (Pa) at
-        temperature TAC (Celsius). From Jones 1992 p 110 (note error in
-        a - wrong units)
-    */
-    return (613.75 * exp(17.502 * tac / (240.97 + tac)));
-}
-
-
-
-void calculate_sub_daily_water_balance(control *c, fluxes *f, met *m, params *p,
-                                       state *s, double par,
-                                       double *trans_leaf) {
-    /*
-
-    Calculate water balance
-
-    Parameters:
-    ----------
-    day : int
-        project day.
-    daylen : float
-        length of day in hours.
-    */
-    double soil_evap_hlf_hr, et_hlf_hr, interception_hlf_hr, runoff_hlf_hr;
-    double rain = m->rain[c->hrly_idx];
-    double transpiration_hlf_hr = *(trans_leaf+SUNLIT) + *(trans_leaf+SHADED);
-    /* transpiration mol m-2 s-1 to mm 30 min-1 */
-    transpiration_hlf_hr *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-
-    interception_hlf_hr = calc_infiltration_subdaily(p, s, rain);
-    soil_evap_hlf_hr = calc_soil_evaporation_subdaily(p, s, par,
-                                                      m->press[c->hrly_idx],
-                                                      m->tair[c->hrly_idx]);
-    et_hlf_hr = transpiration_hlf_hr + soil_evap_hlf_hr + interception_hlf_hr;
-    update_water_storage_subdaily(c, f, p, s, rain, &transpiration_hlf_hr,
-                                  &interception_hlf_hr, &soil_evap_hlf_hr,
-                                  &et_hlf_hr, &runoff_hlf_hr);
-
-    
-    sum_hourly_water_fluxes(f, soil_evap_hlf_hr, transpiration_hlf_hr,
-                            et_hlf_hr, rain, interception_hlf_hr,
-                            runoff_hlf_hr);
-
-    return;
-}
-
-
 void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
                              double transpiration_hlf_hr, double et_hlf_hr,
-                             double rain, double interception_hlf_hr,
+                             double interception_hlf_hr,
                              double runoff_hlf_hr) {
 
     /* add half hour fluxes to day total store */
     f->soil_evap += soil_evap_hlf_hr;
     f->transpiration += transpiration_hlf_hr;
     f->et += et_hlf_hr;
-    f->erain += rain - interception_hlf_hr;
     f->interception += interception_hlf_hr;
     f->runoff += runoff_hlf_hr;
+
+    return;
+}
+
+void update_daily_water_struct(fluxes *f, double day_soil_evap,
+                               double day_transpiration, double day_et,
+                               double day_interception, double day_runoff) {
+
+    /* add half hour fluxes to day total store */
+    f->soil_evap = day_soil_evap;
+    f->transpiration = day_transpiration;
+    f->et = day_et;
+    f->interception = day_interception;
+    f->runoff = day_runoff;
 
     return;
 }
@@ -1240,207 +1177,9 @@ void zero_water_day_fluxes(fluxes *f) {
     f->et = 0.0;
     f->soil_evap = 0.0;
     f->transpiration = 0.0;
-    f->erain = 0.0;
     f->interception = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
-
-    return;
-}
-
-double calc_infiltration_subdaily(params *p, state* s, double rain) {
-    /* Estimate "effective" rain, or infiltration I guess.
-
-    Simple assumption that infiltration relates to leaf area
-    and therefore canopy storage capacity (wetloss). Interception is
-    likely to be ("more") erroneous if a canopy is subject to frequent daily
-    rainfall I would suggest.
-
-    Parameters:
-    -------
-    rain : float
-        rainfall [mm d-1]
-
-    */
-    double interception;
-
-    if (s->lai > 0.0) {
-        interception = (rain * p->intercep_frac * \
-                        MIN(1.0, s->lai / p->max_intercep_lai));
-    } else {
-        interception = 0.0;
-    }
-
-    return (interception);
-}
-
-
-double calc_soil_evaporation_subdaily(params *p, state *s, double par,
-                                      double press, double tair) {
-    /* Use Penman eqn to calculate top soil evaporation flux at the
-    potential rate.
-
-    Soil evaporation is dependent upon soil wetness and plant cover. The net
-    radiation term is scaled for the canopy cover passed to this func and
-    the impact of soil wetness is accounted for in the wtfac term. As the
-    soil dries the evaporation component reduces significantly.
-
-    Key assumptions from Ritchie...
-
-    * When plant provides shade for the soil surface, evaporation will not
-    be the same as bare soil evaporation. Wind speed, net radiation and VPD
-    will all belowered in proportion to the canopy density. Following
-    Ritchie role ofwind, VPD are assumed to be negligible and are therefore
-    ignored.
-
-    These assumptions are based on work with crops and whether this holds
-    for tree shading where the height from the soil to the base of the
-    crown is larger is questionable.
-
-    units = (mm/day)
-
-    References:
-    -----------
-    * Ritchie, 1972, Water Resources Research, 8, 1204-1213.
-
-    Parameters:
-    -----------
-    tavg : float
-        average daytime temp [degC]
-    par : float
-        PAR [umol m-2 day-1]
-    press : float
-        average daytime pressure [kPa]
-
-    Returns:
-    --------
-    soil_evap : float
-        soil evaporation [mm d-1]
-
-    */
-    double lambda, gamma, slope, arg1, arg2, soil_evap, net_lw, net_rad;
-    double sw_rad = par * PAR_2_SW; /* W m-2 */
-
-    /* Latent heat of water vapour at air temperature (J mol-1) */
-    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
-
-    /* psychrometric constant */
-    gamma = CP * MASS_AIR * press / lambda;
-
-    /* Const s in Penman-Monteith equation  (Pa K-1) */
-    arg1 = calc_sat_water_vapour_press(tair + 0.1);
-    arg2 = calc_sat_water_vapour_press(tair);
-    slope = (arg1 - arg2) / 0.1;
-
-    /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
-    net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
-
-    /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
-        - note the minus net_lw is correct as eqn 4.17 is reversed in
-          eqn 4.21, i.e Lu-Ld vs. Ld-Lu
-        - NB: this formula only really holds for cloudless skies!
-        - Bounding to zero, as we can't have negative soil evaporation, but you
-          can have negative net radiation.
-        - units: W m-2
-    */
-    net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad - net_lw);
-
-    /* W/m-2 */
-    soil_evap = ((slope / (slope + gamma)) * net_rad) ;
-
-    /*
-      Surface radiation is reduced by overstory LAI cover. This empirical
-      fit comes from Ritchie (1972) and is formed by a fit between the LAI
-      of 5 crops types and the fraction of observed net radiation at the
-      surface. Whilst the LAI does cover a large range, nominal 0–6, there
-      are only 12 measurements and only three from LAI > 3. So this might
-      not hold as well for a forest canopy?
-      Ritchie 1972, Water Resources Research, 8, 1204-1213.
-    */
-    if (s->lai > 0.0)
-        soil_evap *= exp(-0.398 * s->lai);
-
-    /* reduce soil evaporation if top soil is dry */
-    soil_evap *= s->wtfac_topsoil;
-
-    /*
-         W/m2 = 1000 (kg/m3) * 2.45 * 10^6 (J/kg) * 1 mm/day * \
-                (1/1800.0) (30 min/s) * (1/1000) (mm/m)
-              = 1000.0 * 2.501 * 1E6 * 1 * (1./86400.) * (1.0 / 1000.) mm/30 min
-              = 1.0 / 1389.44 mm/30 min
-    */
-    soil_evap /= 1389.44;
-
-    return (soil_evap);
-}
-
-
-void update_water_storage_subdaily(control *c, fluxes *f, params *p, state *s,
-                                   double rain, double *transpiration,
-                                   double *interception, double *soil_evap,
-                                   double *et, double *runoff) {
-    /* Calculate root and top soil plant available water and runoff.
-
-    Soil drainage is estimated using a "leaky-bucket" approach with two
-    soil layers. In reality this is a combined drainage and runoff
-    calculation, i.e. "outflow". There is no drainage out of the "bucket"
-    soil.
-
-    Returns:
-    --------
-    outflow : float
-        outflow [mm d-1]
-    */
-    double trans_frac, previous;
-
-    /* reduce transpiration from the top soil if it is dry */
-    trans_frac = p->fractup_soil * s->wtfac_topsoil;
-
-    /* Total soil layer */
-    s->pawater_topsoil += (rain - *interception) - \
-                          (*transpiration * trans_frac) - \
-                           *soil_evap;
-
-    if (s->pawater_topsoil < 0.0) {
-        s->pawater_topsoil = 0.0;
-    } else if (s->pawater_topsoil > p->wcapac_topsoil) {
-        s->pawater_topsoil = p->wcapac_topsoil;
-    }
-
-    /* Total root zone */
-    previous = s->pawater_root;
-    s->pawater_root += (rain - *interception) - *transpiration - *soil_evap;
-
-    /* calculate runoff and remove any excess from rootzone */
-    if (s->pawater_root > p->wcapac_root) {
-        *runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= *runoff;
-    } else {
-        *runoff = 0.0;
-    }
-
-    if (s->pawater_root < 0.0) {
-        *transpiration = 0.0;
-        *soil_evap = 0.0;
-        *et = *interception;
-    }
-
-    if (s->pawater_root < 0.0)
-        s->pawater_root = 0.0;
-    else if (s->pawater_root > p->wcapac_root)
-        s->pawater_root = p->wcapac_root;
-
-    s->delta_sw_store = s->pawater_root - previous;
-
-    if (c->water_stress) {
-        /* Calculate the soil moisture availability factors [0,1] in the
-           topsoil and the entire root zone */
-        calculate_soil_water_fac(c, p, s);
-    } else {
-        /* really this should only be a debugging option! */
-        s->wtfac_topsoil = 1.0;
-        s->wtfac_root = 1.0;
-    }
 
     return;
 }

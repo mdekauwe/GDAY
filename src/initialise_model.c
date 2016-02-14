@@ -262,7 +262,6 @@ void initialise_fluxes(fluxes *f) {
     f->et = 0.0;
     f->soil_evap = 0.0;
     f->transpiration = 0.0;
-    f->erain = 0.0;
     f->interception = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;

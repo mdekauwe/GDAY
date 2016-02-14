@@ -438,7 +438,6 @@ typedef struct {
     double et;
     double soil_evap;
     double transpiration;
-    double erain;
     double interception;
     double runoff;
     double gs_mol_m2_sec;

@@ -42,9 +42,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     */
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
-           press, vpd, par, tair, wind, Ca, sunlit_lai, shaded_lai, sw_rad;
+           press, vpd, par, tair, wind, Ca, sunlit_lai, shaded_lai, sw_rad,
+           trans_canopy;
     double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0[2];
-    int    hod, iter = 0, itermax = 100, i;
+    int    hod, iter = 0, itermax = 100, i, dummy;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -118,7 +119,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
             zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]));
         }
         sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
-        calculate_sub_daily_water_balance(c, f, m, p, s, par, trans_leaf);
+        trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
+        calculate_water_balance(c, f, m, p, s, dummy, dummy, trans_canopy);
 
         c->hrly_idx++;
     } /* end of hour loop */
