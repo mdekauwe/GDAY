@@ -29,13 +29,13 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double soil_evap, et, interception, runoff, rain, press, sw_rad, conv,
-           tair, transpiration;
+           tair, transpiration, net_rad, SEC_2_DAY, DAY_2_SEC;
 
     double net_rad_day, net_rad_am, net_rad_pm, trans_am, omega_am,
            gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm, tair_day,
            sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
            wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
-           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, DAY_2_SEC;
+           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm;
 
     /* unpack met forcing */
     if (c->sub_daily) {
@@ -52,9 +52,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         sw_rad_am = m->sw_rad_am[day_idx];
         sw_rad_pm = m->sw_rad_pm[day_idx];
         rain = m->rain[day_idx];
-        vpd_day = m->vpd_avg[day_idx];
-        vpd_am = m->vpd_am[day_idx];
-        vpd_pm = m->vpd_pm[day_idx];
+        vpd_am = m->vpd_am[day_idx] * KPA_2_PA;
+        vpd_pm = m->vpd_pm[day_idx] * KPA_2_PA;
         wind_am = m->wind_am[day_idx];
         wind_pm = m->wind_pm[day_idx];
         wind_day = m->wind[day_idx];
@@ -62,7 +61,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     }
 
     interception = calc_infiltration(p, s, rain);
-    soil_evap = calc_soil_evaporation(p, s, sw_rad, press, tair);
+    net_rad = calc_net_radiation(p, sw_rad, tair);
+    soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
         /*
             W/m2 = 1000 (kg/m3) * 2.501 * 10^6 (J/kg) * 1 mm/day * \
@@ -95,6 +95,9 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         double transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am, LE_pm,
                ga_am, ga_pm;
 
+        net_rad_am = calc_net_radiation(p, sw_rad_am, tair_am);
+        net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair_pm);
+
         DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
         SEC_2_DAY = 1.0 / DAY_2_SEC;
 
@@ -102,10 +105,12 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         gpp_am = f->gpp_am * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
         gpp_pm = f->gpp_pm * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
 
-        penman_canopy_wrapper(p, s, press, vpd, tair, wind, rnet, ca, gpp_am,
-                              &ga_am, &gs_am, &transpiration_am, &LE_am);
-        penman_canopy_wrapper(p, s, press, vpd, tair, wind, rnet, ca, gpp_pm,
-                              &ga_pm, &gs_pm, &transpiration_pm, &LE_pm);
+        penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad_am,
+                              ca, gpp_am, &ga_am, &gs_am, &transpiration_am,
+                              &LE_am, &omega_am);
+        penman_canopy_wrapper(p, s, press, vpd_pm, tair_pm, wind_pm, net_rad_pm,
+                              ca, gpp_pm, &ga_pm, &gs_pm, &transpiration_pm,
+                              &LE_pm, &omega_pm);
 
         /* mol m-2 s-1 to mm/day */
         transpiration = (transpiration_am * MOLE_WATER_2_G_WATER * G_TO_KG * \
@@ -117,18 +122,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
         f->omega = (omega_am + omega_pm) / 2.0;
 
-        /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
-        epsilon = slope / gamma;
-        omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
-
-            gv = 1.0 / (1.0 / *gsv + 1.0 / *ga);
         /* output in mol H20 m-2 s-1 */
         f->gs_mol_m2_sec = gs_am + gs_pm;
         f->ga_mol_m2_sec = ga_am + ga_pm;
-
-
     }
-
 
     et = transpiration + soil_evap + interception;
     update_water_storage(c, f, p, s, rain, interception, &transpiration,
@@ -245,7 +242,7 @@ double calc_infiltration(params *p, state* s, double rain) {
     return (interception);
 }
 
-double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
+double calc_soil_evaporation(params *p, state *s, double net_rad, double press,
                              double tair) {
     /* Use Penman eqn to calculate top soil evaporation flux at the
     potential rate.
@@ -277,8 +274,8 @@ double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
     -----------
     tair : float
         temperature [degC]
-    sw_rad : float
-        shortwave radiation [W m-2]
+    net_rad : float
+        net radiation [W m-2]
     press : float
         air pressure [kPa]
 
@@ -288,31 +285,11 @@ double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
         soil evaporation [mm d-1]
 
     */
-    double lambda, gamma, slope, arg1, arg2, soil_evap, net_lw, net_rad;
+    double lambda, gamma, slope, arg1, arg2, soil_evap;
 
-    /* Latent heat of water vapour at air temperature (J mol-1) */
-    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
-
-    /* psychrometric constant */
-    gamma = CP * MASS_AIR * press / lambda;
-
-    /* Const s in Penman-Monteith equation  (Pa K-1) */
-    arg1 = calc_sat_water_vapour_press(tair + 0.1);
-    arg2 = calc_sat_water_vapour_press(tair);
-    slope = (arg1 - arg2) / 0.1;
-
-    /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
-    net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
-
-    /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
-        - note the minus net_lw is correct as eqn 4.17 is reversed in
-          eqn 4.21, i.e Lu-Ld vs. Ld-Lu
-        - NB: this formula only really holds for cloudless skies!
-        - Bounding to zero, as we can't have negative soil evaporation, but you
-          can have negative net radiation.
-        - units: W m-2
-    */
-    net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad - net_lw);
+    lambda = calc_latent_heat_of_vapourisation(tair);
+    gamma = calc_pyschrometric_constant(press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
 
     /* mol H20 m-2 s-1 */
     soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda;
@@ -335,11 +312,31 @@ double calc_soil_evaporation(params *p, state *s, double sw_rad, double press,
     return (soil_evap);
 }
 
+double calc_net_radiation(params *p, double sw_rad, double tair) {
+
+    double net_rad, net_lw;
+
+    /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
+    net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
+
+    /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
+        - note the minus net_lw is correct as eqn 4.17 is reversed in
+          eqn 4.21, i.e Lu-Ld vs. Ld-Lu
+        - NB: this formula only really holds for cloudless skies!
+        - Bounding to zero, as we can't have negative soil evaporation, but you
+          can have negative net radiation.
+        - units: W m-2
+    */
+    net_rad = MAX(0.0, (1.0 - p->albedo) * sw_rad - net_lw);
+
+    return (net_rad);
+}
+
 
 void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
                            double tair, double wind, double rnet, double ca,
                            double gpp, double *ga, double *gsv,
-                           double *transpiration, double *LE) {
+                           double *transpiration, double *LE, double *omega) {
     /*
         Calculates transpiration at the canopy scale (or big leaf) using the
         Penman-Monteith
@@ -375,18 +372,27 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
 
 
     */
-    double gb, gsv, gv, gsc;
+    double gb, gv, gsc, epsilon, arg1, arg2, slope, gamma, lambda;
 
     /* stomtal conductance to CO2 */
-    gsc = calc_stomatal_conductance(p->g1, s->wtfac_root, vpd, ca, gpp);
+    gsc = calc_stomatal_conductance(p, s, vpd, ca, gpp);
 
     /* stomtal conductance to H2O */
     *gsv = GSVGSC * gsc;
 
     *ga = canopy_boundary_layer_conduct(p, s->canht, wind, press, tair);
     gv = 1.0 / (1.0 / *gsv + 1.0 / *ga);
-    penman_monteith(press, vpd, rnet, slope, lambda, gamma, ga, gv,
+
+    lambda = calc_latent_heat_of_vapourisation(tair);
+    gamma = calc_pyschrometric_constant(press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
+
+    penman_monteith(press, vpd, rnet, slope, lambda, gamma, ga, &gv,
                     transpiration, LE);
+
+    /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
+    epsilon = slope / gamma;
+    *omega = (1.0 + epsilon) / (1.0 + epsilon + *ga / *gsv);
 
     return;
 }
@@ -415,7 +421,7 @@ void penman_leaf_wrapper(params *p, state *s, double press, double vpd,
 
 
     */
-    double slope, omega, epsilon, lambda, arg1, arg2, gradn, gbhu, gbhf, gbh,
+    double slope, epsilon, lambda, arg1, arg2, gradn, gbhu, gbhf, gbh,
            gbv, gsv, gamma, Tdiff, sensible_heat, ema, Tk;
 
     /* Radiation conductance (mol m-2 s-1) */
@@ -440,26 +446,23 @@ void penman_leaf_wrapper(params *p, state *s, double press, double vpd,
     *gv = (gbv * gsv) / (gbv + gsv);
     *gbc = gbh / GBHGBC;
 
-    /* Latent heat of water vapour at air temperature (J mol-1) */
-    lambda = (H2OLV0 - 2.365E3 * tair) * H2OMW;
-
-    /* psychrometric constant */
-    gamma = CP * MASS_AIR * press / lambda;
-
-    /* Const slope in Penman-Monteith equation  (Pa K-1) */
-    arg1 = calc_sat_water_vapour_press(tair + 0.1);
-    arg2 = calc_sat_water_vapour_press(tair);
-    slope = (arg1 - arg2) / 0.1;
+    lambda = calc_latent_heat_of_vapourisation(tair);
+    gamma = calc_pyschrometric_constant(press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
 
     penman_monteith(press, vpd, rnet, slope, lambda, gamma, gh, gv,
-                    transpiration, LE, omega);
+                    transpiration, LE);
+
+    /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
+    epsilon = slope / gamma;
+    *omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
     return;
 }
 
 void penman_monteith(double press, double vpd, double rnet, double slope,
                      double lambda, double gamma, double *gh, double *gv,
-                     double *transpiration, double *LE, double *omega) {
+                     double *transpiration, double *LE) {
     /*
         Calculates transpiration using the Penman-Monteith
 
@@ -504,157 +507,10 @@ void penman_monteith(double press, double vpd, double rnet, double slope,
     /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
     *transpiration = MAX(0.0, *transpiration);
 
-    /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */
-    epsilon = slope / gamma;
-    *omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
-
     return;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-double calc_sat_water_vapour_press(double tac) {
-    /*
-        Calculate saturated water vapour pressure (Pa) at
-        temperature TAC (Celsius). From Jones 1992 p 110 (note error in
-        a - wrong units)
-    */
-    return (613.75 * exp(17.502 * tac / (240.97 + tac)));
-}
-
-
-
-
-
-
-
-
-
-void calc_transpiration_penmon(fluxes *f, params *p, state *s, double vpd, double net_rad,
-                               double tavg, double wind, double ca,
-                               double daylen, double press) {
-    /* Calculate canopy transpiration using the Penman-Monteith equation.
-    units mm/day
-
-    Parameters:
-    -----------
-    vpd : float
-        average daily vpd [kPa]
-    net_rad : float
-        net radiation [mj m-2 s-1]
-    tavg : float
-        average daytime temp [degC]
-    wind : float
-        average daily wind speed [m s-1]
-    ca : float
-        atmospheric co2 [umol mol-1]
-    daylen : float
-        daylength in hours
-    press : float
-        average daytime pressure [kPa]
-
-    */
-    double SEC_2_DAY, DAY_2_SEC, gs_mol_m2_sec, tk, MOL_SEC_2_M_PER_SEC,
-           trans, omegax, M_PER_SEC_2_MOL_SEC, gs_m_per_sec,
-           ga_m_per_sec;
-
-    SEC_2_DAY =  60.0 * 60.0 * daylen;
-    DAY_2_SEC = 1.0 / SEC_2_DAY;
-    gs_mol_m2_sec = calc_stomatal_conductance(p->g1, s->wtfac_root, vpd, ca, daylen,
-                                              f->gpp_gCm2);
-
-
-    /* convert units
-        - mol/sec to m/s See Jones, 1992, appendix */
-    tk = tavg + DEG_TO_KELVIN;
-    MOL_SEC_2_M_PER_SEC = MM_TO_M / (press / (RGAS * tk));
-    M_PER_SEC_2_MOL_SEC = 1.0 / MOL_SEC_2_M_PER_SEC;
-
-    gs_m_per_sec = gs_mol_m2_sec * MOL_SEC_2_M_PER_SEC;
-    ga_m_per_sec = canopy_boundary_layer_conductance(p, wind, s->canht);
-
-    penman_monteithx(vpd, gs_m_per_sec, net_rad, tavg, press,
-                    ga_m_per_sec, &omegax, &trans &omega);
-
-    f->gs_mol_m2_sec = gs_mol_m2_sec;
-    f->ga_mol_m2_sec = ga_m_per_sec * M_PER_SEC_2_MOL_SEC;
-    f->transpiration = trans * SEC_2_DAY;
-
-    return;
-}
-
-
-void calc_transpiration_penmon_am_pm(params *p, state *s, double net_rad,
-                                     double wind, double ca, double daylen,
-                                     double press, double vpd, double tair,
-                                     double gpp, double *trans, double *omega,
-                                     double *gs_mol_m2_hfday,
-                                     double *ga_mol_m2_hfday) {
-    /* Calculate canopy transpiration using the Penman-Monteith equation
-    using am and pm data [mm/day]
-
-    Parameters:
-    -----------
-    vpd : float
-        average daily vpd [kPa]
-    net_rad_am : float
-        net radiation [mj m-2 s-1] (morning)
-    net_rad_pm : float
-        net radiation [mj m-2 s-1] (afternoon)
-    tair : float
-        AM/PM air temp [degC] am/pm
-    wind : float
-        daily wind speed [m s-1]
-    ca : float
-        atmospheric co2 [umol mol-1]
-    daylen : float
-        daylength in hours
-    press : float
-        average daytime pressure [kPa]
-    */
-    double half_day, SEC_2_HALF_DAY, HALF_DAY_2_SEC, Tk, MOL_SEC_2_M_PER_SEC,
-           M_PER_SEC_2_MOL_SEC, gs_mol_m2_sec, ga_m_per_sec,
-           gs_m_per_sec;
-
-    half_day = daylen / 2.0;
-
-    /* time unit conversions */
-    SEC_2_HALF_DAY =  60.0 * 60.0 * half_day;
-    HALF_DAY_2_SEC = 1.0 / SEC_2_HALF_DAY;
-
-    Tk = tair + DEG_TO_KELVIN;
-    MOL_SEC_2_M_PER_SEC = MM_TO_M / (press / (RGAS * Tk));
-    M_PER_SEC_2_MOL_SEC = 1.0 / MOL_SEC_2_M_PER_SEC;
-
-    ga_m_per_sec = canopy_boundary_layer_conductance(p, wind, s->canht);
-    gs_mol_m2_sec = calc_stomatal_conductance(p->g1, s->wtfac_root, vpd, ca,
-                                              half_day, gpp);
-
-    /* unit conversions */
-    *ga_mol_m2_hfday = ga_m_per_sec * M_PER_SEC_2_MOL_SEC * SEC_2_HALF_DAY;
-    *gs_mol_m2_hfday = gs_mol_m2_sec * SEC_2_HALF_DAY;
-    gs_m_per_sec = gs_mol_m2_sec * MOL_SEC_2_M_PER_SEC;
-
-    penman_monteithx(vpd, gs_m_per_sec, net_rad, tair, press, ga_m_per_sec,
-                    *(&omega), *(&trans));
-
-    /* convert to mm/half day */
-    *trans *= SEC_2_HALF_DAY;
-
-    return;
-}
-
-double calc_stomatal_conductance(double g1, double wtfac, double vpd, double ca,
+double calc_stomatal_conductance(params *p, state *s, double vpd, double Ca,
                                  double gpp) {
     /*
         Calculate stomatal conductance using Belinda's model. For the medlyn
@@ -689,26 +545,17 @@ double calc_stomatal_conductance(double g1, double wtfac, double vpd, double ca,
     gs : float
         stomatal conductance (mol CO2 m-2 s-1)
     */
-    double gs_over_a, g1, g0;
+    double gs_over_a, g1, g0, gsc;
 
     g1 = p->g1 * s->wtfac_root;
-    g0 = p->g0;
+    g0 = 0.0; /* p->g0; */
     gs_over_a = (1.0 + g1 / sqrt(vpd)) / Ca;
     gsc = MAX(g0, g0 + gs_over_a * gpp);
 
-    double DAY_2_SEC, gpp_umol_m2_sec, arg1, arg2;
-
-    DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
-    gpp_umol_m2_sec = gpp * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
-
-    arg1 = 1.6 * (1.0 + (g1 * wtfac) / sqrt(vpd));
-    arg2 = gpp_umol_m2_sec / ca;
-
     /* mol m-2 s-1 */
-    return (arg1 * arg2);
+    return (gsc);
 
 }
-
 
 double canopy_boundary_layer_conductance(params *p, double wind, double canht) {
     /*  Canopy boundary layer conductance, ga or 1/ra
@@ -770,191 +617,211 @@ double canopy_boundary_layer_conductance(params *p, double wind, double canht) {
     return (arg1 / (arg2 * arg3));
 }
 
-void penman_monteithx(double vpd, double gs, double net_rad, double tavg,
-                     double press, double ga, double *omega,
-                     double *et) {
+double calc_radiation_conductance(double tair) {
+    /*  Returns the 'radiation conductance' at given temperature.
 
-    /* Water loss from a canopy (ET), representing surface as a big "leaf".
-    The resistance to vapour transfer from the canopy to the atmosphere is
-    determined by the aerodynamic canopy conductance (ga) and the stomatal
-    conductance (gs). If the surface is wet then there is a further water vapour
-    flux from the soil/surface (calculated elsewhere!).
+        Units: mol m-2 s-1
 
-    Assumption is that calculation is for the entire stand (one surface), e.g.
-    the single-layer approach. Second major assumption is that soil heat is
-    zero over the course of a day and is thus ignored.
+        References:
+        -----------
+        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
+          1998, Table 1,
+        * See also Jones (1992) p. 108.
+        * And documented in Medlyn 2007, equation A3, although I think there
+          is a mistake. It should be Tk**3 not Tk**4, see W & L.
+    */
+    double grad;
+    double Tk;
 
-    Value for cp comes from Allen et al 1998.
+    Tk = tair + DEG_TO_KELVIN;
+    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CP * MASS_AIR);
 
-    units: mm day-1
+    return (grad);
+}
+
+double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
+                                     double leaf_width) {
+    /*
+        Boundary layer conductance for heat - single sided, forced convection
+        (mol m-2 s-1)
+        See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
+    */
+    double cmolar, Tk, gbh;
+
+    Tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * Tk);
+    gbh = 0.003 * sqrt(wind / leaf_width) * cmolar;
+
+    return (gbh);
+}
+
+double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
+                                   double leaf_width) {
+    /*
+        Boundary layer conductance for heat - single sided, free convection
+        (mol m-2 s-1)
+        See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
+    */
+    double cmolar, Tk, gbh, grashof, leaf_width_cubed;
+    double tolerance = 1E-08;
+
+    Tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * Tk);
+    leaf_width_cubed = leaf_width * leaf_width * leaf_width;
+
+    if (float_eq((tleaf - tair), 0.0)) {
+        gbh = 0.0;
+    } else {
+        grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
+        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
+    }
+
+    return (gbh);
+}
+
+
+double canopy_boundary_layer_conduct(params *p, double canht, double wind,
+                                     double press, double tair) {
+    /*  Canopy boundary layer conductance, ga (from Jones 1992 p 68)
+
+
+    Notes:
+    ------
+    'Estimates of ga for pine canopies from LAI of 3 to 6 vary from
+    3.5 to 1.1 mol m-2 s-1  (Kelliher et al., 1993; Juang et al., 2007).'
+    Drake et al, 2010, 17, pg. 1526.
 
     References:
-    -----------
-    * Monteith and Unsworth (1990) Principles of Environmental
-      Physics, pg. 247. Although I have removed the soil heat flux as G'DAY
-      calculates soil evaporation seperately.
-    * Allen et al. (1989) Operational estimates of reference evapotranspiration.
-      Agronomy Journal, 81, 650-662.
-    * Allen et al. (1998) Crop evapotranspiration - Guidelines for computing
-      crop water requirements - FAO Irrigation and drainage paper 56.
-      http://www.fao.org/docrep/X0490E/x0490e00.htm#Contents. PDF in bibtex lib.
-    * Harrison (1963) Fundamentals concepts and definitions relating to
-      humidity. In Wexler, A. (Ed.) Humidity and moisture. Vol 3, Reinhold
-      Publishing Co., New York, NY, USA.
-    * Dawes and Zhang (2011) Waves - An integrated energy and water balance
-      model http://www.clw.csiro.au/products/waves/downloads/chap3.pdf
+    ------------
+    * Jones 1992, pg. 67-8.
+    * Monteith and Unsworth (1990), pg. 248. Note this in the inverted form
+      of what is in Monteith (ga = 1 / ra)
+    * Allen et al. (1989) pg. 651.
+    * Gash et al. (1999) Ag forest met, 94, 149-158.
 
     Parameters:
     -----------
-    vpd : float
-        vapour pressure def [kPa]
+    params : p
+        parameters structure
+    canht : float
+        canopy height (m)
     wind : float
-        average daytime wind speed [m s-1]
-    gs : float
-        stomatal conductance [m s-1]
-    net_rad : float
-        net radiation [mj m-2 s-1]
-    tavg : float
-        daytime average temperature [degC]
+        wind speed (m s-1)
     press : float
-        average daytime pressure [kPa]
+        atmospheric pressure (Pa)
+    tair : float
+        air temperature (deg C)
 
     Returns:
     --------
-    et : float
-        evapotranspiration [mm d-1]
-
+    ga : float
+        canopy boundary layer conductance (mol m-2 s-1)
     */
+
+    /* z0m roughness length governing momentum transfer [m] */
+    double z0m, z0h, d, arg1, arg2, arg3, tk, ga, cmolar;
+    double vk = 0.41;
+
+    tk = tair + DEG_TO_KELVIN;
+
+    /* Convert from mm s-1 to mol m-2 s-1 */
+    cmolar = press / (RGAS * tk);
+
+    /* roughness length for momentum */
+    z0m = p->dz0v_dh * canht;
 
     /*
-    if press == None:
-        press = self.calc_atmos_pressure()
+       z0h roughness length governing transfer of heat and vapour [m]
+      *Heat tranfer typically less efficent than momentum transfer. There is
+       a lot of variability in values quoted for the ratio of these two...
+       JULES uses 0.1, Campbell and Norman '98 say z0h = z0m / 5. Garratt
+       and Hicks, 1973/ Stewart et al '94 say z0h = z0m / 7. Therefore for
+       the default I am following Monteith and Unsworth, by setting the
+       ratio to be 1, the code below is identical to that on page 249,
+       eqn 15.7
     */
-    double lambdax, gamma, slope, rho, e, arg1, arg2;
-    double cp = 1.013E-3;
+    z0h = p->z0h_z0m * z0m;
 
-    lambdax = calc_latent_heat_of_vapourisation(tavg);
-    gamma = calc_pyschrometric_constant(lambdax, press);
-    slope = calc_slope_of_saturation_vapour_pressure_curve(tavg);
-    rho = calc_density_of_air(tavg);
+    /* zero plan displacement height [m] */
+    d = p->displace_ratio * canht;
 
-    if (gs > 0.0) {
-        /* decoupling coefficent, Jarvis and McNaughton, 1986
-           when omega is close to zero, it is said to be well coupled and
-           gs is the dominant controller of water loss (gs<ga). */
-        e = slope / gamma; /* chg of latent heat relative to sensible heat of air */
-        *omega = (e + 1.0) / (e + 1.0 + (ga / gs));
+    arg1 = (vk * vk) * wind;
+    arg2 = log((canht - d) / z0m);
+    arg3 = log((canht - d) / z0h);
 
-        arg1 = ((slope * net_rad ) + (rho * cp * vpd * ga));
-        arg2 = slope + gamma * (1.0 + (ga / gs));
-        *et = (arg1 / arg2) / lambdax;
-    } else {
-        *et = 0.0;
-        *omega = 0.0;
-    }
-    return;
+    ga = (arg1 / (arg2 * arg3)) * cmolar;
+
+    return (ga);
 }
 
-
-double calc_slope_of_saturation_vapour_pressure_curve(double tavg) {
-    /* Eqn 13 from FAO paper, Allen et al. 1998.
-
-    Parameters:
-    -----------
-    tavg : float
-        average daytime temperature
-
-    Returns:
-    --------
-    slope : float
-        slope of saturation vapour pressure curve [kPa degC-1]
-
-    */
-    double t, arg1, arg2;
-
-    t = tavg + 237.3;
-    arg1 = 4098.0 * (0.6108 * exp((17.27 * tavg) / t));
-    arg2 = t * t;
-    return (arg1 / arg2);
-}
-
-double calc_pyschrometric_constant(double lambdax, double press) {
-    /* Psychrometric constant ratio of specific heat of moist air at
-    a constant pressure to latent heat of vaporisation.
-
-    References:
-    -----------
-    * Eqn 8 from FAO paper, Allen et al. 1998.
-
-    Parameters:
-    -----------
-    lambdax : float
-         latent heat of water vaporization [MJ kg-1]
-    press : float
-        average daytime pressure [kPa]
-
-    Returns:
-    --------
-    gamma : float
-        pyschrometric_constant [kPa degC-1]
-
-    */
-    double cp = 1.013E-3;
-    double epsilon = 0.6222;
-
-    return ((cp * press) / (epsilon * lambdax));
-}
-
-double calc_atmos_pressure() {
-    /* Pressure exerted by the weight of earth's atmosphere.
-
-    References:
-    -----------
-    * Eqn 7 from FAO paper, Allen et al. 1998.
-
-    Returns:
-    --------
-    press : float
-        modelled average daytime pressure [kPa]
-
-    */
-    double zele_sea = 125.0;
-    return (101.3 * pow(((293.0 - 0.0065 * zele_sea) / (293.0)),5.26));
-}
-
-double calc_latent_heat_of_vapourisation(double tavg) {
-    /*  After Harrison (1963), should roughly = 2.45 MJ kg-1
-
-        Returns:
-        -----------
-        lambdax : float
-            latent heat of water vaporization [MJ kg-1]
-    */
-    return (2.501 - 0.002361 * tavg);
-}
-
-double calc_density_of_air(double tavg) {
-    /*  Found in lots of places but only reference I could find it in that
-        wasn't an uncited equation is Dawes and Zhang (2011). No doubt there
-        is a better reference
+double calc_slope_of_sat_vapour_pressure_curve(double tair) {
+    /*
+        Constant slope in Penman-Monteith equation
 
         Parameters:
         -----------
         tavg : float
-            average daytime temperature [degC]
+            average daytime temperature
 
         Returns:
         --------
-        density : float
-            density of air [kg m-3]
+        slope : float
+            slope of saturation vapour pressure curve [Pa K-1]
+
     */
-    return (1.292 - (0.00428 * tavg));
+    double arg1, arg2, slope;
+
+    /* Const slope in Penman-Monteith equation  (Pa K-1) */
+    arg1 = calc_sat_water_vapour_press(tair + 0.1);
+    arg2 = calc_sat_water_vapour_press(tair);
+    slope = (arg1 - arg2) / 0.1;
+
+    return (slope);
 }
 
 
+double calc_pyschrometric_constant(double press, double lambda) {
+    /* Psychrometric constant ratio of specific heat of moist air at
+    a constant pressure to latent heat of vaporisation.
+
+    Parameters:
+    -----------
+    press : float
+        air pressure (Pa)
+    lambda : float
+         latent heat of water vaporization (J mol-1)
 
 
+    Returns:
+    --------
+    gamma : float
+        pyschrometric_constant [J mol-1]
 
+    */
+    return ( CP * MASS_AIR * press / lambda );
+
+}
+
+double calc_latent_heat_of_vapourisation(double tair) {
+    /*   Latent heat of water vapour at air temperature
+
+        Returns:
+        -----------
+        lambda : float
+            latent heat of water vaporization [J mol-1]
+    */
+    return ( (H2OLV0 - 2.365E3 * tair) * H2OMW );
+
+}
+
+double calc_sat_water_vapour_press(double tac) {
+    /*
+        Calculate saturated water vapour pressure (Pa) at
+        temperature TAC (Celsius). From Jones 1992 p 110 (note error in
+        a - wrong units)
+    */
+    return (613.75 * exp(17.502 * tac / (240.97 + tac)));
+}
 
 void initialise_soil_moisture_parameters(control *c, params *p) {
     /*
@@ -1319,141 +1186,4 @@ void zero_water_day_fluxes(fluxes *f) {
     f->gs_mol_m2_sec = 0.0;
 
     return;
-}
-
-double calc_radiation_conductance(double tair) {
-    /*  Returns the 'radiation conductance' at given temperature.
-
-        Units: mol m-2 s-1
-
-        References:
-        -----------
-        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
-          1998, Table 1,
-        * See also Jones (1992) p. 108.
-        * And documented in Medlyn 2007, equation A3, although I think there
-          is a mistake. It should be Tk**3 not Tk**4, see W & L.
-    */
-    double grad;
-    double Tk;
-
-    Tk = tair + DEG_TO_KELVIN;
-    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CP * MASS_AIR);
-
-    return (grad);
-}
-
-double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
-                                     double leaf_width) {
-    /*
-        Boundary layer conductance for heat - single sided, forced convection
-        (mol m-2 s-1)
-        See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
-    */
-    double cmolar, Tk, gbh;
-
-    Tk = tair + DEG_TO_KELVIN;
-    cmolar = press / (RGAS * Tk);
-    gbh = 0.003 * sqrt(wind / leaf_width) * cmolar;
-
-    return (gbh);
-}
-
-double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
-                                   double leaf_width) {
-    /*
-        Boundary layer conductance for heat - single sided, free convection
-        (mol m-2 s-1)
-        See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
-    */
-    double cmolar, Tk, gbh, grashof, leaf_width_cubed;
-    double tolerance = 1E-08;
-
-    Tk = tair + DEG_TO_KELVIN;
-    cmolar = press / (RGAS * Tk);
-    leaf_width_cubed = leaf_width * leaf_width * leaf_width;
-
-    if (float_eq((tleaf - tair), 0.0)) {
-        gbh = 0.0;
-    } else {
-        grashof = 1.6E8 * fabs(tleaf - tair) * leaf_width_cubed;
-        gbh = 0.5 * DHEAT * pow(grashof, 0.25) / leaf_width * cmolar;
-    }
-
-    return (gbh);
-}
-
-
-double canopy_boundary_layer_conduct(params *p, double canht, double wind,
-                                     double press, double tair) {
-    /*  Canopy boundary layer conductance, ga (from Jones 1992 p 68)
-
-
-    Notes:
-    ------
-    'Estimates of ga for pine canopies from LAI of 3 to 6 vary from
-    3.5 to 1.1 mol m-2 s-1  (Kelliher et al., 1993; Juang et al., 2007).'
-    Drake et al, 2010, 17, pg. 1526.
-
-    References:
-    ------------
-    * Jones 1992, pg. 67-8.
-    * Monteith and Unsworth (1990), pg. 248. Note this in the inverted form
-      of what is in Monteith (ga = 1 / ra)
-    * Allen et al. (1989) pg. 651.
-    * Gash et al. (1999) Ag forest met, 94, 149-158.
-
-    Parameters:
-    -----------
-    params : p
-        parameters structure
-    canht : float
-        canopy height (m)
-    wind : float
-        wind speed (m s-1)
-    press : float
-        atmospheric pressure (Pa)
-    tair : float
-        air temperature (deg C)
-
-    Returns:
-    --------
-    ga : float
-        canopy boundary layer conductance (mol m-2 s-1)
-    */
-
-    /* z0m roughness length governing momentum transfer [m] */
-    double z0m, z0h, d, arg1, arg2, arg3, tk;
-    double vk = 0.41;
-
-    tk = tair + DEG_TO_KELVIN;
-
-    /* Convert from mm s-1 to mol m-2 s-1 */
-    cmolar = press / (RGAS * tk);
-
-    /* roughness length for momentum */
-    z0m = p->dz0v_dh * canht;
-
-    /*
-       z0h roughness length governing transfer of heat and vapour [m]
-      *Heat tranfer typically less efficent than momentum transfer. There is
-       a lot of variability in values quoted for the ratio of these two...
-       JULES uses 0.1, Campbell and Norman '98 say z0h = z0m / 5. Garratt
-       and Hicks, 1973/ Stewart et al '94 say z0h = z0m / 7. Therefore for
-       the default I am following Monteith and Unsworth, by setting the
-       ratio to be 1, the code below is identical to that on page 249,
-       eqn 15.7
-    */
-    z0h = p->z0h_z0m * z0m;
-
-    /* zero plan displacement height [m] */
-    d = p->displace_ratio * canht;
-
-    arg1 = (vk * vk) * wind;
-    arg2 = log((canht - d) / z0m);
-    arg3 = log((canht - d) / z0h);
-
-    ga = (arg1 / (arg2 * arg3)) * cmolar;
-
-    return (ga);
 }

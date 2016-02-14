@@ -98,7 +98,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf,
                                                   an_leaf[i], gsc_leaf[i],
                                                   apar_leaf[i], &Cs, &dleaf,
-                                                  &tleaf_new, &trans_leaf[i]
+                                                  &tleaf_new, &trans_leaf[i],
                                                   &omega_leaf[i]);
                     } else {
                         break;
@@ -133,7 +133,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
 
     /* work out average omega for the day */
     f->omega /= sunlight_hrs;
-    
+
     return;
 }
 
@@ -168,7 +168,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
     penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
-                        transpiration, &LE, &gbc, &gh, &gv, &omega);
+                        transpiration, &LE, &gbc, &gh, &gv, omega);
 
     /*
     ** calculate new dleaf, tleaf and Cs
