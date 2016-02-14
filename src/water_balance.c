@@ -29,13 +29,21 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double soil_evap, et, interception, runoff, rain, press, sw_rad, conv,
-           tair, transpiration, net_rad, SEC_2_DAY, DAY_2_SEC;
+           tair, transpiration, net_rad, SEC_2_HALF_DAY, HALF_DAY_2_SEC,
+           half_day,transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
+           LE_pm, ga_am, ga_pm, DAY_2_SEC;
+
 
     double net_rad_day, net_rad_am, net_rad_pm, trans_am, omega_am,
            gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm, tair_day,
            sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
            wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
            omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm;
+
+    half_day = daylen / 2.0;
+    SEC_2_HALF_DAY =  60.0 * 60.0 * half_day;
+    HALF_DAY_2_SEC = 1.0 / SEC_2_HALF_DAY;
+    DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
 
     /* unpack met forcing */
     if (c->sub_daily) {
@@ -48,9 +56,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         tair = m->tair[day_idx];
         tair_am = m->tam[day_idx];
         tair_pm = m->tpm[day_idx];
-        sw_rad = m->sw_rad[day_idx];
-        sw_rad_am = m->sw_rad_am[day_idx];
-        sw_rad_pm = m->sw_rad_pm[day_idx];
+        /* should be am/pm but sw_rad is in the wrong units in input file
+           MJ m-2 half day
+           - Also CHANGE PAR UNITS to umol m-2 s-1!!!! */
+        sw_rad = m->par[day_idx] * DAY_2_SEC * PAR_2_SW;
         rain = m->rain[day_idx];
         vpd_am = m->vpd_am[day_idx] * KPA_2_PA;
         vpd_pm = m->vpd_pm[day_idx] * KPA_2_PA;
@@ -64,62 +73,35 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     net_rad = calc_net_radiation(p, sw_rad, tair);
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
-        /*
-            W/m2 = 1000 (kg/m3) * 2.501 * 10^6 (J/kg) * 1 mm/day * \
-                    (1/1800.0) (30 min/s) * (1/1000) (mm/30min)
-
-                 = 1.0 / 1389.44 mm/30 min
-        */
-        /*soil_evap /= 1389.44;*/
-
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
     } else {
-        /*
-            W/m2 = 1000 (kg/m3) * 2.501 * 10^6 (J/kg) * 1 mm/day * \
-                    (1/86400.0) (day/s) * (1/1000) (mm/day)
-        */
-        /*conv = 1000.0 * 2.501 * 1E6 * \
-                 (1. / (60.0 * 60.0 * daylen)) * (1.0 / 1000.);
-        soil_evap /= conv;*/
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
     }
 
 
     if (c->sub_daily) {
-
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
 
     } else {
-        double transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am, LE_pm,
-               ga_am, ga_pm;
-
-        net_rad_am = calc_net_radiation(p, sw_rad_am, tair_am);
-        net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair_pm);
-
-        DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
-        SEC_2_DAY = 1.0 / DAY_2_SEC;
-
         /* umol m-2 s-1 */
-        gpp_am = f->gpp_am * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
-        gpp_pm = f->gpp_pm * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
+        gpp_am = f->gpp_am * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
+        gpp_pm = f->gpp_pm * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
 
-        penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad_am,
+        penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad,
                               ca, gpp_am, &ga_am, &gs_am, &transpiration_am,
                               &LE_am, &omega_am);
-        penman_canopy_wrapper(p, s, press, vpd_pm, tair_pm, wind_pm, net_rad_pm,
+        penman_canopy_wrapper(p, s, press, vpd_pm, tair_pm, wind_pm, net_rad,
                               ca, gpp_pm, &ga_pm, &gs_pm, &transpiration_pm,
                               &LE_pm, &omega_pm);
 
         /* mol m-2 s-1 to mm/day */
         transpiration = (transpiration_am * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                         SEC_2_DAY) + \
+                         SEC_2_HALF_DAY) + \
                         (transpiration_pm * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                         SEC_2_DAY);
+                         SEC_2_HALF_DAY);
 
-        /* Unit conversions... */
-        DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
         f->omega = (omega_am + omega_pm) / 2.0;
 
         /* output in mol H20 m-2 s-1 */
@@ -131,14 +113,12 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     update_water_storage(c, f, p, s, rain, interception, &transpiration,
                          &soil_evap, &et, &runoff);
 
-
     if (c->sub_daily) {
         sum_hourly_water_fluxes(f, soil_evap, transpiration, et,
                                 interception, runoff, omega_leaf);
     } else {
         update_daily_water_struct(f, soil_evap, transpiration, et,
                                   interception, runoff);
-
     }
 
     return;
