@@ -123,6 +123,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         c->hrly_idx++;
     } /* end of hour loop */
 
+    exit(1);
+
     return;
 }
 
@@ -322,7 +324,7 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
         Ntot_sun = s->shootnc * LMA * sunlit_lai;
         Ntot_sha = s->shootnc * LMA * shaded_lai;
 
-        printf("%.10lf %.10lf %.10lf\n", Ntot, Ntot_sun , Ntot_sha);
+        /*printf("%.10lf %.10lf %.10lf\n", Ntot, Ntot_sun , Ntot_sha);*/
 
         /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
         N0_canopy = Ntot * k / (1.0 - exp(-k * s->lai));
@@ -331,8 +333,8 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
 
         /**(N0+SHADED) = N0_canopy - *(N0+SUNLIT);*/
 
-        printf("%.10lf %.10lf %.10lf\n", N0_canopy, *(N0+SUNLIT) , *(N0+SHADED));
-        exit(1);
+        /*printf("%.10lf %.10lf %.10lf\n", N0_canopy, *(N0+SUNLIT) , *(N0+SHADED));
+        exit(1);*/
 
 
     } else {
