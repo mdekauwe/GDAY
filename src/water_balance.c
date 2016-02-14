@@ -1348,7 +1348,6 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
     /* reduce soil evaporation if top soil is dry */
     soil_evap *= s->wtfac_topsoil;
 
-
     /*
         W/m2       = 1000 (kg/m3) * 2.45 * 10^6 (J/kg) * 1 mm/day * \
                      (1/86400) (day/s) * (1/1000) (mm/m)
@@ -1361,7 +1360,7 @@ double calc_soil_evaporation_subdaily(params *p, state *s, double par,
     soil_evap /= conv;
 
     soil_evap = MAX(0.0, soil_evap);
-    
+
     return (soil_evap);
 }
 
