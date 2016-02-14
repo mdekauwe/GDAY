@@ -157,7 +157,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     Ca = m->co2[c->hrly_idx];
     sw_rad = apar_leaf * PAR_2_SW; /* W m-2 */
 
-    rnet = calc_canopy_net_rad(p, s, tair, vpd, sw_rad);
+    rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
     penman_leaf(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
                 transpiration, &LE, &gbc, &gh, &gv);
 
@@ -173,8 +173,8 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     return;
 }
 
-double calc_canopy_net_rad(params *p, state *s, double tair, double vpd,
-                           double sw_rad) {
+double calc_leaf_net_rad(params *p, state *s, double tair, double vpd,
+                         double sw_rad) {
 
     double rnet, Tk, ea, emissivity_atm, net_lw_rad;
     /*

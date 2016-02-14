@@ -25,5 +25,5 @@ void    solve_leaf_energy_balance(control *, fluxes *, met *, params *, state *,
 
 void    sum_hourly_carbon_fluxes(fluxes *, params *, double *, double *,
                                  double *);
-double calc_canopy_net_rad(params *, state *, double, double, double);
+double  calc_leaf_net_rad(params *, state *, double, double, double);
 #endif /* CANOPY_H */
