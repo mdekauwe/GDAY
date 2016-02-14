@@ -15,11 +15,15 @@ void   update_water_storage(control *, fluxes *, params *, state *,
 double  calc_soil_evaporation(params*, state *, double, double , double);
 double  calc_infiltration(params *, state*, double);
 
-/*double  penman_leaf(double, double, double, double, double, double, double,
-                    double, double *); */
-void penman_leaf(params *p, state *s, double, double, double, double, double,
-                 double, double, double *, double *, double *, double *,
-                 double *);
+void penman_canopy_wrapper(params *, state *, double, double, double, double,
+                           double, double, double, double *, double *,
+                           double *, double *) {
+void penman_leaf_wrapper(params *p, state *s, double, double, double, double,
+                         double, double, double, double *, double *, double *,
+                         double *, double *, double *);
+void penman_monteith(double, double, double, double, double, double, double *,
+                     double *, double *, double *, double *);
+
 double  calc_sat_water_vapour_press(double);
 void    calculate_daily_water_balance(control *, fluxes *, met *, params *,
                                       state *, int, double);
@@ -38,7 +42,7 @@ double  calc_atmos_pressure();
 double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_saturation_vapour_pressure_curve(double);
 double  canopy_boundary_layer_conductance(params *p, double, double);
-void    penman_monteith(double, double, double, double, double, double,
+void    penman_monteithx(double, double, double, double, double, double,
                         double *, double*);
 double  calc_sw_modifier(double, double, double);
 void    initialise_soil_moisture_parameters(control *, params *);
@@ -49,7 +53,7 @@ void    calc_soil_params(double *, double *, double *,
                         double *, double *, double *);
 void    calculate_soil_water_fac(control *, params *, state *);
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
-                                double);
+                                double, double);
 void    update_daily_water_struct(fluxes *, double, double, double, double,
                                   double);
 double  calc_radiation_conductance(double);
@@ -57,5 +61,5 @@ double  calc_bdn_layer_forced_conduct(double, double, double,double);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 void    calculate_top_of_canopy_leafn(params *, state *, double, double,
                                       double *);
-
+double canopy_boundary_layer_conduct(params *, double, double, double, double);
 #endif /* WATER_BALANCE */

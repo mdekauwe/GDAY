@@ -21,7 +21,7 @@ void    canopy(control *, fluxes *, met *, params *, state *);
 
 void    solve_leaf_energy_balance(control *, fluxes *, met *, params *, state *,
                                   double, double, double, double, double *,
-                                  double *, double *, double *);
+                                  double *, double *, double *, double *);
 
 void    sum_hourly_carbon_fluxes(fluxes *, params *, double *, double *,
                                  double *);

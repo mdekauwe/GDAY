@@ -43,13 +43,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
            press, vpd, par, tair, wind, Ca, sunlit_lai, shaded_lai, sw_rad,
-           trans_canopy;
-    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0[2];
-    int    hod, iter = 0, itermax = 100, i, dummy;
+           trans_canopy, omega_canopy;
+    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0[2],
+           omega_leaf[2];
+    int    hod, iter = 0, itermax = 100, i, dummy, sunlight_hrs;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
+    sunlight_hrs = 0;
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
 
         calculate_solar_geometry(p, m->doy[c->hrly_idx], hod, &cos_zenith,
@@ -96,7 +98,8 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf,
                                                   an_leaf[i], gsc_leaf[i],
                                                   apar_leaf[i], &Cs, &dleaf,
-                                                  &tleaf_new, &trans_leaf[i]);
+                                                  &tleaf_new, &trans_leaf[i]
+                                                  &omega_leaf[i]);
                     } else {
                         break;
                     }
@@ -120,11 +123,17 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         }
         sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
         trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
-        calculate_water_balance(c, f, m, p, s, dummy, dummy, trans_canopy);
+        omega_canopy = (omega_leaf[SUNLIT] + omega_leaf[SHADED]) / 2.0;
+        calculate_water_balance(c, f, m, p, s, dummy, dummy, trans_canopy,
+                                omega_canopy);
 
         c->hrly_idx++;
+        sunlight_hrs++;
     } /* end of hour loop */
 
+    /* work out average omega for the day */
+    f->omega /= sunlight_hrs;
+    
     return;
 }
 
@@ -134,7 +143,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double an_leaf,
                                double gsc_leaf, double apar_leaf, double *Cs,
                                double *dleaf, double *tleaf_new,
-                               double *transpiration) {
+                               double *transpiration, double *omega) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -158,8 +167,8 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     sw_rad = apar_leaf * PAR_2_SW; /* W m-2 */
 
     rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
-    penman_leaf(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
-                transpiration, &LE, &gbc, &gh, &gv);
+    penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
+                        transpiration, &LE, &gbc, &gh, &gv, &omega);
 
     /*
     ** calculate new dleaf, tleaf and Cs
