@@ -37,7 +37,6 @@ void initialise_control(control *c) {
     c->respiration_model = FIXED;   /* Plant respiration ... Fixed, TEMPERATURE or BIOMASS */
     c->strfloat = 0;                /* Structural pool input N:C varies=1, fixed=0 */
     c->sw_stress_model = 1;         /* JULES type linear stress func, or Landsberg and Waring non-linear func */
-    c->trans_model = 0;             /* 0=trans from WUE, 1=Penman-Monteith, 2=Priestley-Taylor */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */

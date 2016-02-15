@@ -391,8 +391,6 @@ int handler(char *section, char *name, char *value, control *c,
         }*/
     } else if (MATCH("control", "sw_stress_model")) {
         c->sw_stress_model = atoi(value);
-    } else if (MATCH("control", "trans_model")) {
-        c->trans_model = atoi(value);
     } else if (MATCH("control", "use_eff_nc")) {
         c->use_eff_nc = atoi(value);
     } else if (MATCH("control", "water_stress")) {

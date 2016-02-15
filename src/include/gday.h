@@ -94,7 +94,6 @@ typedef struct {
     int   respiration_model;
     int   strfloat;
     int   sw_stress_model;
-    int   trans_model;
     int   use_eff_nc;
     int   water_stress;
     int   num_days;
