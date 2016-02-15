@@ -35,9 +35,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
            omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm,
            tair_day, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
            wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
-           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm;
+           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, SEC_2_DAY;
 
     SEC_2_HALF_DAY =  60.0 * 60.0 * (daylen / 2.0);
+    SEC_2_DAY = 60.0 * 60.0 * daylen;
     HALF_DAY_2_SEC = 1.0 / SEC_2_HALF_DAY;
 
     /* unpack met forcing */
@@ -80,7 +81,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                         SEC_2_HLFHR;
 
     } else {
-        /* umol m-2 s-1 */
+        /* gC m-2 half day-1 -> umol m-2 s-1 */
         gpp_am = f->gpp_am * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
         gpp_pm = f->gpp_pm * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
 
@@ -92,10 +93,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                               &LE_pm, &omega_pm);
 
         /* mol m-2 s-1 to mm/day */
-        transpiration = (transpiration_am * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                         SEC_2_HALF_DAY) + \
-                        (transpiration_pm * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                         SEC_2_HALF_DAY);
+        transpiration = (transpiration_am + transpiration_pm) * \
+                         MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
 
         f->omega = (omega_am + omega_pm) / 2.0;
 
