@@ -712,7 +712,7 @@ double calc_pyschrometric_constant(double press, double lambda) {
     Returns:
     --------
     gamma : float
-        pyschrometric_constant [J mol-1]
+        pyschrometric constant [Pa K-1]
 
     */
     return ( CP * MASS_AIR * press / lambda );
