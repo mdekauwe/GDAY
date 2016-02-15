@@ -30,20 +30,15 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     */
     double soil_evap, et, interception, runoff, rain, press, sw_rad, conv,
            tair, transpiration, net_rad, SEC_2_HALF_DAY, HALF_DAY_2_SEC,
-           half_day,transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
-           LE_pm, ga_am, ga_pm, DAY_2_SEC;
-
-
-    double net_rad_day, net_rad_am, net_rad_pm, trans_am, omega_am,
-           gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm, tair_day,
-           sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
+           transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
+           LE_pm, ga_am, ga_pm, net_rad_day, net_rad_am, net_rad_pm, trans_am,
+           omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm,
+           tair_day, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
            wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
            omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm;
 
-    half_day = daylen / 2.0;
-    SEC_2_HALF_DAY =  60.0 * 60.0 * half_day;
+    SEC_2_HALF_DAY =  60.0 * 60.0 * (daylen / 2.0);
     HALF_DAY_2_SEC = 1.0 / SEC_2_HALF_DAY;
-    DAY_2_SEC = 1.0 / (60.0 * 60.0 * daylen);
 
     /* unpack met forcing */
     if (c->sub_daily) {
@@ -70,7 +65,6 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     interception = calc_infiltration(p, s, rain);
     net_rad = calc_net_radiation(p, sw_rad, tair);
-
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
@@ -79,7 +73,6 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
     }
-
 
     if (c->sub_daily) {
         /* mol m-2 s-1 to mm/30 min */
