@@ -70,8 +70,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     if (c->sub_daily) {
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
     } else {
-        net_rad_am = calc_net_radiation(p, sw_rad_am, tair);
-        net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair);
+        net_rad_am = calc_net_radiation(p, sw_rad_am, tair_am);
+        net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair_pm);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
     }
 
@@ -114,6 +114,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         update_daily_water_struct(f, soil_evap, transpiration, et,
                                   interception, runoff);
     }
+    
 
     return;
 }
