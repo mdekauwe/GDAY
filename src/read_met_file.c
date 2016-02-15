@@ -6,7 +6,7 @@ void read_daily_met_data(char **argv, control *c, met *m)
     char   line[STRING_LENGTH];
     int    file_len = 0;
     int    i = 0;
-    int    nvars = 23;
+    int    nvars = 22;
     int    skipped_lines = 0;
     double current_yr;
 
@@ -34,11 +34,6 @@ void read_daily_met_data(char **argv, control *c, met *m)
 
     if ((m->prjday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for prjday array\n");
-		exit(EXIT_FAILURE);
-    }
-
-    if ((m->sw_rad = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for sw_rad array\n");
 		exit(EXIT_FAILURE);
     }
 
@@ -117,11 +112,6 @@ void read_daily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->par = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for par array\n");
-		exit(EXIT_FAILURE);
-    }
-
     if ((m->wind_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind_am array\n");
 		exit(EXIT_FAILURE);
@@ -132,13 +122,18 @@ void read_daily_met_data(char **argv, control *c, met *m)
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->sw_rad_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for sw_rad_am array\n");
+    if ((m->par = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for par array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->sw_rad_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for sw_rad_pm array\n");
+    if ((m->par_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for par_am array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((m->par_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for par_pm array\n");
 		exit(EXIT_FAILURE);
     }
 
@@ -153,7 +148,7 @@ void read_daily_met_data(char **argv, control *c, met *m)
             continue;
         }
 
-        if (sscanf(line, "%lf,%lf,%lf,\
+        if (sscanf(line, "%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
@@ -161,14 +156,14 @@ void read_daily_met_data(char **argv, control *c, met *m)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf", \
-                          &(m->year[i]), &(m->prjday[i]), &(m->sw_rad[i]), \
+                          &(m->year[i]), &(m->prjday[i]), \
                           &(m->tair[i]), &(m->rain[i]), &(m->tsoil[i]), \
                           &(m->tam[i]), &(m->tpm[i]), &(m->tmin[i]), \
                           &(m->tmax[i]), &(m->tday[i]), &(m->vpd_am[i]), \
                           &(m->vpd_pm[i]), &(m->vpd_avg[i]), &(m->co2[i]), \
                           &(m->ndep[i]), &(m->wind[i]), &(m->press[i]), \
-                          &(m->par[i]), &(m->wind_am[i]), &(m->wind_pm[i]), \
-                          &(m->sw_rad_am[i]), &(m->sw_rad_pm[i])) != nvars) {
+                          &(m->wind_am[i]), &(m->wind_pm[i]), &(m->par[i]), \
+                          &(m->par_am[i]), &(m->par_pm[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);

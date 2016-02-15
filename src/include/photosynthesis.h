@@ -26,8 +26,8 @@ void   mate_C3_photosynthesis(control *, fluxes *, met *, params *,
                               state *, int, double, double);
 
 double  calculate_top_of_canopy_n(params *, state *, double);
-void    get_met_stuff(met *, int, double *, double *, double *, double *,
-                     double *, double *);
+void    get_met_stuff(met *, int, double, double *, double *, double *,
+                     double *, double *, double *);
 double  calculate_co2_compensation_point(params *, double, double);
 double  arrh(double, double, double, double);
 double  peaked_arrh(double, double, double, double, double, double);

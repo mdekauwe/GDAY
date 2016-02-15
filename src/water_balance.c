@@ -56,10 +56,9 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         tair = m->tair[day_idx];
         tair_am = m->tam[day_idx];
         tair_pm = m->tpm[day_idx];
-        /* should be am/pm but sw_rad is in the wrong units in input file
-           MJ m-2 half day
-           - Also CHANGE PAR UNITS to umol m-2 s-1!!!! */
-        sw_rad = m->par[day_idx] * DAY_2_SEC * PAR_2_SW;
+        sw_rad = m->par[day_idx] * PAR_2_SW;
+        sw_rad_am = m->par_am[day_idx] * PAR_2_SW;
+        sw_rad_pm = m->par_pm[day_idx] * PAR_2_SW;
         rain = m->rain[day_idx];
         vpd_am = m->vpd_am[day_idx] * KPA_2_PA;
         vpd_pm = m->vpd_pm[day_idx] * KPA_2_PA;
@@ -71,10 +70,13 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     interception = calc_infiltration(p, s, rain);
     net_rad = calc_net_radiation(p, sw_rad, tair);
+
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
     } else {
+        net_rad_am = calc_net_radiation(p, sw_rad_am, tair);
+        net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
     }
 
@@ -89,10 +91,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         gpp_am = f->gpp_am * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
         gpp_pm = f->gpp_pm * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
 
-        penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad,
+        penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad_am,
                               ca, gpp_am, &ga_am, &gs_am, &transpiration_am,
                               &LE_am, &omega_am);
-        penman_canopy_wrapper(p, s, press, vpd_pm, tair_pm, wind_pm, net_rad,
+        penman_canopy_wrapper(p, s, press, vpd_pm, tair_pm, wind_pm, net_rad_pm,
                               ca, gpp_pm, &ga_pm, &gs_pm, &transpiration_pm,
                               &LE_pm, &omega_pm);
 

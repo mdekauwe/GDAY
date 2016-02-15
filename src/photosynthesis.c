@@ -467,9 +467,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
            asat_am, asat_pm, lue_am, lue_pm, lue_avg, apar_half_day;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
-    get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am, &vpd_pm, &ca);
-
-
+    get_met_stuff(m, project_day, daylen, &Tk_am, &Tk_pm, &par, &vpd_am,
+                  &vpd_pm, &ca);
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
@@ -527,8 +526,9 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     return;
 }
 
-void get_met_stuff(met *m, int project_day, double *Tk_am, double *Tk_pm,
-                  double *par, double *vpd_am, double *vpd_pm, double *ca) {
+void get_met_stuff(met *m, int project_day, double daylen, double *Tk_am,
+                   double *Tk_pm, double *par, double *vpd_am, double *vpd_pm,
+                   double *ca) {
     /*
     Grab the days met data out of the structure and return day values.
 
@@ -548,7 +548,7 @@ void get_met_stuff(met *m, int project_day, double *Tk_am, double *Tk_pm,
     vpd_pm : float
         pm vpd [kPa]
     par : float
-        average daytime PAR [umol m-2 d-1]
+        average daytime PAR [umol m-2 s-1]
     ca : float
         atmospheric co2 [umol mol-1]
     */
@@ -559,6 +559,9 @@ void get_met_stuff(met *m, int project_day, double *Tk_am, double *Tk_pm,
     *vpd_pm = m->vpd_pm[project_day];
     *ca = m->co2[project_day];
     *par = m->par[project_day];
+
+    /* umol m-2 s-1 -> umol m-2 d-1 */
+    *par *= 60.0 * 60.0 * daylen;
 
     return;
 }
@@ -1014,7 +1017,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, Tk_am, Tk_pm, par, vpd_am, vpd_pm, ca, vcmax_am, vcmax_pm,
            ci_am, ci_pm, asat_am, asat_pm, lue_am, lue_pm, lue_avg,
            vcmax25_am, vcmax25_pm, par_per_sec, M_am, M_pm, A_am, A_pm,
-           Rd_am, Rd_pm, apar_half_day;
+           Rd_am, Rd_pm, apar_half_day, SEC_2_HALF_DAY, half_day;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
     /* curvature parameter, transition between light-limited and
@@ -1029,7 +1032,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
        Collatz table 2 */
     double kslope = 0.7;
 
-    get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am, &vpd_pm, &ca);
+    get_met_stuff(m, project_day, daylen, &Tk_am, &Tk_pm, &par, &vpd_am,
+                  &vpd_pm, &ca);
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);

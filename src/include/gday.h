@@ -377,7 +377,6 @@ typedef struct {
     double *year;
     double *rain;
     double *par;
-    double *sw_rad;
     double *tair;
     double *tsoil;
     double *co2;
@@ -397,8 +396,8 @@ typedef struct {
     double *vpd_avg;
     double *wind_am;
     double *wind_pm;
-    double *sw_rad_am;
-    double *sw_rad_pm;
+    double *par_am;
+    double *par_pm;
 
     /* sub-daily timestep */
     double *vpd;

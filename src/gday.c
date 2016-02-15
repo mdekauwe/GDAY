@@ -132,7 +132,6 @@ int main(int argc, char **argv)
         free(m->doy);
     } else {
         free(m->prjday);
-        free(m->sw_rad);
         free(m->tam);
         free(m->tpm);
         free(m->tmin);
@@ -142,8 +141,8 @@ int main(int argc, char **argv)
         free(m->vpd_avg);
         free(m->wind_am);
         free(m->wind_pm);
-        free(m->sw_rad_am);
-        free(m->sw_rad_pm);
+        free(m->par_am);
+        free(m->par_pm);
     }
     free(m);
     free(p);
