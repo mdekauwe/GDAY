@@ -114,7 +114,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         update_daily_water_struct(f, soil_evap, transpiration, et,
                                   interception, runoff);
     }
-    
+
 
     return;
 }
@@ -532,13 +532,14 @@ double calc_stomatal_conductance(params *p, state *s, double vpd, double Ca,
 
 }
 
-double canopy_boundary_layer_conductance(params *p, double wind, double canht) {
-    /*  Canopy boundary layer conductance, ga or 1/ra
 
-    Characterises the heat/water vapour from evaporating surface, but does
-    not account for leaf boundary layer conductance, which is the parellel
-    sum of single leaf boundary layer conductances for all leaves in the
-    canopy.
+
+
+
+double canopy_boundary_layer_conduct(params *p, double canht, double wind,
+                                     double press, double tair) {
+    /*  Canopy boundary layer conductance, ga (from Jones 1992 p 68)
+
 
     Notes:
     ------
@@ -556,18 +557,31 @@ double canopy_boundary_layer_conductance(params *p, double wind, double canht) {
 
     Parameters:
     -----------
+    params : p
+        parameters structure
+    canht : float
+        canopy height (m)
     wind : float
-        average daytime wind speed [m s-1]
+        wind speed (m s-1)
+    press : float
+        atmospheric pressure (Pa)
+    tair : float
+        air temperature (deg C)
 
     Returns:
     --------
     ga : float
-        canopy boundary layer conductance [m s-1]
+        canopy boundary layer conductance (mol m-2 s-1)
     */
 
     /* z0m roughness length governing momentum transfer [m] */
-    double z0m, z0h, d, arg1, arg2, arg3;
+    double z0m, z0h, d, arg1, arg2, arg3, ga, cmolar;
     double vk = 0.41;
+
+    /* Convert from mm s-1 to mol m-2 s-1 */
+    cmolar = press / (RGAS * (tair + DEG_TO_KELVIN));
+
+    /* roughness length for momentum */
     z0m = p->dz0v_dh * canht;
 
     /*
@@ -589,7 +603,9 @@ double canopy_boundary_layer_conductance(params *p, double wind, double canht) {
     arg2 = log((canht - d) / z0m);
     arg3 = log((canht - d) / z0h);
 
-    return (arg1 / (arg2 * arg3));
+    ga = (arg1 / (arg2 * arg3)) * cmolar;
+
+    return (ga);
 }
 
 double calc_radiation_conductance(double tair) {
@@ -654,80 +670,6 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
     return (gbh);
 }
 
-
-double canopy_boundary_layer_conduct(params *p, double canht, double wind,
-                                     double press, double tair) {
-    /*  Canopy boundary layer conductance, ga (from Jones 1992 p 68)
-
-
-    Notes:
-    ------
-    'Estimates of ga for pine canopies from LAI of 3 to 6 vary from
-    3.5 to 1.1 mol m-2 s-1  (Kelliher et al., 1993; Juang et al., 2007).'
-    Drake et al, 2010, 17, pg. 1526.
-
-    References:
-    ------------
-    * Jones 1992, pg. 67-8.
-    * Monteith and Unsworth (1990), pg. 248. Note this in the inverted form
-      of what is in Monteith (ga = 1 / ra)
-    * Allen et al. (1989) pg. 651.
-    * Gash et al. (1999) Ag forest met, 94, 149-158.
-
-    Parameters:
-    -----------
-    params : p
-        parameters structure
-    canht : float
-        canopy height (m)
-    wind : float
-        wind speed (m s-1)
-    press : float
-        atmospheric pressure (Pa)
-    tair : float
-        air temperature (deg C)
-
-    Returns:
-    --------
-    ga : float
-        canopy boundary layer conductance (mol m-2 s-1)
-    */
-
-    /* z0m roughness length governing momentum transfer [m] */
-    double z0m, z0h, d, arg1, arg2, arg3, tk, ga, cmolar;
-    double vk = 0.41;
-
-    tk = tair + DEG_TO_KELVIN;
-
-    /* Convert from mm s-1 to mol m-2 s-1 */
-    cmolar = press / (RGAS * tk);
-
-    /* roughness length for momentum */
-    z0m = p->dz0v_dh * canht;
-
-    /*
-       z0h roughness length governing transfer of heat and vapour [m]
-      *Heat tranfer typically less efficent than momentum transfer. There is
-       a lot of variability in values quoted for the ratio of these two...
-       JULES uses 0.1, Campbell and Norman '98 say z0h = z0m / 5. Garratt
-       and Hicks, 1973/ Stewart et al '94 say z0h = z0m / 7. Therefore for
-       the default I am following Monteith and Unsworth, by setting the
-       ratio to be 1, the code below is identical to that on page 249,
-       eqn 15.7
-    */
-    z0h = p->z0h_z0m * z0m;
-
-    /* zero plan displacement height [m] */
-    d = p->displace_ratio * canht;
-
-    arg1 = (vk * vk) * wind;
-    arg2 = log((canht - d) / z0m);
-    arg3 = log((canht - d) / z0h);
-
-    ga = (arg1 / (arg2 * arg3)) * cmolar;
-
-    return (ga);
-}
 
 double calc_slope_of_sat_vapour_pressure_curve(double tair) {
     /*
