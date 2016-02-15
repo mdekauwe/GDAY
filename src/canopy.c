@@ -1,9 +1,9 @@
 /* ============================================================================
-* Calculates all within canopy C & water fluxes.
+* Calculates all within canopy C & water fluxes (live in water balance).
 *
 *
 * NOTES:
-*   - Should resturcure the code so that MATE is called from within the canopy
+*   - Should restructure the code so that MATE is called from within the canopy
 *     space, rather than via plant growth
 *
 *   Future improvements:

@@ -470,6 +470,10 @@ void penman_monteith(double press, double vpd, double rnet, double slope,
             latent heat flux (W m-2; returned)
         omega : float
             decoupling coefficient (unitless; returned)
+
+        References:
+        ------------
+        * Medlyn et al. (2007), Tree Physiology, 27, 1687-1699.
     */
     double arg1, arg2, epsilon;
 
