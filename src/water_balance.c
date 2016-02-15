@@ -356,6 +356,8 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
     *gsv = GSVGSC * gsc;
 
     *ga = canopy_boundary_layer_conduct(p, s->canht, wind, press, tair);
+
+    /* Total leaf conductance to water vapour */
     gv = 1.0 / (1.0 / *gsv + 1.0 / *ga);
 
     lambda = calc_latent_heat_of_vapourisation(tair);
@@ -415,9 +417,10 @@ void penman_leaf_wrapper(params *p, state *s, double press, double vpd,
     /* Total conductance for heat - two-sided */
     *gh = 2.0 * (gbh + gradn);
 
-    /* Total conductance for water vapour */
     gbv = GBVGBH * gbh;
     gsv = GSVGSC * gsc;
+
+    /* Total leaf conductance to water vapour */
     *gv = (gbv * gsv) / (gbv + gsv);
     *gbc = gbh / GBHGBC;
 
