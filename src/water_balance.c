@@ -104,7 +104,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     }
 
     et = transpiration + soil_evap + interception;
-    
+
     update_water_storage(c, f, p, s, rain, interception, &transpiration,
                          &soil_evap, &et, &runoff);
 
@@ -206,15 +206,15 @@ double calc_infiltration(params *p, state* s, double rain) {
         rainfall [mm d-1]
 
     */
-    double interception;
+    double interception, infiltration;
 
-    if (s->lai > 0.0) {
-        interception = (rain * p->intercep_frac * \
-                        MIN(1.0, s->lai / p->max_intercep_lai));
+    if (rain > 0.0) {
+        infiltration = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
+        interception = rain * p->rfmult - infiltration;
     } else {
         interception = 0.0;
     }
-
+    
     return (interception);
 }
 
