@@ -464,7 +464,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, Tk_am, Tk_pm, par, vpd_am, vpd_pm, ca, gamma_star_am,
            gamma_star_pm, Km_am, Km_pm, jmax_am, jmax_pm, vcmax_am, vcmax_pm,
            ci_am, ci_pm, alpha_am, alpha_pm, ac_am, ac_pm, aj_am, aj_pm,
-           asat_am, asat_pm, lue_am, lue_pm, lue_avg, apar_half_day;
+           asat_am, asat_pm, lue_am, lue_pm, lue_avg, apar_half_day, conv;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
     get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
@@ -501,9 +501,6 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
 
-    /* umol m-2 s-1 -> umol m-2 d-1 */
-    par *= 60.0 * 60.0 * daylen;
-
     /* LUE (umol C umol-1 PAR) */
     lue_am = epsilon(p, asat_am, par, daylen, alpha_am);
     lue_pm = epsilon(p, asat_pm, par, daylen, alpha_pm);
@@ -518,10 +515,11 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
         f->apar = par * s->fipar;
     apar_half_day = f->apar / 2.0;
 
-    /* convert umol m-2 d-1 -> gC m-2 d-1 */
-    f->gpp_gCm2 = f->apar * lue_avg * UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
-    f->gpp_am = apar_half_day * lue_am * UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
-    f->gpp_pm = apar_half_day * lue_pm * UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
+    /* convert umol m-2 s-1 -> gC m-2 d-1 */
+    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
+    f->gpp_gCm2 = f->apar * lue_avg * conv;
+    f->gpp_am = apar_half_day * lue_am * conv;
+    f->gpp_pm = apar_half_day * lue_pm * conv;
 
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
@@ -943,6 +941,14 @@ double epsilon(params *p, double asat, double par, double daylen,
     lue : float
         integrated light use efficiency over the canopy (umol C umol-1 PAR)
 
+    Notes:
+    ------
+    NB. I've removed some of the unit conversions as they are unnecessary.
+    Sands had gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
+    umol PAR on the basis that 1 MJ m-2 = 2.08 mol m-2 & mol to umol = 1E6.
+    He then has a divide by h (where h is in seconds) to go from day to seconds
+    of PAR. But if we just pass PAR in umol m-2 s-1 we don't need all of this
+
     References:
     -----------
     See assumptions above...
@@ -956,12 +962,12 @@ double epsilon(params *p, double asat, double par, double daylen,
     /* subintervals scaler, i.e. 6 intervals */
     delta = 0.16666666667;
 
-    /* number of seconds of daylight */
-    h = daylen * SECS_IN_HOUR;
+    /* number of seconds of daylight - NB. don't need this see above */
+    /*h = daylen * SECS_IN_HOUR;*/
 
     if (asat > 0.0) {
         /* normalised daily irradiance */
-        q = M_PI * p->kext * alpha * par / (2.0 * h * asat);
+        q = M_PI * p->kext * alpha * par / (2.0 * asat);
         integral_g = 0.0;
         for (i = 1; i < 13; i+=2) {
             sinx = sin(M_PI * i / 24.);

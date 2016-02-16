@@ -29,17 +29,16 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double soil_evap, et, interception, runoff, rain, press, sw_rad, conv,
-           tair, transpiration, net_rad, SEC_2_HALF_DAY, HALF_DAY_2_SEC,
+           tair, transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
            LE_pm, ga_am, ga_pm, net_rad_day, net_rad_am, net_rad_pm, trans_am,
            omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm,
            tair_day, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
            wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
-           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, SEC_2_DAY;
+           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm;
 
-    SEC_2_HALF_DAY =  60.0 * 60.0 * (daylen / 2.0);
     SEC_2_DAY = 60.0 * 60.0 * daylen;
-    HALF_DAY_2_SEC = 1.0 / SEC_2_HALF_DAY;
+    DAY_2_SEC = 1.0 / SEC_2_DAY;
 
     /* unpack met forcing */
     if (c->sub_daily) {
@@ -81,9 +80,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                         SEC_2_HLFHR;
 
     } else {
-        /* gC m-2 half day-1 -> umol m-2 s-1 */
-        gpp_am = f->gpp_am * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
-        gpp_pm = f->gpp_pm * GRAMS_C_TO_MOL_C * MOL_TO_UMOL * HALF_DAY_2_SEC;
+        /* gC m-2 day-1 -> umol m-2 s-1 */
+        conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
+        gpp_am = f->gpp_am * conv;
+        gpp_pm = f->gpp_pm * conv;
 
         penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad_am,
                               ca, gpp_am, &ga_am, &gs_am, &transpiration_am,
@@ -93,8 +93,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                               &LE_pm, &omega_pm);
 
         /* mol m-2 s-1 to mm/day */
-        transpiration = (transpiration_am + transpiration_pm) * \
-                         MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
+        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
+        transpiration = (transpiration_am + transpiration_pm) * conv;
 
         f->omega = (omega_am + omega_pm) / 2.0;
 
@@ -104,6 +104,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     }
 
     et = transpiration + soil_evap + interception;
+    
     update_water_storage(c, f, p, s, rain, interception, &transpiration,
                          &soil_evap, &et, &runoff);
 
