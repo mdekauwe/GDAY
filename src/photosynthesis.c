@@ -467,7 +467,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
            asat_am, asat_pm, lue_am, lue_pm, lue_avg, apar_half_day;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
-    get_met_stuff(m, project_day, daylen, &Tk_am, &Tk_pm, &par, &vpd_am,
+    get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
                   &vpd_pm, &ca);
 
     /* Calculate mate params & account for temperature dependencies */
@@ -501,9 +501,13 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
 
+    /* umol m-2 s-1 -> umol m-2 d-1 */
+    par *= 60.0 * 60.0 * daylen;
+
     /* LUE (umol C umol-1 PAR) */
     lue_am = epsilon(p, asat_am, par, daylen, alpha_am);
     lue_pm = epsilon(p, asat_pm, par, daylen, alpha_pm);
+
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
 
@@ -513,7 +517,6 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     else
         f->apar = par * s->fipar;
     apar_half_day = f->apar / 2.0;
-
 
     /* convert umol m-2 d-1 -> gC m-2 d-1 */
     f->gpp_gCm2 = f->apar * lue_avg * UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
@@ -526,7 +529,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     return;
 }
 
-void get_met_stuff(met *m, int project_day, double daylen, double *Tk_am,
+void get_met_stuff(met *m, int project_day, double *Tk_am,
                    double *Tk_pm, double *par, double *vpd_am, double *vpd_pm,
                    double *ca) {
     /*
@@ -559,9 +562,6 @@ void get_met_stuff(met *m, int project_day, double daylen, double *Tk_am,
     *vpd_pm = m->vpd_pm[project_day];
     *ca = m->co2[project_day];
     *par = m->par[project_day];
-
-    /* umol m-2 s-1 -> umol m-2 d-1 */
-    *par *= 60.0 * 60.0 * daylen;
 
     return;
 }
@@ -1032,7 +1032,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
        Collatz table 2 */
     double kslope = 0.7;
 
-    get_met_stuff(m, project_day, daylen, &Tk_am, &Tk_pm, &par, &vpd_am,
+    get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
                   &vpd_pm, &ca);
 
     /* Calculate mate params & account for temperature dependencies */
@@ -1067,6 +1067,9 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* Net (saturated) photosynthetic rate, not sure if this makes sense. */
     asat_am = A_am - Rd_am;
     asat_pm = A_pm - Rd_pm;
+
+    /* umol m-2 s-1 -> umol m-2 d-1 */
+    par *= 60.0 * 60.0 * daylen;
 
     /* LUE (umol C umol-1 PAR) */
     lue_am = epsilon(p, asat_am, par, daylen, p->alpha_c4);
