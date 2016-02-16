@@ -63,7 +63,9 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         press = m->press[day_idx] * KPA_2_PA;
     }
 
-    interception = calc_infiltration(p, s, rain);
+    interception = calc_interception(p, f, s, rain);
+    interception = 0.0;
+
     net_rad = calc_net_radiation(p, sw_rad, tair);
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
@@ -192,29 +194,51 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
 
 
-double calc_infiltration(params *p, state* s, double rain) {
-    /* Estimate "effective" rain, or infiltration I guess.
+double calc_interception(params *p, fluxes *f, state *s, double rain) {
+    /* Estimate canopy interception
 
     Simple assumption that infiltration relates to leaf area
-    and therefore canopy storage capacity (wetloss). Interception is
-    likely to be ("more") erroneous if a canopy is subject to frequent daily
-    rainfall I would suggest.
+    and therefore canopy storage capacity (wetloss).
 
     Parameters:
     -------
     rain : float
         rainfall [mm d-1]
 
+    References:
+    ----------
+    * Lloyd et al.(1988) Agricultural and Forest Meteorology, 43, 277-294, 277.
+
     */
-    double interception, infiltration;
+    double interception, infiltration, d_s, b, drainge_rate;
+    double MIN_2_HALF_HR = 30.0;
+    double canopy_store_capacity = 0.74; /* mm from Lloyd */
+
+    /* mm min-1 -> mm 30min-1 */
+    d_s = 0.0014 * MIN_2_HALF_HR;
+    b = 5.25; /* drainage coefficent */
 
     if (rain > 0.0) {
         infiltration = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
         interception = rain * p->rfmult - infiltration;
+
+        /*
+        drainge_rate = d_s * exp(b * (C - f->canopy_store));
+         call penman canopy with resistance zero
+        f->canopy_store -= MAX(0.0, drainge_rate - canopy_evap);
+
+        if (C < f->canopy_store) {
+            X = C / S;
+             multiply this by evap rate 
+        } else if (C >= S) {
+            X = 1;
+        }
+        */
+
     } else {
         interception = 0.0;
     }
-    
+
     return (interception);
 }
 

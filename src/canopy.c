@@ -134,6 +134,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     /* work out average omega for the day */
     f->omega /= sunlight_hrs;
 
+
     return;
 }
 

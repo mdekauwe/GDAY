@@ -14,7 +14,7 @@ void   update_water_storage(control *, fluxes *, params *, state *,
                             double *);
 
 double  calc_soil_evaporation(params*, state *, double, double , double);
-double  calc_infiltration(params *, state*, double);
+double  calc_interception(params *, fluxes *f, state*, double);
 void    penman_canopy_wrapper(params *, state *, double, double, double, double,
                               double, double, double, double *, double *,
                               double *, double *, double *);
