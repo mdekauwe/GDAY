@@ -246,14 +246,13 @@ double calculate_top_of_canopy_leafn(params *p, state *s) {
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
 
     if (s->lai > 0.0) {
-        /* the total amount of nitrogen in sunlit/shaded parts of canopy */
+        /* the total amount of nitrogen in the canopy */
         Ntot = s->shootnc * LMA * s->lai;
 
-        /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
+        /* top of canopy leaf N (gN m-2) */
         N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
     } else {
         N0 = 0.0;
-
     }
     return (N0);
 }

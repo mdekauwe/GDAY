@@ -254,12 +254,21 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
 double integrate_for_sunlit_frac(double a, double b, double N0,
                                      double lai) {
 
+    /*
+        Integrate over the canopy depth to yeild bulk values of sunlit
+        vcmax/jmax
+
+        References:
+        ----------
+        * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 37a,b
+    */
     double kb = 0.5;
     double kn = 0.3;
-    double sun;
+    double sun, arg1, arg2;
 
-    sun = a / kb * (1.0 - exp(-kb * lai)) + (b * N0) / (kb + kn) * \
-         (1.0 - exp(-(kn + kb) * lai));
+    arg1 = a / kb * (1.0 - exp(-kb * lai));
+    arg2 = b * N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
+    sun = arg1 + arg2;
 
     return (sun);
 }
@@ -267,13 +276,23 @@ double integrate_for_sunlit_frac(double a, double b, double N0,
 double integrate_for_shaded_frac(double a, double b, double N0,
                                      double lai) {
 
+    /*
+        Integrate over the canopy depth to yeild bulk values of shaded
+        vcmax/jmax
+
+        References:
+        ----------
+        * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 38a,b
+    */
     double kb = 0.5;
     double kn = 0.3;
-    double shade;
+    double shade, arg1, arg2, arg3, arg4;
 
-    shade = a * lai + (a / kb) * (exp(-kb * lai) - 1.0) - \
-            (b * N0 / kn) * (exp(-kb * lai) - 1.0) + \
-            (b * N0 / (kn + kb)) * (exp(-(kn + kb) * lai) - 1.0);
+    arg1 = a * lai;
+    arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
+    arg3 = b * N0 / kn * (exp(-kb * lai) - 1.0);
+    arg4 = b * N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
+    shade = arg1 + arg2 - arg2 + arg3;
 
     return (shade);
 }
