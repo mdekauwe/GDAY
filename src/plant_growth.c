@@ -327,7 +327,6 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
     int    recalc_wb;
     double nsupply, rtot, ntot, arg, lai_inc = 0.0, conv;
     double depth_guess = 1.0, total_req;
-    int    OLD = TRUE;
 
     /* default is we don't need to recalculate the water balance,
        however if we cut back on NPP due to available N below then we do
@@ -399,20 +398,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             - cut back C prodn */
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
-        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD == FALSE) {
-
-            /* arbitarily keep 10% for leaves/roots */
-            double leaf_root_N = 0.1 * ntot;
-
-            /* Rescale allocated N to the amount we actually have available */
-            total_req = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
-
-            f->npstemimm = (f->npstemimm / total_req) * (ntot - leaf_root_N);
-            f->npstemmob = (f->npstemmob / total_req) * (ntot - leaf_root_N);
-            f->npbranch = (f->npbranch / total_req) * (ntot - leaf_root_N);
-            f->npcroot = (f->npcroot / total_req) * (ntot - leaf_root_N);
-
-        } else if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD) {
+        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
@@ -426,11 +412,8 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                            (f->deadleaves + f->ceaten) * s->lai / s->shoot);
             }
 
-            f->npp *= ntot / (f->npstemimm + f->npstemmob + f->npbranch+ f->npcroot);
-
-
-
-
+            f->npp *= ntot / (f->npstemimm + f->npstemmob + \
+                              f->npbranch + f->npcroot);
 
             /* need to adjust growth values accordingly as well */
             f->cpleaf = f->npp * f->alleaf;
@@ -463,7 +446,8 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                 } else if (s->leaf_out_days[doy] > 0.0) {
                     s->lai -= lai_inc;
                     s->lai += (f->cpleaf *
-                               (p->sla * M2_AS_HA / (KG_AS_TONNES * p->cfracts)) -
+                               (p->sla * M2_AS_HA / \
+                               (KG_AS_TONNES * p->cfracts)) -
                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
                 } else {
                     s->lai = 0.0;
@@ -475,7 +459,8 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                 } else {
                     s->lai -= lai_inc;
                     s->lai += (f->cpleaf *
-                               (p->sla * M2_AS_HA / (KG_AS_TONNES * p->cfracts)) -
+                               (p->sla * M2_AS_HA / \
+                               (KG_AS_TONNES * p->cfracts)) -
                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
                 }
             }
@@ -488,7 +473,6 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         /* allocate remaining N to flexible-ratio pools */
         f->npleaf = ntot * f->alleaf / (f->alleaf + f->alroot * p->ncrfac);
         f->nproot = ntot - f->npleaf;
-
     }
     return (recalc_wb);
 }
