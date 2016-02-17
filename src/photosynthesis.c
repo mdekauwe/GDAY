@@ -464,7 +464,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, Tk_am, Tk_pm, par, vpd_am, vpd_pm, ca, gamma_star_am,
            gamma_star_pm, Km_am, Km_pm, jmax_am, jmax_pm, vcmax_am, vcmax_pm,
            ci_am, ci_pm, alpha_am, alpha_pm, ac_am, ac_pm, aj_am, aj_pm,
-           asat_am, asat_pm, lue_am, lue_pm, lue_avg, apar_half_day, conv;
+           asat_am, asat_pm, lue_am, lue_pm, lue_avg, conv;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
     get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
@@ -513,13 +513,12 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
         f->apar = 0.0;
     else
         f->apar = par * s->fipar;
-    apar_half_day = f->apar / 2.0;
 
     /* convert umol m-2 s-1 -> gC m-2 d-1 */
     conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
     f->gpp_gCm2 = f->apar * lue_avg * conv;
-    f->gpp_am = apar_half_day * lue_am * conv;
-    f->gpp_pm = apar_half_day * lue_pm * conv;
+    f->gpp_am = (f->apar / 2.0) * lue_am * conv;
+    f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
 
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
@@ -759,22 +758,6 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
         *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk, p->delsj,
                                p->edj);
-
-        if (c->sub_daily) {
-            vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
-            *vcmax = arrh(mt, vcmax25, p->eav, Tk);
-
-
-            
-            *vcmax *= *sunlit_lai
-
-
-            *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
-            *shaded_lai = s->lai - *sunlit_lai;
-
-        }
-
-
     } else if (c->modeljm == 3) {
         /* the maximum rate of electron transport at 25 degC */
         jmax25 = p->jmax;
@@ -972,14 +955,11 @@ double epsilon(params *p, double asat, double par, double daylen,
       22, 601-14.
 
     */
-    double delta, h, q, integral_g, sinx, arg1, arg2, arg3, lue;
+    double delta, q, integral_g, sinx, arg1, arg2, arg3, lue;
     int i;
 
     /* subintervals scaler, i.e. 6 intervals */
     delta = 0.16666666667;
-
-    /* number of seconds of daylight - NB. don't need this see above */
-    /*h = daylen * SECS_IN_HOUR;*/
 
     if (asat > 0.0) {
         /* normalised daily irradiance */
@@ -1039,7 +1019,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, Tk_am, Tk_pm, par, vpd_am, vpd_pm, ca, vcmax_am, vcmax_pm,
            ci_am, ci_pm, asat_am, asat_pm, lue_am, lue_pm, lue_avg,
            vcmax25_am, vcmax25_pm, par_per_sec, M_am, M_pm, A_am, A_pm,
-           Rd_am, Rd_pm, apar_half_day, SEC_2_HALF_DAY, half_day;
+           Rd_am, Rd_pm, apar_half_day, SEC_2_HALF_DAY, conv;
+
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
     /* curvature parameter, transition between light-limited and
@@ -1067,7 +1048,6 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     calculate_vcmax_parameter(p, s, Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
     calculate_vcmax_parameter(p, s, Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
 
-
     /* Rubisco and light-limited capacity (Appendix, 2B) */
     par_per_sec = par / (60.0 * 60.0 * daylen);
     M_am = quadratic(beta1, -(vcmax_am + p->alpha_c4 * par_per_sec),
@@ -1090,9 +1070,6 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = A_am - Rd_am;
     asat_pm = A_pm - Rd_pm;
 
-    /* umol m-2 s-1 -> umol m-2 d-1 */
-    par *= 60.0 * 60.0 * daylen;
-
     /* LUE (umol C umol-1 PAR) */
     lue_am = epsilon(p, asat_am, par, daylen, p->alpha_c4);
     lue_pm = epsilon(p, asat_pm, par, daylen, p->alpha_c4);
@@ -1105,12 +1082,12 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
         f->apar = 0.0;
     else
         f->apar = par * s->fipar;
-    apar_half_day = f->apar / 2.0;
 
     /* convert umol m-2 d-1 -> gC m-2 d-1 */
-    f->gpp_gCm2 = f->apar * lue_avg * UMOL_2_GRAMS_C;
-    f->gpp_am = apar_half_day * lue_am * UMOL_2_GRAMS_C;
-    f->gpp_pm = apar_half_day * lue_pm * UMOL_2_GRAMS_C;
+    conv = UMOL_2_GRAMS_C * (60.0 * 60.0 * daylen);
+    f->gpp_gCm2 = f->apar * lue_avg * conv;
+    f->gpp_am = (f->apar / 2.0) * lue_am * conv;
+    f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
 
     /* g C m-2 to tonnes hectare-1 day-1 */
