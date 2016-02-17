@@ -64,7 +64,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                         sw_rad);
 
         /* Is the sun up? */
-        if (elevation > 0.0 && par > 50.0) {
+        if (elevation > 0.0 && par > 20.0) {
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
                                          cos_zenith, &(apar_leaf[0]),
                                          &sunlit_lai, &shaded_lai);
