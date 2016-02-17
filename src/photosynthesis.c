@@ -18,7 +18,7 @@
 
 void photosynthesis_C3(control *c, params *p, state *s, double N0,
                        double tleaf, double par, double Cs, double dleaf,
-                       double *anleaf, double *gsc) {
+                       double *anleaf, double *gsc, bool leaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA
@@ -41,23 +41,11 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax);
-
-
-
-    /******* TO GET AROUND N0 not being right ******/
-
-    /*jmax = 60.0;
-    vcmax = 30.0;*/
-    /******* TO GET AROUND N0 not being right ******/
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax, leaf);
 
     /* leaf respiration in the light, Collatz et al. 1991 */
     rd = 0.015 * vcmax;
-
     /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
-
-
-
 
     /* actual electron transport rate */
     qudratic_error = FALSE;
@@ -187,7 +175,8 @@ double calculate_michaelis_menten(params *p, double tleaf) {
 }
 
 void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
-                            double N0, double *jmax, double *vcmax) {
+                            double N0, double *jmax, double *vcmax,
+                            bool leaf) {
     /*
         Calculate the potential electron transport rate (Jmax) and the
         maximum Rubisco activity (Vcmax) at the leaf temperature.
@@ -206,7 +195,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         vcmax : float
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
-    double jmax25, vcmax25;
+    double jmax25, vcmax25, a, b, V25, J25;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
@@ -217,10 +206,23 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax = p->jmax;
         *vcmax = p->vcmax;
     } else if (c->modeljm == 1) {
+
+        if (leaf == SUNLIT) {
+            J25 = integrate_for_sunlit_frac(p->jmaxna, p->jmaxnb, N0, s->lai);
+            V25 = integrate_for_sunlit_frac(p->vcmaxna, p->vcmaxnb, N0, s->lai);
+        } else {
+            J25 = integrate_for_shaded_frac(p->jmaxna, p->jmaxnb, N0, s->lai);
+            V25 = integrate_for_shaded_frac(p->jmaxna, p->jmaxnb, N0,s->lai);
+        }
+        *jmax = peaked_arrhenius(J25, p->eaj, tleaf, tref, p->delsj, p->edj);
+        *vcmax = arrhenius(V25, p->eav, tleaf, tref);
+
+
+        /*
         jmax25 = p->jmaxna * N0 + p->jmaxnb;
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);*/
     } else if (c->modeljm == 2) {
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
@@ -232,7 +234,6 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         vcmax25 = p->vcmax;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
     }
-
 
     /* reduce photosynthetic capacity with moisture stress */
     *jmax *= s->wtfac_root;
@@ -249,6 +250,35 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
 
     return;
 }
+
+double integrate_for_sunlit_frac(double a, double b, double N0,
+                                     double lai) {
+
+    double kb = 0.5;
+    double kn = 0.3;
+    double sun;
+
+    sun = a / kb * (1.0 - exp(-kb * lai)) + (b * N0) / (kb + kn) * \
+         (1.0 - exp(-(kn + kb) * lai));
+
+    return (sun);
+}
+
+double integrate_for_shaded_fract(double a, double b, double N0,
+                                     double lai) {
+
+    double kb = 0.5;
+    double kn = 0.3;
+    double shade;
+
+    shade = a * lai + (a / kb) * (exp(-kb * lai) - 1.0) - \
+            (b * N0 / kn) * (exp(-kb * lai) - 1.0) + \
+            (b * N0 / (kn + kb)) * (exp(-(kn + kb) * lai) - 1.0);
+
+    return (shade);
+}
+
+
 
 double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* Calculate leaf respiration in the light using a Q10 (exponential)

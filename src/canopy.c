@@ -44,7 +44,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
            press, vpd, par, tair, wind, Ca, sunlit_lai, shaded_lai, sw_rad,
            trans_canopy, omega_canopy;
-    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0[2],
+    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0,
            omega_leaf[2];
     int    hod, iter = 0, itermax = 100, i, dummy, sunlight_hrs;
 
@@ -70,8 +70,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                                          &sunlit_lai, &shaded_lai);
 
             /* Not sure if this quite makes sense for shaded bit? */
-            calculate_top_of_canopy_leafn(p, s, sunlit_lai, shaded_lai,
-                                          &(N0[0]));
+            N0 = calculate_top_of_canopy_leafn(p, s);
 
             /* sunlit / shaded loop */
             for (i = 0; i < NUM_LEAVES; i++) {
@@ -85,8 +84,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                 while (TRUE) {
 
                     if (c->ps_pathway == C3) {
-                        photosynthesis_C3(c, p, s, N0[i], tleaf, apar_leaf[i],
-                                          Cs, dleaf, &an_leaf[i], &gsc_leaf[i]);
+                        photosynthesis_C3(c, p, s, N0, tleaf, apar_leaf[i],
+                                          Cs, dleaf, &an_leaf[i], &gsc_leaf[i],
+                                          i);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
@@ -224,8 +224,7 @@ void zero_carbon_day_fluxes(fluxes *f) {
 
 
 
-void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
-                                   double shaded_lai, double *N0)  {
+double calculate_top_of_canopy_leafn(params *p, state *s) {
 
     /*
     Calculate the N at the top of the canopy (g N m-2), N0.
@@ -240,40 +239,24 @@ void calculate_top_of_canopy_leafn(params *p, state *s, double sunlit_lai,
     * Chen et al 93, Oecologia, 93,63-69.
 
     */
-    double Ntot_sun, Ntot_sha, Ntot, N0_canopy;
-    double k = p->kext;
+    double Ntot, N0;
+    double kn = 0.3; /* extinction coefficent for Nitrogen less steep */
 
     /* leaf mass per area (g C m-2 leaf) */
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
 
     if (s->lai > 0.0) {
-
         /* the total amount of nitrogen in sunlit/shaded parts of canopy */
         Ntot = s->shootnc * LMA * s->lai;
-        Ntot_sun = s->shootnc * LMA * sunlit_lai;
-        Ntot_sha = s->shootnc * LMA * shaded_lai;
-
-        /*printf("%.10lf %.10lf %.10lf\n", Ntot, Ntot_sun , Ntot_sha);*/
 
         /* top of canopy leaf N in the shaded/sunlit part of canopy (gN m-2) */
-        N0_canopy = Ntot * k / (1.0 - exp(-k * s->lai));
-        *(N0+SUNLIT) = Ntot_sun * k / (1.0 - exp(-k * sunlit_lai));
-        *(N0+SHADED) = Ntot_sha * k / (1.0 - exp(-k * shaded_lai));
-
-        /**(N0+SHADED) = N0_canopy - *(N0+SUNLIT);*/
-
-        /*printf("%.10lf %.10lf %.10lf\n", N0_canopy, *(N0+SUNLIT) , *(N0+SHADED));
-        exit(1);*/
-
-
+        N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
     } else {
-        *(N0+SUNLIT) = 0.0;
-        *(N0+SHADED) = 0.0;
+        N0 = 0.0;
+
     }
-    return;
+    return (N0);
 }
-
-
 
 void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
                         double *trans_leaf) {
