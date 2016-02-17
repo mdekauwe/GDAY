@@ -64,7 +64,11 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     }
 
     interception = calc_interception(p, f, s, rain);
-    interception = 0.0;
+
+    if (c->sub_daily) {
+        /* need to add Rutter model */
+        interception = 0.0;
+    }
 
     net_rad = calc_net_radiation(p, sw_rad, tair);
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
@@ -229,7 +233,7 @@ double calc_interception(params *p, fluxes *f, state *s, double rain) {
 
         if (C < f->canopy_store) {
             X = C / S;
-             multiply this by evap rate 
+             multiply this by evap rate
         } else if (C >= S) {
             X = 1;
         }

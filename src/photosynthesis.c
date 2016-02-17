@@ -759,6 +759,22 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
         *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk, p->delsj,
                                p->edj);
+
+        if (c->sub_daily) {
+            vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+            *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+
+
+            
+            *vcmax *= *sunlit_lai
+
+
+            *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
+            *shaded_lai = s->lai - *sunlit_lai;
+
+        }
+
+
     } else if (c->modeljm == 3) {
         /* the maximum rate of electron transport at 25 degC */
         jmax25 = p->jmax;
