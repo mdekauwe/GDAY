@@ -212,12 +212,12 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
             V25 = integrate_for_sunlit_frac(p->vcmaxna, p->vcmaxnb, N0, s->lai);
         } else {
             J25 = integrate_for_shaded_frac(p->jmaxna, p->jmaxnb, N0, s->lai);
-            V25 = integrate_for_shaded_frac(p->jmaxna, p->jmaxnb, N0,s->lai);
+            V25 = integrate_for_shaded_frac(p->vcmaxna, p->vcmaxnb, N0,s->lai);
         }
         *jmax = peaked_arrhenius(J25, p->eaj, tleaf, tref, p->delsj, p->edj);
         *vcmax = arrhenius(V25, p->eav, tleaf, tref);
 
-        printf("%d %lf %lf\n", leaf, *vcmax, *jmax);
+        /*printf("%d %lf %lf\n", leaf, *vcmax, *jmax);*/
         /*
         jmax25 = p->jmaxna * N0 + p->jmaxnb;
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
