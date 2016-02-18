@@ -93,7 +93,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                         exit(EXIT_FAILURE);
                     }
 
-                    if (an_leaf[i] > 0.0) {
+                    if (an_leaf[i] > 1E-04) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, f, m, p, s, tleaf,
                                                   an_leaf[i], gsc_leaf[i],
@@ -105,11 +105,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     }
 
                     if (iter >= itermax) {
-                        fprintf(stderr, "No convergence in canopy loop:\n");
+                        /*fprintf(stderr, "No convergence in canopy loop:\n");
+                        exit(EXIT_FAILURE);*/
+                        fprintf(stderr, "No convergence in canopy loop: %lf %lf %lf %lf : %.10lf %.10lf\n", Cs, tleaf, dleaf*0.001, apar_leaf[i], an_leaf[i], gsc_leaf[i] );
                         exit(EXIT_FAILURE);
-                        /*fprintf(stderr, "No convergence in canopy loop: %lf: %lf %lf\n", m->tair[c->hrly_idx], tleaf, tleaf_new);
-                        tleaf = tleaf_new;
-                        break;*/
                     } else if (fabs(tleaf - tleaf_new) < 0.02) {
                         break;
                     }
@@ -147,7 +146,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
-    
+
     return;
 }
 
