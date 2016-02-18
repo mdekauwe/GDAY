@@ -448,6 +448,10 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
             /* Have we reached a steady state? */
             fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
                     s->plantc, s->soilc);
+            fprintf(stderr, "Spinup: activesoil C - %f, slowsoil C - %f, passivesoil C - %f\n",
+                    s->activesoil, s->slowsoil, s->passivesoil);
+            fprintf(stderr, "Spinup: activesoil N - %f, slowsoil N - %f, passivesoil N - %f, inorgn N - %f\n\n",
+                    s->activesoiln, s->slowsoiln, s->passivesoiln, s->inorgn);
         }
     }
     write_final_state(c, p, s);

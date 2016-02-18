@@ -217,7 +217,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax = peaked_arrhenius(J25, p->eaj, tleaf, tref, p->delsj, p->edj);
         *vcmax = arrhenius(V25, p->eav, tleaf, tref);
 
-        printf("%d %lf %lf\n", leaf, *vcmax, *jmax);
+        /*printf("%d %lf %lf\n", leaf, *vcmax, *jmax);*/
         /*
         jmax25 = p->jmaxna * N0 + p->jmaxnb;
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
