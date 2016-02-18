@@ -42,7 +42,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     */
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
-           press, vpd, par, tair, wind, Ca, sunlit_lai, shaded_lai, sw_rad,
+           press, vpd, par, tair, wind, Ca, sunlit_shaded_lai, sw_rad,
            trans_canopy, omega_canopy;
     double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0,
            omega_leaf[2];
@@ -67,7 +67,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         if (elevation > 0.0 && par > 20.0) {
             calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
                                          cos_zenith, &(apar_leaf[0]),
-                                         &sunlit_lai, &shaded_lai);
+                                         &(sunlit_shaded_lai[0]));
 
             /* Not sure if this quite makes sense for shaded bit? */
             N0 = calculate_top_of_canopy_leafn(p, s);
@@ -86,7 +86,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     if (c->ps_pathway == C3) {
                         photosynthesis_C3(c, p, s, N0, tleaf, apar_leaf[i],
                                           Cs, dleaf, &an_leaf[i], &gsc_leaf[i],
-                                          i);
+                                          sunlit_shaded_lai[i], i);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");

@@ -78,7 +78,7 @@ double spitters(int doy, double cos_zenith, double sw_rad) {
 void calculate_absorbed_radiation(params *p, state *s, double par,
                                   double diffuse_frac, double elevation,
                                   double cos_zenith, double *apar,
-                                  double *sunlit_lai, double *shaded_lai) {
+                                  double *sunlit_shaded_lai) {
     /*
         Calculate absorded irradiance of sunlit and shaded fractions of
         the canopy
@@ -165,9 +165,9 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
           decreasing with canopy depth.
         - De Pury & Farquhar 1997, eqn 18.
     */
-    *sunlit_lai = (1.0 - exp(-kb * s->lai)) / kb;
-    *shaded_lai = s->lai - *sunlit_lai;
-
+    *(sunlit_shaded_lai+SUNLIT) = (1.0 - exp(-kb * s->lai)) / kb;
+    *(sunlit_shaded_lai+SHADED) = s->lai - *sunlit_lai;
+    
     return;
 }
 

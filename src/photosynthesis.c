@@ -18,7 +18,8 @@
 
 void photosynthesis_C3(control *c, params *p, state *s, double N0,
                        double tleaf, double par, double Cs, double dleaf,
-                       double *anleaf, double *gsc, bool leaf) {
+                       double *anleaf, double *gsc, double leaf_lai,
+                       bool leaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA
@@ -41,7 +42,7 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax, leaf);
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax, leaf_lai, leaf);
 
     /* leaf respiration in the light, Collatz et al. 1991 */
     rd = 0.015 * vcmax;
@@ -176,7 +177,7 @@ double calculate_michaelis_menten(params *p, double tleaf) {
 
 void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
                             double N0, double *jmax, double *vcmax,
-                            bool leaf) {
+                            double leaf_lai, bool leaf) {
     /*
         Calculate the potential electron transport rate (Jmax) and the
         maximum Rubisco activity (Vcmax) at the leaf temperature.
@@ -208,11 +209,11 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     } else if (c->modeljm == 1) {
 
         if (leaf == SUNLIT) {
-            jmax25 = integrate_sunlit_frac(p->jmaxna, p->jmaxnb, N0, s->lai);
-            vcmax25 = integrate_sunlit_frac(p->vcmaxna, p->vcmaxnb, N0, s->lai);
+            jmax25 = integrate_sunlit_frac(p->jmaxna, p->jmaxnb, N0, leaf_lai);
+            vcmax25 = integrate_sunlit_frac(p->vcmaxna, p->vcmaxnb, N0, leaf_lai);
         } else {
-            jmax25 = integrate_shaded_frac(p->jmaxna, p->jmaxnb, N0, s->lai);
-            vcmax25 = integrate_shaded_frac(p->vcmaxna, p->vcmaxnb, N0,s->lai);
+            jmax25 = integrate_shaded_frac(p->jmaxna, p->jmaxnb, N0, leaf_lai);
+            vcmax25 = integrate_shaded_frac(p->vcmaxna, p->vcmaxnb, N0, leaf_lai);
         }
         /*printf("%d %lf %lf\n", leaf, vcmax25, jmax25);*/
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
