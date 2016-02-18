@@ -166,8 +166,8 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
         - De Pury & Farquhar 1997, eqn 18.
     */
     *(sunlit_shaded_lai+SUNLIT) = (1.0 - exp(-kb * s->lai)) / kb;
-    *(sunlit_shaded_lai+SHADED) = s->lai - *sunlit_lai;
-    
+    *(sunlit_shaded_lai+SHADED) = s->lai - *(sunlit_shaded_lai+SUNLIT);
+
     return;
 }
 

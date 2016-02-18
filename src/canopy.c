@@ -42,10 +42,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     */
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
-           press, vpd, par, tair, wind, Ca, sunlit_shaded_lai, sw_rad,
+           press, vpd, par, tair, wind, Ca, sw_rad, N0,
            trans_canopy, omega_canopy;
-    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], N0,
-           omega_leaf[2];
+    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2],
+           sunlit_shaded_lai[2], omega_leaf[2];
     int    hod, iter = 0, itermax = 100, i, dummy, sunlight_hrs;
 
     /* loop through the day */
