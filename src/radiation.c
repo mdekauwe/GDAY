@@ -167,7 +167,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     */
     *(sunlit_shaded_lai+SUNLIT) = (1.0 - exp(-kb * s->lai)) / kb;
     *(sunlit_shaded_lai+SHADED) = s->lai - *(sunlit_shaded_lai+SUNLIT);
-
+    
     return;
 }
 
