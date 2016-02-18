@@ -105,8 +105,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
                     }
 
                     if (iter >= itermax) {
-                        fprintf(stderr, "No convergence in canopy loop\n");
-                        exit(EXIT_FAILURE);
+                        fprintf(stderr, "No convergence in canopy loop: %lf: %lf %lf\n", m->tair[c->hrly_idx], tleaf, tleaf_new);
+                        tleaf = tleaf_new;
+                        break;
+                        /*exit(EXIT_FAILURE);*/
                     } else if (fabs(tleaf - tleaf_new) < 0.02) {
                         break;
                     }
