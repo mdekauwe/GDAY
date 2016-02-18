@@ -137,6 +137,16 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     f->omega /= sunlight_hrs;
 
 
+    if (c->water_stress) {
+        /* Calculate the soil moisture availability factors [0,1] in the
+           topsoil and the entire root zone */
+        calculate_soil_water_fac(c, p, s);
+    } else {
+        /* really this should only be a debugging option! */
+        s->wtfac_topsoil = 1.0;
+        s->wtfac_root = 1.0;
+    }
+
     return;
 }
 
@@ -253,6 +263,7 @@ double calculate_top_of_canopy_leafn(params *p, state *s) {
 
         /* top of canopy leaf N (gN m-2) */
         N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
+        /*printf("%lf %lf %lf %f\n", s->lai, s->shootnc, Ntot, N0);*/
     } else {
         N0 = 0.0;
     }

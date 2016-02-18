@@ -183,14 +183,17 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     s->delta_sw_store = s->pawater_root - previous;
 
-    if (c->water_stress) {
-        /* Calculate the soil moisture availability factors [0,1] in the
-           topsoil and the entire root zone */
-        calculate_soil_water_fac(c, p, s);
-    } else {
-        /* really this should only be a debugging option! */
-        s->wtfac_topsoil = 1.0;
-        s->wtfac_root = 1.0;
+    /* calculated at the end of the day for sub_daily */
+    if (! c->sub_daily) {
+        if (c->water_stress) {
+            /* Calculate the soil moisture availability factors [0,1] in the
+               topsoil and the entire root zone */
+            calculate_soil_water_fac(c, p, s);
+        } else {
+            /* really this should only be a debugging option! */
+            s->wtfac_topsoil = 1.0;
+            s->wtfac_root = 1.0;
+        }
     }
 
     return;
