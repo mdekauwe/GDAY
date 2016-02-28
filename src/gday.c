@@ -443,9 +443,10 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
             prev_soilc = s->soilc;
 
             /* 1000 years (50 yrs x 20 cycles) */
-            for (i = 0; i < 20; i++)
+            for (i = 0; i < 20; i++) {
                 run_sim(c, f, m, p, s); /* run GDAY */
-
+            }
+            
             /* Have we reached a steady state? */
             fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
                     s->plantc, s->soilc);
