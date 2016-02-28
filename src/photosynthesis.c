@@ -288,7 +288,7 @@ double integrate_shaded_frac(double a, double b, double N0,
 
     arg1 = a * lai;
     arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
-    arg3 = b * N0 / kn * (exp(-kb * lai) - 1.0);
+    arg3 = b * N0 / kn * (1.0 - exp(-kn * lai));
     arg4 = b * N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
     shade = arg1 + arg2 - arg2 + arg3;
 
