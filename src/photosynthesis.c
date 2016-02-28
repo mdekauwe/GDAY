@@ -211,16 +211,25 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax = p->jmax;
         *vcmax = p->vcmax;
     } else if (c->modeljm == 1) {
-        if (leaf == SUNLIT) {
-            jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai);
-            vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
+        if (c->sub_daily) {
+
+            if (leaf == SUNLIT) {
+                jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai);
+                vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
+            } else {
+                jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai);
+                vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
+            }
+            /*printf("%d %lf %lf\n", leaf, vcmax25, jmax25);*/
+            *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+            *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         } else {
-            jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai);
-            vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
+            jmax25 = p->jmaxna * N0 + p->jmaxnb;
+            *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+
+            vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+            *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         }
-        /*printf("%d %lf %lf\n", leaf, vcmax25, jmax25);*/
-        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
     } else if (c->modeljm == 2) {
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
