@@ -98,12 +98,15 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
         if (c->sub_daily) {
             /* calculate 30-min GPP/NPP, respiration and water fluxes */
-            /* DONT WANT TO DO THIScanopy(c, f, m, p, s);*/
+            printf("%lf\n", s->wtfac_root);
 
-            /* need to fix */
-            double blah = 0.0;
-
-
+            /* reduce transpiration to match cut back GPP
+                -there isn't an obvious way to make this work at the 30 min
+                 timestep, so invert T from WUE assumption and use that
+                 to recalculate the end day water balance
+            */
+            f->transpiration = f->gpp_gCm2 / f->wue;
+            update_water_storage_recalwb(c, f, p, s, m);
         } else {
             calculate_water_balance(c, f, m, p, s, project_day, day_length,
                                     dummy, dummy);
@@ -400,7 +403,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
 
 
         /*if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
-            
+
             total_req = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
             f->nuptake = total_req;
@@ -450,6 +453,9 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
             f->npcroot = f->npp * f->alcroot * nccnew;
 
+            /* Save WUE before cut back */
+            f->wue = f->gpp_gCm2 / f->transpiration;
+
             /* Also need to recalculate GPP and thus Ra and return a flag
                so that we know to recalculate the water balance. */
             f->gpp = f->npp / p->cue;
@@ -457,6 +463,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->gpp_gCm2 = f->gpp / conv;
             f->gpp_am = f->gpp_gCm2 / 2.0;
             f->gpp_pm = f->gpp_gCm2 / 2.0;
+
 
             /* New respiration flux */
             f->auto_resp =  f->gpp - f->npp;

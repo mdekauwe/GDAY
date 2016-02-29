@@ -200,6 +200,85 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 }
 
 
+void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
+                                  met *m) {
+    /* Calculate root and top soil plant available water and runoff.
+
+    Soil drainage is estimated using a "leaky-bucket" approach with two
+    soil layers. In reality this is a combined drainage and runoff
+    calculation, i.e. "outflow". There is no drainage out of the "bucket"
+    soil.
+
+    Returns:
+    --------
+    outflow : float
+        outflow [mm d-1]
+    */
+    double trans_frac, previous, rain;
+    int    hod;
+
+    rain = 0.0;
+    for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+        rain += m->rain[c->hrly_idx];
+    }
+
+    f->et = f->transpiration + f->soil_evap + f->interception;
+
+    /* reduce transpiration from the top soil if it is dry */
+    trans_frac = p->fractup_soil * s->wtfac_topsoil;
+
+    /* Total soil layer */
+    s->pawater_topsoil += (rain - f->interception) - \
+                          (f->transpiration * trans_frac) - \
+                           f->soil_evap;
+
+    if (s->pawater_topsoil < 0.0) {
+        s->pawater_topsoil = 0.0;
+    } else if (s->pawater_topsoil > p->wcapac_topsoil) {
+        s->pawater_topsoil = p->wcapac_topsoil;
+    }
+
+    /* Total root zone */
+    previous = s->pawater_root;
+    s->pawater_root += (rain - f->interception) - f->transpiration - f->soil_evap;
+
+    /* calculate runoff and remove any excess from rootzone */
+    if (s->pawater_root > p->wcapac_root) {
+        f->runoff = s->pawater_root - p->wcapac_root;
+        s->pawater_root -= f->runoff;
+    } else {
+        f->runoff = 0.0;
+    }
+
+    if (s->pawater_root < 0.0) {
+        f->transpiration = 0.0;
+        f->soil_evap = 0.0;
+        f->et = f->interception;
+    }
+
+    if (s->pawater_root < 0.0)
+        s->pawater_root = 0.0;
+    else if (s->pawater_root > p->wcapac_root)
+        s->pawater_root = p->wcapac_root;
+
+    s->delta_sw_store = s->pawater_root - previous;
+
+    /* calculated at the end of the day for sub_daily */
+    if (c->water_stress) {
+        /* Calculate the soil moisture availability factors [0,1] in the
+           topsoil and the entire root zone */
+        calculate_soil_water_fac(c, p, s);
+    } else {
+        /* really this should only be a debugging option! */
+        s->wtfac_topsoil = 1.0;
+        s->wtfac_root = 1.0;
+    }
+
+
+    return;
+}
+
+
 
 double calc_interception(params *p, fluxes *f, state *s, double rain) {
     /* Estimate canopy interception

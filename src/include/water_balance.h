@@ -12,7 +12,8 @@ void   zero_water_day_fluxes(fluxes *);
 void   update_water_storage(control *, fluxes *, params *, state *,
                             double, double, double *, double *, double *,
                             double *);
-
+void    update_water_storage_recalwb(control *, fluxes *, params *, state *,
+                                     met *);
 double  calc_soil_evaporation(params*, state *, double, double , double);
 double  calc_interception(params *, fluxes *f, state*, double);
 void    penman_canopy_wrapper(params *, state *, double, double, double, double,
