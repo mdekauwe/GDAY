@@ -313,7 +313,6 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay, &day_tsoil, &day_ndep);
 
-
             calculate_csoil_flows(c, f, p, s, day_tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, day_ndep, doy);
 
