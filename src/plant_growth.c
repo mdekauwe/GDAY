@@ -97,9 +97,6 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
         s->pawater_root = previous_rootzone_store;
 
         if (c->sub_daily) {
-            /* calculate 30-min GPP/NPP, respiration and water fluxes */
-            printf("%lf\n", s->wtfac_root);
-
             /* reduce transpiration to match cut back GPP
                 -there isn't an obvious way to make this work at the 30 min
                  timestep, so invert T from WUE assumption and use that
