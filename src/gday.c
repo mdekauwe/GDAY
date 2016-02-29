@@ -159,7 +159,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     int    project_day = 0, fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
 
-    double fdecay, rdecay, current_limitation, nitfac, year;
+    double fdecay, rdecay, current_limitation, nitfac, year, day_tsoil,
+           day_ndep;
     int   *disturbance_yrs = NULL;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
@@ -310,10 +311,11 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             }
 
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
-                            doy, fdecay, rdecay);
+                            doy, fdecay, rdecay, &day_tsoil, &day_ndep);
 
-            calculate_csoil_flows(c, f, p, s, m->tsoil[project_day], doy);
-            calculate_nsoil_flows(c, f, p, s, m->ndep[project_day], doy);
+            
+            calculate_csoil_flows(c, f, p, s, day_tsoil, doy);
+            calculate_nsoil_flows(c, f, p, s, day_ndep, doy);
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
@@ -347,7 +349,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-
+            /*printf(" %lf\n", s->lai);*/
             /*
             printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
                                                   c->num_days, f->gpp*100,
@@ -392,7 +394,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     if (c->disturbance) {
         free(disturbance_yrs);
     }
-    
+
     return;
 
 

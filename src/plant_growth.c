@@ -23,7 +23,7 @@
 
 void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
                      int project_day, double day_length, int doy, double fdecay,
-                     double rdecay)
+                     double rdecay, double *day_tsoil, double *day_ndep)
 {
     double previous_topsoil_store, dummy,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
@@ -33,15 +33,16 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
     previous_topsoil_store = s->pawater_topsoil;
     previous_rootzone_store = s->pawater_root;
 
-
     if (c->sub_daily) {
         /* calculate 30-min GPP/NPP, respiration and water fluxes */
-        canopy(c, f, m, p, s);
+        canopy(c, f, m, p, s, day_tsoil, day_ndep);
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, project_day, day_length);
         calculate_water_balance(c, f, m, p, s, project_day, day_length, dummy,
                                 dummy);
+        *day_tsoil = m->tsoil[project_day];
+        *day_ndep = m->ndep[project_day];
     }
 
     /*printf("* %lf\n", f->gpp);*/
@@ -102,8 +103,9 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
                  timestep, so invert T from WUE assumption and use that
                  to recalculate the end day water balance
             */
-            f->transpiration = f->gpp_gCm2 / f->wue;
-            update_water_storage_recalwb(c, f, p, s, m);
+            /*f->transpiration = f->gpp_gCm2 / f->wue;
+            update_water_storage_recalwb(c, f, p, s, m);*/
+            double blah;
         } else {
             calculate_water_balance(c, f, m, p, s, project_day, day_length,
                                     dummy, dummy);
@@ -398,14 +400,6 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             - cut back C prodn */
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
-
-        /*if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
-
-            total_req = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
-
-            f->nuptake = total_req;
-            ntot = MAX(0.0, f->nuptake + f->retrans);
-        } */
 
         if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD == FALSE) {
 

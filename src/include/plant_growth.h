@@ -16,7 +16,7 @@
 
 /* C stuff */
 void    calc_day_growth(control *, fluxes *, met *, params *, state *, int,
-                        double, int, double, double);
+                        double, int, double, double, double *, double *);
 void    carbon_allocation(control *, fluxes *, params *, state *,
                                                      double, int);
 void    calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,

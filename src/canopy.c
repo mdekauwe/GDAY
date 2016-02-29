@@ -21,7 +21,8 @@
 #include "canopy.h"
 #include "water_balance.h"
 
-void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
+void canopy(control *c, fluxes *f, met *m, params *p, state *s,
+            double *day_tsoil, double *day_ndep) {
     /*
         Canopy module consists of two parts:
         (1) a radiation sub-model to calculate apar of sunlit/shaded leaves
@@ -52,7 +53,12 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     sunlight_hrs = 0;
+    *day_tsoil = 0.0;
+    *day_ndep = 0.0;
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+
+        *day_tsoil += m->tsoil[c->hrly_idx];
+        *day_ndep += m->ndep[c->hrly_idx];
 
         calculate_solar_geometry(p, m->doy[c->hrly_idx], hod, &cos_zenith,
                                  &elevation);
@@ -133,9 +139,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s) {
         sunlight_hrs++;
     } /* end of hour loop */
 
-    /* work out average omega for the day */
+    /* work out average omega for the day over sunlight hours */
     f->omega /= sunlight_hrs;
 
+    /* work out average omega for the day, including the night */
+    *day_tsoil /= c->num_hlf_hrs;
 
     if (c->water_stress) {
         /* Calculate the soil moisture availability factors [0,1] in the

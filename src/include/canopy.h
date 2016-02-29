@@ -17,7 +17,8 @@
 void    zero_carbon_day_fluxes(fluxes *);
 void    zero_hourly_fluxes(double *, double *, double *);
 void    update_daily_carbon_fluxes(fluxes *, params *, double, double);
-void    canopy(control *, fluxes *, met *, params *, state *);
+void    canopy(control *, fluxes *, met *, params *, state *, double *,
+               double *);
 
 void    solve_leaf_energy_balance(control *, fluxes *, met *, params *,
                                   state *, double, double, double, double,
