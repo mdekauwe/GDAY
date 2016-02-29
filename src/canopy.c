@@ -275,6 +275,7 @@ double calculate_top_of_canopy_leafn(params *p, state *s) {
     } else {
         N0 = 0.0;
     }
+    
     return (N0);
 }
 

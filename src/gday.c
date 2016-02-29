@@ -393,7 +393,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     if (c->disturbance) {
         free(disturbance_yrs);
     }
-
+    
     return;
 
 
@@ -449,8 +449,9 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
             }
 
             /* Have we reached a steady state? */
-            fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
-                    s->plantc, s->soilc);
+            fprintf(stderr,
+                    "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
+                    s->plantc, s->soilc, s->plantn, s->soiln);
         }
     }
     write_final_state(c, p, s);
