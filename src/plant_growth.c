@@ -103,9 +103,9 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
                  timestep, so invert T from WUE assumption and use that
                  to recalculate the end day water balance
             */
-            /*f->transpiration = f->gpp_gCm2 / f->wue;
-            update_water_storage_recalwb(c, f, p, s, m);*/
-            double blah;
+            f->transpiration = f->gpp_gCm2 / f->wue;
+            update_water_storage_recalwb(c, f, p, s, m);
+
         } else {
             calculate_water_balance(c, f, m, p, s, project_day, day_length,
                                     dummy, dummy);
@@ -329,7 +329,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
     int    recalc_wb;
     double nsupply, rtot, ntot, arg, lai_inc = 0.0, conv;
     double depth_guess = 1.0, total_req;
-    int    OLD = TRUE;
+    
     /* default is we don't need to recalculate the water balance,
        however if we cut back on NPP due to available N below then we do
        need to do this */
@@ -401,20 +401,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
 
-        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD == FALSE) {
-
-            /* arbitarily keep 10% for leaves/roots */
-            double leaf_root_N = 0.1 * ntot;
-
-            /* Rescale allocated N to the amount we actually have available */
-            total_req = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
-
-            f->npstemimm = (f->npstemimm / total_req) * (ntot - leaf_root_N);
-            f->npstemmob = (f->npstemmob / total_req) * (ntot - leaf_root_N);
-            f->npbranch = (f->npbranch / total_req) * (ntot - leaf_root_N);
-            f->npcroot = (f->npcroot / total_req) * (ntot - leaf_root_N);
-
-        } else if (arg > ntot && c->fixleafnc == FALSE && c->ncycle && OLD) {
+        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
 
 
             /* Need to readjust the LAI for the reduced growth as this will

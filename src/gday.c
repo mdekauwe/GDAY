@@ -313,7 +313,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
                             doy, fdecay, rdecay, &day_tsoil, &day_ndep);
 
-            
+
             calculate_csoil_flows(c, f, p, s, day_tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, day_ndep, doy);
 
@@ -452,12 +452,6 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
             /* Have we reached a steady state? */
             fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
                     s->plantc, s->soilc);
-            fprintf(stderr, "Spinup: shoot C - %f, LAI - %f\n",
-                    s->shoot, s->lai);
-            fprintf(stderr, "Spinup: activesoil C - %f, slowsoil C - %f, passivesoil C - %f\n",
-                    s->activesoil, s->slowsoil, s->passivesoil);
-            fprintf(stderr, "Spinup: activesoil N - %f, slowsoil N - %f, passivesoil N - %f, inorgn N - %f\n\n",
-                    s->activesoiln, s->slowsoiln, s->passivesoiln, s->inorgn);
         }
     }
     write_final_state(c, p, s);
