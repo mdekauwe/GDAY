@@ -347,7 +347,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            /*printf(" %lf\n", s->lai);*/
+            printf("%lf %lf\n", f->gpp, s->lai);
             /*
             printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
                                                   c->num_days, f->gpp*100,
@@ -392,7 +392,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     if (c->disturbance) {
         free(disturbance_yrs);
     }
-
+    exit(1);
     return;
 
 
@@ -446,7 +446,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
             for (i = 0; i < 20; i++) {
                 run_sim(c, f, m, p, s); /* run GDAY */
             }
-            
+
             /* Have we reached a steady state? */
             fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n",
                     s->plantc, s->soilc);
