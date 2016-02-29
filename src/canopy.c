@@ -263,7 +263,7 @@ double calculate_top_of_canopy_leafn(params *p, state *s) {
 
         /* top of canopy leaf N (gN m-2) */
         N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
-        
+        /*printf("%lf %lf %lf %f\n", s->lai, s->shootnc, Ntot, N0);*/
     } else {
         N0 = 0.0;
     }

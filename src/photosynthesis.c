@@ -220,7 +220,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
                 jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai);
                 vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
             }
-            /*printf("%d %lf %lf\n", leaf, vcmax25, jmax25);*/
+            /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
             *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
             *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         } else {

@@ -399,7 +399,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
         if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
-
+            
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
                much we have increased LAI by, important it is done here
