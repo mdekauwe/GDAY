@@ -220,9 +220,9 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
                                             cos_zenith, c->modeljm);
         } else {
             *jmax = integrate_shaded_frac(p->jmax, DUMMY, DUMMY, leaf_lai,
-                                           cos_zenith, c->modeljm);
+                                           cos_zenith, c->modeljm, FALSE);
             *vcmax = integrate_shaded_frac(p->vcmax, DUMMY, DUMMY, leaf_lai,
-                                            cos_zenith, c->modeljm);
+                                            cos_zenith, c->modeljm, TRUE);
         }
 
     } else if (c->modeljm == 1) {
@@ -235,9 +235,9 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
                                                 cos_zenith, c->modeljm);
             } else {
                 jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai,
-                                               cos_zenith, c->modeljm);
+                                               cos_zenith, c->modeljm, FALSE);
                 vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
-                                                cos_zenith, c->modeljm);
+                                                cos_zenith, c->modeljm, TRUE);
             }
             /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
             *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
@@ -328,7 +328,7 @@ double integrate_sunlit_frac(double a, double b, double N0, double lai,
 }
 
 double integrate_shaded_frac(double a, double b, double N0, double lai,
-                             double cos_zenith, int modeljm) {
+                             double cos_zenith, int modeljm, bool do_vcmax) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of shaded
@@ -357,16 +357,25 @@ double integrate_shaded_frac(double a, double b, double N0, double lai,
         ----------
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 38a,b
     */
-    double shade, arg1, arg2, arg3, arg4, kb, kn;
+    double shade, arg1, arg2, arg3, arg4, kb, kn, k_dash_d;
 
     /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
     kb = 0.5 / cos_zenith;
     kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
 
+    /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
+    k_dash_d = 0.718;
+
     if (modeljm == 0) {
-        arg1 = (1.0 - exp(-kn * lai)) * 1.0 / kn;
-        arg2 = (1.0 - exp(-(kn + kb) * lai)) * 1.0 / (kn + kb);
-        shade = a * (arg1 - arg2);
+        if (do_vcmax) {
+            arg1 = (1.0 - exp(-kn * lai)) * 1.0 / kn;
+            arg2 = (1.0 - exp(-(kn + kb) * lai)) * 1.0 / (kn + kb);
+            shade = a * (arg1 - arg2);
+        } else {
+            arg1 = (1.0 - exp(-k_dash_d * lai)) * 1.0 / k_dash_d;
+            arg2 = (1.0 - exp(-(k_dash_d + kb) * lai)) * 1.0 / (k_dash_d + kb);
+            shade = a * (arg1 - arg2);
+        }
     } else if (modeljm == 1) {
         arg1 = a * lai;
         arg2 = (a / kb) * (exp(-kb * lai) - 1.0);

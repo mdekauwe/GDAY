@@ -129,7 +129,11 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         } else {
             zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]));
         }
-        
+        /*
+        an_leaf[SUNLIT] *= sunlit_shaded_lai[SUNLIT];
+        an_leaf[SHADED] *= sunlit_shaded_lai[SHADED];
+        trans_canopy = (trans_leaf[SUNLIT]*sunlit_shaded_lai[SUNLIT]) + (trans_leaf[SHADED]*sunlit_shaded_lai[SHADED]);
+        */
         sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
         trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
         omega_canopy = (omega_leaf[SUNLIT] + omega_leaf[SHADED]) / 2.0;

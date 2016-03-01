@@ -19,7 +19,7 @@ double peaked_arrhenius(double, double, double, double, double, double);
 double calc_leaf_day_respiration(double, double);
 double quad(double, double, double, bool, int *);
 double integrate_sunlit_frac(double, double, double, double, double, int);
-double integrate_shaded_frac(double, double, double, double, double, int);
+double integrate_shaded_frac(double, double, double, double, double, int, bool);
 
 
 
