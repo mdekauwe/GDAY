@@ -205,6 +205,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     double jmaxnb = p->jmaxnb;
     double vcmaxna = p->vcmaxna;
     double vcmaxnb = p->vcmaxnb;
+    int    DUMMY = -999;
     *vcmax = 0.0;
     *jmax = 0.0;
 
@@ -212,19 +213,31 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax = p->jmax;
         *vcmax = p->vcmax;
 
+        if (leaf == SUNLIT) {
+            *jmax = integrate_sunlit_frac(p->jmax, DUMMY, DUMMY, leaf_lai,
+                                           cos_zenith, c->modeljm);
+            *vcmax = integrate_sunlit_frac(p->vcmax, DUMMY, N0, leaf_lai,
+                                            cos_zenith, c->modeljm);
+        } else {
+            *jmax = integrate_shaded_frac(p->jmax, DUMMY, DUMMY, leaf_lai,
+                                           cos_zenith, c->modeljm);
+            *vcmax = integrate_shaded_frac(p->vcmax, DUMMY, DUMMY, leaf_lai,
+                                            cos_zenith, c->modeljm);
+        }
+
     } else if (c->modeljm == 1) {
         if (c->sub_daily) {
 
             if (leaf == SUNLIT) {
                 jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai,
-                                               cos_zenith);
+                                               cos_zenith, c->modeljm);
                 vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
-                                                cos_zenith);
+                                                cos_zenith, c->modeljm);
             } else {
                 jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai,
-                                               cos_zenith);
+                                               cos_zenith, c->modeljm);
                 vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
-                                                cos_zenith);
+                                                cos_zenith, c->modeljm);
             }
             /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
             *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
@@ -269,11 +282,29 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
 }
 
 double integrate_sunlit_frac(double a, double b, double N0, double lai,
-                             double cos_zenith) {
+                             double cos_zenith, int modeljm) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of sunlit
         vcmax/jmax
+
+        Parameters:
+        ----------
+        a : float
+            slope in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
+        b : float
+            intercept in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
+        lai : float
+            sunlit LAI (m2 m-2)
+        cos_zenith : double
+            sun zenith angle (radians)
+        modeljm : int
+            which Vcmax/Jmax calculation
+
+        Returns:
+        --------
+        sun : float
+            sunlit Vcmax or Jmax (umol m-2 s-1)
 
         References:
         ----------
@@ -282,22 +313,45 @@ double integrate_sunlit_frac(double a, double b, double N0, double lai,
     double sun, arg1, arg2, kb, kn = 0.3;
 
     /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cos_zenith; /* sin_beta == cos_zenith */
-    kn = 0.3; /* assume less steep N profile */
+    kb = 0.5 / cos_zenith;
+    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
 
-    arg1 = a / kb * (1.0 - exp(-kb * lai));
-    arg2 = b * N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
-    sun = arg1 + arg2;
+    if (modeljm == 0) {
+        sun = a * (1.0 - exp(-(kn + kb) * lai)) * (1.0 / (kn + kb));
+    } else if (modeljm == 1) {
+        arg1 = a / kb * (1.0 - exp(-kb * lai));
+        arg2 = b * N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
+        sun = arg1 + arg2;
+    }
 
     return (sun);
 }
 
 double integrate_shaded_frac(double a, double b, double N0, double lai,
-                             double cos_zenith) {
+                             double cos_zenith, int modeljm) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of shaded
         vcmax/jmax
+
+        Parameters:
+        ----------
+        a : float
+            slope in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
+        b : float
+            intercept in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
+        lai : float
+            shaded LAI (m2 m-2)
+        cos_zenith : double
+            sun zenith angle (radians)
+        modeljm : int
+            which Vcmax/Jmax calculation
+
+        Returns:
+        --------
+        shade : float
+            shaded Vcmax or Jmax (umol m-2 s-1)
+
 
         References:
         ----------
@@ -306,19 +360,23 @@ double integrate_shaded_frac(double a, double b, double N0, double lai,
     double shade, arg1, arg2, arg3, arg4, kb, kn;
 
     /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cos_zenith; /* sin_beta == cos_zenith */
-    kn = 0.3; /* assume less steep N profile */
+    kb = 0.5 / cos_zenith;
+    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
 
-    arg1 = a * lai;
-    arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
-    arg3 = b * N0 / kn * (1.0 - exp(-kn * lai));
-    arg4 = b * N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
-    shade = arg1 + arg2 - arg2 + arg3;
+    if (modeljm == 0) {
+        arg1 = (1.0 - exp(-kn * lai)) * 1.0 / kn;
+        arg2 = (1.0 - exp(-(kn + kb) * lai)) * 1.0 / (kn + kb);
+        shade = a * (arg1 - arg2);
+    } else if (modeljm == 1) {
+        arg1 = a * lai;
+        arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
+        arg3 = b * N0 / kn * (1.0 - exp(-kn * lai));
+        arg4 = b * N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
+        shade = arg1 + arg2 - arg2 + arg3;
+    }
 
     return (shade);
 }
-
-
 
 double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* Calculate leaf respiration in the light using a Q10 (exponential)
