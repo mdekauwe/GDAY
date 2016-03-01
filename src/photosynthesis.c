@@ -19,7 +19,7 @@
 void photosynthesis_C3(control *c, params *p, state *s, double N0,
                        double tleaf, double par, double Cs, double dleaf,
                        double *anleaf, double *gsc, double leaf_lai,
-                       bool leaf) {
+                       bool leaf, double cos_zenith) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA
@@ -42,7 +42,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax, leaf_lai, leaf);
+    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax, leaf_lai, leaf,
+                           cos_zenith);
 
     /* leaf respiration in the light, Collatz et al. 1991 */
     rd = 0.015 * vcmax;
@@ -177,7 +178,7 @@ double calculate_michaelis_menten(params *p, double tleaf) {
 
 void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
                             double N0, double *jmax, double *vcmax,
-                            double leaf_lai, bool leaf) {
+                            double leaf_lai, bool leaf, double cos_zenith) {
     /*
         Calculate the potential electron transport rate (Jmax) and the
         maximum Rubisco activity (Vcmax) at the leaf temperature.
@@ -215,18 +216,24 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         if (c->sub_daily) {
 
             if (leaf == SUNLIT) {
-                jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai);
-                vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
+                jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai,
+                                               cos_zenith);
+                vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
+                                                cos_zenith);
             } else {
-                jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai);
-                vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai);
+                jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai,
+                                               cos_zenith);
+                vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
+                                                cos_zenith);
             }
             /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
-            *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+            *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
+                                     p->edj);
             *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         } else {
             jmax25 = p->jmaxna * N0 + p->jmaxnb;
-            *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+            *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
+                                     p->edj);
 
             vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
             *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
@@ -261,8 +268,8 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     return;
 }
 
-double integrate_sunlit_frac(double a, double b, double N0,
-                                     double lai) {
+double integrate_sunlit_frac(double a, double b, double N0, double lai,
+                             double cos_zenith) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of sunlit
@@ -272,9 +279,11 @@ double integrate_sunlit_frac(double a, double b, double N0,
         ----------
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 37a,b
     */
-    double kb = 0.5;
-    double kn = 0.3;
-    double sun, arg1, arg2;
+    double sun, arg1, arg2, kb, kn = 0.3;
+
+    /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
+    kb = 0.5 / cos_zenith; /* sin_beta == cos_zenith */
+    kn = 0.3; /* assume less steep N profile */
 
     arg1 = a / kb * (1.0 - exp(-kb * lai));
     arg2 = b * N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
@@ -283,8 +292,8 @@ double integrate_sunlit_frac(double a, double b, double N0,
     return (sun);
 }
 
-double integrate_shaded_frac(double a, double b, double N0,
-                                     double lai) {
+double integrate_shaded_frac(double a, double b, double N0, double lai,
+                             double cos_zenith) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of shaded
@@ -294,9 +303,11 @@ double integrate_shaded_frac(double a, double b, double N0,
         ----------
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 38a,b
     */
-    double kb = 0.5;
-    double kn = 0.3;
-    double shade, arg1, arg2, arg3, arg4;
+    double shade, arg1, arg2, arg3, arg4, kb, kn;
+
+    /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
+    kb = 0.5 / cos_zenith; /* sin_beta == cos_zenith */
+    kn = 0.3; /* assume less steep N profile */
 
     arg1 = a * lai;
     arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
