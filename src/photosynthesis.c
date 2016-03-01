@@ -210,6 +210,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
+
     } else if (c->modeljm == 1) {
         if (c->sub_daily) {
 
@@ -246,6 +247,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     *jmax *= s->wtfac_root;
     *vcmax *= s->wtfac_root;
 
+
     /* Jmax/Vcmax forced linearly to zero at low T */
     if (tleaf < lower_bound) {
         *jmax = 0.0;
@@ -254,6 +256,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
     }
+
 
     return;
 }
