@@ -5,9 +5,10 @@
 #include "constants.h"
 #include "utilities.h"
 
-
+double calc_canopy_evaporation(params *, state *, double, double, double,
+                               double, double);
 void   calculate_water_balance(control *, fluxes *, met *, params *,
-                              state *, int, int, double, double);
+                              state *, int, int, double, double, double);
 void   zero_water_day_fluxes(fluxes *);
 void   update_water_storage(control *, fluxes *, params *, state *,
                             double, double, double *, double *, double *,
@@ -15,7 +16,8 @@ void   update_water_storage(control *, fluxes *, params *, state *,
 void    update_water_storage_recalwb(control *, fluxes *, params *, state *,
                                      met *);
 double  calc_soil_evaporation(params*, state *, double, double , double);
-double  calc_interception(params *, fluxes *f, state*, double);
+void    calc_interception(control *c, params *, fluxes *, state *, double,
+                          double, double *, double *, double *);
 void    penman_canopy_wrapper(params *, state *, double, double, double, double,
                               double, double, double, double *, double *,
                               double *, double *, double *);
@@ -42,9 +44,9 @@ void    calc_soil_params(double *, double *, double *,
                         double *, double *, double *);
 void    calculate_soil_water_fac(control *, params *, state *);
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
-                                double, double);
+                                double, double, double);
 void    update_daily_water_struct(fluxes *, double, double, double, double,
-                                  double);
+                                  double, double);
 double  calc_radiation_conductance(double);
 double  calc_bdn_layer_forced_conduct(double, double, double,double);
 double  calc_bdn_layer_free_conduct(double, double, double, double);

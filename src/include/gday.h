@@ -192,6 +192,7 @@ typedef struct {
     double totalc;
     double soilc;
     double soiln;
+    double canopy_store;
 } state;
 
 typedef struct {
@@ -437,6 +438,7 @@ typedef struct {
     double soil_evap;
     double transpiration;
     double interception;
+    double canopy_evap;
     double runoff;
     double gs_mol_m2_sec;
     double ga_mol_m2_sec;

@@ -262,6 +262,7 @@ void initialise_fluxes(fluxes *f) {
     f->soil_evap = 0.0;
     f->transpiration = 0.0;
     f->interception = 0.0;
+    f->canopy_evap = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
     f->ga_mol_m2_sec = 0.0;
@@ -433,6 +434,7 @@ void initialise_state(state *s) {
     s->structsoiln = 0.00611418800245;
     s->structsurf = 7.10566198821;
     s->structsurfn = 0.0473710799214;
+    s->canopy_store = 0.0;
 
     s->wtfac_root = 1.0;
     return;

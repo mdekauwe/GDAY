@@ -43,9 +43,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
     */
     double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
            elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
-           press, vpd, par, tair, wind, Ca, sw_rad, N0,
+           press, vpd, par, tair, wind, Ca, sw_rad, N0, rnet_canopy,
            trans_canopy, omega_canopy;
-    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2],
+    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], rnet_leaf[2],
            sunlit_shaded_lai[2], omega_leaf[2];
     int    hod, iter = 0, itermax = 100, i, dummy, sunlight_hrs;
 
@@ -105,15 +105,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                                                   an_leaf[i], gsc_leaf[i],
                                                   apar_leaf[i], &Cs, &dleaf,
                                                   &tleaf_new, &trans_leaf[i],
-                                                  &omega_leaf[i]);
+                                                  &omega_leaf[i],
+                                                  &rnet_leaf[i]);
                     } else {
                         break;
                     }
 
                     if (iter >= itermax) {
-                        /*fprintf(stderr, "No convergence in canopy loop:\n");
-                        exit(EXIT_FAILURE);*/
-                        fprintf(stderr, "No convergence in canopy loop: %lf %lf %lf %lf : %.10lf %.10lf\n", Cs, tleaf, dleaf*0.001, apar_leaf[i], an_leaf[i], gsc_leaf[i] );
+                        fprintf(stderr, "No convergence in canopy loop:\n");
                         exit(EXIT_FAILURE);
                     } else if (fabs(tleaf - tleaf_new) < 0.02) {
                         break;
@@ -137,8 +136,9 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
         trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
         omega_canopy = (omega_leaf[SUNLIT] + omega_leaf[SHADED]) / 2.0;
+        rnet_canopy = rnet_leaf[SUNLIT] + rnet_leaf[SHADED];
         calculate_water_balance(c, f, m, p, s, dummy, dummy, trans_canopy,
-                                omega_canopy);
+                                omega_canopy, rnet_canopy);
 
         c->hrly_idx++;
         sunlight_hrs++;
@@ -169,7 +169,8 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
                                state *s, double tleaf, double an_leaf,
                                double gsc_leaf, double apar_leaf, double *Cs,
                                double *dleaf, double *tleaf_new,
-                               double *transpiration, double *omega) {
+                               double *transpiration, double *omega,
+                               double *rnet) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -182,7 +183,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double LE; /* latent heat (W m-2) */
-    double Tdiff, press, vpd, tair, wind, Ca, gv, gbc, gh, rnet, Tk, sw_rad;
+    double Tdiff, press, vpd, tair, wind, Ca, gv, gbc, gh, Tk, sw_rad;
 
     /* unpack the met data and get the units right */
     press = m->press[c->hrly_idx] * KPA_2_PA;
@@ -192,7 +193,7 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     Ca = m->co2[c->hrly_idx];
     sw_rad = apar_leaf * PAR_2_SW; /* W m-2 */
 
-    rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
+    *rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
     penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
                         transpiration, &LE, &gbc, &gh, &gv, omega);
 

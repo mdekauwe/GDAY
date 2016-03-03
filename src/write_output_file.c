@@ -60,7 +60,7 @@ void write_output_header(control *c, FILE **fp) {
     */
 
     /* water */
-    fprintf(*fp, "et,transpiration,soil_evap,interception,runoff,");
+    fprintf(*fp, "et,transpiration,soil_evap,canopy_evap,runoff,");
     fprintf(*fp, "gs_mol_m2_sec,ga_mol_m2_sec,");
 
     /* litter */
@@ -135,7 +135,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->shoot,s->lai,s->branch,s->stem,s->root,s->croot,
                     s->shootn,s->branchn,s->stemn);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
                     s->rootn,s->crootn,s->cstore,s->nstore);
 
@@ -153,7 +153,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
 
     /* water */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
-                    f->et,f->transpiration,f->soil_evap,f->interception);
+                    f->et,f->transpiration,f->soil_evap,f->canopy_evap);
     fprintf(c->ofp, "%.10f,%.10f,%.10f,",
                     f->runoff,f->gs_mol_m2_sec,f->ga_mol_m2_sec);
 
@@ -279,7 +279,7 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     fwrite(&(f->et), sizeof(double), 1, c->ofp);
     fwrite(&(f->transpiration), sizeof(double), 1, c->ofp);
     fwrite(&(f->soil_evap), sizeof(double), 1, c->ofp);
-    fwrite(&(f->interception), sizeof(double), 1, c->ofp);
+    fwrite(&(f->canopy_evap), sizeof(double), 1, c->ofp);
     fwrite(&(f->runoff), sizeof(double), 1, c->ofp);
     fwrite(&(f->gs_mol_m2_sec), sizeof(double), 1, c->ofp);
     fwrite(&(f->ga_mol_m2_sec), sizeof(double), 1, c->ofp);
