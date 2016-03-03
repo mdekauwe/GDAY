@@ -74,6 +74,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
            depending on canopy water storage */
         canopy_evap = calc_canopy_evaporation(p, s, rnet_leaf, vpd, press, tair,
                                               wind);
+
         /* mol m-2 s-1 to mm/day */
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         canopy_evap *= conv;
@@ -315,8 +316,12 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         canopy_capacity = 0.1 * s->lai;
 
         /* Calculate canopy intercepted rainfall */
-        *interception = MAX(0.0, canopy_capacity - s->canopy_store);
-        if (tair < 0.0) {
+        if (rain > 0.0) {
+            *interception = MAX(0.0, canopy_capacity - s->canopy_store);
+            if (tair < 0.0) {
+                *interception = 0.0;
+            }
+        } else {
             *interception = 0.0;
         }
 
@@ -326,8 +331,13 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         /* Add canopy interception to canopy storage term */
         s->canopy_store += *interception;
 
+
         /* Calculate canopy water storage excess */
-        canopy_spill = MAX(0.0, canopy_capacity - s->canopy_store);
+        if (s->canopy_store > canopy_capacity) {
+            canopy_spill = s->canopy_store - canopy_capacity;
+        } else {
+            canopy_spill = 0.0;
+        }
 
         /* Move excess canopy water to throughfall */
         *throughfall += canopy_spill;
@@ -336,7 +346,6 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         s->canopy_store -= canopy_spill;
 
         /* remove canopy evap flux */;
-        s->canopy_store -= *canopy_evap;
         if (s->canopy_store > *canopy_evap) {
             s->canopy_store -= *canopy_evap;
         } else {
@@ -344,6 +353,7 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
             *canopy_evap = s->canopy_store;
             s->canopy_store = 0.0;
         }
+
     } else {
 
         if (rain > 0.0) {
@@ -1298,6 +1308,8 @@ void zero_water_day_fluxes(fluxes *f) {
     f->soil_evap = 0.0;
     f->transpiration = 0.0;
     f->interception = 0.0;
+    f->canopy_evap = 0.0;
+    f->throughfall = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
 

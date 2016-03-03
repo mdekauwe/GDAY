@@ -159,7 +159,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
-
+    
     return;
 }
 

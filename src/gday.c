@@ -353,6 +353,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                                                   c->num_days, f->gpp*100,
                                                   s->lai, s->shootnc);*/
 
+            /*printf("%lf %lf %lf %lf\n", f->transpiration, f->interception, f->throughfall, f->canopy_evap);*/
+
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
@@ -377,7 +379,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             allocate_stored_c_and_n(f, p, s);
         }
     }
-    
+
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
