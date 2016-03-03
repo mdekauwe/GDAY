@@ -64,12 +64,6 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     }
 
     interception = calc_interception(p, f, s, rain);
-
-    if (c->sub_daily) {
-        /* need to add Rutter model */
-        interception = 0.0;
-    }
-
     net_rad = calc_net_radiation(p, sw_rad, tair);
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
@@ -304,25 +298,31 @@ double calc_interception(params *p, fluxes *f, state *s, double rain) {
     d_s = 0.0014 * MIN_2_HALF_HR;
     b = 5.25; /* drainage coefficent */
 
-    if (rain > 0.0) {
-        infiltration = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
-        interception = rain * p->rfmult - infiltration;
-
-        /*
-        drainge_rate = d_s * exp(b * (C - f->canopy_store));
-         call penman canopy with resistance zero
-        f->canopy_store -= MAX(0.0, drainge_rate - canopy_evap);
-
-        if (C < f->canopy_store) {
-            X = C / S;
-             multiply this by evap rate
-        } else if (C >= S) {
-            X = 1;
-        }
-        */
-
+    if (c->sub_daily) {
+            /* need to add Rutter model */
+            interception = 0.0;
     } else {
-        interception = 0.0;
+
+        if (rain > 0.0) {
+            infiltration = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
+            interception = rain * p->rfmult - infiltration;
+
+            /*
+            drainge_rate = d_s * exp(b * (C - f->canopy_store));
+             call penman canopy with resistance zero
+            f->canopy_store -= MAX(0.0, drainge_rate - canopy_evap);
+
+            if (C < f->canopy_store) {
+                X = C / S;
+                 multiply this by evap rate
+            } else if (C >= S) {
+                X = 1;
+            }
+            */
+
+        } else {
+            interception = 0.0;
+        }
     }
 
     return (interception);
