@@ -63,6 +63,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         press = m->press[day_idx] * KPA_2_PA;
     }
 
+
     interception = calc_interception(p, f, s, rain);
     net_rad = calc_net_radiation(p, sw_rad, tair);
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
@@ -275,10 +276,12 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
 
 
 double calc_interception(params *p, fluxes *f, state *s, double rain) {
-    /* Estimate canopy interception
+    /*
+    Estimate canopy interception.
 
-    Simple assumption that infiltration relates to leaf area
-    and therefore canopy storage capacity (wetloss).
+    1. At the day scale using a simple model from Landsberg
+    2. At the sub-daily time scale using the logic from CABLE, but ignoring
+       canopy drainage e.g. a Rutter type model for the moment.
 
     Parameters:
     -------
@@ -287,20 +290,46 @@ double calc_interception(params *p, fluxes *f, state *s, double rain) {
 
     References:
     ----------
-    * Lloyd et al.(1988) Agricultural and Forest Meteorology, 43, 277-294, 277.
+    * Wang (2011)
+    * Landsberg and Sands
 
     */
-    double interception, infiltration, d_s, b, drainge_rate;
-    double MIN_2_HALF_HR = 30.0;
-    double canopy_store_capacity = 0.74; /* mm from Lloyd */
-
-    /* mm min-1 -> mm 30min-1 */
-    d_s = 0.0014 * MIN_2_HALF_HR;
-    b = 5.25; /* drainage coefficent */
+    double interception, infiltration;
+    double canopy_capacity, canopy_evap, conv;
 
     if (c->sub_daily) {
-            /* need to add Rutter model */
+
+        /* Max canopy intercept (mm): BATS-type canopy saturation
+           proportional to LAI */
+        canopy_capacity = 0.1 * s->lai;
+
+        canopy_evap = calc_canopy_evaporation(p, s, net_rad, press, tair);
+        /* mol m-2 s-1 to mm/day */
+        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+        canopy_evap *= conv;
+
+        /* Calculate canopy intercepted rainfall */
+        interception = max(0.0, canopy_capacity - s->canopy_store)
+        if (tair < 0.0) {
             interception = 0.0;
+        }
+
+        /* Define canopy throughfall */
+        throughfall = rain - interception;
+
+        /* Add canopy interception to canopy storage term */
+        s->canopy_store += interception;
+
+        /* remove canopy evap */;
+        s->canopy_store -= canopy_evap;
+        if (s->canopy_store > canopy_evap) {
+            s->canopy_store -= canopy_evap;
+        } else {
+            /* reduce evaporation to water available */
+            canopy_evap = s->canopy_store;
+            s->canopy_store = 0.0
+        }
+
     } else {
 
         if (rain > 0.0) {
@@ -397,6 +426,44 @@ double calc_soil_evaporation(params *p, state *s, double net_rad, double press,
 
     return (soil_evap);
 }
+
+double calc_canopy_evaporation(params *p, state *s, double net_rad,
+                               double press, double tair) {
+    /* Use Penman eqn to calculate evaporation flux at the potential rate for
+    canopy evaporation
+
+    units = (mm/day)
+
+    Parameters:
+    -----------
+    tair : float
+        temperature [degC]
+    net_rad : float
+        net radiation [W m-2]
+    press : float
+        air pressure [kPa]
+
+    Returns:
+    --------
+    pot_evap : float
+        evaporation [mm d-1]
+
+    */
+    double lambda, gamma, slope, arg1, arg2, soil_evap;
+
+    ga = canopy_boundary_layer_conduct(p, s->canht, wind, press, tair);
+    lambda = calc_latent_heat_of_vapourisation(tair);
+    gamma = calc_pyschrometric_constant(press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
+
+    arg1 = slope * rnet + vpd * ga * CP * MASS_AIR;
+    arg2 = slope + gamma;
+    LE = arg1 / arg2; /* W m-2 */
+    pot_evap = *LE / lambda; /* mol H20 m-2 s-1 */
+
+    return (pot_evap);
+}
+
 
 double calc_net_radiation(params *p, double sw_rad, double tair) {
 
