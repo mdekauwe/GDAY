@@ -194,14 +194,14 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     sw_rad = apar_leaf * PAR_2_SW; /* W m-2 */
 
     *rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
-    penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, rnet, gsc_leaf,
+    penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, *rnet, gsc_leaf,
                         transpiration, &LE, &gbc, &gh, &gv, omega);
 
     /*
     ** calculate new dleaf, tleaf and Cs
     */
     /* Temperature difference between the leaf surface and the air */
-    Tdiff = (rnet - LE) / (CP * MASS_AIR * gh);
+    Tdiff = (*rnet - LE) / (CP * MASS_AIR * gh);
     *tleaf_new = tair + Tdiff / 4.;
     *Cs = Ca - an_leaf / gbc;                /* CO2 conc at the leaf surface */
     *dleaf = *transpiration * press / gv;         /* VPD at the leaf surface */

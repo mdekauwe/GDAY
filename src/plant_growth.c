@@ -108,7 +108,8 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
 
         } else {
             calculate_water_balance(c, f, m, p, s, project_day, day_length,
-                                    dummy, dummy);
+                                    dummy, dummy, dummy);
+
         }
 
     }

@@ -39,7 +39,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
            tair_day, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
            wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
            omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, throughfall,
-           canopy_evap, wind;
+           canopy_evap, wind, vpd;
 
     SEC_2_DAY = 60.0 * 60.0 * daylen;
     DAY_2_SEC = 1.0 / SEC_2_DAY;
@@ -49,6 +49,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         rain = m->rain[c->hrly_idx];
         wind = m->wind[c->hrly_idx];
         press = m->press[c->hrly_idx] * KPA_2_PA;
+        vpd = m->vpd[c->hrly_idx] * KPA_2_PA;
         tair = m->tair[c->hrly_idx];
         sw_rad = m->par[c->hrly_idx] * PAR_2_SW; /* W m-2 */
     } else {
@@ -80,8 +81,9 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                           &canopy_evap);
     } else {
         /* don't need to work out the canopy evap */
-        calc_interception(p, f, s, rain, tair, &throughfall, &interception,
+        calc_interception(c, p, f, s, rain, tair, &throughfall, &interception,
                           &canopy_evap);
+
     }
 
     net_rad = calc_net_radiation(p, sw_rad, tair);
@@ -125,17 +127,16 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     et = transpiration + soil_evap + canopy_evap;
 
-    update_water_storage(c, f, p, s, rain, throughfall, interception,
+    update_water_storage(c, f, p, s, throughfall, interception,
                          &transpiration, &soil_evap, &et, &runoff);
 
     if (c->sub_daily) {
-        sum_hourly_water_fluxes(f, soil_evap, transpiration, et,
-                                interception, canopy_evap, runoff, omega_leaf);
+        sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
+                                throughfall, canopy_evap, runoff, omega_leaf);
     } else {
-        update_daily_water_struct(f, soil_evap, transpiration, et,
-                                  interception, canopy_evap, runoff);
+        update_daily_water_struct(f, soil_evap, transpiration, et, interception,
+                                  throughfall, canopy_evap, runoff);
     }
-
 
     return;
 }
@@ -227,23 +228,16 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
     outflow : float
         outflow [mm d-1]
     */
-    double trans_frac, previous, rain;
-    int    hod;
+    double trans_frac, previous;
 
-    rain = 0.0;
-    for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        rain += m->rain[c->hrly_idx];
-    }
-
-    f->et = f->transpiration + f->soil_evap + f->interception;
+    f->et = f->transpiration + f->soil_evap + f->canopy_evap;
 
     /* reduce transpiration from the top soil if it is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
 
     /* Total soil layer */
-    s->pawater_topsoil += (rain - f->interception) - \
-                          (f->transpiration * trans_frac) - \
-                           f->soil_evap;
+    s->pawater_topsoil += f->throughfall - (f->transpiration * trans_frac) - \
+                          f->soil_evap;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
@@ -253,7 +247,7 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
 
     /* Total root zone */
     previous = s->pawater_root;
-    s->pawater_root += (rain - f->interception) - f->transpiration - f->soil_evap;
+    s->pawater_root += f->throughfall - f->transpiration - f->soil_evap;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
@@ -266,7 +260,7 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
     if (s->pawater_root < 0.0) {
         f->transpiration = 0.0;
         f->soil_evap = 0.0;
-        f->et = f->interception;
+        f->et = f->canopy_evap;
     }
 
     if (s->pawater_root < 0.0)
@@ -291,8 +285,6 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
     return;
 }
 
-
-
 void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
                        double tair, double *throughfall, double *interception,
                        double *canopy_evap) {
@@ -314,8 +306,7 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
     * Landsberg and Sands
 
     */
-    double interception, infiltration, canopy_spill, canopy_capacity,
-           canopy_evap, conv;
+    double canopy_spill, canopy_capacity;
 
     if (c->sub_daily) {
 
@@ -324,7 +315,7 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         canopy_capacity = 0.1 * s->lai;
 
         /* Calculate canopy intercepted rainfall */
-        *interception = max(0.0, canopy_capacity - s->canopy_store)
+        *interception = MAX(0.0, canopy_capacity - s->canopy_store);
         if (tair < 0.0) {
             *interception = 0.0;
         }
@@ -336,7 +327,7 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         s->canopy_store += *interception;
 
         /* Calculate canopy water storage excess */
-        canopy_spill = max(0.0, canopy_capacity - s->canopy_store);
+        canopy_spill = MAX(0.0, canopy_capacity - s->canopy_store);
 
         /* Move excess canopy water to throughfall */
         *throughfall += canopy_spill;
@@ -1266,6 +1257,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
                              double transpiration_hlf_hr, double et_hlf_hr,
                              double interception_hlf_hr,
+                             double thoughfall_hlf_hr,
                              double canopy_evap_hlf_hr,
                              double runoff_hlf_hr, double omega_hlf_hr) {
 
@@ -1274,6 +1266,7 @@ void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
     f->transpiration += transpiration_hlf_hr;
     f->et += et_hlf_hr;
     f->interception += interception_hlf_hr;
+    f->throughfall += thoughfall_hlf_hr;
     f->canopy_evap += canopy_evap_hlf_hr;
     f->runoff += runoff_hlf_hr;
     f->omega += omega_hlf_hr; /* average at the end of hour loop */
@@ -1283,7 +1276,8 @@ void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
 
 void update_daily_water_struct(fluxes *f, double day_soil_evap,
                                double day_transpiration, double day_et,
-                               double day_interception, double day_canopy_evap,
+                               double day_interception, double day_thoughfall,
+                               double day_canopy_evap,
                                double day_runoff) {
 
     /* add half hour fluxes to day total store */
@@ -1291,6 +1285,7 @@ void update_daily_water_struct(fluxes *f, double day_soil_evap,
     f->transpiration = day_transpiration;
     f->et = day_et;
     f->interception = day_interception;
+    f->throughfall = day_thoughfall;
     f->canopy_evap = day_canopy_evap;
     f->runoff = day_runoff;
 
