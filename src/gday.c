@@ -52,31 +52,31 @@ int main(int argc, char **argv)
     c = (control *)malloc(sizeof (control));
     if (c == NULL) {
         fprintf(stderr, "control structure: Not allocated enough memory!\n");
-    	exit(1);
+    	exit(EXIT_FAILURE);
     }
 
     f = (fluxes *)malloc(sizeof (fluxes));
     if (f == NULL) {
     	fprintf(stderr, "fluxes structure: Not allocated enough memory!\n");
-    	exit(1);
+    	exit(EXIT_FAILURE);
     }
 
     m = (met *)malloc(sizeof (met));
     if (m == NULL) {
     	fprintf(stderr, "met structure: Not allocated enough memory!\n");
-    	exit(1);
+    	exit(EXIT_FAILURE);
     }
 
     p = (params *)malloc(sizeof (params));
     if (p == NULL) {
     	fprintf(stderr, "params structure: Not allocated enough memory!\n");
-    	exit(1);
+    	exit(EXIT_FAILURE);
     }
 
     s = (state *)malloc(sizeof (state));
     if (s == NULL) {
     	fprintf(stderr, "state structure: Not allocated enough memory!\n");
-    	exit(1);
+    	exit(EXIT_FAILURE);
     }
 
     initialise_control(c);

@@ -226,7 +226,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         }
 
     } else if (c->modeljm == 1) {
-        
+
         if (leaf == SUNLIT) {
             jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai,
                                            cos_zenith, c->modeljm);
@@ -606,7 +606,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
                   &vpd_pm, &ca);
-
+    
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 

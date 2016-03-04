@@ -86,7 +86,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                           &canopy_evap);
 
     }
-
+    
     net_rad = calc_net_radiation(p, sw_rad, tair);
     soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
     if (c->sub_daily) {
@@ -357,11 +357,18 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
     } else {
 
         if (rain > 0.0) {
-            *canopy_evap = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
+            /*
+            *throughfall  = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
+            *canopy_evap = rain - *throughfall;
 
-            /* Define canopy throughfall */
-            *throughfall = rain * p->rfmult - *canopy_evap;
-            *interception = rain - *throughfall;
+            *interception = 0.0;
+            */
+
+            *canopy_evap = (rain * p->intercep_frac * \
+                            MIN(1.0, s->lai / p->max_intercep_lai));
+            *throughfall = rain - f->interception;
+            *interception = 0.0;
+
 
         } else {
             *canopy_evap = 0.0;
