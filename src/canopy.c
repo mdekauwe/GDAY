@@ -126,13 +126,10 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
 
             } /* end of sunlit/shaded leaf loop */
         } else {
-            zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]));
+            zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]),
+                               &(rnet_leaf[0]), &(apar_leaf[0]),
+                               &(omega_leaf[0]));
         }
-        /*
-        an_leaf[SUNLIT] *= sunlit_shaded_lai[SUNLIT];
-        an_leaf[SHADED] *= sunlit_shaded_lai[SHADED];
-        trans_canopy = (trans_leaf[SUNLIT]*sunlit_shaded_lai[SUNLIT]) + (trans_leaf[SHADED]*sunlit_shaded_lai[SHADED]);
-        */
         sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
         trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
         omega_canopy = (omega_leaf[SUNLIT] + omega_leaf[SHADED]) / 2.0;
@@ -159,7 +156,7 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
-    
+
     return;
 }
 
@@ -287,7 +284,8 @@ double calculate_top_of_canopy_leafn(params *p, state *s) {
 }
 
 void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
-                        double *trans_leaf) {
+                        double *trans_leaf, double *rnet_leaf,
+                        double *apar_leaf, double *omega_leaf) {
 
     int i;
 
@@ -296,6 +294,9 @@ void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
         *(an_leaf+i) = 0.0;
         *(gsc_leaf+i) = 0.0;
         *(trans_leaf+i) = 0.0;
+        *(rnet_leaf+i) = 0.0;
+        *(apar_leaf+i) = 0.0;
+        *(omega_leaf+i) = 0.0;
     }
 
     return;
