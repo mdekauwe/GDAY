@@ -290,7 +290,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         /* =================== **
         **   D A Y   L O O P   **
         ** =================== */
-
         for (doy = 0; doy < c->num_days; doy++) {
             if (! c->sub_daily) {
                 unpack_met_data(c, ma, m, project_day, dummy);
@@ -759,7 +758,6 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int project_day,
         m->tsoil = ma->tsoil[project_day];
         m->Tk_am = ma->tam[project_day] + DEG_TO_KELVIN;
         m->Tk_pm = ma->tpm[project_day] + DEG_TO_KELVIN;
-
     }
 
     return;

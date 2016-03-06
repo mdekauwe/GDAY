@@ -637,8 +637,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = MIN(aj_pm, ac_pm);
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, daylen, alpha_am);
-    lue_pm = epsilon(p, asat_pm, m->par, daylen, alpha_pm);
+    lue_am = epsilon(p, asat_am, m->par, alpha_am);
+    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -1001,8 +1001,7 @@ double assim(double ci, double gamma_star, double a1, double a2) {
 
 }
 
-double epsilon(params *p, double asat, double par, double daylen,
-               double alpha) {
+double epsilon(params *p, double asat, double par, double alpha) {
     /*
     Canopy scale LUE using method from Sands 1995, 1996.
 
@@ -1026,8 +1025,6 @@ double epsilon(params *p, double asat, double par, double daylen,
         Light-saturated photosynthetic rate at the top of the canopy
     par : float
         photosyntetically active radiation (umol m-2 d-1)
-    daylen : float
-        length of day (hrs).
     theta : float
         curvature of photosynthetic light response curve
     alpha : float
@@ -1166,8 +1163,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = A_pm - Rd_pm;
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, daylen, p->alpha_c4);
-    lue_pm = epsilon(p, asat_pm, m->par, daylen, p->alpha_c4);
+    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4);
+    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
