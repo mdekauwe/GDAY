@@ -1,17 +1,18 @@
 
 #include "radiation.h"
 
-double get_diffuse_frac(int doy, double cos_zenith, double sw_rad) {
+void get_diffuse_frac(canopy_wk *cw, int doy, double sw_rad) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
         of a useless wrapper function.
 
     */
+    spitters(cw, doy, sw_rad);
 
-    return spitters(doy, cos_zenith, sw_rad);
+    return;
 }
 
-double spitters(int doy, double cos_zenith, double sw_rad) {
+void spitters(canopy_wk *cw, int doy, double sw_rad) {
 
     /*
 
@@ -22,8 +23,6 @@ double spitters(int doy, double cos_zenith, double sw_rad) {
     ----------
     doy : int
         day of year
-    cos_zenith : double
-        sun zenith angle [radians]
     par : double
         total par measured [umol m-2 s-1]
 
@@ -40,45 +39,47 @@ double spitters(int doy, double cos_zenith, double sw_rad) {
       incoming radiation. Agricultural Forest Meteorol., 38:217-229.
     */
 
-    double So, tau, R, K, diffuse_frac;
+    double So, tau, R, K, diffuse_frac, cos_zen_sq;
 
-    So = calc_extra_terrestrial_irradiance(doy, cos_zenith);
+    cos_zen_sq = cw->cos_zenith * cw->cos_zenith;
+
+    So = calc_extra_terrestrial_irradiance(doy, cw->cos_zenith);
 
     /* atmospheric transmisivity */
     tau = estimate_clearness(sw_rad, So);
 
     /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
-    if (cos_zenith > 0.17) {
+    if (cw->cos_zenith > 0.17) {
         /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
-        R = 0.847 - 1.61 * cos_zenith + 1.04 * cos_zenith * cos_zenith;
+        R = 0.847 - 1.61 * cw->cos_zenith + 1.04 * cos_zen_sq;
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
-            diffuse_frac = 1.0;
+            cw->diffuse_frac = 1.0;
         } else if (tau > 0.22 && tau <= 0.35) {
-            diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
+            cw->diffuse_frac = 1.0 - 6.4 * (tau - 0.22) * (tau - 0.22);
         } else if (tau > 0.35 && tau <= K) {
-            diffuse_frac = 1.47 - 1.66 * tau;
+            cw->diffuse_frac = 1.47 - 1.66 * tau;
         } else {
-            diffuse_frac = R;
+            cw->diffuse_frac = R;
         }
     } else {
-        diffuse_frac = 1.0;
+        cw->diffuse_frac = 1.0;
     }
 
-    if (diffuse_frac <= 0.0) {
-        diffuse_frac = 0.0;
-    } else if (diffuse_frac >= 1.0) {
-        diffuse_frac = 1.0;
+    if (cw->diffuse_frac <= 0.0) {
+        cw->diffuse_frac = 0.0;
+    } else if (cw->diffuse_frac >= 1.0) {
+        cw->diffuse_frac = 1.0;
     }
 
-    return (diffuse_frac);
+    cw->direct_frac = 1.0 - cw->diffuse_frac;
+
+    return;
 
 }
 
-void calculate_absorbed_radiation(params *p, state *s, double par,
-                                  double diffuse_frac, double elevation,
-                                  double cos_zenith, double *apar,
-                                  double *sunlit_shaded_lai) {
+void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
+                                  double par) {
     /*
         Calculate absorded irradiance of sunlit and shaded fractions of
         the canopy
@@ -95,7 +96,6 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     int    i;
     double czen, integral, kb, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
            k_dash_b, k_dash_d, scattered, shaded, beam;
-    double beam_frac = 1.0 - diffuse_frac;
     double lai = s->lai;
     double lad = p->lad;
 
@@ -116,20 +116,20 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
     */
 
     /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cos_zenith; /* sin_beta == cos_zenith */
+    kb = 0.5 / cw->cos_zenith; /* sin_beta == cos_zenith */
 
     /* beam & scattered PAR extinction coefficent - de P & Farq '97, Table 3*/
-    k_dash_b = 0.46 / cos_zenith; /* sin_beta == cos_zenith */
+    k_dash_b = 0.46 / cw->cos_zenith; /* sin_beta == cos_zenith */
 
     /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
     k_dash_d = 0.718;
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
-    Ib = par * beam_frac;
+    Ib = par * cw->direct_frac;
     beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
-    Id = par * diffuse_frac;
+    Id = par * cw->diffuse_frac;
     shaded = (Id * (1.0 - rho_cd) * (1.0 - exp(-(k_dash_d + kb) * lai)) *
               (k_dash_d / (k_dash_d + kb)));
 
@@ -146,8 +146,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
         Irradiance absorbed by the sunlit fraction of the canopy is the sum of
         direct-beam, diffuse and scattered-beam components
     */
-    *(apar+SUNLIT) = beam + scattered + shaded;
-
+    cw->apar_leaf[SUNLIT] = beam + scattered + shaded;
 
     /*
         Irradiance absorbed by the shaded leaf area of the canopy is the
@@ -156,7 +155,7 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
         irradiacne absorbed by the canopy and the irradiance absorbed by the
         sunlit leaf area
     */
-    *(apar+SHADED) = Ic - *(apar+SUNLIT);
+    cw->apar_leaf[SHADED] = Ic - cw->apar_leaf[SUNLIT];
 
     /*
         Scale leaf fluxes to the canopy
@@ -165,14 +164,14 @@ void calculate_absorbed_radiation(params *p, state *s, double par,
           decreasing with canopy depth.
         - De Pury & Farquhar 1997, eqn 18.
     */
-    *(sunlit_shaded_lai+SUNLIT) = (1.0 - exp(-kb * s->lai)) / kb;
-    *(sunlit_shaded_lai+SHADED) = s->lai - *(sunlit_shaded_lai+SUNLIT);
-    
+    cw->lai_leaf[SUNLIT] = (1.0 - exp(-kb * lai)) / kb;
+    cw->lai_leaf[SHADED] = lai - cw->lai_leaf[SUNLIT];
+
     return;
 }
 
-void calculate_solar_geometry(params *p, double doy, double hod,
-                              double *cos_zen, double *elevation) {
+void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
+                              double hod) {
 
     /*
         The solar zenith angle is the angle between the zenith and the centre
@@ -215,14 +214,14 @@ void calculate_solar_geometry(params *p, double doy, double hod,
 
     /* A13 - De Pury & Farquhar */
     sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
-    *cos_zen = sin_beta; /* The same thing, going to use cos_zen throughout */
-    if (*cos_zen > 1.0)
-        *cos_zen = 1.0;
-    else if (*cos_zen < 0.0)
-        *cos_zen = 0.0;
+    cw->cos_zenith = sin_beta; /* The same thing, going to use throughout */
+    if (cw->cos_zenith > 1.0)
+        cw->cos_zenith = 1.0;
+    else if (cw->cos_zenith < 0.0)
+        cw->cos_zenith = 0.0;
 
-    zenith_angle = RAD2DEG(acos(*cos_zen));
-    *elevation = 90.0 - zenith_angle;
+    zenith_angle = RAD2DEG(acos(cw->cos_zenith));
+    cw->elevation = 90.0 - zenith_angle;
 
     return;
 }

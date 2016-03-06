@@ -15,11 +15,8 @@
 * =========================================================================== */
 #include "photosynthesis.h"
 
-
-void photosynthesis_C3(control *c, params *p, state *s, double N0,
-                       double tleaf, double par, double Cs, double dleaf,
-                       double *anleaf, double *gsc, double leaf_lai,
-                       bool leaf, double cos_zenith) {
+void photosynthesis_C3(control *c, canopy_wk *cw, params *p, state *s,
+                       double tleaf, double Cs, double dleaf) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA
@@ -33,17 +30,19 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
         * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
     */
 
-    double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
+    double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
     double A, B, C, arg1, arg2, Ci, Ac, Aj, dleaf_kpa;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
-    int    qudratic_error = FALSE, large_root;
+    int    idx, qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
+
+    idx = cw->leaf_idx;
+    par = cw->apar_leaf[idx];
 
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, p, s, tleaf, N0, &jmax, &vcmax, leaf_lai, leaf,
-                           cos_zenith);
+    calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
 
     /* leaf respiration in the light, Collatz et al. 1991 */
     rd = 0.015 * vcmax;
@@ -59,8 +58,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
 
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
-        *anleaf = -rd;
-        *gsc = g0_zero;
+        cw->an_leaf[idx] = -rd;
+        cw->gsc_leaf[idx] = g0_zero;
     } else {
         /* Hardwiring this for Medlyn gs model for the moment, till I figure
         out the best structure */
@@ -111,8 +110,8 @@ void photosynthesis_C3(control *c, params *p, state *s, double N0,
             Ci = Cs;
             Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         }
-        *anleaf = MIN(Ac, Aj) - rd;
-        *gsc = MAX(g0, g0 + gs_over_a * *anleaf);
+        cw->an_leaf[idx] = MIN(Ac, Aj) - rd;
+        cw->gsc_leaf[idx] = MAX(g0, g0 + gs_over_a * cw->an_leaf[idx]);
     }
     return;
 }
@@ -176,9 +175,8 @@ double calculate_michaelis_menten(params *p, double tleaf) {
     return (Km);
 }
 
-void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
-                            double N0, double *jmax, double *vcmax,
-                            double leaf_lai, bool leaf, double cos_zenith) {
+void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
+                            double tleaf, double *jmax, double *vcmax) {
     /*
         Calculate the potential electron transport rate (Jmax) and the
         maximum Rubisco activity (Vcmax) at the leaf temperature.
@@ -189,15 +187,13 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         ----------
         tleaf : float
             air temperature (deg C)
-        N0 : float
-            leaf N at the top of the canopy
         jmax : float
             the potential electron transport rate at the leaf temperature
             (umol m-2 s-1)
         vcmax : float
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
-    double jmax25, vcmax25;
+    double jmax25, vcmax25, lai_leaf;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
@@ -206,37 +202,39 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
     double vcmaxna = p->vcmaxna;
     double vcmaxnb = p->vcmaxnb;
     int    DUMMY = -999;
+
     *vcmax = 0.0;
     *jmax = 0.0;
+    lai_leaf = cw->lai_leaf[cw->leaf_idx];
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
 
-        if (leaf == SUNLIT) {
-            *jmax = integrate_sunlit_frac(p->jmax, DUMMY, DUMMY, leaf_lai,
-                                           cos_zenith, c->modeljm);
-            *vcmax = integrate_sunlit_frac(p->vcmax, DUMMY, N0, leaf_lai,
-                                            cos_zenith, c->modeljm);
+        if (cw->leaf_idx == SUNLIT) {
+            *jmax = integrate_sunlit_frac(p->jmax, DUMMY, DUMMY, lai_leaf,
+                                          cw->cos_zenith, c->modeljm);
+            *vcmax = integrate_sunlit_frac(p->vcmax, DUMMY, DUMMY, lai_leaf,
+                                           cw->cos_zenith, c->modeljm);
         } else {
-            *jmax = integrate_shaded_frac(p->jmax, DUMMY, DUMMY, leaf_lai,
-                                           cos_zenith, c->modeljm, FALSE);
-            *vcmax = integrate_shaded_frac(p->vcmax, DUMMY, DUMMY, leaf_lai,
-                                            cos_zenith, c->modeljm, TRUE);
+            *jmax = integrate_shaded_frac(p->jmax, DUMMY, DUMMY, lai_leaf,
+                                          cw->cos_zenith, c->modeljm, FALSE);
+            *vcmax = integrate_shaded_frac(p->vcmax, DUMMY, DUMMY, lai_leaf,
+                                           cw->cos_zenith, c->modeljm, TRUE);
         }
 
     } else if (c->modeljm == 1) {
 
-        if (leaf == SUNLIT) {
-            jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, N0, leaf_lai,
-                                           cos_zenith, c->modeljm);
-            vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
-                                            cos_zenith, c->modeljm);
+        if (cw->leaf_idx == SUNLIT) {
+            jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, cw->N0, lai_leaf,
+                                           cw->cos_zenith, c->modeljm);
+            vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, cw->N0, lai_leaf,
+                                            cw->cos_zenith, c->modeljm);
         } else {
-            jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, N0, leaf_lai,
-                                           cos_zenith, c->modeljm, FALSE);
-            vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, N0, leaf_lai,
-                                            cos_zenith, c->modeljm, TRUE);
+            jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, cw->N0, lai_leaf,
+                                           cw->cos_zenith, c->modeljm, FALSE);
+            vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, cw->N0, lai_leaf,
+                                            cw->cos_zenith, c->modeljm, TRUE);
         }
         /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
@@ -252,7 +250,7 @@ void calculate_jmaxt_vcmaxt(control *c, params *p, state *s, double tleaf,
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         */
     } else if (c->modeljm == 2) {
-        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+        vcmax25 = p->vcmaxna * cw->N0 + p->vcmaxnb;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
@@ -606,7 +604,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
                   &vpd_pm, &ca);
-    
+
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 

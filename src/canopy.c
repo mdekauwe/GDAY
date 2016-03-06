@@ -19,7 +19,6 @@
 *
 * =========================================================================== */
 #include "canopy.h"
-#include "water_balance.h"
 
 void canopy(control *c, fluxes *f, met *m, params *p, state *s,
             double *day_tsoil, double *day_ndep) {
@@ -41,13 +40,15 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
-    double Cs, dleaf, tleaf, tleaf_new, trans_hlf_hr, leafn, fc, cos_zenith,
-           elevation, direct_apar, diffuse_apar, diffuse_frac, rnet=0.0,
-           press, vpd, par, tair, wind, Ca, sw_rad, N0, rnet_canopy,
-           trans_canopy, omega_canopy;
-    double an_leaf[2], gsc_leaf[2], apar_leaf[2], trans_leaf[2], rnet_leaf[2],
-           sunlit_shaded_lai[2], omega_leaf[2];
-    int    hod, iter = 0, itermax = 100, i, dummy, sunlight_hrs;
+    double Cs, dleaf, tleaf, tleaf_new, par, sw_rad;
+    int    hod, iter = 0, itermax = 100, dummy, sunlight_hrs;
+
+    canopy_wk *cw;
+    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
+    if (cw == NULL) {
+        fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
+    	exit(EXIT_FAILURE);
+    }
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -60,26 +61,22 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         *day_tsoil += m->tsoil[c->hrly_idx];
         *day_ndep += m->ndep[c->hrly_idx];
 
-        calculate_solar_geometry(p, m->doy[c->hrly_idx], hod, &cos_zenith,
-                                 &elevation);
+        calculate_solar_geometry(cw, p, m->doy[c->hrly_idx], hod);
 
         /* calculates diffuse frac from half-hourly incident radiation */
         par = m->par[c->hrly_idx];
         sw_rad = par * PAR_2_SW; /* SW_down [W/m2] = [J m-2 s-1] */
-        diffuse_frac = get_diffuse_frac(m->doy[c->hrly_idx], cos_zenith,
-                                        sw_rad);
+        get_diffuse_frac(cw, m->doy[c->hrly_idx], sw_rad);
 
         /* Is the sun up? */
-        if (elevation > 0.0 && par > 20.0) {
-            calculate_absorbed_radiation(p, s, par, diffuse_frac, elevation,
-                                         cos_zenith, &(apar_leaf[0]),
-                                         &(sunlit_shaded_lai[0]));
+        if (cw->elevation > 0.0 && par > 20.0) {
+            calculate_absorbed_radiation(cw, p, s, par);
 
             /* Not sure if this quite makes sense for shaded bit? */
-            N0 = calculate_top_of_canopy_leafn(p, s);
+            calculate_top_of_canopy_leafn(cw, p, s);
 
             /* sunlit / shaded loop */
-            for (i = 0; i < NUM_LEAVES; i++) {
+            for (cw->leaf_idx = 0; cw->leaf_idx < NUM_LEAVES; cw->leaf_idx++) {
 
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 tleaf = m->tair[c->hrly_idx];
@@ -90,23 +87,17 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                 while (TRUE) {
 
                     if (c->ps_pathway == C3) {
-                        photosynthesis_C3(c, p, s, N0, tleaf, apar_leaf[i],
-                                          Cs, dleaf, &an_leaf[i], &gsc_leaf[i],
-                                          sunlit_shaded_lai[i], i, cos_zenith);
+                        photosynthesis_C3(c, cw, p, s, tleaf, Cs, dleaf);
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
                     }
 
-                    if (an_leaf[i] > 1E-04) {
+                    if (cw->an_leaf[cw->leaf_idx] > 1E-04) {
                         /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, f, m, p, s, tleaf,
-                                                  an_leaf[i], gsc_leaf[i],
-                                                  apar_leaf[i], &Cs, &dleaf,
-                                                  &tleaf_new, &trans_leaf[i],
-                                                  &omega_leaf[i],
-                                                  &rnet_leaf[i]);
+                        solve_leaf_energy_balance(c, cw, f, m, p, s, tleaf,
+                                                  &Cs, &dleaf, &tleaf_new);
                     } else {
                         break;
                     }
@@ -123,19 +114,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
                     iter++;
 
                 } /* end of leaf temperature stability loop */
-
             } /* end of sunlit/shaded leaf loop */
         } else {
-            zero_hourly_fluxes(&(an_leaf[0]), &(gsc_leaf[0]), &(trans_leaf[0]),
-                               &(rnet_leaf[0]), &(apar_leaf[0]),
-                               &(omega_leaf[0]));
+            zero_hourly_fluxes(cw);
         }
-        sum_hourly_carbon_fluxes(f, p, an_leaf, gsc_leaf, apar_leaf);
-        trans_canopy = trans_leaf[SUNLIT] + trans_leaf[SHADED];
-        omega_canopy = (omega_leaf[SUNLIT] + omega_leaf[SHADED]) / 2.0;
-        rnet_canopy = rnet_leaf[SUNLIT] + rnet_leaf[SHADED];
-        calculate_water_balance(c, f, m, p, s, dummy, dummy, trans_canopy,
-                                omega_canopy, rnet_canopy);
+        scale_to_canopy(cw);
+        sum_hourly_carbon_fluxes(cw, f, p);
+        calculate_water_balance(c, f, m, p, s, dummy, dummy, cw->trans_canopy,
+                                cw->omega_canopy, cw->rnet_canopy);
 
         c->hrly_idx++;
         sunlight_hrs++;
@@ -157,17 +143,14 @@ void canopy(control *c, fluxes *f, met *m, params *p, state *s,
         s->wtfac_root = 1.0;
     }
 
+    free(cw);
+
     return;
 }
 
-
-
-void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
-                               state *s, double tleaf, double an_leaf,
-                               double gsc_leaf, double apar_leaf, double *Cs,
-                               double *dleaf, double *tleaf_new,
-                               double *transpiration, double *omega,
-                               double *rnet) {
+void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
+                              params *p, state *s, double tleaf, double *Cs,
+                              double *dleaf, double *tleaf_new) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -179,7 +162,8 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
         * Wang & Leuning (1998) Agricultural & Forest Meterorology, 91, 89-111.
 
     */
-    double LE; /* latent heat (W m-2) */
+    int    idx = cw->leaf_idx;
+    double omega, transpiration, LE; /* latent heat (W m-2) */
     double Tdiff, press, vpd, tair, wind, Ca, gv, gbc, gh, Tk, sw_rad;
 
     /* unpack the met data and get the units right */
@@ -188,20 +172,23 @@ void solve_leaf_energy_balance(control *c, fluxes *f, met *m, params *p,
     tair = m->tair[c->hrly_idx];
     wind = m->wind[c->hrly_idx];
     Ca = m->co2[c->hrly_idx];
-    sw_rad = apar_leaf * PAR_2_SW; /* W m-2 */
+    sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
 
-    *rnet = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
-    penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, *rnet, gsc_leaf,
-                        transpiration, &LE, &gbc, &gh, &gv, omega);
+    cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, tair, vpd, sw_rad);
+    penman_leaf_wrapper(p, s, press, vpd, tair, tleaf, wind, cw->rnet_leaf[idx],
+                        cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
+                        &omega);
+    cw->trans_leaf[idx] = transpiration;
+    cw->omega_leaf[idx] = omega;
 
     /*
     ** calculate new dleaf, tleaf and Cs
     */
     /* Temperature difference between the leaf surface and the air */
-    Tdiff = (*rnet - LE) / (CP * MASS_AIR * gh);
+    Tdiff = (cw->rnet_leaf[idx] - LE) / (CP * MASS_AIR * gh);
     *tleaf_new = tair + Tdiff / 4.;
-    *Cs = Ca - an_leaf / gbc;                /* CO2 conc at the leaf surface */
-    *dleaf = *transpiration * press / gv;         /* VPD at the leaf surface */
+    *Cs = Ca - cw->an_leaf[idx] / gbc;       /* CO2 conc at the leaf surface */
+    *dleaf = cw->trans_leaf[idx] * press / gv;    /* VPD at the leaf surface */
 
     return;
 }
@@ -247,15 +234,10 @@ void zero_carbon_day_fluxes(fluxes *f) {
 
 
 
-double calculate_top_of_canopy_leafn(params *p, state *s) {
+void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
 
     /*
     Calculate the N at the top of the canopy (g N m-2), N0.
-
-    Returns:
-    -------
-    N0 : float (gN m-2)
-        leaf nitrogen content at the top of the canopy
 
     References:
     -----------
@@ -273,56 +255,53 @@ double calculate_top_of_canopy_leafn(params *p, state *s) {
         Ntot = s->shootnc * LMA * s->lai;
 
         /* top of canopy leaf N (gN m-2) */
-        N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
-        /*printf("%lf %lf %lf %f\n", s->lai, s->shootnc, Ntot, N0);*/
-
+        cw->N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
     } else {
-        N0 = 0.0;
-    }
-
-    return (N0);
-}
-
-void zero_hourly_fluxes(double *an_leaf, double *gsc_leaf,
-                        double *trans_leaf, double *rnet_leaf,
-                        double *apar_leaf, double *omega_leaf) {
-
-    int i;
-
-    /* sunlit / shaded loop */
-    for (i = 0; i < NUM_LEAVES; i++) {
-        *(an_leaf+i) = 0.0;
-        *(gsc_leaf+i) = 0.0;
-        *(trans_leaf+i) = 0.0;
-        *(rnet_leaf+i) = 0.0;
-        *(apar_leaf+i) = 0.0;
-        *(omega_leaf+i) = 0.0;
+        cw->N0 = 0.0;
     }
 
     return;
 }
 
-void sum_hourly_carbon_fluxes(fluxes *f, params *p, double *an_leaf,
-                              double *gsc_leaf, double *apar_leaf) {
+void zero_hourly_fluxes(canopy_wk *cw) {
 
-    double an_canopy = 0.0, gsc_canopy = 0.0, apar_canopy = 0.0;;
-    int    i;
+    int i;
 
-    /* scale to canopy */
+    /* sunlit / shaded loop */
     for (i = 0; i < NUM_LEAVES; i++) {
-        an_canopy += *(an_leaf+i);
-        gsc_canopy += *(gsc_leaf+i);
-        apar_canopy += *(apar_leaf+i);
+        cw->an_leaf[i] = 0.0;
+        cw->gsc_leaf[i] = 0.0;
+        cw->trans_leaf[i] = 0.0;
+        cw->rnet_leaf[i] = 0.0;
+        cw->apar_leaf[i] = 0.0;
+        cw->omega_leaf[i] = 0.0;
     }
 
+    return;
+}
+
+void scale_to_canopy(canopy_wk *cw) {
+
+    cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
+    cw->gsc_canopy = cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED];
+    cw->apar_canopy = cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED];
+    cw->trans_canopy = cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED];
+    cw->omega_canopy = (cw->omega_leaf[SUNLIT] + cw->omega_leaf[SHADED]) / 2.0;
+    cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
+
+    return;
+}
+
+void sum_hourly_carbon_fluxes(canopy_wk *cw, fluxes *f, params *p) {
+
     /* umol m-2 s-1 -> gC m-2 30 min-1 */
-    f->gpp_gCm2 += an_canopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
+    f->gpp_gCm2 += cw->an_canopy * UMOL_TO_MOL * MOL_C_TO_GRAMS_C * SEC_2_HLFHR;
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
     f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
     f->auto_resp = f->gpp - f->npp;
-    f->apar += apar_canopy;
-    f->gs_mol_m2_sec += gsc_canopy;
+    f->apar += cw->apar_canopy;
+    f->gs_mol_m2_sec += cw->gsc_canopy;
 
     return;
 }

@@ -6,14 +6,12 @@
 #include "utilities.h"
 
 /* C3 */
-void   photosynthesis_C3(control *, params *, state *,  double,
-                         double, double, double, double, double *, double *,
-                         double, bool, double);
+void   photosynthesis_C3(control *, canopy_wk *, params *, state *,
+                         double, double, double);
 double calc_co2_compensation_point(params *, double);
 double calculate_michaelis_menten(params *, double);
-void   calculate_jmaxt_vcmaxt(control *, params *, state *, double,
-                              double, double *, double *, double, bool,
-                              double);
+void   calculate_jmaxt_vcmaxt(control *, canopy_wk *, params *, state *,
+                              double, double *, double *);
 double arrhenius(double, double, double, double);
 double peaked_arrhenius(double, double, double, double, double, double);
 double calc_leaf_day_respiration(double, double);

@@ -19,22 +19,6 @@
 * =========================================================================== */
 
 #include "gday.h"
-#include "constants.h"
-#include "utilities.h"
-#include "litter_production.h"
-#include "plant_growth.h"
-#include "photosynthesis.h"
-#include "water_balance.h"
-#include "simple_moving_average.h"
-#include "soils.h"
-#include "optimal_root_model.h"
-#include "initialise_model.h"
-#include "write_output_file.h"
-#include "version.h"
-#include "phenology.h"
-#include "read_param_file.h"
-#include "read_met_file.h"
-#include "disturbance.h"
 
 int main(int argc, char **argv)
 {
@@ -49,31 +33,31 @@ int main(int argc, char **argv)
     params *p;
     state *s;
 
-    c = (control *)malloc(sizeof (control));
+    c = (control *)malloc(sizeof(control));
     if (c == NULL) {
         fprintf(stderr, "control structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
-    f = (fluxes *)malloc(sizeof (fluxes));
+    f = (fluxes *)malloc(sizeof(fluxes));
     if (f == NULL) {
     	fprintf(stderr, "fluxes structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
-    m = (met *)malloc(sizeof (met));
+    m = (met *)malloc(sizeof(met));
     if (m == NULL) {
     	fprintf(stderr, "met structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
-    p = (params *)malloc(sizeof (params));
+    p = (params *)malloc(sizeof(params));
     if (p == NULL) {
     	fprintf(stderr, "params structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
-    s = (state *)malloc(sizeof (state));
+    s = (state *)malloc(sizeof(state));
     if (s == NULL) {
     	fprintf(stderr, "state structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);

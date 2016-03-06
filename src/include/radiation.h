@@ -11,19 +11,16 @@
 #include "constants.h"
 #include "utilities.h"
 
-
-
 /* utilities */
 double day_angle(int);
-void   calculate_solar_geometry(params *, double, double, double *, double *);
+void   calculate_solar_geometry(canopy_wk *, params *, double, double);
 double calculate_solar_declination(int, double);
 double calculate_eqn_of_time(double);
-double get_diffuse_frac(int, double, double);
-double spitters(int, double, double);
+void   get_diffuse_frac(canopy_wk *, int, double);
+void   spitters(canopy_wk *, int, double);
 double calc_extra_terrestrial_irradiance(double, double);
 double estimate_clearness(double, double);
-void   calculate_absorbed_radiation(params *, state *, double, double, double,
-                                    double, double *, double *);
+void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double);
 double calculate_solar_noon(double, double);
 double calculate_hour_angle(double, double);
 
