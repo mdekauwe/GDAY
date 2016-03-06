@@ -15,8 +15,7 @@
 * =========================================================================== */
 #include "photosynthesis.h"
 
-void photosynthesis_C3(control *c, canopy_wk *cw, params *p, state *s,
-                       double tleaf, double Cs, double dleaf) {
+void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     /*
         Calculate photosynthesis following Farquhar & von Caemmerer, this is an
         implementation of the routinue in MAESTRA
@@ -31,13 +30,17 @@ void photosynthesis_C3(control *c, canopy_wk *cw, params *p, state *s,
     */
 
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
-    double A, B, C, arg1, arg2, Ci, Ac, Aj, dleaf_kpa;
+    double A, B, C, arg1, arg2, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
     int    idx, qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
+    /* unpack some stuff */
     idx = cw->leaf_idx;
     par = cw->apar_leaf[idx];
+    Cs = cw->Cs;
+    tleaf = cw->tleaf;
+    dleaf = cw->dleaf;
 
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
@@ -596,29 +599,26 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
 
     */
-    double N0, Tk_am, Tk_pm, par, vpd_am, vpd_pm, ca, gamma_star_am,
+    double N0, gamma_star_am,
            gamma_star_pm, Km_am, Km_pm, jmax_am, jmax_pm, vcmax_am, vcmax_pm,
            ci_am, ci_pm, alpha_am, alpha_pm, ac_am, ac_pm, aj_am, aj_pm,
            asat_am, asat_pm, lue_am, lue_pm, lue_avg, conv;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
-    get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
-                  &vpd_pm, &ca);
-
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 
-    gamma_star_am = calculate_co2_compensation_point(p, Tk_am, mt);
-    gamma_star_pm = calculate_co2_compensation_point(p, Tk_pm, mt);
+    gamma_star_am = calculate_co2_compensation_point(p, m->Tk_am, mt);
+    gamma_star_pm = calculate_co2_compensation_point(p, m->Tk_pm, mt);
 
-    Km_am = calculate_michaelis_menten_parameter(p, Tk_am, mt);
-    Km_pm = calculate_michaelis_menten_parameter(p, Tk_pm, mt);
+    Km_am = calculate_michaelis_menten_parameter(p, m->Tk_am, mt);
+    Km_pm = calculate_michaelis_menten_parameter(p, m->Tk_pm, mt);
 
-    calculate_jmax_and_vcmax(c, p, s, Tk_am, N0, &jmax_am, &vcmax_am, mt);
-    calculate_jmax_and_vcmax(c, p, s, Tk_pm, N0, &jmax_pm, &vcmax_pm, mt);
+    calculate_jmax_and_vcmax(c, p, s, m->Tk_am, N0, &jmax_am, &vcmax_am, mt);
+    calculate_jmax_and_vcmax(c, p, s, m->Tk_pm, N0, &jmax_pm, &vcmax_pm, mt);
 
-    ci_am = calculate_ci(c, p, s, vpd_am, ca);
-    ci_pm = calculate_ci(c, p, s, vpd_pm, ca);
+    ci_am = calculate_ci(c, p, s, m->vpd_am, m->Ca);
+    ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
 
     /* quantum efficiency calculated for C3 plants */
     alpha_am = calculate_quantum_efficiency(p, ci_am, gamma_star_am);
@@ -637,8 +637,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = MIN(aj_pm, ac_pm);
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, par, daylen, alpha_am);
-    lue_pm = epsilon(p, asat_pm, par, daylen, alpha_pm);
+    lue_am = epsilon(p, asat_am, m->par, daylen, alpha_am);
+    lue_pm = epsilon(p, asat_pm, m->par, daylen, alpha_pm);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -647,7 +647,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     if (float_eq(s->lai, 0.0))
         f->apar = 0.0;
     else
-        f->apar = par * s->fipar;
+        f->apar = m->par * s->fipar;
 
     /* convert umol m-2 s-1 -> gC m-2 d-1 */
     conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
@@ -657,43 +657,6 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
-
-    return;
-}
-
-void get_met_stuff(met *m, int project_day, double *Tk_am,
-                   double *Tk_pm, double *par, double *vpd_am, double *vpd_pm,
-                   double *ca) {
-    /*
-    Grab the days met data out of the structure and return day values.
-
-    Parameters:
-    ----------
-    project_day : int
-        project day.
-
-    Returns:
-    -------
-    TK_am : float
-        am air temperature [Kelvin]
-    TK_am : float
-        pm air temperature [Kelvin]
-    vpd_am : float
-        am vpd [kPa]
-    vpd_pm : float
-        pm vpd [kPa]
-    par : float
-        average daytime PAR [umol m-2 s-1]
-    ca : float
-        atmospheric co2 [umol mol-1]
-    */
-
-    *Tk_am = m->tam[project_day] + DEG_TO_KELVIN;
-    *Tk_pm = m->tpm[project_day] + DEG_TO_KELVIN;
-    *vpd_am = m->vpd_am[project_day];
-    *vpd_pm = m->vpd_pm[project_day];
-    *ca = m->co2[project_day];
-    *par = m->par[project_day];
 
     return;
 }
@@ -942,7 +905,7 @@ void adj_for_low_temp(double *param, double Tk) {
     return;
 }
 
-double calculate_ci(control *c, params *p, state *s, double vpd, double ca) {
+double calculate_ci(control *c, params *p, state *s, double vpd, double Ca) {
     /*
     Calculate the intercellular (Ci) concentration
 
@@ -953,7 +916,7 @@ double calculate_ci(control *c, params *p, state *s, double vpd, double ca) {
     ----------
     vpd : float
         vapour pressure deficit
-    ca : float
+    Ca : float
         ambient co2 concentration
 
     Returns:
@@ -971,7 +934,7 @@ double calculate_ci(control *c, params *p, state *s, double vpd, double ca) {
     if (c->gs_model == MEDLYN) {
         g1w = p->g1 * s->wtfac_root;
         cica = g1w / (g1w + sqrt(vpd));
-        ci = cica * ca;
+        ci = cica * Ca;
     } else {
         prog_error("Only Belindas gs model is implemented", __LINE__);
     }
@@ -1151,7 +1114,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     * Value taken from Table 1, Collatz et al.1998 Oecologia, 114, 441-454.
 
     */
-    double N0, Tk_am, Tk_pm, par, vpd_am, vpd_pm, ca, vcmax_am, vcmax_pm,
+    double N0, vcmax_am, vcmax_pm,
            ci_am, ci_pm, asat_am, asat_pm, lue_am, lue_pm, lue_avg,
            vcmax25_am, vcmax25_pm, par_per_sec, M_am, M_pm, A_am, A_pm,
            Rd_am, Rd_pm, apar_half_day, SEC_2_HALF_DAY, conv;
@@ -1170,21 +1133,18 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
        Collatz table 2 */
     double kslope = 0.7;
 
-    get_met_stuff(m, project_day, &Tk_am, &Tk_pm, &par, &vpd_am,
-                  &vpd_pm, &ca);
-
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
 
-    ci_am = calculate_ci(c, p, s, vpd_am, ca);
-    ci_pm = calculate_ci(c, p, s, vpd_pm, ca);
+    ci_am = calculate_ci(c, p, s, m->vpd_am, m->Ca);
+    ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
 
     /* Temp dependancies from Massad et al. 2007 */
-    calculate_vcmax_parameter(p, s, Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
-    calculate_vcmax_parameter(p, s, Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
+    calculate_vcmax_parameter(p, s, m->Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
+    calculate_vcmax_parameter(p, s, m->Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
 
     /* Rubisco and light-limited capacity (Appendix, 2B) */
-    par_per_sec = par / (60.0 * 60.0 * daylen);
+    par_per_sec = m->par / (60.0 * 60.0 * daylen);
     M_am = quadratic(beta1, -(vcmax_am + p->alpha_c4 * par_per_sec),
                     (vcmax_am * p->alpha_c4 * par_per_sec));
     M_pm = quadratic(beta1, -(vcmax_pm + p->alpha_c4 * par_per_sec),
@@ -1198,16 +1158,16 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* These respiration terms are just for assimilation calculations,
        autotrophic respiration is stil assumed to be half of GPP */
-    Rd_am = calc_respiration(Tk_am, vcmax25_am);
-    Rd_pm = calc_respiration(Tk_pm, vcmax25_pm);
+    Rd_am = calc_respiration(m->Tk_am, vcmax25_am);
+    Rd_pm = calc_respiration(m->Tk_pm, vcmax25_pm);
 
     /* Net (saturated) photosynthetic rate, not sure if this makes sense. */
     asat_am = A_am - Rd_am;
     asat_pm = A_pm - Rd_pm;
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, par, daylen, p->alpha_c4);
-    lue_pm = epsilon(p, asat_pm, par, daylen, p->alpha_c4);
+    lue_am = epsilon(p, asat_am, m->par, daylen, p->alpha_c4);
+    lue_pm = epsilon(p, asat_pm, m->par, daylen, p->alpha_c4);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -1216,7 +1176,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     if (float_eq(s->lai, 0.0))
         f->apar = 0.0;
     else
-        f->apar = par * s->fipar;
+        f->apar = m->par * s->fipar;
 
     /* convert umol m-2 d-1 -> gC m-2 d-1 */
     conv = UMOL_2_GRAMS_C * (60.0 * 60.0 * daylen);

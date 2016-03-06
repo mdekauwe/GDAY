@@ -1,6 +1,6 @@
 #include "read_met_file.h"
 
-void read_daily_met_data(char **argv, control *c, met *m)
+void read_daily_met_data(char **argv, control *c, met_arrays *ma)
 {
     FILE  *fp;
     char   line[STRING_LENGTH];
@@ -27,112 +27,112 @@ void read_daily_met_data(char **argv, control *c, met *m)
     c->num_days = file_len;
 
     /* allocate memory for meteorological arrays */
-    if ((m->year = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->year = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for year array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->prjday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->prjday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for prjday array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tair = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tair = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tair array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->rain = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->rain = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for rain array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tsoil = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tsoil = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tsoil array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tam = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tam = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tam array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tpm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tpm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tpm array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tmin = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tmin = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tmin array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tmax = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tmax = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tmax array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->tday = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tday array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->vpd_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->vpd_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for vpd_am array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->vpd_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->vpd_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for vpd_pm array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->vpd_avg = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->vpd_avg = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for vpd_avg array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->co2 = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->co2 = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for co2 array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->ndep = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->ndep = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for ndep array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->wind = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->wind = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->press = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->press = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for press array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->wind_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->wind_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind_am array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->wind_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->wind_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind_pm array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->par = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->par = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for par array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->par_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->par_am = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for par_am array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->par_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
+    if ((ma->par_pm = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for par_pm array\n");
 		exit(EXIT_FAILURE);
     }
@@ -156,23 +156,23 @@ void read_daily_met_data(char **argv, control *c, met *m)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf", \
-                          &(m->year[i]), &(m->prjday[i]), \
-                          &(m->tair[i]), &(m->rain[i]), &(m->tsoil[i]), \
-                          &(m->tam[i]), &(m->tpm[i]), &(m->tmin[i]), \
-                          &(m->tmax[i]), &(m->tday[i]), &(m->vpd_am[i]), \
-                          &(m->vpd_pm[i]), &(m->vpd_avg[i]), &(m->co2[i]), \
-                          &(m->ndep[i]), &(m->wind[i]), &(m->press[i]), \
-                          &(m->wind_am[i]), &(m->wind_pm[i]), &(m->par[i]), \
-                          &(m->par_am[i]), &(m->par_pm[i])) != nvars) {
+                          &(ma->year[i]), &(ma->prjday[i]), \
+                          &(ma->tair[i]), &(ma->rain[i]), &(ma->tsoil[i]), \
+                          &(ma->tam[i]), &(ma->tpm[i]), &(ma->tmin[i]), \
+                          &(ma->tmax[i]), &(ma->tday[i]), &(ma->vpd_am[i]), \
+                          &(ma->vpd_pm[i]), &(ma->vpd_avg[i]), &(ma->co2[i]), \
+                          &(ma->ndep[i]), &(ma->wind[i]), &(ma->press[i]), \
+                          &(ma->wind_am[i]), &(ma->wind_pm[i]), &(ma->par[i]), \
+                          &(ma->par_am[i]), &(ma->par_pm[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
         }
 
         /* Build an array of the unique years as we loop over the input file */
-        if (current_yr != m->year[i]) {
+        if (current_yr != ma->year[i]) {
             c->num_years++;
-            current_yr = m->year[i];
+            current_yr = ma->year[i];
         }
         i++;
     }
@@ -180,7 +180,7 @@ void read_daily_met_data(char **argv, control *c, met *m)
     return;
 }
 
-void read_subdaily_met_data(char **argv, control *c, met *m)
+void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
 {
     FILE  *fp;
     char   line[STRING_LENGTH];
@@ -208,62 +208,62 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
     rewind(fp);
 
     /* allocate memory for meteorological arrays */
-    if ((m->year = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->year = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for year array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->doy = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->doy = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for doy array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->rain = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->rain = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for rain array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->par = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->par = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for par array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tair = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->tair = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tair array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->tsoil = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->tsoil = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for tsoil array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->vpd = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->vpd = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for vpd array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->co2 = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->co2 = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for co2 array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->ndep = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->ndep = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for ndep array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->wind = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->wind = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind array\n");
 		exit(EXIT_FAILURE);
     }
 
-    if ((m->press = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
+    if ((ma->press = (double *)calloc(num_timesteps, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for press array\n");
 		exit(EXIT_FAILURE);
     }
 
-    current_yr = m->year[0];
+    current_yr = ma->year[0];
 
     i = 0;
     c->num_years = 0;
@@ -280,20 +280,20 @@ void read_subdaily_met_data(char **argv, control *c, met *m)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf", \
-                          &(m->year[i]), &(m->doy[i]), &temp_HOD, \
-                          &(m->rain[i]), &(m->par[i]), &(m->tair[i]), \
-                          &(m->tsoil[i]), &(m->vpd[i]), &(m->co2[i]), \
-                          &(m->ndep[i]), &(m->wind[i]), \
-                          &(m->press[i])) != nvars) {
+                          &(ma->year[i]), &(ma->doy[i]), &temp_HOD, \
+                          &(ma->rain[i]), &(ma->par[i]), &(ma->tair[i]), \
+                          &(ma->tsoil[i]), &(ma->vpd[i]), &(ma->co2[i]), \
+                          &(ma->ndep[i]), &(ma->wind[i]), \
+                          &(ma->press[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
         }
 
         /* Build an array of the unique years as we loop over the input file */
-        if (current_yr != m->year[i]) {
+        if (current_yr != ma->year[i]) {
             c->num_years++;
-            current_yr = m->year[i];
+            current_yr = ma->year[i];
         }
         i++;
     }

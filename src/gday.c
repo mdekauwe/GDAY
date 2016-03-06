@@ -27,11 +27,19 @@ int main(int argc, char **argv)
     /*
     ** Setup structures, initialise stuff, e.g. zero fluxes.
     */
+    canopy_wk *cw;
     control *c;
     fluxes *f;
+    met_arrays *ma;
     met *m;
     params *p;
     state *s;
+
+    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
+    if (cw == NULL) {
+        fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
+    	exit(EXIT_FAILURE);
+    }
 
     c = (control *)malloc(sizeof(control));
     if (c == NULL) {
@@ -42,6 +50,12 @@ int main(int argc, char **argv)
     f = (fluxes *)malloc(sizeof(fluxes));
     if (f == NULL) {
     	fprintf(stderr, "fluxes structure: Not allocated enough memory!\n");
+    	exit(EXIT_FAILURE);
+    }
+
+    ma = (met_arrays *)malloc(sizeof(met_arrays));
+    if (ma == NULL) {
+    	fprintf(stderr, "met arrays structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
@@ -63,6 +77,7 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
+
     initialise_control(c);
     initialise_params(p);
     initialise_fluxes(f);
@@ -83,14 +98,15 @@ int main(int argc, char **argv)
     }
 
     if (c->sub_daily)
-        read_subdaily_met_data(argv, c, m);
+        read_subdaily_met_data(argv, c, ma);
     else
-        read_daily_met_data(argv, c, m);
+        read_daily_met_data(argv, c, ma);
+
 
     if (c->spin_up)
-        spin_up_pools(c, f, m, p, s);
+        spin_up_pools(cw, c, f, ma, m, p, s);
     else
-        run_sim(c, f, m, p, s);
+        run_sim(cw, c, f, ma, m, p, s);
 
     /* clean up */
     fclose(c->ofp);
@@ -99,35 +115,37 @@ int main(int argc, char **argv)
         fclose(c->ofp_hdr);
     }
 
+
+    free(cw);
     free(c);
     free(f);
-    free(m->year);
-
-    free(m->tair);
-    free(m->rain);
-    free(m->tsoil);
-    free(m->co2);
-    free(m->ndep);
-    free(m->wind);
-    free(m->press);
-    free(m->par);
+    free(ma->year);
+    free(ma->tair);
+    free(ma->rain);
+    free(ma->tsoil);
+    free(ma->co2);
+    free(ma->ndep);
+    free(ma->wind);
+    free(ma->press);
+    free(ma->par);
     if (c->sub_daily) {
-        free(m->vpd);
-        free(m->doy);
+        free(ma->vpd);
+        free(ma->doy);
     } else {
-        free(m->prjday);
-        free(m->tam);
-        free(m->tpm);
-        free(m->tmin);
-        free(m->tmax);
-        free(m->vpd_am);
-        free(m->vpd_pm);
-        free(m->vpd_avg);
-        free(m->wind_am);
-        free(m->wind_pm);
-        free(m->par_am);
-        free(m->par_pm);
+        free(ma->prjday);
+        free(ma->tam);
+        free(ma->tpm);
+        free(ma->tmin);
+        free(ma->tmax);
+        free(ma->vpd_am);
+        free(ma->vpd_pm);
+        free(ma->vpd_avg);
+        free(ma->wind_am);
+        free(ma->wind_pm);
+        free(ma->par_am);
+        free(ma->par_pm);
     }
+    free(ma);
     free(m);
     free(p);
     free(s);
@@ -137,14 +155,14 @@ int main(int argc, char **argv)
 
 
 
-void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
+void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
+             params *p, state *s){
 
-    int    nyr, doy, window_size, i;
+    int    nyr, doy, window_size, i, dummy;
     int    project_day = 0, fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
 
-    double fdecay, rdecay, current_limitation, nitfac, year, day_tsoil,
-           day_ndep;
+    double fdecay, rdecay, current_limitation, nitfac, year;
     int   *disturbance_yrs = NULL;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
@@ -233,7 +251,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
             fprintf(stderr,"Error allocating space for disturbance_yrs\n");
     		exit(EXIT_FAILURE);
         }
-        figure_out_years_with_disturbances(c, m, p, &disturbance_yrs,
+        figure_out_years_with_disturbances(c, ma, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
 
@@ -245,9 +263,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
         if (c->sub_daily) {
-            year = m->year[c->hrly_idx];
+            year = ma->year[c->hrly_idx];
         } else {
-            year = m->year[project_day];
+            year = ma->year[project_day];
         }
         if (is_leap_year(year))
             c->num_days = 366;
@@ -257,7 +275,7 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         calculate_daylength(c->num_days, p->latitude, *(&day_length));
 
         if (c->deciduous_model) {
-            phenology(c, f, m, p, s, day_length, project_day);
+            phenology(c, f, ma, p, s, day_length, project_day);
 
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
@@ -274,6 +292,9 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
         ** =================== */
 
         for (doy = 0; doy < c->num_days; doy++) {
+            if (! c->sub_daily) {
+                unpack_met_data(c, ma, m, project_day, dummy);
+            }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
             if (c->disturbance && p->disturbance_doy == doy+1) {
@@ -294,11 +315,11 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
                 hurricane(f, p, s);
             }
 
-            calc_day_growth(c, f, m, p, s, project_day, day_length[doy],
-                            doy, fdecay, rdecay, &day_tsoil, &day_ndep);
+            calc_day_growth(cw, c, f, ma, m, p, s, project_day, day_length[doy],
+                            doy, fdecay, rdecay);
 
-            calculate_csoil_flows(c, f, p, s, day_tsoil, doy);
-            calculate_nsoil_flows(c, f, p, s, day_ndep, doy);
+            calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
+            calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
@@ -384,7 +405,8 @@ void run_sim(control *c, fluxes *f, met *m, params *p, state *s){
 
 }
 
-void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
+void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
+                   params *p, state *s){
     /* Spin up model plant & soil pools to equilibrium.
 
     - Examine sequences of 50 years and check if C pools are changing
@@ -414,7 +436,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
         c->disturbance = FALSE;
         /*  200 years (50 yrs x 4 cycles) */
         for (i = 0; i < 4; i++) {
-            run_sim(c, f, m, p, s); /* run GDAY */
+            run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
         }
         c->disturbance = cntrl_flag;
     }
@@ -430,7 +452,7 @@ void spin_up_pools(control *c, fluxes *f, met *m, params *p, state *s){
 
             /* 1000 years (50 yrs x 20 cycles) */
             for (i = 0; i < 20; i++) {
-                run_sim(c, f, m, p, s); /* run GDAY */
+                run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
             }
 
             /* Have we reached a steady state? */
@@ -686,6 +708,59 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     if (init == FALSE)
         /* Required so max leaf & root N:C can depend on Age */
         s->age += 1.0 / days_in_year;
+
+    return;
+}
+
+void unpack_met_data(control *c, met_arrays *ma, met *m, int project_day,
+                     int hod) {
+
+    /* unpack met forcing */
+    if (c->sub_daily) {
+        m->rain = ma->rain[c->hrly_idx];
+        m->wind = ma->wind[c->hrly_idx];
+        m->press = ma->press[c->hrly_idx] * KPA_2_PA;
+        m->vpd = ma->vpd[c->hrly_idx] * KPA_2_PA;
+        m->tair = ma->tair[c->hrly_idx];
+        m->par = ma->par[c->hrly_idx];
+        m->sw_rad = ma->par[c->hrly_idx] * PAR_2_SW; /* W m-2 */
+        m->Ca = ma->co2[c->hrly_idx];
+
+        /*
+        * NDEP is per 30 min so need to sum 30 min data
+        *
+        * TSOIL - need to take the average of tsoil, so sum day and we will
+        * average outside of this function call.
+        */
+        if (hod == 0) {
+            m->ndep = ma->ndep[c->hrly_idx];
+            m->tsoil = ma->tsoil[c->hrly_idx];
+        } else {
+            m->ndep += ma->ndep[c->hrly_idx];
+            m->tsoil += ma->tsoil[c->hrly_idx];
+        }
+
+    } else {
+        m->Ca = ma->co2[project_day];
+        m->tair = ma->tair[project_day];
+        m->tair_am = ma->tam[project_day];
+        m->tair_pm = ma->tpm[project_day];
+        m->par = ma->par[project_day];
+        m->sw_rad = ma->par[project_day] * PAR_2_SW;
+        m->sw_rad_am = ma->par_am[project_day] * PAR_2_SW;
+        m->sw_rad_pm = ma->par_pm[project_day] * PAR_2_SW;
+        m->rain = ma->rain[project_day];
+        m->vpd_am = ma->vpd_am[project_day] * KPA_2_PA;
+        m->vpd_pm = ma->vpd_pm[project_day] * KPA_2_PA;
+        m->wind_am = ma->wind_am[project_day];
+        m->wind_pm = ma->wind_pm[project_day];
+        m->press = ma->press[project_day] * KPA_2_PA;
+        m->ndep = ma->ndep[project_day];
+        m->tsoil = ma->tsoil[project_day];
+        m->Tk_am = ma->tam[project_day] + DEG_TO_KELVIN;
+        m->Tk_pm = ma->tpm[project_day] + DEG_TO_KELVIN;
+
+    }
 
     return;
 }

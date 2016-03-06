@@ -346,7 +346,52 @@ typedef struct {
     double *diffuse_frac;
 
 
+} met_arrays;
+
+
+typedef struct {
+
+    /* sub-daily */
+    double rain;
+    double wind;
+    double press;
+    double vpd;;
+    double tair;
+    double sw_rad;
+    double par;
+    double Ca;
+    double ndep;
+    double tsoil;
+
+    /* daily */
+    double tair_am;
+    double tair_pm;
+    double sw_rad_am;
+    double sw_rad_pm;
+    double vpd_am;
+    double vpd_pm;
+    double wind_am;
+    double wind_pm;
+    double Tk_am;
+    double Tk_pm;
+
 } met;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -537,6 +582,10 @@ typedef struct {
     double cos_zenith;     /* radians */
     double diffuse_frac;
     double direct_frac;
+    double tleaf;
+    double tleaf_new;
+    double dleaf;
+    double Cs;
 } canopy_wk;
 
 

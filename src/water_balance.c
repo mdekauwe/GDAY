@@ -37,7 +37,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
            LE_pm, ga_am, ga_pm, net_rad_day, net_rad_am, net_rad_pm, trans_am,
            omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm,
            tair_day, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
-           wind_am, wind_pm, wind_day, ca, gpp_am, gpp_pm, trans_pm,
+           wind_am, wind_pm, ca, gpp_am, gpp_pm, trans_pm,
            omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, throughfall,
            canopy_evap, wind, vpd;
 
@@ -46,27 +46,26 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     /* unpack met forcing */
     if (c->sub_daily) {
-        rain = m->rain[c->hrly_idx];
-        wind = m->wind[c->hrly_idx];
-        press = m->press[c->hrly_idx] * KPA_2_PA;
-        vpd = m->vpd[c->hrly_idx] * KPA_2_PA;
-        tair = m->tair[c->hrly_idx];
-        sw_rad = m->par[c->hrly_idx] * PAR_2_SW; /* W m-2 */
+        rain = m->rain;
+        wind = m->wind;
+        press = m->press;
+        vpd = m->vpd;
+        tair = m->tair;
+        sw_rad = m->sw_rad;
     } else {
-        ca = m->co2[day_idx];
-        tair = m->tair[day_idx];
-        tair_am = m->tam[day_idx];
-        tair_pm = m->tpm[day_idx];
-        sw_rad = m->par[day_idx] * PAR_2_SW;
-        sw_rad_am = m->par_am[day_idx] * PAR_2_SW;
-        sw_rad_pm = m->par_pm[day_idx] * PAR_2_SW;
-        rain = m->rain[day_idx];
-        vpd_am = m->vpd_am[day_idx] * KPA_2_PA;
-        vpd_pm = m->vpd_pm[day_idx] * KPA_2_PA;
-        wind_am = m->wind_am[day_idx];
-        wind_pm = m->wind_pm[day_idx];
-        wind_day = m->wind[day_idx];
-        press = m->press[day_idx] * KPA_2_PA;
+        ca = m->Ca;
+        tair = m->tair;
+        tair_am = m->tair_am;
+        tair_pm = m->tair_pm;
+        sw_rad = m->sw_rad;
+        sw_rad_am = m->sw_rad_am;
+        sw_rad_pm = m->sw_rad_pm;
+        rain = m->rain;
+        vpd_am = m->vpd_am;
+        vpd_pm = m->vpd_pm;
+        wind_am = m->wind_am;
+        wind_pm = m->wind_pm;
+        press = m->press;
     }
 
     if (c->sub_daily) {

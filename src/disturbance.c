@@ -1,7 +1,7 @@
 #include "disturbance.h"
 
 
-void figure_out_years_with_disturbances(control *c, met *m, params *p,
+void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
                                         int **yrs, int *cnt) {
     int nyr, year_of_disturbance, yrs_till_event, prjday, year;
 
@@ -10,7 +10,7 @@ void figure_out_years_with_disturbances(control *c, met *m, params *p,
         (*yrs)[0] = p->burn_specific_yr;
     } else {
         yrs_till_event = time_till_next_disturbance();
-        year = (int)m->year[prjday];
+        year = (int)ma->year[prjday];
         /*year_of_disturbance = year + yrs_till_event; */
         year_of_disturbance = 1996;
 
@@ -19,7 +19,7 @@ void figure_out_years_with_disturbances(control *c, met *m, params *p,
         prjday = 0;
 
         for (nyr = 0; nyr < c->num_years - 1; nyr++) {
-            year = (int)m->year[prjday];
+            year = (int)ma->year[prjday];
             if (is_leap_year(year))
                 prjday+=366;
             else

@@ -1,6 +1,6 @@
 #include "phenology.h"
 
-void phenology(control *c, fluxes *f, met *m, params *p, state *s,
+void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s,
                double *daylen, int project_day) {
     /*
     There are two phenology schemes currently implemented, one which should
@@ -49,8 +49,8 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
     int leaf_on = 0, leaf_off = 0, len_groloss = 0.0;
     int leaf_on_found, leaf_off_found;
     double grass_temp_threshold, tmax_ann, Tmin_avg, ppt_sum_crit, gdd_thresh;
-    
-    
+
+
     /*
         Krinner et al. 2005, page 26, alternatively Foley et al. 1996 suggests
         the same value = 100 for both pathways
@@ -60,48 +60,48 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
             gdd_thresh = 185.;
         else if (c->ps_pathway == C4)
             gdd_thresh = 400.;
-        calc_ini_grass_pheno_stuff(c, m, project_day, &grass_temp_threshold,
+        calc_ini_grass_pheno_stuff(c, ma, project_day, &grass_temp_threshold,
                                    &tmax_ann, &Tmin_avg, &ppt_sum_crit);
     } else {
         gdd_thresh = gdd_chill_thresh(pa, pb, pc, p->previous_ncd);
     }
-    
-    
-    calculate_leafon_off(c, m, p, daylen, grass_temp_threshold, tmax_ann, 
-                         Tmin_avg, ppt_sum_crit, project_day, 
-                         &leaf_on, &leaf_off, &leaf_on_found, 
+
+
+    calculate_leafon_off(c, ma, p, daylen, grass_temp_threshold, tmax_ann,
+                         Tmin_avg, ppt_sum_crit, project_day,
+                         &leaf_on, &leaf_off, &leaf_on_found,
                          &leaf_off_found, gdd_thresh);
-   
+
     /*
         No leaf drop found, try a warmer temperature i.e. 5 instead of 0,
         if this doesn't work there really is an issue (or there is no leaf
         drop and we have an evergreen grass...
-    */  
+    */
     if (leaf_off_found == FALSE) {
         grass_temp_threshold = 5.0;
-        calculate_leafon_off(c, m, p, daylen, grass_temp_threshold, tmax_ann, 
-                             Tmin_avg, ppt_sum_crit, project_day,  
-                             &leaf_on, &leaf_off, &leaf_on_found, 
+        calculate_leafon_off(c, ma, p, daylen, grass_temp_threshold, tmax_ann,
+                             Tmin_avg, ppt_sum_crit, project_day,
+                             &leaf_on, &leaf_off, &leaf_on_found,
                              &leaf_off_found, gdd_thresh);
     }
-    
+
     /*
         if widening the temperature threshold didn't produce a suitable leaf
-        drop date we will follow biome-bgc and assume the leaves fall on the 
+        drop date we will follow biome-bgc and assume the leaves fall on the
         last day
     */
     if (leaf_off_found == FALSE) {
         leaf_off = 364;
     }
-    
-    
-    
+
+
+
     if (leaf_on_found == FALSE) {
         fprintf(stderr, "Problem in phenology leaf *ON* not found\n");
         exit(EXIT_FAILURE);
     }
-    
-    
+
+
     /*
         Length of time taken for new growth from storage to be allocated.
         This is either some site-specific calibration or the midpoint of the
@@ -117,42 +117,42 @@ void phenology(control *c, fluxes *f, met *m, params *p, state *s,
 
     calculate_days_left_in_growing_season(c, s, leaf_on, leaf_off, len_groloss);
     calculate_growing_season_fluxes(f, s, len_groloss);
-    
+
     /*printf("%d %d\n", leaf_on, leaf_off); */
-    
+
     return;
 }
 
-void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
-                          double grass_temp_threshold, double tmax_ann, 
+void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
+                          double grass_temp_threshold, double tmax_ann,
                           double Tmin_avg, double ppt_sum_crit,
-                          int project_day, int *leaf_on, int *leaf_off, 
-                          int *leaf_on_found, int *leaf_off_found, 
+                          int project_day, int *leaf_on, int *leaf_off,
+                          int *leaf_on_found, int *leaf_off_found,
                           double gdd_thresh) {
 
-    double ppt_sum_next, ppt_sum, ppt_sum_prev, Tmean, Tsoil, Tsoil_next_3days, 
+    double ppt_sum_next, ppt_sum, ppt_sum_prev, Tmean, Tsoil, Tsoil_next_3days,
            Tair_next_3days, Tmin_boxcar, Tmax, Tday;
     double accumulated_ncd = 0.0;
     double accum_gdd = 0.0;
     int    drop_leaves = FALSE;
     int    d, dd, st, en, nov_doy;
     int project_day_save = project_day;
-    
+
     *leaf_on_found = FALSE;
     *leaf_off_found = FALSE;
-    
+
     if (c->num_days == 366)
         nov_doy = 306;
     else
         nov_doy = 305;
-    
+
     ppt_sum = 0.0;
     for (d = 1; d < c->num_days+1; d++) {
-        Tmean = m->tair[project_day];
-        Tday = m->tday[project_day];
-        Tsoil = m->tsoil[project_day];
-        Tmax = m->tmax[project_day];
-        ppt_sum += m->rain[project_day];
+        Tmean = ma->tair[project_day];
+        Tday = ma->tday[project_day];
+        Tsoil = ma->tsoil[project_day];
+        Tmax = ma->tmax[project_day];
+        ppt_sum += ma->rain[project_day];
 
         /* Calculate ppt total from the next 7 days */
         if (d < 358) {
@@ -160,7 +160,7 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
             en = project_day + 8;
             ppt_sum_next = 0.0;
             for (dd = st; dd < en; dd++) {
-                ppt_sum_next += m->rain[dd];
+                ppt_sum_next += ma->rain[dd];
             }
         } else {
             /* i.e. end of year, didn't find this so have no effect */
@@ -175,23 +175,23 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
             en = project_day;
             ppt_sum_prev = 0.0;
             for (dd = st; dd < en; dd++) {
-                ppt_sum_prev += m->rain[dd];
+                ppt_sum_prev += ma->rain[dd];
             }
         }
 
         if (d < 362) {
-            Tsoil_next_3days = ((m->tsoil[project_day] +
-                                 m->tsoil[project_day+1] +
-                                 m->tsoil[project_day+2]) / 3.0);
+            Tsoil_next_3days = ((ma->tsoil[project_day] +
+                                 ma->tsoil[project_day+1] +
+                                 ma->tsoil[project_day+2]) / 3.0);
 
-            Tair_next_3days = ((m->tair[project_day] +
-                                m->tair[project_day+1] +
-                                m->tair[project_day+2]) / 3.0);
-            
-            Tmin_boxcar = ((m->tmin[project_day-1] +
-                            m->tmin[project_day] +
-                            m->tmin[project_day+1]) / 3.0);
-                                
+            Tair_next_3days = ((ma->tair[project_day] +
+                                ma->tair[project_day+1] +
+                                ma->tair[project_day+2]) / 3.0);
+
+            Tmin_boxcar = ((ma->tmin[project_day-1] +
+                            ma->tmin[project_day] +
+                            ma->tmin[project_day+1]) / 3.0);
+
         } else {
             /* i.e. end of year, didn't find this so have no effect */
             Tsoil_next_3days = 999.9;
@@ -224,17 +224,17 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
         */
         if (c->alloc_model == GRASSES) {
             if (*leaf_off_found == FALSE) {
-                
-                /* 
+
+                /*
                     Leaf drop constraint is based on Foley et al. 1996
-                    
-                    The 243 is just a safe guard to make sure we avoid 
-                    predicting offset in late spring (White et al. 1997). 
-                    
-                    This Tmean is the mean daytime temp, but I wonder if it 
+
+                    The 243 is just a safe guard to make sure we avoid
+                    predicting offset in late spring (White et al. 1997).
+
+                    This Tmean is the mean daytime temp, but I wonder if it
                     should be the full 24 daytime temp mean?
                 */
-                
+
                 /*if (d >= 243) {
                     printf("%d %f %f\n", d, Tmean, grass_temp_threshold);
                 }*/
@@ -242,30 +242,30 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
                     *leaf_off_found = TRUE;
                     *leaf_off = d;
                 }
-                
-                
-                /* 
-                    Leaf drop constraint is based on White et al. 1997 
-                
-                     - test for hot && dry conditions.  
-                
+
+
+                /*
+                    Leaf drop constraint is based on White et al. 1997
+
+                     - test for hot && dry conditions.
+
                 if (ppt_sum_prev < 11.4 &&
                     ppt_sum_next < 9.7 &&
-                    Tmax > tmax_ann && 
+                    Tmax > tmax_ann &&
                     d > 243) {
-                    
+
                     *leaf_off_found = TRUE;
                     *leaf_off = d;
-                
-                    - test for cold offset condition 
+
+                    - test for cold offset condition
                 } else if (d > 243 && Tmin_boxcar <= Tmin_avg) {
-                    
+
                     *leaf_off_found = TRUE;
-                    *leaf_off = d; 
-                     
+                    *leaf_off = d;
+
                 }
                 */
-                
+
             }
         } else {
             if (*leaf_off_found == FALSE && accum_gdd >= gdd_thresh) {
@@ -288,15 +288,15 @@ void calculate_leafon_off(control *c, met *m, params *p, double *daylen,
             accumulated_ncd += calc_ncd(Tmean);
         project_day++;
     }
-    
-    
+
+
     /* updated stored param, note this will be written out if the user
        dumps the current state, which makes sense as we may want pass the
        stat between spinup and a simulation */
     p->previous_ncd = accumulated_ncd;
 
-    
-    
+
+
     return;
 }
 
@@ -348,15 +348,15 @@ double leaf_drop(double daylen, double Tsoil, double Tsoil_next_3days) {
         return (FALSE);
 }
 
-void calc_ini_grass_pheno_stuff(control *c, met *m, int project_day,
+void calc_ini_grass_pheno_stuff(control *c, met_arrays *ma, int project_day,
                                 double *grass_temp_threshold,
-                                double *tmax_ann, double *Tmin_avg, 
+                                double *tmax_ann, double *Tmin_avg,
                                 double *ppt_sum_crit) {
     /*
         Series of constraints based on temp && precip need to be
         pre-calculated for grasses to determine leaf on/off
     */
-    
+
     /*
         Save this as we need to loop over the data once to pre-calculate
         everything
@@ -368,16 +368,16 @@ void calc_ini_grass_pheno_stuff(control *c, met *m, int project_day,
     double tavg_ann = 0.0;
     double ppt_sum = 0.0;
     double tair, tam, tpm, tmin, tmax, Trange;
-    
+
     for (d = 0; d < c->num_days; d++) {
-        tair = m->tair[project_day];
-        tam = m->tam[project_day];
-        tpm = m->tpm[project_day];
-        tmax = m->tmax[project_day];
-        tmin = m->tmin[project_day];
-        ppt_sum += m->rain[project_day];
-        *Tmin_avg += m->tmin[project_day]; 
-        
+        tair = ma->tair[project_day];
+        tam = ma->tam[project_day];
+        tpm = ma->tpm[project_day];
+        tmax = ma->tmax[project_day];
+        tmin = ma->tmin[project_day];
+        ppt_sum += ma->rain[project_day];
+        *Tmin_avg += ma->tmin[project_day];
+
         if (tmax > *tmax_ann)
            *tmax_ann = tmax;
 
@@ -388,36 +388,36 @@ void calc_ini_grass_pheno_stuff(control *c, met *m, int project_day,
         project_day += 1;
     }
     *Tmin_avg /= (float)c->num_days;
-    
+
     /* reset date index */
     project_day = project_day_save;
 
     Trange = *tmax_ann - tmin_ann;
     tavg_ann /= c->num_days;
-    
+
     /*
         Cool or warm grassland Definitions are from Botta, Table 1, pg 712.
         But grass temp thresholds are from Foley et al.
     */
-    
+
     /* cool */
     if (Trange > 20.0 || tmin_ann < 5.0)
-        *grass_temp_threshold = 0.0; 
-    
+        *grass_temp_threshold = 0.0;
+
     /* warm */
     else if (Trange <= 20.0 || tmin_ann >= 5.0)
-        *grass_temp_threshold = 5.0;  
+        *grass_temp_threshold = 5.0;
     else {
         fprintf(stderr, "Problem grass thresholds\n");
         exit(EXIT_FAILURE);
     }
-    
+
     /*
         92% of tmax_ann is the threshold used in grass offset below
         Note this has to be done below the range calcs as they use the tmax
     */
     *tmax_ann *= 0.92;
-    
+
     /*
         Based on White et al. 1997 this is a threshold for grasses so they
         have enough accumulated rain. It is essentially a fudge for soil

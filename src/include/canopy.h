@@ -15,14 +15,14 @@
 #include "photosynthesis.h"
 
 /* C stuff */
+void    initialise_leaf_surface(canopy_wk *, met *);
 void    zero_carbon_day_fluxes(fluxes *);
 void    zero_hourly_fluxes(canopy_wk *);
 void    update_daily_carbon_fluxes(fluxes *, params *, double, double);
-void    canopy(control *, fluxes *, met *, params *, state *, double *,
-               double *);
+void    canopy(canopy_wk *, control *, fluxes *, met_arrays *, met *, params *,
+               state *);
 void    solve_leaf_energy_balance(control *, canopy_wk *, fluxes *, met *,
-                                  params *, state *, double, double *,
-                                  double *, double *);
+                                  params *, state *);
 void    sum_hourly_carbon_fluxes(canopy_wk *, fluxes *, params *);
 void    scale_to_canopy(canopy_wk *);
 double  calc_leaf_net_rad(params *, state *, double, double, double);
