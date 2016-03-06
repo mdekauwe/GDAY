@@ -7,22 +7,21 @@
 
 void    update_water_storage(control *, fluxes *, params *, state *, double,
                              double, double *, double *, double *, double *);
-double  calc_canopy_evaporation(params *, state *, double, double, double,
-                                double, double);
+double  calc_canopy_evaporation(met *, params *, state *, double);
 void    calculate_water_balance(control *, fluxes *, met *, params *,
                               state *, int, int, double, double, double);
 void    zero_water_day_fluxes(fluxes *);
 void    update_water_storage_recalwb(control *, fluxes *, params *, state *,
                                      met *);
-double  calc_soil_evaporation(params*, state *, double, double , double);
-void    calc_interception(control *c, params *, fluxes *, state *, double,
-                          double, double *, double *, double *);
+double  calc_soil_evaporation(met *, params*, state *, double);
+void    calc_interception(control *c, met *m, params *, fluxes *, state *,
+                          double *, double *, double *);
 void    penman_canopy_wrapper(params *, state *, double, double, double, double,
                               double, double, double, double *, double *,
                               double *, double *, double *);
-void    penman_leaf_wrapper(params *p, state *s, double, double, double, double,
-                            double, double, double, double *, double *, double *,
-                            double *, double *, double *);
+void    penman_leaf_wrapper(met *, params *, state *, double, double,
+                            double, double *, double *, double *, double *,
+                            double *, double *);
 void    penman_monteith(double, double, double, double, double, double, double *,
                         double *, double *, double *);
 double  calc_sat_water_vapour_press(double);

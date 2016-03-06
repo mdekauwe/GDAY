@@ -31,68 +31,41 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         total canopy rnet (Dummy argument, only passed for sub-daily model)
 
     */
-    double soil_evap, et, interception, runoff, rain, press, sw_rad, conv,
-           tair, transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
+    double soil_evap, et, interception, runoff, conv,
+           transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
-           LE_pm, ga_am, ga_pm, net_rad_day, net_rad_am, net_rad_pm, trans_am,
-           omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, tair_am, tair_pm,
-           tair_day, sw_rad_am, sw_rad_pm, sw_rad_day, vpd_am, vpd_pm, vpd_day,
-           wind_am, wind_pm, ca, gpp_am, gpp_pm, trans_pm,
-           omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm, throughfall,
-           canopy_evap, wind, vpd;
+           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, trans_am,
+           omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, gpp_am,
+           gpp_pm, trans_pm, omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm,
+           throughfall, canopy_evap;
 
     SEC_2_DAY = 60.0 * 60.0 * daylen;
     DAY_2_SEC = 1.0 / SEC_2_DAY;
 
-    /* unpack met forcing */
-    if (c->sub_daily) {
-        rain = m->rain;
-        wind = m->wind;
-        press = m->press;
-        vpd = m->vpd;
-        tair = m->tair;
-        sw_rad = m->sw_rad;
-    } else {
-        ca = m->Ca;
-        tair = m->tair;
-        tair_am = m->tair_am;
-        tair_pm = m->tair_pm;
-        sw_rad = m->sw_rad;
-        sw_rad_am = m->sw_rad_am;
-        sw_rad_pm = m->sw_rad_pm;
-        rain = m->rain;
-        vpd_am = m->vpd_am;
-        vpd_pm = m->vpd_pm;
-        wind_am = m->wind_am;
-        wind_pm = m->wind_pm;
-        press = m->press;
-    }
-
     if (c->sub_daily) {
         /* calculate potential canopy evap rate, this may be reduced later
            depending on canopy water storage */
-        canopy_evap = calc_canopy_evaporation(p, s, rnet_leaf, vpd, press, tair,
-                                              wind);
+        canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
 
         /* mol m-2 s-1 to mm/day */
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         canopy_evap *= conv;
-        calc_interception(c, p, f, s, rain, tair, &throughfall, &interception,
+        calc_interception(c, m, p, f, s, &throughfall, &interception,
                           &canopy_evap);
     } else {
         /* don't need to work out the canopy evap */
-        calc_interception(c, p, f, s, rain, tair, &throughfall, &interception,
+        calc_interception(c, m, p, f, s, &throughfall, &interception,
                           &canopy_evap);
 
     }
 
-    net_rad = calc_net_radiation(p, sw_rad, tair);
-    soil_evap = calc_soil_evaporation(p, s, net_rad, press, tair);
+    net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
+    soil_evap = calc_soil_evaporation(m, p, s, net_rad);
     if (c->sub_daily) {
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
     } else {
-        net_rad_am = calc_net_radiation(p, sw_rad_am, tair_am);
-        net_rad_pm = calc_net_radiation(p, sw_rad_pm, tair_pm);
+        net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
+        net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
     }
 
@@ -107,12 +80,12 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         gpp_am = f->gpp_am * conv;
         gpp_pm = f->gpp_pm * conv;
 
-        penman_canopy_wrapper(p, s, press, vpd_am, tair_am, wind_am, net_rad_am,
-                              ca, gpp_am, &ga_am, &gs_am, &transpiration_am,
-                              &LE_am, &omega_am);
-        penman_canopy_wrapper(p, s, press, vpd_pm, tair_pm, wind_pm, net_rad_pm,
-                              ca, gpp_pm, &ga_pm, &gs_pm, &transpiration_pm,
-                              &LE_pm, &omega_pm);
+        penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
+                              net_rad_am, m->Ca, gpp_am, &ga_am, &gs_am,
+                              &transpiration_am, &LE_am, &omega_am);
+        penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
+                              net_rad_pm, m->Ca, gpp_pm, &ga_pm, &gs_pm,
+                              &transpiration_pm, &LE_pm, &omega_pm);
 
         /* mol m-2 s-1 to mm/day */
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
@@ -285,8 +258,8 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
     return;
 }
 
-void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
-                       double tair, double *throughfall, double *interception,
+void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
+                       double *throughfall, double *interception,
                        double *canopy_evap) {
     /*
     Estimate canopy interception.
@@ -315,9 +288,9 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         canopy_capacity = 0.1 * s->lai;
 
         /* Calculate canopy intercepted rainfall */
-        if (rain > 0.0) {
+        if (m->rain > 0.0) {
             *interception = MAX(0.0, canopy_capacity - s->canopy_store);
-            if (tair < 0.0) {
+            if (m->tair < 0.0) {
                 *interception = 0.0;
             }
         } else {
@@ -325,7 +298,7 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
         }
 
         /* Define canopy throughfall */
-        *throughfall = rain - *interception;
+        *throughfall = m->rain - *interception;
 
         /* Add canopy interception to canopy storage term */
         s->canopy_store += *interception;
@@ -355,16 +328,16 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
 
     } else {
 
-        if (rain > 0.0) {
+        if (m->rain > 0.0) {
             /*
             *throughfall  = MAX(0.0, rain * p->rfmult - s->lai * p->wetloss);
             *canopy_evap = rain - *throughfall;
             *interception = 0.0;
             */
 
-            *canopy_evap = (rain * p->intercep_frac * \
+            *canopy_evap = (m->rain * p->intercep_frac * \
                             MIN(1.0, s->lai / p->max_intercep_lai));
-            *throughfall = rain - f->interception;
+            *throughfall = m->rain - f->interception;
             *interception = 0.0;
 
 
@@ -378,8 +351,7 @@ void calc_interception(control *c, params *p, fluxes *f, state *s, double rain,
     return;
 }
 
-double calc_soil_evaporation(params *p, state *s, double net_rad, double press,
-                             double tair) {
+double calc_soil_evaporation(met *m, params *p, state *s, double net_rad) {
     /* Use Penman eqn to calculate top soil evaporation flux at the
     potential rate.
 
@@ -423,9 +395,9 @@ double calc_soil_evaporation(params *p, state *s, double net_rad, double press,
     */
     double lambda, gamma, slope, arg1, arg2, soil_evap;
 
-    lambda = calc_latent_heat_of_vapourisation(tair);
-    gamma = calc_pyschrometric_constant(press, lambda);
-    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
+    lambda = calc_latent_heat_of_vapourisation(m->tair);
+    gamma = calc_pyschrometric_constant(m->press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(m->tair);
 
     /* mol H20 m-2 s-1 */
     soil_evap = ((slope / (slope + gamma)) * net_rad) / lambda;
@@ -448,8 +420,7 @@ double calc_soil_evaporation(params *p, state *s, double net_rad, double press,
     return (soil_evap);
 }
 
-double calc_canopy_evaporation(params *p, state *s, double rnet, double vpd,
-                               double press, double tair, double wind) {
+double calc_canopy_evaporation(met *m, params *p, state *s, double rnet) {
     /* Use Penman eqn to calculate evaporation flux at the potential rate for
     canopy evaporation
 
@@ -472,12 +443,12 @@ double calc_canopy_evaporation(params *p, state *s, double rnet, double vpd,
     */
     double lambda, gamma, slope, arg1, arg2, pot_evap, LE, ga;
 
-    ga = canopy_boundary_layer_conduct(p, s->canht, wind, press, tair);
-    lambda = calc_latent_heat_of_vapourisation(tair);
-    gamma = calc_pyschrometric_constant(press, lambda);
-    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
+    ga = canopy_boundary_layer_conduct(p, s->canht, m->wind, m->press, m->tair);
+    lambda = calc_latent_heat_of_vapourisation(m->tair);
+    gamma = calc_pyschrometric_constant(m->press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(m->tair);
 
-    arg1 = slope * rnet + vpd * ga * CP * MASS_AIR;
+    arg1 = slope * rnet + m->vpd * ga * CP * MASS_AIR;
     arg2 = slope + gamma;
     LE = arg1 / arg2; /* W m-2 */
     pot_evap = LE / lambda; /* mol H20 m-2 s-1 */
@@ -573,8 +544,7 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
     return;
 }
 
-void penman_leaf_wrapper(params *p, state *s, double press, double vpd,
-                         double tair, double tleaf, double wind, double rnet,
+void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
                          double gsc, double *transpiration, double *LE,
                          double *gbc, double *gh, double *gv, double *omega) {
     /*
@@ -601,14 +571,15 @@ void penman_leaf_wrapper(params *p, state *s, double press, double vpd,
            gbv, gsv, gamma, Tdiff, sensible_heat, ema, Tk;
 
     /* Radiation conductance (mol m-2 s-1) */
-    gradn = calc_radiation_conductance(tair);
+    gradn = calc_radiation_conductance(m->tair);
 
     /* Boundary layer conductance for heat - single sided, forced
        convection (mol m-2 s-1) */
-    gbhu = calc_bdn_layer_forced_conduct(tair, press, wind, p->leaf_width);
+    gbhu = calc_bdn_layer_forced_conduct(m->tair, m->press, m->wind,
+                                         p->leaf_width);
 
     /* Boundary layer conductance for heat - single sided, free convection */
-    gbhf = calc_bdn_layer_free_conduct(tair, tleaf, press, p->leaf_width);
+    gbhf = calc_bdn_layer_free_conduct(m->tair, tleaf, m->press, p->leaf_width);
 
     /* Total boundary layer conductance for heat */
     gbh = gbhu + gbhf;
@@ -623,11 +594,11 @@ void penman_leaf_wrapper(params *p, state *s, double press, double vpd,
     *gv = (gbv * gsv) / (gbv + gsv);
     *gbc = gbh / GBHGBC;
 
-    lambda = calc_latent_heat_of_vapourisation(tair);
-    gamma = calc_pyschrometric_constant(press, lambda);
-    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
+    lambda = calc_latent_heat_of_vapourisation(m->tair);
+    gamma = calc_pyschrometric_constant(m->press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(m->tair);
 
-    penman_monteith(press, vpd, rnet, slope, lambda, gamma, gh, gv,
+    penman_monteith(m->press, m->vpd, rnet, slope, lambda, gamma, gh, gv,
                     transpiration, LE);
 
     /* Calculate decoupling coefficient (McNaughton and Jarvis 1986) */

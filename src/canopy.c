@@ -152,9 +152,9 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
 
     cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd, sw_rad);
-    penman_leaf_wrapper(p, s, m->press, m->vpd, m->tair, cw->tleaf, m->wind,
-                        cw->rnet_leaf[idx], cw->gsc_leaf[idx], &transpiration,
-                        &LE, &gbc, &gh, &gv, &omega);
+    penman_leaf_wrapper(m, p, s, cw->tleaf, cw->rnet_leaf[idx],
+                        cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
+                        &omega);
 
     /* store in structure */
     cw->trans_leaf[idx] = transpiration;
