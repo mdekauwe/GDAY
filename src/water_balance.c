@@ -97,7 +97,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         f->gs_mol_m2_sec = gs_am + gs_pm;
         f->ga_mol_m2_sec = ga_am + ga_pm;
     }
-    
+
     et = transpiration + soil_evap + canopy_evap;
 
     update_water_storage(c, f, p, s, throughfall, interception,
@@ -701,7 +701,7 @@ double calc_stomatal_conductance(params *p, state *s, double vpd, double Ca,
 
     g1 = p->g1 * s->wtfac_root;
     g0 = 0.0; /* p->g0; */
-    gs_over_a = (1.0 + g1 / sqrt(vpd)) / Ca;
+    gs_over_a = (1.0 + g1 / sqrt(vpd * PA_2_KPA)) / Ca;
     gsc = MAX(g0, g0 + gs_over_a * gpp);
 
     /* mol m-2 s-1 */
