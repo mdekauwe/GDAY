@@ -97,7 +97,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         f->gs_mol_m2_sec = gs_am + gs_pm;
         f->ga_mol_m2_sec = ga_am + ga_pm;
     }
-
+    
     et = transpiration + soil_evap + canopy_evap;
 
     update_water_storage(c, f, p, s, throughfall, interception,

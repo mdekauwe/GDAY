@@ -268,7 +268,6 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     *jmax *= s->wtfac_root;
     *vcmax *= s->wtfac_root;
 
-
     /* Jmax/Vcmax forced linearly to zero at low T */
     if (tleaf < lower_bound) {
         *jmax = 0.0;
@@ -277,7 +276,6 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
     }
-
 
     return;
 }
@@ -915,7 +913,7 @@ double calculate_ci(control *c, params *p, state *s, double vpd, double Ca) {
     Parameters:
     ----------
     vpd : float
-        vapour pressure deficit
+        vapour pressure deficit [Pa]
     Ca : float
         ambient co2 concentration
 
@@ -933,7 +931,7 @@ double calculate_ci(control *c, params *p, state *s, double vpd, double Ca) {
 
     if (c->gs_model == MEDLYN) {
         g1w = p->g1 * s->wtfac_root;
-        cica = g1w / (g1w + sqrt(vpd));
+        cica = g1w / (g1w + sqrt(vpd * PA_2_KPA));
         ci = cica * Ca;
     } else {
         prog_error("Only Belindas gs model is implemented", __LINE__);
