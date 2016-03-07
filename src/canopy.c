@@ -101,6 +101,18 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             } /* end of sunlit/shaded leaf loop */
         } else {
             zero_hourly_fluxes(cw);
+
+            /*
+             * pre-dawn soil water potential, clearly one should link this
+             * the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
+             */
+            if (hod == 10) {
+                calc_soil_water_potential(c, p, s);
+                /**printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
+            }
+
+
+
         }
         scale_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);

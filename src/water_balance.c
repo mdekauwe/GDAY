@@ -932,10 +932,12 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
 
         /* top soil */
         calc_soil_params(fsoil_top, &theta_fc_topsoil, &theta_wp_topsoil,
-                         &p->theta_sat_topsoil, &p->b_topsoil, &p->psi_sat_topsoil);
+                         &p->theta_sat_topsoil, &p->b_topsoil,
+                         &p->psi_sat_topsoil);
 
         /* Plant available water in top soil (mm) */
-        p->wcapac_topsoil = p->topsoil_depth * (theta_fc_topsoil - theta_wp_topsoil);
+        p->wcapac_topsoil = p->topsoil_depth * \
+                            (theta_fc_topsoil - theta_wp_topsoil);
 
         /* Root zone */
         calc_soil_params(fsoil_root, &theta_fc_root, &theta_wp_root,
@@ -1038,48 +1040,67 @@ void get_soil_params(char *soil_type, double *c_theta, double *n_theta) {
     Table also has values from Saxton for soil texture, perhaps makes more
     sense to use those than Cosby? Investigate?
 
+    Psi_e - Soil water potential at saturation (m) is taken from Clapp &
+            Hornberger following CABLE, note units change cm->m and negative
+            sign. NB I'm not actually using these values as I'm deriving them
+            from the Cosby eqn in calc_soil_params
+
     Reference
     ---------
     * Landsberg and Sands (2011) Physiological ecology of forest production.
     * Landsberg and Waring (1997) Forest Ecology & Management, 95, 209-228.
+    * Clapp & Hornberger (1978) Water Resources Research, 14, 601–604.
     */
 
     if (strcmp(soil_type, "clay") == 0) {
         *c_theta = 0.4;
         *n_theta = 3.0;
+        /**psi_e = -0.405;*/
     } else if (strcmp(soil_type, "clay_loam") == 0) {
         *c_theta = 0.5;
         *n_theta = 5.0;
+        /**psi_e = -0.63; */
     } else if (strcmp(soil_type, "loam") == 0) {
         *c_theta = 0.55;
         *n_theta = 6.0;
+        /**psi_e = -0.478; */
     } else if (strcmp(soil_type, "loamy_sand") == 0) {
         *c_theta = 0.65;
         *n_theta = 8.0;
+        /**psi_e = -0.09; */
     } else if (strcmp(soil_type, "sand") == 0) {
         *c_theta = 0.7;
         *n_theta = 9.0;
+        /**psi_e = -0.121; */
     } else if (strcmp(soil_type, "sandy_clay") == 0) {
         *c_theta = 0.45;
         *n_theta = 4.0;
+        /**psi_e = -0.153; */
     } else if (strcmp(soil_type, "sandy_clay_loam") == 0) {
         *c_theta = 0.525;
         *n_theta = 5.5;
+        /**psi_e = -0.299; */
     } else if (strcmp(soil_type, "sandy_loam") == 0) {
         *c_theta = 0.6;
         *n_theta = 7.0;
+        /**psi_e = -0.218; */
     } else if (strcmp(soil_type, "silt") == 0) {
         *c_theta = 0.625;
         *n_theta = 7.5;
+        /* no value for silt so I've averaged the silt values */
+        /**psi_e = -0.544; */
     } else if (strcmp(soil_type, "silty_clay") == 0) {
         *c_theta = 0.425;
         *n_theta = 3.5;
+        /**psi_e = -0.49; */
     } else if (strcmp(soil_type, "silty_clay_loam") == 0) {
         *c_theta = 0.475;
         *n_theta = 4.5;
+        /**psi_e = -0.356; */
     } else if (strcmp(soil_type, "silty_loam") == 0) {
         *c_theta = 0.575;
         *n_theta = 6.5;
+        /**psi_e = -0.786; */
     } else {
         prog_error("There are no parameters for your soil type", __LINE__);
     }
@@ -1111,7 +1132,7 @@ void calc_soil_params(double *fsoil, double *theta_fc, double *theta_wp,
     /* soil suction of 3.364m and 152.9m, or equivalent of -0.033 & -1.5 MPa */
     double pressure_head_wilt = -152.9;
     double pressure_head_crit = -3.364;
-    double KPA_2_MPA, METER_OF_HEAD_TO_MPA, psi_sat;
+    double psi_sat;
 
     /* *Note* subtle unit change to be consistent with fractions as opposed
       to percentages of sand, silt, clay, e.g. I've changed the slope in
@@ -1125,12 +1146,10 @@ void calc_soil_params(double *fsoil, double *theta_fc, double *theta_wp,
     *b = 3.1 + 15.7 * fsoil[CLAY] - 0.3 * fsoil[SAND];
 
     /* soil matric potential at saturation, taking inverse of log (base10)
-      units = m (0.01 converts from mm to m) */
-    psi_sat = 0.01 * -(pow(10.0, (1.54 - 0.95 * fsoil[SAND] + 0.63 * fsoil[SILT])));
-
-    /* Height (m) x gravity (m/s2) = pressure (kPa) */
-    KPA_2_MPA = 0.001;
-    METER_OF_HEAD_TO_MPA = 9.81 * KPA_2_MPA;
+     * units = m
+     */
+    psi_sat = CM_2_M * -(pow(10.0, (1.54 - 0.95 * fsoil[SAND] +\
+              0.63 * fsoil[SILT])));
     *psi_sat_mpa = psi_sat * METER_OF_HEAD_TO_MPA;
 
     /* volumetric soil moisture concentrations at the saturation point */
@@ -1233,6 +1252,31 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
 
     return;
 }
+
+
+void calc_soil_water_potential(control *c, params *p, state *s) {
+
+    /*
+    ** Estimate pre-dawn soil water potential from soil water content
+    */
+    double theta_over_theta_sat, theta;
+    double topsoil_depth = 200.0;
+    double rootsoil_depth = 750.0;
+
+    /* Soil water potential of topsoil (MPa) */
+    theta = s->pawater_topsoil / topsoil_depth;
+    theta_over_theta_sat = theta / p->theta_sat_topsoil;
+    s->psi_s_topsoil = p->psi_sat_topsoil * \
+                        pow(theta_over_theta_sat, -p->b_topsoil);
+
+    /* Soil water potential of rootzone (MPa) */
+    theta = s->pawater_root / rootsoil_depth;
+    theta_over_theta_sat = theta / p->theta_sat_root;
+    s->psi_s_root = p->psi_sat_root * pow(theta_over_theta_sat, -p->b_root);
+    /*printf("%lf %lf %lf\n", s->psi_s_root, theta, theta_over_theta_sat);
+    exit(1);*/
+}
+
 
 double calc_sw_modifier(double theta, double c_theta, double n_theta) {
     /* From Landsberg and Waring */

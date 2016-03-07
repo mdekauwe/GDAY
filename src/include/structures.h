@@ -135,6 +135,8 @@ typedef struct {
     double soilc;
     double soiln;
     double canopy_store;
+    double psi_s_topsoil;
+    double psi_s_root;
 } state;
 
 typedef struct {
@@ -261,6 +263,8 @@ typedef struct {
     double previous_ncd;                    /* In the first year we don't have last years data, so I have precalculated the average of all the november-jan chilling values  */
     double psi_sat_root;                    /* MPa */
     double psi_sat_topsoil;                 /* MPa */
+    double psie_topsoil;                    /* Soil water potential at saturation (m) */
+    double psie_root;                       /* Soil water potential at saturation (m) */
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */

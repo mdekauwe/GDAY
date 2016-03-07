@@ -28,6 +28,7 @@
 #define DAYS_IN_YRS 365.25
 #define G_M2_2_TONNES_HA 0.01
 #define KG_M2_2_TONNES_HA 10.0
+#define KPA_2_MPA 0.001
 #define KG_AS_TONNES 1E-3
 #define G_TO_KG 0.001
 #define TONNES_AS_KG 1.0 / KG_AS_TONNES
@@ -42,7 +43,10 @@
 #define SIGMA 5.67e-8          /* Steffan Boltzman constant (W/m2/K4) */
 #define LEAF_EMISSIVITY 0.95   /* Emissivity of thermal radiation by leaf */
 #define KPA_2_PA 1000.
+#define KPA_2_MPA 0.001
+#define METER_OF_HEAD_TO_MPA 9.81 * KPA_2_MPA /* Height (m) x gravity (m/s2) = pressure (kPa) */
 #define PA_2_KPA 0.001
+#define CM_2_M 0.01
 /* Solar radiaiton 1 W m-2 ~ 2.3 umol m-2 s-1 PAR
    Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
 #define SW_2_PAR 2.3
