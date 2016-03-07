@@ -48,9 +48,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     sunlight_hrs = 0;
-    doy = ma->doy[c->hrly_idx];
+    doy = ma->doy[c->hour_idx];
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        unpack_met_data(c, ma, m, dummy, hod);
+        unpack_met_data(c, ma, m, hod);
 
         /* calculates diffuse frac from half-hourly incident radiation */
         calculate_solar_geometry(cw, p, doy, hod);
@@ -104,10 +104,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
         scale_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);
-        calculate_water_balance(c, f, m, p, s, dummy, dummy, cw->trans_canopy,
+        calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
                                 cw->omega_canopy, cw->rnet_canopy);
 
-        c->hrly_idx++;
+        c->hour_idx++;
         sunlight_hrs++;
     } /* end of hour loop */
 

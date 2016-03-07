@@ -45,7 +45,8 @@ typedef struct {
     int   exudation;
     int   sub_daily;
     int   num_hlf_hrs;
-    long  hrly_idx;
+    long  hour_idx;
+    long  day_idx;
 
 } control;
 

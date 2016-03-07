@@ -2,9 +2,8 @@
 
 
 void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
-                             state *s, int day_idx, int daylen,
-                             double trans_leaf, double omega_leaf,
-                             double rnet_leaf) {
+                             state *s, int daylen, double trans_leaf,
+                             double omega_leaf, double rnet_leaf) {
     /*
 
     Calculate the water balance (including all water fluxes).

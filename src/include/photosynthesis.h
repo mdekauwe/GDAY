@@ -21,7 +21,7 @@ double integrate_shaded_frac(double, double, double, double, double, int, bool);
 
 
 void   mate_C3_photosynthesis(control *, fluxes *, met *, params *,
-                              state *, int, double, double);
+                              state *, double, double);
 
 double  calculate_top_of_canopy_n(params *, state *, double);
 double  calculate_co2_compensation_point(params *, double, double);
@@ -39,7 +39,7 @@ double  epsilon(params *, double, double, double);
 
 /* C4 additional prototypes */
 void   mate_C4_photosynthesis(control *, fluxes *, met *, params *,
-                              state *, int, double, double);
+                              state *, double, double);
 void   calculate_vcmax_parameter(params *, state *s, double, double, double *,
                                  double *, double);
 double calc_respiration(double, double);

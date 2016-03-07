@@ -22,8 +22,8 @@
 
 
 void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
-                     met *m, params *p, state *s, int project_day,
-                     double day_length, int doy, double fdecay, double rdecay)
+                     met *m, params *p, state *s, double day_length, int doy,
+                     double fdecay, double rdecay)
 {
     double previous_topsoil_store, dummy,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
@@ -34,17 +34,13 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     previous_rootzone_store = s->pawater_root;
 
     if (c->sub_daily) {
-        /* calculate 30-min GPP/NPP, respiration and water fluxes */
+        /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
         canopy(cw, c, f, ma, m, p, s);
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
-        carbon_daily_production(c, f, m, p, s, project_day, day_length);
-        calculate_water_balance(c, f, m, p, s, project_day, day_length, dummy,
-                                dummy, dummy);
+        carbon_daily_production(c, f, m, p, s, day_length);
+        calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy, dummy);
     }
-
-    /*printf("* %lf\n", f->gpp);*/
-
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
        foliage in young stand */
@@ -105,9 +101,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
             update_water_storage_recalwb(c, f, p, s, m);
 
         } else {
-            calculate_water_balance(c, f, m, p, s, project_day, day_length,
-                                    dummy, dummy, dummy);
-
+            calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy,
+                                    dummy);
         }
 
     }
@@ -151,13 +146,11 @@ void calc_root_exudation_release(fluxes *f, state *s) {
     return;
 }
 void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
-                             int project_day, double daylen) {
+                             double daylen) {
     /* Calculate GPP, NPP and plant respiration at the daily timestep
 
     Parameters:
     -----------
-    project_day : integer
-        simulation day
     daylen : float
         daytime length (hrs)
 
@@ -209,11 +202,9 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         exit(EXIT_FAILURE);
     } else if (c->assim_model == MATE) {
         if (c->ps_pathway == C3) {
-            mate_C3_photosynthesis(c, f, m, p, s, project_day, daylen,
-                                   ncontent);
+            mate_C3_photosynthesis(c, f, m, p, s, daylen, ncontent);
         } else {
-            mate_C4_photosynthesis(c, f, m, p, s, project_day, daylen,
-                                   ncontent);
+            mate_C4_photosynthesis(c, f, m, p, s, daylen, ncontent);
         }
     } else {
         fprintf(stderr,"Unknown photosynthesis model'");

@@ -4,7 +4,7 @@
 #include "gday.h"
 
 void    phenology(control *, fluxes *, met_arrays *, params *, state *,
-                  double *, int);
+                  double *);
 void    calculate_leafon_off(control *, met_arrays *, params *, double *, double,
                              double, double, double, int, int *, int *,
                              int *, int *, double);

@@ -574,7 +574,7 @@ double quad(double a, double b, double c, bool large, int *error) {
 
 
 void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
-                            int project_day, double daylen, double ncontent) {
+                            double daylen, double ncontent) {
     /*
 
     MATE simulates big-leaf C3 photosynthesis (GPP) based on Sands (1995),
@@ -1077,7 +1077,7 @@ double epsilon(params *p, double asat, double par, double alpha) {
 
 
 void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
-                            int project_day, double daylen, double ncontent) {
+                            double daylen, double ncontent) {
     /*
 
     MATE simulates big-leaf C3 photosynthesis (GPP) based on Sands (1995),

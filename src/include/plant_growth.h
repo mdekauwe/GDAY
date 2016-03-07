@@ -16,7 +16,7 @@
 
 /* C stuff */
 void    calc_day_growth(canopy_wk *, control *, fluxes *, met_arrays *ma, met *,
-                        params *, state *, int, double, int, double, double);
+                        params *, state *, double, int, double, double);
 void    carbon_allocation(control *, fluxes *, params *, state *,
                                                      double, int);
 void    calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,
@@ -29,7 +29,7 @@ void    calculate_cn_store(fluxes *, state *);
 void    calculate_average_alloc_fractions(fluxes *, state *, int );
 void    allocate_stored_c_and_n(fluxes *f, params *p, state *s);
 void    carbon_daily_production(control *, fluxes *, met *m, params *, state *,
-                               int, double);
+                                double);
 void    calculate_subdaily_production(control *, fluxes *, met *m, params *,
                                      state *, int, double);
 

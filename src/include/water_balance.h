@@ -9,7 +9,7 @@ void    update_water_storage(control *, fluxes *, params *, state *, double,
                              double, double *, double *, double *, double *);
 double  calc_canopy_evaporation(met *, params *, state *, double);
 void    calculate_water_balance(control *, fluxes *, met *, params *,
-                              state *, int, int, double, double, double);
+                              state *, int, double, double, double);
 void    zero_water_day_fluxes(fluxes *);
 void    update_water_storage_recalwb(control *, fluxes *, params *, state *,
                                      met *);

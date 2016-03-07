@@ -159,7 +159,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              params *p, state *s){
 
     int    nyr, doy, window_size, i, dummy;
-    int    project_day = 0, fire_found = FALSE;;
+    int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
 
     double fdecay, rdecay, current_limitation, nitfac, year;
@@ -258,14 +258,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
-    project_day = 0;
-    c->hrly_idx = 0;
+    c->day_idx = 0;
+    c->hour_idx = 0;
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
         if (c->sub_daily) {
-            year = ma->year[c->hrly_idx];
+            year = ma->year[c->hour_idx];
         } else {
-            year = ma->year[project_day];
+            year = ma->year[c->day_idx];
         }
         if (is_leap_year(year))
             c->num_days = 366;
@@ -275,7 +275,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         calculate_daylength(c->num_days, p->latitude, *(&day_length));
 
         if (c->deciduous_model) {
-            phenology(c, f, ma, p, s, day_length, project_day);
+            phenology(c, f, ma, p, s, day_length);
 
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
@@ -292,7 +292,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
             if (! c->sub_daily) {
-                unpack_met_data(c, ma, m, project_day, dummy);
+                unpack_met_data(c, ma, m, dummy);
             }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
@@ -313,8 +313,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* Hurricane? */
                 hurricane(f, p, s);
             }
-
-            calc_day_growth(cw, c, f, ma, m, p, s, project_day, day_length[doy],
+            calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
@@ -352,25 +351,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            /*
-            printf("%d/%d %d/%d : %lf %lf %.10lf\n", nyr, c->num_years, doy,
-                                                  c->num_days, f->gpp*100,
-                                                  s->lai, s->shootnc);*/
-
-            /*printf("%lf %lf %lf %lf\n", f->transpiration, f->interception, f->throughfall, f->canopy_evap);*/
-
-
             if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 else
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
-
-            /* check the daily water balance */
-            /*check_water_balance(project_day); */
-
-            project_day++;
+            c->day_idx++;
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
@@ -711,19 +698,18 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     return;
 }
 
-void unpack_met_data(control *c, met_arrays *ma, met *m, int project_day,
-                     int hod) {
+void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
 
     /* unpack met forcing */
     if (c->sub_daily) {
-        m->rain = ma->rain[c->hrly_idx];
-        m->wind = ma->wind[c->hrly_idx];
-        m->press = ma->press[c->hrly_idx] * KPA_2_PA;
-        m->vpd = ma->vpd[c->hrly_idx] * KPA_2_PA;
-        m->tair = ma->tair[c->hrly_idx];
-        m->par = ma->par[c->hrly_idx];
-        m->sw_rad = ma->par[c->hrly_idx] * PAR_2_SW; /* W m-2 */
-        m->Ca = ma->co2[c->hrly_idx];
+        m->rain = ma->rain[c->hour_idx];
+        m->wind = ma->wind[c->hour_idx];
+        m->press = ma->press[c->hour_idx] * KPA_2_PA;
+        m->vpd = ma->vpd[c->hour_idx] * KPA_2_PA;
+        m->tair = ma->tair[c->hour_idx];
+        m->par = ma->par[c->hour_idx];
+        m->sw_rad = ma->par[c->hour_idx] * PAR_2_SW; /* W m-2 */
+        m->Ca = ma->co2[c->hour_idx];
 
         /*
         * NDEP is per 30 min so need to sum 30 min data
@@ -732,32 +718,32 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int project_day,
         * average outside of this function call.
         */
         if (hod == 0) {
-            m->ndep = ma->ndep[c->hrly_idx];
-            m->tsoil = ma->tsoil[c->hrly_idx];
+            m->ndep = ma->ndep[c->hour_idx];
+            m->tsoil = ma->tsoil[c->hour_idx];
         } else {
-            m->ndep += ma->ndep[c->hrly_idx];
-            m->tsoil += ma->tsoil[c->hrly_idx];
+            m->ndep += ma->ndep[c->hour_idx];
+            m->tsoil += ma->tsoil[c->hour_idx];
         }
 
     } else {
-        m->Ca = ma->co2[project_day];
-        m->tair = ma->tair[project_day];
-        m->tair_am = ma->tam[project_day];
-        m->tair_pm = ma->tpm[project_day];
-        m->par = ma->par[project_day];
-        m->sw_rad = ma->par[project_day] * PAR_2_SW;
-        m->sw_rad_am = ma->par_am[project_day] * PAR_2_SW;
-        m->sw_rad_pm = ma->par_pm[project_day] * PAR_2_SW;
-        m->rain = ma->rain[project_day];
-        m->vpd_am = ma->vpd_am[project_day] * KPA_2_PA;
-        m->vpd_pm = ma->vpd_pm[project_day] * KPA_2_PA;
-        m->wind_am = ma->wind_am[project_day];
-        m->wind_pm = ma->wind_pm[project_day];
-        m->press = ma->press[project_day] * KPA_2_PA;
-        m->ndep = ma->ndep[project_day];
-        m->tsoil = ma->tsoil[project_day];
-        m->Tk_am = ma->tam[project_day] + DEG_TO_KELVIN;
-        m->Tk_pm = ma->tpm[project_day] + DEG_TO_KELVIN;
+        m->Ca = ma->co2[c->day_idx];
+        m->tair = ma->tair[c->day_idx];
+        m->tair_am = ma->tam[c->day_idx];
+        m->tair_pm = ma->tpm[c->day_idx];
+        m->par = ma->par[c->day_idx];
+        m->sw_rad = ma->par[c->day_idx] * PAR_2_SW;
+        m->sw_rad_am = ma->par_am[c->day_idx] * PAR_2_SW;
+        m->sw_rad_pm = ma->par_pm[c->day_idx] * PAR_2_SW;
+        m->rain = ma->rain[c->day_idx];
+        m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
+        m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;
+        m->wind_am = ma->wind_am[c->day_idx];
+        m->wind_pm = ma->wind_pm[c->day_idx];
+        m->press = ma->press[c->day_idx] * KPA_2_PA;
+        m->ndep = ma->ndep[c->day_idx];
+        m->tsoil = ma->tsoil[c->day_idx];
+        m->Tk_am = ma->tam[c->day_idx] + DEG_TO_KELVIN;
+        m->Tk_pm = ma->tpm[c->day_idx] + DEG_TO_KELVIN;
     }
 
     return;
