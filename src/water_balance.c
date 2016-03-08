@@ -1040,11 +1040,6 @@ void get_soil_params(char *soil_type, double *c_theta, double *n_theta) {
     Table also has values from Saxton for soil texture, perhaps makes more
     sense to use those than Cosby? Investigate?
 
-    Psi_e - Soil water potential at saturation (m) is taken from Clapp &
-            Hornberger following CABLE, note units change cm->m and negative
-            sign. NB I'm not actually using these values as I'm deriving them
-            from the Cosby eqn in calc_soil_params
-
     Reference
     ---------
     * Landsberg and Sands (2011) Physiological ecology of forest production.
@@ -1055,52 +1050,39 @@ void get_soil_params(char *soil_type, double *c_theta, double *n_theta) {
     if (strcmp(soil_type, "clay") == 0) {
         *c_theta = 0.4;
         *n_theta = 3.0;
-        /**psi_e = -0.405;*/
     } else if (strcmp(soil_type, "clay_loam") == 0) {
         *c_theta = 0.5;
         *n_theta = 5.0;
-        /**psi_e = -0.63; */
     } else if (strcmp(soil_type, "loam") == 0) {
         *c_theta = 0.55;
         *n_theta = 6.0;
-        /**psi_e = -0.478; */
     } else if (strcmp(soil_type, "loamy_sand") == 0) {
         *c_theta = 0.65;
         *n_theta = 8.0;
-        /**psi_e = -0.09; */
     } else if (strcmp(soil_type, "sand") == 0) {
         *c_theta = 0.7;
         *n_theta = 9.0;
-        /**psi_e = -0.121; */
     } else if (strcmp(soil_type, "sandy_clay") == 0) {
         *c_theta = 0.45;
         *n_theta = 4.0;
-        /**psi_e = -0.153; */
     } else if (strcmp(soil_type, "sandy_clay_loam") == 0) {
         *c_theta = 0.525;
         *n_theta = 5.5;
-        /**psi_e = -0.299; */
     } else if (strcmp(soil_type, "sandy_loam") == 0) {
         *c_theta = 0.6;
         *n_theta = 7.0;
-        /**psi_e = -0.218; */
     } else if (strcmp(soil_type, "silt") == 0) {
         *c_theta = 0.625;
         *n_theta = 7.5;
-        /* no value for silt so I've averaged the silt values */
-        /**psi_e = -0.544; */
     } else if (strcmp(soil_type, "silty_clay") == 0) {
         *c_theta = 0.425;
         *n_theta = 3.5;
-        /**psi_e = -0.49; */
     } else if (strcmp(soil_type, "silty_clay_loam") == 0) {
         *c_theta = 0.475;
         *n_theta = 4.5;
-        /**psi_e = -0.356; */
     } else if (strcmp(soil_type, "silty_loam") == 0) {
         *c_theta = 0.575;
         *n_theta = 6.5;
-        /**psi_e = -0.786; */
     } else {
         prog_error("There are no parameters for your soil type", __LINE__);
     }
@@ -1225,12 +1207,26 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
                                          p->ntheta_root);
 
     } else if (c->sw_stress_model == 2) {
-        /* Nothing implemented */
+        /*
+            Zhou et al.(2013) Agricultural & Forest Met. 182–183, 204–214
+            Assuming that overnight 􏰀pre-dawn leaf water potential =
+            pre-dawn soil water potential.
+        */
         fprintf(stderr, "Zhou model not implemented\n");
         exit(EXIT_FAILURE);
+        /*
+        s->wtfac_topsoil = exp(p->g1_b * s->psi_s_topsoil);
+        s->wtfac_root = exp(p->g1_b * s->psi_s_root);
 
+        ! SW modifier for Vcmax (non-stomatal limitation)
+        s->wtfac_topsoil_ns = (1.0 + exp(p->vcmax_sf * p->vcmax_psi_f)) / \
+                              (1.0 + exp(p->vcmax_sf * \
+                                        (p->vcmax_psi_f - s->psi_s_topsoil)));
+        s->wtfac_root_ns = (1.0 + exp(p->vcmax_sf * p->vcmax_psi_f)) / \
+                            (1.0 + exp(p->vcmax_sf * \
+                                        (p->vcmax_psi_f - s->psi_s_root)));
+        */
     }
-
     return;
 }
 
@@ -1240,7 +1236,7 @@ double calc_beta(double paw, double depth, double fc, double wp,
         Soil water modifier, standard JULES/CABLE type approach
 
         equation 16 in Egea
-        
+
         Note: we don't need to subtract the wp in the denominator here
               because our plant available water (paw) isn't bounded by
               the wilting point, it reaches zero

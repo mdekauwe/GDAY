@@ -108,7 +108,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              */
             if (hod == 10) {
                 calc_soil_water_potential(c, p, s);
-                printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );
+                /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
             }
 
 
