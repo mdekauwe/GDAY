@@ -946,6 +946,7 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
                             (p->theta_fc_root - p->theta_wp_root);
     }
 
+
     /* calculate Landsberg and Waring SW modifier parameters if not
        specified by the user based on a site calibration */
     if (p->ctheta_topsoil < -900.0 && p->ntheta_topsoil  < -900.0 &&

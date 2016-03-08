@@ -289,10 +289,10 @@ typedef struct {
     double theta;                           /* curvature of photosynthetic light response curve */
     double theta_sp_root;
     double theta_sp_topsoil;
-    double theta_fc_topsoil;
-    double theta_wp_topsoil;
     double theta_fc_root;
+    double theta_fc_topsoil;
     double theta_wp_root;
+    double theta_wp_topsoil;
     double topsoil_depth;                   /* Topsoil depth (mm) */
     char   topsoil_type[STRING_LENGTH];
     double vcmax;                           /* maximum rate of carboxylation (umol m-2 s-1)  */
