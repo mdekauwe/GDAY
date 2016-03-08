@@ -1201,11 +1201,10 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         water availability factor for the root zone [0,1]
     */
 
-    double smc_topsoil, smc_root, psi_swp_topsoil, arg1, arg2, arg3,
-           psi_swp_root, b, theta;
+    double moisture_ratio_topsoil, moisture_ratio_root, psi_swp_topsoil, theta;
 
     if (c->sw_stress_model == 0) {
-
+        /* JULES type model, see Egea et al. (2011) */
         s->wtfac_topsoil = calc_beta(s->pawater_topsoil, p->topsoil_depth,
                                      p->theta_fc_topsoil, p->theta_wp_topsoil,
                                      p->qs);
@@ -1215,13 +1214,14 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
                                      p->qs);
 
     } else if (c->sw_stress_model == 1) {
-        /* turn into fraction... */
-        smc_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
-        smc_root = s->pawater_root / p->wcapac_root;
+        /* Landsberg and Waring, (1997) */
+        moisture_ratio_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
+        moisture_ratio_root = s->pawater_root / p->wcapac_root;
 
-        s->wtfac_topsoil = calc_sw_modifier(smc_topsoil, p->ctheta_topsoil,
+        s->wtfac_topsoil = calc_sw_modifier(moisture_ratio_topsoil,
+                                            p->ctheta_topsoil,
                                             p->ntheta_topsoil);
-        s->wtfac_root = calc_sw_modifier(smc_root, p->ctheta_root,
+        s->wtfac_root = calc_sw_modifier(moisture_ratio_root, p->ctheta_root,
                                          p->ntheta_root);
 
     } else if (c->sw_stress_model == 2) {
@@ -1237,7 +1237,12 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
 double calc_beta(double paw, double depth, double fc, double wp,
                  double exponent) {
     double beta, theta;
-    /* calc theta like this we don't need to remove the wp in denominator */
+
+    /*
+     * we don't need to subtract the wp in the denominator here because our
+     * plant available water (paw) isn't bounded by the wilting point, it
+     * reaches zero
+     */
     theta = paw / depth;
     beta = pow(theta / (fc - wp), exponent);
     if (beta > fc) {
@@ -1250,7 +1255,15 @@ double calc_beta(double paw, double depth, double fc, double wp,
 }
 
 double calc_sw_modifier(double theta, double c_theta, double n_theta) {
-    /* From Landsberg and Waring */
+    /*
+        Soil water modifier, equation 2 in Landsberg and Waring.
+        Note: "The values of c_theta and n_theta are, nevertheless, chosen
+              without specific empirical justification" :)
+              
+        Reference:
+        ----------
+        * Landsberg and Waring (1997) Forest Ecology and Management 95, 209-228.
+    */
     return (1.0  / (1.0 + pow(((1.0 - theta) / c_theta), n_theta)));
 }
 
