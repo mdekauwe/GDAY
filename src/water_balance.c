@@ -1236,13 +1236,22 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
 
 double calc_beta(double paw, double depth, double fc, double wp,
                  double exponent) {
+    /*
+        Soil water modifier, standard JULES/CABLE type approach
+
+        equation 16 in Egea
+        
+        Note: we don't need to subtract the wp in the denominator here
+              because our plant available water (paw) isn't bounded by
+              the wilting point, it reaches zero
+
+        Reference:
+        ----------
+        * Egea et al. (2011) Agricultural and Forest Meteorology.
+    */
+
     double beta, theta;
 
-    /*
-     * we don't need to subtract the wp in the denominator here because our
-     * plant available water (paw) isn't bounded by the wilting point, it
-     * reaches zero
-     */
     theta = paw / depth;
     beta = pow(theta / (fc - wp), exponent);
     if (beta > fc) {
@@ -1259,7 +1268,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
         Soil water modifier, equation 2 in Landsberg and Waring.
         Note: "The values of c_theta and n_theta are, nevertheless, chosen
               without specific empirical justification" :)
-              
+
         Reference:
         ----------
         * Landsberg and Waring (1997) Forest Ecology and Management 95, 209-228.
@@ -1269,9 +1278,8 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 
 
 void calc_soil_water_potential(control *c, params *p, state *s) {
-
     /*
-    ** Estimate pre-dawn soil water potential from soil water content
+        Estimate pre-dawn soil water potential from soil water content
     */
     double theta_over_theta_sat, theta;
 
