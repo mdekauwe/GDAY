@@ -287,8 +287,12 @@ typedef struct {
     double structrat;                       /* structural input n:c as fraction of metab */
     double targ_sens;                       /* sensitivity of allocation (leaf/branch) to track the target, higher values = less responsive. */
     double theta;                           /* curvature of photosynthetic light response curve */
-    double theta_sat_root;
-    double theta_sat_topsoil;
+    double theta_sp_root;
+    double theta_sp_topsoil;
+    double theta_fc_topsoil;
+    double theta_wp_topsoil;
+    double theta_fc_root;
+    double theta_wp_root;
     double topsoil_depth;                   /* Topsoil depth (mm) */
     char   topsoil_type[STRING_LENGTH];
     double vcmax;                           /* maximum rate of carboxylation (umol m-2 s-1)  */

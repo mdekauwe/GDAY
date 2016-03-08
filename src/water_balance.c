@@ -923,7 +923,6 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
       available water.
      */
 
-    double theta_fc_topsoil, theta_wp_topsoil, theta_fc_root, theta_wp_root;
     double *fsoil_top = NULL, *fsoil_root = NULL;
 
     if (c->calc_sw_params) {
@@ -931,20 +930,20 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
         fsoil_root = get_soil_fracs(p->rootsoil_type);
 
         /* top soil */
-        calc_soil_params(fsoil_top, &theta_fc_topsoil, &theta_wp_topsoil,
-                         &p->theta_sat_topsoil, &p->b_topsoil,
+        calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,
+                         &p->theta_sp_topsoil, &p->b_topsoil,
                          &p->psi_sat_topsoil);
 
         /* Plant available water in top soil (mm) */
-        p->wcapac_topsoil = p->topsoil_depth * \
-                            (theta_fc_topsoil - theta_wp_topsoil);
-
+        p->wcapac_topsoil = p->topsoil_depth  *\
+                            (p->theta_fc_topsoil - p->theta_wp_topsoil);
         /* Root zone */
-        calc_soil_params(fsoil_root, &theta_fc_root, &theta_wp_root,
-                         &p->theta_sat_root, &p->b_root, &p->psi_sat_root);
+        calc_soil_params(fsoil_root, &p->theta_fc_root, &p->theta_wp_root,
+                         &p->theta_sp_root, &p->b_root, &p->psi_sat_root);
 
         /* Plant available water in rooting zone (mm) */
-        p->wcapac_root = p->rooting_depth * (theta_fc_root - theta_wp_root);
+        p->wcapac_root = p->rooting_depth * \
+                            (p->theta_fc_root - p->theta_wp_root);
     }
 
     /* calculate Landsberg and Waring SW modifier parameters if not
@@ -976,9 +975,10 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
 
 
 double *get_soil_fracs(char *soil_type) {
-    /* Based on Table 2 in Cosby et al 1984, page 2.
-    Fractions of silt, sand and clay (in that order)
-    */
+    /*
+     * Based on Table 2 in Cosby et al 1984, page 2.
+     * Fractions of silt, sand and clay (in that order)
+     */
     double *fsoil = malloc(3 * sizeof(double));
 
     if (strcmp(soil_type, "sand") == 0) {
@@ -1135,17 +1135,18 @@ void calc_soil_params(double *fsoil, double *theta_fc, double *theta_wp,
     double psi_sat;
 
     /* *Note* subtle unit change to be consistent with fractions as opposed
-      to percentages of sand, silt, clay, e.g. I've changed the slope in
-      the "b" Clapp paramter from 0.157 to 15.7
-
-      Also Cosby is unclear about which log base were used. 'Generally' now
-      assumed that logarithms to the base 10
-    */
+     * to percentages of sand, silt, clay, e.g. I've changed the slope in
+     * the "b" Clapp paramter from 0.157 to 15.7
+     *
+     * Also Cosby is unclear about which log base were used. 'Generally' now
+     * assumed that logarithms to the base 10
+     */
 
     /* Clapp Hornberger exponent [-] */
     *b = 3.1 + 15.7 * fsoil[CLAY] - 0.3 * fsoil[SAND];
 
-    /* soil matric potential at saturation, taking inverse of log (base10)
+    /*
+     * soil matric potential at saturation, taking inverse of log (base10)
      * units = m
      */
     psi_sat = CM_2_M * -(pow(10.0, (1.54 - 0.95 * fsoil[SAND] +\
@@ -1155,12 +1156,16 @@ void calc_soil_params(double *fsoil, double *theta_fc, double *theta_wp,
     /* volumetric soil moisture concentrations at the saturation point */
     *theta_sp = 0.505 - 0.037 * fsoil[CLAY] - 0.142 * fsoil[SAND];
 
-    /* volumetric soil moisture concentrations at the wilting point
-       assumed to equal suction of -1.5 MPa or a depth of water of 152.9 m */
+    /*
+     * volumetric soil moisture concentrations at the wilting point
+     * assumed to equal suction of -1.5 MPa or a depth of water of 152.9 m
+     */
     *theta_wp = *theta_sp * pow((psi_sat / pressure_head_wilt), (1.0 / *b));
 
-    /* volumetric soil moisture concentrations at field capacity assumed to
-       equal a suction of -0.0033 MPa or a depth of water of 3.364 m */
+    /*
+     * volumetric soil moisture concentrations at field capacity assumed to
+     * equal a suction of -0.0033 MPa or a depth of water of 3.364 m
+     */
     *theta_fc = *theta_sp * pow((psi_sat / pressure_head_crit), (1.0 / *b));
 
     return;
@@ -1197,57 +1202,46 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
     */
 
     double smc_topsoil, smc_root, psi_swp_topsoil, arg1, arg2, arg3,
-           psi_swp_root, b;
-
-    /* turn into fraction... */
-    smc_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
-    smc_root = s->pawater_root / p->wcapac_root;
+           psi_swp_root, b, theta;
 
     if (c->sw_stress_model == 0) {
-        s->wtfac_topsoil = pow(smc_topsoil, p->qs);
-        s->wtfac_root = pow(smc_root, p->qs);
+        /* calculating theta like this we don't need to remove the wp in arg1 */
+        theta = s->pawater_topsoil / p->topsoil_depth;
+        arg1 = theta;
+        arg2 = p->theta_fc_topsoil - p->theta_wp_topsoil;
+        s->wtfac_topsoil = pow(arg1 / arg2, p->qs);
+        if (s->wtfac_topsoil > p->theta_fc_topsoil) {
+            s->wtfac_topsoil = 1.0;
+        } else if (s->wtfac_topsoil <= p->theta_wp_topsoil) {
+            s->wtfac_topsoil = 0.0;
+        }
+
+        /* calculating theta like this we don't need to remove the wp in arg1 */
+        theta = s->pawater_root / p->rooting_depth;
+        arg1 = theta;
+        arg2 = p->theta_fc_root - p->theta_wp_root;
+        s->wtfac_root = pow(arg1 / arg2, p->qs);
+        if (s->wtfac_root > p->theta_fc_root) {
+            s->wtfac_root = 1.0;
+        } else if (s->wtfac_root <= p->theta_wp_root) {
+            s->wtfac_root = 0.0;
+        }
 
     } else if (c->sw_stress_model == 1) {
+        /* turn into fraction... */
+        smc_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
+        smc_root = s->pawater_root / p->wcapac_root;
+
         s->wtfac_topsoil = calc_sw_modifier(smc_topsoil, p->ctheta_topsoil,
                                             p->ntheta_topsoil);
-
-
         s->wtfac_root = calc_sw_modifier(smc_root, p->ctheta_root,
                                          p->ntheta_root);
 
     } else if (c->sw_stress_model == 2) {
+        /* Nothing implemented */
+        fprintf(stderr, "Zhou model not implemented\n");
+        exit(EXIT_FAILURE);
 
-        /* Stomatal limitaiton
-           Exponetial function to reduce g1 with soil water limitation
-           based on Zhou et al. 2013, AFM, following Makela et al 1996.
-           For the moment I have hardwired the PFT parameter as I am still
-           testing.
-           Because the model is a daily model we are assuming that LWP is
-           well approximated by the night SWP. */
-
-        if (float_eq(smc_topsoil, 0.0)) {
-            psi_swp_topsoil = -1.5;
-        } else {
-            arg1 = s->psi_sat_topsoil;
-            arg2 = smc_topsoil /s->theta_sat_topsoil;
-            arg3 = s->b_topsoil;
-            psi_swp_topsoil = arg1 * pow(arg2, arg3);
-        }
-
-        if (float_eq(smc_root, 0.0)) {
-            psi_swp_root = -1.5;
-        } else {
-            arg1 = s->psi_sat_root;
-            arg2 = smc_root/s->theta_sat_root;
-            arg3 = s->b_root;
-            psi_swp_root = arg1 * pow(arg2, arg3);
-        }
-
-        /* multipliy these by g1, same as eqn 3 in Zhou et al. 2013. */
-        b = 0.66;
-
-        s->wtfac_topsoil = exp(b * psi_swp_topsoil);
-        s->wtfac_root = exp(b * psi_swp_root);
     }
 
     return;
@@ -1260,18 +1254,16 @@ void calc_soil_water_potential(control *c, params *p, state *s) {
     ** Estimate pre-dawn soil water potential from soil water content
     */
     double theta_over_theta_sat, theta;
-    double topsoil_depth = 200.0;
-    double rootsoil_depth = 750.0;
 
     /* Soil water potential of topsoil (MPa) */
-    theta = s->pawater_topsoil / topsoil_depth;
-    theta_over_theta_sat = theta / p->theta_sat_topsoil;
+    theta = (s->pawater_topsoil / p->topsoil_depth) + p->theta_wp_topsoil;
+    theta_over_theta_sat = theta / p->theta_sp_topsoil;
     s->psi_s_topsoil = p->psi_sat_topsoil * \
                         pow(theta_over_theta_sat, -p->b_topsoil);
 
     /* Soil water potential of rootzone (MPa) */
-    theta = s->pawater_root / rootsoil_depth;
-    theta_over_theta_sat = theta / p->theta_sat_root;
+    theta = (s->pawater_root / p->rooting_depth) + p->theta_wp_root;
+    theta_over_theta_sat = theta / p->theta_sp_root;
     s->psi_s_root = p->psi_sat_root * pow(theta_over_theta_sat, -p->b_root);
     /*printf("%lf %lf %lf\n", s->psi_s_root, theta, theta_over_theta_sat);
     exit(1);*/

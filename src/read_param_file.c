@@ -797,10 +797,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->targ_sens = atof(value);
     } else if (MATCH("params", "theta")) {
         p->theta = atof(value);
-    } else if (MATCH("params", "theta_sat_root")) {
-        p->theta_sat_root = atof(value);
-    } else if (MATCH("params", "theta_sat_topsoil")) {
-        p->theta_sat_topsoil = atof(value);
+    } else if (MATCH("params", "theta_sp_root")) {
+        p->theta_sp_root = atof(value);
+    } else if (MATCH("params", "theta_sp_topsoil")) {
+        p->theta_sp_topsoil = atof(value);
     } else if (MATCH("params", "topsoil_depth")) {
         p->topsoil_depth = atof(value);
     } else if (MATCH("params", "topsoil_type")) {
