@@ -1205,27 +1205,14 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
            psi_swp_root, b, theta;
 
     if (c->sw_stress_model == 0) {
-        /* calculating theta like this we don't need to remove the wp in arg1 */
-        theta = s->pawater_topsoil / p->topsoil_depth;
-        arg1 = theta;
-        arg2 = p->theta_fc_topsoil - p->theta_wp_topsoil;
-        s->wtfac_topsoil = pow(arg1 / arg2, p->qs);
-        if (s->wtfac_topsoil > p->theta_fc_topsoil) {
-            s->wtfac_topsoil = 1.0;
-        } else if (s->wtfac_topsoil <= p->theta_wp_topsoil) {
-            s->wtfac_topsoil = 0.0;
-        }
 
-        /* calculating theta like this we don't need to remove the wp in arg1 */
-        theta = s->pawater_root / p->rooting_depth;
-        arg1 = theta;
-        arg2 = p->theta_fc_root - p->theta_wp_root;
-        s->wtfac_root = pow(arg1 / arg2, p->qs);
-        if (s->wtfac_root > p->theta_fc_root) {
-            s->wtfac_root = 1.0;
-        } else if (s->wtfac_root <= p->theta_wp_root) {
-            s->wtfac_root = 0.0;
-        }
+        s->wtfac_topsoil = calc_beta(s->pawater_topsoil, p->topsoil_depth,
+                                     p->theta_fc_topsoil, p->theta_wp_topsoil,
+                                     p->qs);
+
+        s->wtfac_root = calc_beta(s->pawater_root, p->rooting_depth,
+                                     p->theta_fc_root, p->theta_wp_root,
+                                     p->qs);
 
     } else if (c->sw_stress_model == 1) {
         /* turn into fraction... */
@@ -1245,6 +1232,26 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
     }
 
     return;
+}
+
+double calc_beta(double paw, double depth, double fc, double wp,
+                 double exponent) {
+    double beta, theta;
+    /* calc theta like this we don't need to remove the wp in denominator */
+    theta = paw / depth;
+    beta = pow(theta / (fc - wp), exponent);
+    if (beta > fc) {
+        beta = 1.0;
+    } else if (beta <= wp) {
+        beta = 0.0;
+    }
+
+    return (beta);
+}
+
+double calc_sw_modifier(double theta, double c_theta, double n_theta) {
+    /* From Landsberg and Waring */
+    return (1.0  / (1.0 + pow(((1.0 - theta) / c_theta), n_theta)));
 }
 
 
@@ -1269,11 +1276,6 @@ void calc_soil_water_potential(control *c, params *p, state *s) {
     exit(1);*/
 }
 
-
-double calc_sw_modifier(double theta, double c_theta, double n_theta) {
-    /* From Landsberg and Waring */
-    return (1.0  / (1.0 + pow(((1.0 - theta) / c_theta), n_theta)));
-}
 
 void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
                              double transpiration_hlf_hr, double et_hlf_hr,

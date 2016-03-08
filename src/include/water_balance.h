@@ -36,7 +36,7 @@ void    calc_soil_water_potential(control *, params *, state *);
 double  calc_sw_modifier(double, double, double);
 void    initialise_soil_moisture_parameters(control *, params *);
 double *get_soil_fracs(char *);
-
+double  calc_beta(double, double, double, double, double);
 void    get_soil_params(char *, double *, double *);
 void    calc_soil_params(double *, double *, double *,
                         double *, double *, double *);
