@@ -572,7 +572,7 @@ typedef struct {
 } fluxes;
 
 typedef struct {
-    int    leaf_idx;
+    int    ileaf;
     double an_leaf[2];
     double gsc_leaf[2];
     double apar_leaf[2];

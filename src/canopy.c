@@ -62,7 +62,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calculate_top_of_canopy_leafn(cw, p, s);
 
             /* sunlit / shaded loop */
-            for (cw->leaf_idx = 0; cw->leaf_idx < NUM_LEAVES; cw->leaf_idx++) {
+            for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
 
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 initialise_leaf_surface(cw, m);
@@ -78,7 +78,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         exit(EXIT_FAILURE);
                     }
 
-                    if (cw->an_leaf[cw->leaf_idx] > 1E-04) {
+                    if (cw->an_leaf[cw->ileaf] > 1E-04) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, cw, f, m, p, s);
 
@@ -160,7 +160,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     int    idx;
     double omega, transpiration, LE, Tdiff, gv, gbc, gh, Tk, sw_rad;
 
-    idx = cw->leaf_idx;
+    idx = cw->ileaf;
     sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
 
     cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd, sw_rad);

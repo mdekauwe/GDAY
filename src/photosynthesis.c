@@ -36,7 +36,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
     /* unpack some stuff */
-    idx = cw->leaf_idx;
+    idx = cw->ileaf;
     par = cw->apar_leaf[idx];
     Cs = cw->Cs;
     tleaf = cw->tleaf;
@@ -210,7 +210,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
 
     *vcmax = 0.0;
     *jmax = 0.0;
-    lai_leaf = cw->lai_leaf[cw->leaf_idx];
+    lai_leaf = cw->lai_leaf[cw->ileaf];
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
@@ -218,7 +218,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
 
     } else if (c->modeljm == 1) {
 
-        if (cw->leaf_idx == SUNLIT) {
+        if (cw->ileaf == SUNLIT) {
             jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, cw->N0, lai_leaf,
                                            cw->cos_zenith);
             vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, cw->N0, lai_leaf,
