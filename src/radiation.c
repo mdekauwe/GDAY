@@ -167,6 +167,10 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     cw->lai_leaf[SUNLIT] = (1.0 - exp(-kb * lai)) / kb;
     cw->lai_leaf[SHADED] = lai - cw->lai_leaf[SUNLIT];
 
+    /* convert apart from unit ground to leaf area */
+    cw->apar_leaf[SUNLIT] /= cw->lai_leaf[SUNLIT];
+    cw->apar_leaf[SHADED] /= cw->lai_leaf[SHADED];
+
     return;
 }
 
