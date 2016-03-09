@@ -206,7 +206,6 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double jmaxnb = p->jmaxnb;
     double vcmaxna = p->vcmaxna;
     double vcmaxnb = p->vcmaxnb;
-    int    DUMMY = -999;
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
