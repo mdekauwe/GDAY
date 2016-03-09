@@ -206,16 +206,12 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double jmaxnb = p->jmaxnb;
     double vcmaxna = p->vcmaxna;
     double vcmaxnb = p->vcmaxnb;
-    double lai = cw->lai_leaf[cw->ileaf];
-    double kb = 0.5 / cw->cos_zenith;
-    double kn = 0.3;
 
     /*
     ** Scaling from single leaf to canopy, see Wang & Leuning 1998
     ** Inserting eqn C6 & C7 into B5
     */
-    scalar_sun = (1.0 - exp(-(kb + kn) * lai)) / (kb + kn);
-    scalar_sha = (1.0 - exp(-kn * lai)) / kn - scalar_sun;
+    scale_up_to_the_canopy(cw, &scalar_sun, &scalar_sha);
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
@@ -271,6 +267,47 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
         *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
     }
+
+    return;
+}
+
+void scale_up_to_the_canopy(canopy_wk *cw, double *scalar_sun,
+                            double *scalar_sha) {
+    /*
+        Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
+        values. Following Wang & Leuning, as long as sunlit and shaded
+        leaves are treated seperately, values of parameters in the coupled
+        model for the two big leaves can be closely approximated by
+        integrating values for individual leaves.
+
+        - Inserting eqn C6 & C7 into B5
+
+        per unit ground area
+
+        Parameters:
+        ----------
+        canopy_wk : structure
+            various canopy values: in this case the sunlit or shaded LAI &
+            cos_zenith angle.
+        scalar_sun : float
+            scalar for sunlit leaves, values returned in unit ground area
+            (returned)
+        scalar_sha : float
+            scalar for shaded leaves, values returned in unit ground area
+            (returned)
+
+        References:
+        ----------
+        * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
+    */
+    double kb, kn, lai;
+
+    kb = 0.5 / cw->cos_zenith; /* beam radiation ext coef of canopy  */
+    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
+    lai = cw->lai_leaf[cw->ileaf];
+
+    *scalar_sun = (1.0 - exp(-(kb + kn) * lai)) / (kb + kn);
+    *scalar_sha = (1.0 - exp(-kn * lai)) / kn - *scalar_sun;
 
     return;
 }
