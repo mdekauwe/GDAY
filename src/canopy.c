@@ -43,12 +43,12 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy, sunlight_hrs;
     double doy;
 
-
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
+    
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, ma, m, hod);
 

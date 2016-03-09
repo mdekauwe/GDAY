@@ -95,9 +95,11 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     int    i;
     double czen, integral, kb, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
-           k_dash_b, k_dash_d, scattered, shaded, beam;
-    double lai = s->lai;
-    double lad = p->lad;
+           k_dash_b, k_dash_d, scattered, shaded, beam, lai, lad;
+
+    /* unpack local var */
+    lai = s->lai;
+    lad = p->lad;
 
     /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
     double rho_cd = 0.036;

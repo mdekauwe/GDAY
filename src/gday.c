@@ -370,7 +370,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             allocate_stored_c_and_n(f, p, s);
         }
     }
-    
+
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
@@ -443,8 +443,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* Have we reached a steady state? */
             fprintf(stderr,
-                    "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
-                    s->plantc, s->soilc, s->plantn, s->soiln);
+              "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
+               s->plantc, s->soilc, s->plantn, s->soiln);
         }
     }
     write_final_state(c, p, s);
