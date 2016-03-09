@@ -287,7 +287,7 @@ double integrate_sunlit_frac(canopy_wk *cw, double a, double b) {
     arg1 = a / kb * (1.0 - exp(-kb * lai));
     arg2 = b * cw->N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
     sun = arg1 + arg2;
-
+    
     return (sun);
 }
 
