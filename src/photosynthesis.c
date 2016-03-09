@@ -56,6 +56,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     large_root = FALSE;
     J = quad(p->theta, -(p->alpha_j * par + jmax),
              p->alpha_j * par * jmax, large_root, &qudratic_error);
+
     /* RuBP regeneration rate */
     Vj = J / 4.0;
 
@@ -102,12 +103,13 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         C = ( -(1.0 - Cs * gs_over_a) * gamma_star * (Vj + 2.0 * rd) -
                g0 * 2.0 * gamma_star * Cs );
 
-        /* intercellular CO2 concentration */
+        /* Intercellular CO2 concentration */
         qudratic_error = FALSE;
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
+
         /* Below light compensation point? */
         if (Aj - rd < 1E-6) {
             Ci = Cs;
@@ -214,30 +216,18 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         *jmax = p->jmax;
         *vcmax = p->vcmax;
 
-        if (cw->leaf_idx == SUNLIT) {
-            *jmax = integrate_sunlit_frac(p->jmax, DUMMY, DUMMY, lai_leaf,
-                                          cw->cos_zenith, c->modeljm);
-            *vcmax = integrate_sunlit_frac(p->vcmax, DUMMY, DUMMY, lai_leaf,
-                                           cw->cos_zenith, c->modeljm);
-        } else {
-            *jmax = integrate_shaded_frac(p->jmax, DUMMY, DUMMY, lai_leaf,
-                                          cw->cos_zenith, c->modeljm, FALSE);
-            *vcmax = integrate_shaded_frac(p->vcmax, DUMMY, DUMMY, lai_leaf,
-                                           cw->cos_zenith, c->modeljm, TRUE);
-        }
-
     } else if (c->modeljm == 1) {
 
         if (cw->leaf_idx == SUNLIT) {
             jmax25 = integrate_sunlit_frac(jmaxna, jmaxnb, cw->N0, lai_leaf,
-                                           cw->cos_zenith, c->modeljm);
+                                           cw->cos_zenith);
             vcmax25 = integrate_sunlit_frac(vcmaxna, vcmaxnb, cw->N0, lai_leaf,
-                                            cw->cos_zenith, c->modeljm);
+                                            cw->cos_zenith);
         } else {
             jmax25 = integrate_shaded_frac(jmaxna, jmaxnb, cw->N0, lai_leaf,
-                                           cw->cos_zenith, c->modeljm, FALSE);
+                                           cw->cos_zenith);
             vcmax25 = integrate_shaded_frac(vcmaxna, vcmaxnb, cw->N0, lai_leaf,
-                                            cw->cos_zenith, c->modeljm, TRUE);
+                                            cw->cos_zenith);
         }
         /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
@@ -281,7 +271,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
 }
 
 double integrate_sunlit_frac(double a, double b, double N0, double lai,
-                             double cos_zenith, int modeljm) {
+                             double cos_zenith) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of sunlit
@@ -297,8 +287,6 @@ double integrate_sunlit_frac(double a, double b, double N0, double lai,
             sunlit LAI (m2 m-2)
         cos_zenith : double
             sun zenith angle (radians)
-        modeljm : int
-            which Vcmax/Jmax calculation
 
         Returns:
         --------
@@ -315,19 +303,15 @@ double integrate_sunlit_frac(double a, double b, double N0, double lai,
     kb = 0.5 / cos_zenith;
     kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
 
-    if (modeljm == 0) {
-        sun = a * (1.0 - exp(-(kn + kb) * lai)) * (1.0 / (kn + kb));
-    } else if (modeljm == 1) {
-        arg1 = a / kb * (1.0 - exp(-kb * lai));
-        arg2 = b * N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
-        sun = arg1 + arg2;
-    }
+    arg1 = a / kb * (1.0 - exp(-kb * lai));
+    arg2 = b * N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
+    sun = arg1 + arg2;
 
     return (sun);
 }
 
 double integrate_shaded_frac(double a, double b, double N0, double lai,
-                             double cos_zenith, int modeljm, bool do_vcmax) {
+                             double cos_zenith) {
 
     /*
         Integrate over the canopy depth to yeild bulk values of shaded
@@ -343,8 +327,6 @@ double integrate_shaded_frac(double a, double b, double N0, double lai,
             shaded LAI (m2 m-2)
         cos_zenith : double
             sun zenith angle (radians)
-        modeljm : int
-            which Vcmax/Jmax calculation
 
         Returns:
         --------
@@ -365,23 +347,22 @@ double integrate_shaded_frac(double a, double b, double N0, double lai,
     /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
     k_dash_d = 0.718;
 
-    if (modeljm == 0) {
-        if (do_vcmax) {
-            arg1 = (1.0 - exp(-kn * lai)) * 1.0 / kn;
-            arg2 = (1.0 - exp(-(kn + kb) * lai)) * 1.0 / (kn + kb);
-            shade = a * (arg1 - arg2);
-        } else {
-            arg1 = (1.0 - exp(-k_dash_d * lai)) * 1.0 / k_dash_d;
-            arg2 = (1.0 - exp(-(k_dash_d + kb) * lai)) * 1.0 / (k_dash_d + kb);
-            shade = a * (arg1 - arg2);
-        }
-    } else if (modeljm == 1) {
-        arg1 = a * lai;
-        arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
-        arg3 = b * N0 / kn * (1.0 - exp(-kn * lai));
-        arg4 = b * N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
-        shade = arg1 + arg2 - arg2 + arg3;
-    }
+    /* Jmax use diffuse coefficent, not accounted for in Belinda's calc? */
+    /*if (do_vcmax) {
+        arg1 = (1.0 - exp(-kn * lai)) * 1.0 / kn;
+        arg2 = (1.0 - exp(-(kn + kb) * lai)) * 1.0 / (kn + kb);
+        shade = a * (arg1 - arg2);
+    } else {
+        arg1 = (1.0 - exp(-k_dash_d * lai)) * 1.0 / k_dash_d;
+        arg2 = (1.0 - exp(-(k_dash_d + kb) * lai)) * 1.0 / (k_dash_d + kb);
+        shade = a * (arg1 - arg2);
+    */
+
+    arg1 = a * lai;
+    arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
+    arg3 = b * N0 / kn * (1.0 - exp(-kn * lai));
+    arg4 = b * N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
+    shade = arg1 + arg2 - arg2 + arg3;
 
     return (shade);
 }
