@@ -208,10 +208,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double vcmaxnb = p->vcmaxnb;
 
     /*
-    ** Scaling from single leaf to canopy, see Wang & Leuning 1998
-    ** Inserting eqn C6 & C7 into B5
+    ** Scaling photosynthetic parameters from single leaf to canopy,
+    ** see Wang & Leuning 1998: inserting eqn C6 & C7 into B5
     */
-    scale_up_to_the_canopy(cw, &scalar_sun, &scalar_sha);
+    scale_to_canopy(cw, &scalar_sun, &scalar_sha);
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
@@ -271,8 +271,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     return;
 }
 
-void scale_up_to_the_canopy(canopy_wk *cw, double *scalar_sun,
-                            double *scalar_sha) {
+void scale_to_canopy(canopy_wk *cw, double *scalar_sun, double *scalar_sha) {
     /*
         Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
         values. Following Wang & Leuning, as long as sunlit and shaded

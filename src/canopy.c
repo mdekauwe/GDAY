@@ -139,8 +139,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_root = 1.0;
     }
 
-
-
     return;
 }
 

@@ -17,7 +17,7 @@ double calc_leaf_day_respiration(double, double);
 double quad(double, double, double, bool, int *);
 double integrate_sunlit_frac(canopy_wk *, double, double);
 double integrate_shaded_frac(canopy_wk *, double, double);
-void   scale_up_to_the_canopy(canopy_wk *, double *, double *);
+void   scale_to_canopy(canopy_wk *, double *, double *);
 
 
 
