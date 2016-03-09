@@ -208,16 +208,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double vcmaxnb = p->vcmaxnb;
     int    DUMMY = -999;
 
-    *vcmax = 0.0;
-    *jmax = 0.0;
-
-
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
-
     } else if (c->modeljm == 1) {
-
         if (cw->ileaf == SUNLIT) {
             jmax25 = integrate_sunlit_frac(cw, jmaxna, jmaxnb);
             vcmax25 = integrate_sunlit_frac(cw, vcmaxna, vcmaxnb);
@@ -225,19 +219,8 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
             jmax25 = integrate_shaded_frac(cw, jmaxna, jmaxnb);
             vcmax25 = integrate_shaded_frac(cw, vcmaxna, vcmaxnb);
         }
-        /*printf("%d %lf %lf : %lf %lf\n", leaf, vcmax25, jmax25, N0, leaf_lai);*/
-        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
-                                 p->edj);
+        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
-
-        /*
-        jmax25 = p->jmaxna * N0 + p->jmaxnb;
-        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj,
-                                 p->edj);
-
-        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
-        */
     } else if (c->modeljm == 2) {
         vcmax25 = p->vcmaxna * cw->N0 + p->vcmaxnb;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
@@ -248,6 +231,9 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
         vcmax25 = p->vcmax;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    } else {
+        fprintf(stderr, "You haven't set Jmax/Vcmax model: modeljm \n");
+        exit(EXIT_FAILURE);
     }
 
     /* reduce photosynthetic capacity with moisture stress */
