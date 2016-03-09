@@ -94,21 +94,22 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     */
 
     int    i;
-    double czen, integral, kb, kd, phi_1, phi_2, Gross, psi, Ib, Id, Is, Ic,
-           k_dash_b, k_dash_d, scattered, shaded, beam, lai, lad;
+    double kb, kd, phi_1, phi_2, Gross, Ib, Id, Is, Ic,
+           k_dash_b, k_dash_d, scattered, shaded, beam, lai, lad, rho_cd,
+           rho_cb, omega_PAR;
 
     /* unpack local var */
     lai = s->lai;
     lad = p->lad;
 
     /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
-    double rho_cd = 0.036;
+    rho_cd = 0.036;
 
     /* canopy reflection coeffcient for direct PAR; de Pury & Farquhar, 1997 */
-    double rho_cb = 0.029;
+    rho_cb = 0.029;
 
     /* leaf scattering coefficient of PAR; de Pury & Farquhar, 1997 */
-    double omega_PAR = 0.15;
+    omega_PAR = 0.15;
 
     /* direct PAR extinction coefficent - Dai et al 2004, eqn 2. */
     /*phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
