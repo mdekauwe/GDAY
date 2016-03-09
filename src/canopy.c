@@ -110,9 +110,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 calc_soil_water_potential(c, p, s);
                 /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
             }
-
-
-
         }
         scale_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);
@@ -270,28 +267,13 @@ void zero_hourly_fluxes(canopy_wk *cw) {
 
 void scale_to_canopy(canopy_wk *cw) {
 
+
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
     cw->gsc_canopy = cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED];
     cw->apar_canopy = cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED];
     cw->trans_canopy = cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED];
     cw->omega_canopy = (cw->omega_leaf[SUNLIT] + cw->omega_leaf[SHADED]) / 2.0;
     cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
-
-    /*double sunlit_lai = cw->lai_leaf[SUNLIT];
-    double shaded_lai = cw->lai_leaf[SHADED];
-
-    cw->an_canopy = (cw->an_leaf[SUNLIT] * sunlit_lai) +\
-                     (cw->an_leaf[SHADED] * shaded_lai);
-    cw->gsc_canopy = (cw->gsc_leaf[SUNLIT] * sunlit_lai) + \
-                        (cw->gsc_leaf[SHADED] * shaded_lai);
-    cw->apar_canopy = (cw->apar_leaf[SUNLIT] * sunlit_lai) +\
-                        (cw->apar_leaf[SHADED] * shaded_lai);
-    cw->trans_canopy = (cw->trans_leaf[SUNLIT] * sunlit_lai) + \
-                        (cw->trans_leaf[SHADED] * shaded_lai);
-    cw->omega_canopy = ((cw->omega_leaf[SUNLIT] * sunlit_lai) +\
-                        (cw->omega_leaf[SHADED] * shaded_lai)) / 2.0;
-    cw->rnet_canopy = (cw->rnet_leaf[SUNLIT] * sunlit_lai) +\
-                      (cw->rnet_leaf[SHADED] * shaded_lai);*/
 
     return;
 }
