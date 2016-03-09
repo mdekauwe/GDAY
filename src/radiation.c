@@ -84,6 +84,8 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
         Calculate absorded irradiance of sunlit and shaded fractions of
         the canopy
 
+        NB:  sin_beta == cos_zenith
+
         References:
         -----------
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
@@ -94,38 +96,15 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     */
 
     int    i;
-    double kb, kd, phi_1, phi_2, Gross, Ib, Id, Is, Ic,
-           k_dash_b, k_dash_d, scattered, shaded, beam, lai, lad, rho_cd,
-           rho_cb, omega_PAR;
-
-    /* unpack local var */
-    lai = s->lai;
-    lad = p->lad;
-
-    /* canopy reflection coeffcient for diffuse PAR; de Pury & Farquhar, 1997 */
-    rho_cd = 0.036;
-
-    /* canopy reflection coeffcient for direct PAR; de Pury & Farquhar, 1997 */
-    rho_cb = 0.029;
-
-    /* leaf scattering coefficient of PAR; de Pury & Farquhar, 1997 */
-    omega_PAR = 0.15;
-
-    /* direct PAR extinction coefficent - Dai et al 2004, eqn 2. */
-    /*phi_1 = 0.5 - (0.633 * lad) - (0.33 * lad * lad);
-    phi_2 = 0.877 * (1.0 - 2.0 * phi_1);
-    Gross = phi_1 + (phi_2 * cos_zenith);
-    *kb = Gross / cos_zenith;
-    */
-
-    /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cw->cos_zenith; /* sin_beta == cos_zenith */
-
-    /* beam & scattered PAR extinction coefficent - de P & Farq '97, Table 3*/
-    k_dash_b = 0.46 / cw->cos_zenith; /* sin_beta == cos_zenith */
-
-    /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
-    k_dash_d = 0.718;
+    double Ib, Id, Is, Ic, scattered, shaded, beam;
+    double rho_cd = 0.036;    /* canopy reflection coeffcient for diffuse PAR */
+    double rho_cb = 0.029;     /* canopy reflection coeffcient for direct PAR */
+    double omega_PAR = 0.15;            /* leaf scattering coefficient of PAR */
+    double kb = 0.5 / cw->cos_zenith;   /* beam radiation ext coeff of canopy */
+    double k_dash_b = 0.46 / cw->cos_zenith;      /* beam & scat PAR ext coef */
+    double k_dash_d = 0.718;     /* diffuse & scattered PAR extinction coeff  */
+    double lai = s->lai;
+    double lad = p->lad;
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * cw->direct_frac;
@@ -146,26 +125,26 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
           (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)));
 
     /*
-        Irradiance absorbed by the sunlit fraction of the canopy is the sum of
-        direct-beam, diffuse and scattered-beam components
+    ** Irradiance absorbed by the sunlit fraction of the canopy is the sum of
+    ** direct-beam, diffuse and scattered-beam components
     */
     cw->apar_leaf[SUNLIT] = beam + scattered + shaded;
 
     /*
-        Irradiance absorbed by the shaded leaf area of the canopy is the
-        integral of absorbed irradiance in the shade (Eqn A7) and the shdaded
-        leaf area fraction. Or simply, the difference between the total
-        irradiacne absorbed by the canopy and the irradiance absorbed by the
-        sunlit leaf area
+    **  Irradiance absorbed by the shaded leaf area of the canopy is the
+    **  integral of absorbed irradiance in the shade (Eqn A7) and the shdaded
+    **  leaf area fraction. Or simply, the difference between the total
+    **  irradiacne absorbed by the canopy and the irradiance absorbed by the
+    **  sunlit leaf area
     */
     cw->apar_leaf[SHADED] = Ic - cw->apar_leaf[SUNLIT];
 
     /*
-        Scale leaf fluxes to the canopy
-        - The direct radiation on sunlit leaves is assumed to be equal at
-          all canopy depths but with the fraction of sunlit leaves
-          decreasing with canopy depth.
-        - De Pury & Farquhar 1997, eqn 18.
+    ** Scale leaf fluxes to the canopy
+    ** - The direct radiation on sunlit leaves is assumed to be equal at
+    **   all canopy depths but with the fraction of sunlit leaves
+    **   decreasing with canopy depth.
+    ** - De Pury & Farquhar 1997, eqn 18.
     */
     cw->lai_leaf[SUNLIT] = (1.0 - exp(-kb * lai)) / kb;
     cw->lai_leaf[SHADED] = lai - cw->lai_leaf[SUNLIT];
