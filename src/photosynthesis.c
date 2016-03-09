@@ -198,7 +198,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         vcmax : float
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
-    double jmax25, vcmax25, lai_leaf;
+    double jmax25, vcmax25, lai_leaf, scalar_sun, scalar_sha;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
@@ -206,11 +206,22 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double jmaxnb = p->jmaxnb;
     double vcmaxna = p->vcmaxna;
     double vcmaxnb = p->vcmaxnb;
+    double lai = cw->lai_leaf[cw->ileaf];
+    double kb = 0.5 / cw->cos_zenith;
+    double kn = 0.3;
+
+    /*
+    ** Scaling from single leaf to canopy, see Wang & Leuning 1998
+    ** Inserting eqn C6 & C7 into B5
+    */
+    scalar_sun = (1.0 - exp(-(kb + kn) * lai)) / (kb + kn);
+    scalar_sha = (1.0 - exp(-kn * lai)) / kn - scalar_sun;
 
     if (c->modeljm == 0) {
         *jmax = p->jmax;
         *vcmax = p->vcmax;
     } else if (c->modeljm == 1) {
+        /*
         if (cw->ileaf == SUNLIT) {
             jmax25 = integrate_sunlit_frac(cw, jmaxna, jmaxnb);
             vcmax25 = integrate_sunlit_frac(cw, vcmaxna, vcmaxnb);
@@ -218,18 +229,31 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
             jmax25 = integrate_shaded_frac(cw, jmaxna, jmaxnb);
             vcmax25 = integrate_shaded_frac(cw, vcmaxna, vcmaxnb);
         }
+        */
+        if (cw->ileaf == SUNLIT) {
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sun;
+            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * scalar_sun;
+        } else {
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sha;
+            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * scalar_sha;
+        }
+        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
     } else if (c->modeljm == 2) {
-        vcmax25 = p->vcmaxna * cw->N0 + p->vcmaxnb;
+        if (cw->ileaf == SUNLIT) {
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sun;
+            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * scalar_sun;
+        } else {
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sha;
+            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * scalar_sha;
+        }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
-        jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 3) {
         jmax25 = p->jmax;
-        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
         vcmax25 = p->vcmax;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+        *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else {
         fprintf(stderr, "You haven't set Jmax/Vcmax model: modeljm \n");
         exit(EXIT_FAILURE);
@@ -287,7 +311,8 @@ double integrate_sunlit_frac(canopy_wk *cw, double a, double b) {
     arg1 = a / kb * (1.0 - exp(-kb * lai));
     arg2 = b * cw->N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
     sun = arg1 + arg2;
-    
+
+
     return (sun);
 }
 
