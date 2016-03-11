@@ -22,13 +22,21 @@ A simple model usage can be displayed by calling GDAY as follows:
 $ gday -u
 ```
 
-However, there are only two options from the command line (spin-up the model or run the model), everything is customisable via the parameter file.
+Presently, there are only two options which the user can set via the command line. All model options, including *all* of the model parameters are customisable via the parameter file.
 
-Alternative to run GDAY:
+To spin-up GDAY:
+
+```bash
+$ gday -s -p param_file.cfg
+```
+
+To run GDAY:
 
 ```bash
 $ gday -p param_file.cfg
 ```
+
+When the model is been run it assumes that it has already been spun-up and so will expect to read its "model state" from the parameter file. This state is automatically written the parameter file after spin-up 
 
 ## Key References
 1. Comins, H. N. and McMurtrie, R. E. (1993) Long-Term Response of Nutrient-Limited Forests to CO2 Enrichment; Equilibrium Behavior of Plant-Soil Models. *Ecological Applications*, 3, 666-681.
