@@ -1,6 +1,6 @@
 # GDAY model
 
-GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale. The model can be run at either a daily time step, or sub-daily (i.e. 30-minutes). When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf approximation, otherwise photosynthesis is calculated following Sands (1995,1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESTRA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment.
+GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale. The model can be run at either a daily time step, or sub-daily (i.e. 30-minutes). When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf approximation, otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESTRA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment.
 
 ## Installation
 The model is coded entirely in C without any dependancies. The wrapper files
@@ -13,8 +13,7 @@ There is a Makefile in the src directory...
 $ make clean ; make
 ```
 
-I haven't done anything about an installation directory so you will need to move
-the executable yourself.
+The Makefile will need to be edited by hand to set the $ARCH flag, which sets the installation path. Currently it is hardwired to my computer.
 
 ## Running the model
 A simple model usage can be displayed by calling GDAY as follows ::
