@@ -111,7 +111,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
             }
         }
-        scale_to_canopy(cw);
+        scale_leaf_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);
         calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
                                 cw->omega_canopy, cw->rnet_canopy);
@@ -265,7 +265,7 @@ void zero_hourly_fluxes(canopy_wk *cw) {
     return;
 }
 
-void scale_to_canopy(canopy_wk *cw) {
+void scale_leaf_to_canopy(canopy_wk *cw) {
 
 
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];

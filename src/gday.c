@@ -483,7 +483,7 @@ void usage(char **argv) {
     fprintf(stderr, "\n========\n");
     fprintf(stderr, " USAGE:\n");
     fprintf(stderr, "========\n");
-    fprintf(stderr, "\t%s [options]\n", argv[0]);
+    fprintf(stderr, "%s [options]\n", argv[0]);
     fprintf(stderr, "\n\nExpected input file is a .ini/.cfg style param file, passed with the -p flag .\n");
     fprintf(stderr, "\nThe options are:\n");
     fprintf(stderr, "\n++General options:\n" );
