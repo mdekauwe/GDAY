@@ -13,8 +13,6 @@ There is a Makefile in the src directory...
 $ make clean ; make
 ```
 
-The Makefile will need to be edited by hand to set the $ARCH flag, which sets the installation path. Currently it is hardwired to my computer.
-
 ## Running the model
 A simple model usage can be displayed by calling GDAY as follows:
 
