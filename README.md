@@ -36,7 +36,7 @@ To run GDAY:
 $ gday -p param_file.cfg
 ```
 
-When the model is been run it assumes that it has already been spun-up and so will expect to read its "model state" from the parameter file. This state is automatically written the parameter file after spin-up 
+When the model isrun it assumes that it has previously been spun-up and so will expect to read its "model state" from the parameter file. This state is automatically written the parameter file after the initial spin-up when the "print_options" flag has been set to "end", rather than "daily".
 
 ## Key References
 1. Comins, H. N. and McMurtrie, R. E. (1993) Long-Term Response of Nutrient-Limited Forests to CO2 Enrichment; Equilibrium Behavior of Plant-Soil Models. *Ecological Applications*, 3, 666-681.
