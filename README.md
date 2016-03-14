@@ -46,9 +46,9 @@ GDAY expects a parameter file to be supplied as an argument (-p filename) on the
 
 Parameter files are broken down into 6 section, namely [git], [files], [params], [control], [state] and [print]. The order of these sections shouldn't make any difference. The basic element contained in the parameter file is the key or property. Every key has a name and a value, delimited by an equals sign (=). The name appears to the left of the equals sign.
 
-<source lang="ini">
+```ini
 eac = 79430.0
-</source>
+```
 
 
 
