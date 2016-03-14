@@ -77,7 +77,7 @@ Finally, (I need to check), but the options to vary the state and flux variables
 
 When I have time I will write something more extensive (ha), but information about what different variable names refer to are listed in the [header file](src/include/gday.h), which documents the different structures (i.e. control, state, params).
 
-The git hash allows you to connect which version of the model code produced which version of the model output. I'd argue for maintaining this functionality, but if you don't use git or wish to ignore me, filling this line with gibberish and disabling the shell command in the Makefile should allow you to do this. 
+The git hash allows you to connect which version of the model code produced which version of the model output. I'd argue for maintaining this functionality, but if you don't use git or wish to ignore me, filling this line with gibberish and disabling the shell command in the Makefile should allow you to do this.
 
 ## Meteorological driving file
 
@@ -127,9 +127,16 @@ par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<s
 
 
 ## Example run
-The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just a wrapper script around this which produces a plot at the end comparing the data to the observations.
+The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
 
-This example tends to break from time to time when I change various options, so please let me know if it isn't working!
+```bash
+cd example/
+python run_experiment.py
+```
+
+This should pop a plot of NPP, LAI and transpiration onto your screen. This example tends to break from time to time when I change various options, so please let me know if it isn't working!
+
+**NB** to use this wrapper script you will need to have an installation of the [Pandas](http://pandas.pydata.org/) and [Matplotlib](http://matplotlib.org/) libraries installed. If you are a python user this is fairly standard.
 
 
 ## Key References
