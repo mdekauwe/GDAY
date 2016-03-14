@@ -44,7 +44,7 @@ When the model is run it expects to find its "model state" (i.e. from a previous
 
 ## Meteorological driving file
 
-30-minute file:
+**30-minute file:**
 
 Variable | Description | Units
 --- | --- | ---
@@ -60,7 +60,8 @@ ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
 wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
 press | atmospheric pressure | kPa
 
-daily file:
+
+**Day file:**
 
 Variable | Description | Units
 --- | --- | ---
