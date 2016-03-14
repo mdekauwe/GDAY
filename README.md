@@ -42,6 +42,40 @@ $ gday -p param_file.cfg
 
 When the model is run it expects to find its "model state" (i.e. from a previous spin-up) in the parameter file. This state is automatically written the parameter file after the initial spin-up when the "print_options" flag has been set to "end", rather than "daily".
 
+
+## Parameter file
+
+GDAY expects a parameter file to be supplied as an argument (-p filename) on the command line. Parameter files follow the standard [.ini](https://en.wikipedia.org/wiki/INI_file) format, although only a relatively simple implementation has been coded into GDAY.
+
+Parameter files are broken down into 6 section, namely [git], [files], [params], [control], [state] and [print]. The order of these sections shouldn't make any difference. The basic element contained in the parameter file is the key or property. Every key has a name and a value, delimited by an equals sign (=). The name appears to the left of the equals sign.
+
+```ini
+eac = 79430.0
+```
+
+As mentioned above, keys are grouped into sections:
+
+```ini
+[control]
+alloc_model = allometric
+deciduous_model = false
+```
+
+or
+
+```ini
+[files]
+cfg_fname = params/NCEAS_DUKE_model_youngforest_amb.cfg
+met_fname = met_data/DUKE_met_data_amb_co2.csv
+out_fname = outputs/D1GDAYDUKEAMB.csv
+out_param_fname = params/NCEAS_DUKE_model_simulation_amb.cfg
+```
+
+As all the model parameters are accessible via this file, these files can be quite long. Clearly it isn't necessary to list every parameter. The recommended approach is to use the [base file](example/params/base_start.cfg) and then customise whichever parameters are required via a shell script, e.g. see the python [wrapper script](example/example.py). This file just lists the parameters which needs to be changed and calls adjust_gday_param_file.py to swap the param from the shell script with the default parameter. Clearly it would be trivial to write an alternative version in another language. I should highlight that I wouldn't necessarily trust the default values :).
+
+Finally, (I need to check), but the options to vary the state and flux variables on the fly is a nice hangover from the python implementation. This functionality doesn't actually exist in the C code, instead all the state and flux variables used in the FACE intercomparisons are dumped as standard.
+
+
 ## Meteorological driving file
 
 **30-minute file:**
@@ -87,6 +121,13 @@ wind_pm | afternoon wind speed | m<sup>-2</sup> s<sup>-1</sup>
 par | daylight photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
+
+
+## Example run
+The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just a wrapper script around this which produces a plot at the end comparing the data to the observations.
+
+This example tends to break from time to time when I change various options, so please let me know if it isn't working!
+
 
 ## Key References
 1. Comins, H. N. and McMurtrie, R. E. (1993) Long-Term Response of Nutrient-Limited Forests to CO2 Enrichment; Equilibrium Behavior of Plant-Soil Models. *Ecological Applications*, 3, 666-681.
