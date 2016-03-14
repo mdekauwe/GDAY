@@ -50,6 +50,27 @@ Parameter files are broken down into 6 section, namely [git], [files], [params],
 eac = 79430.0
 ```
 
+As mentioned above, keys are grouped into sections:
+
+```ini
+[control]
+alloc_model = allometric
+deciduous_model = false
+```
+
+or
+
+```ini
+[files]
+cfg_fname = params/NCEAS_DUKE_model_youngforest_amb.cfg
+met_fname = met_data/DUKE_met_data_amb_co2.csv
+out_fname = outputs/D1GDAYDUKEAMB.csv
+out_param_fname = params/NCEAS_DUKE_model_simulation_amb.cfg
+```
+
+As all the model parameters are accessible via this file, these files can be quite long. Clearly it isn't necessary to list every parameter. The recommended approach is to use the [base file](example/params/base_start.cfg) and then customise whichever parameters are required via a shell script, e.g. see the python [wrapper scrip](example/example.py). This file just lists the parameters which needs to be changed and calls adjust_gday_param_file.py to swap the param from the shell script with the default parameter. Clearly it would be trivial to write an alternative version in another language. I should highlight that I wouldn't necessarily trust the default values :).
+
+Finally, (I need to check), but the options to vary the state and flux variables on the fly is a nice hangover from the python implementation. This functionality doesn't actually exist in the C code, instead all the state and flux variables used in the FACE intercomparisons are dumped as standard.
 
 
 ## Meteorological driving file
