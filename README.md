@@ -2,7 +2,9 @@
 
 GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale. The model can be run at either a daily time step, or sub-daily (i.e. 30-minutes). When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESTRA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment.
 
-**NOTE** the sub-daily version of the model is still in the development branch, but will be pulled into the main code asap. 
+**NOTE** the sub-daily version of the model is still in the development branch, but will be pulled into the main code asap.
+
+<p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
 
 ## Installation
 The model is coded entirely in C without any dependancies. The wrapper files
