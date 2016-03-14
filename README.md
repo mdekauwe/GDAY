@@ -42,6 +42,24 @@ $ gday -p param_file.cfg
 
 When the model is run it expects to find its "model state" (i.e. from a previous spin-up) in the parameter file. This state is automatically written the parameter file after the initial spin-up when the "print_options" flag has been set to "end", rather than "daily".
 
+## Meteorological driving file
+
+30-minute file:
+
+Variable | Description | Units
+--- | --- | ---
+year | |
+doy  | day of year  | [0-365/6]
+rain | | mm 30 min<sup>-1</sup>
+par | photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
+tair | air temperature | deg C
+tsoil | soil temperature | deg C
+vpd | vapour pressure deficit | kPa
+co2 | CO<sub>2</sub> concentration | ppm
+ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
+wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
+press | atmospheric pressure | kPa
+
 ## Key References
 1. Comins, H. N. and McMurtrie, R. E. (1993) Long-Term Response of Nutrient-Limited Forests to CO2 Enrichment; Equilibrium Behavior of Plant-Soil Models. *Ecological Applications*, 3, 666-681.
 2. Medlyn, B. E., McMurtrie, R. E., Dewar, R. C. and Jeffreys, M. P. (2000), Soil processes dominate the long-term response of forest net primary productivity to increased temperature and atmospheric CO2 concentration, *Canadian Journal of Forest Research*, 30, 873–888.
