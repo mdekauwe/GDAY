@@ -87,4 +87,4 @@ if __name__ == "__main__":
     experiment_id = "NCEAS"
     site = "DUKE"
     treatment="amb"
-    main(experiment_id, site, treatment, ascii)
+    main(experiment_id, site, treatment)
