@@ -124,9 +124,16 @@ par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup
 par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 
 ## Example run
-The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just a wrapper script around this which produces a plot at the end comparing the data to the observations.
+The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
 
-This example tends to break from time to time when I change various options, so please let me know if it isn't working!
+```bash
+cd example/
+python run_experiment.py
+```
+
+This should pop a plot of NPP, LAI and transpiration onto your screen. This example tends to break from time to time when I change various options, so please let me know if it isn't working!
+
+**NB** to use this wrapper script you will need to have an installation of the [Pandas](http://pandas.pydata.org/) and [Matplotlib](http://matplotlib.org/) libraries installed. If you are a python user this is fairly standard.
 
 
 ## Key References
