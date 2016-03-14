@@ -50,7 +50,7 @@ Variable | Description | Units
 --- | --- | ---
 year | |
 doy  | day of year  | [0-365/6]
-rain | precipitation<sup>*</sup> | mm 30 min<sup>-1</sup>
+rain | rainfall | mm 30 min<sup>-1</sup>
 par | photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 tair | air temperature | deg C
 tsoil | soil temperature | deg C
@@ -59,6 +59,33 @@ co2 | CO<sub>2</sub> concentration | ppm
 ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
 wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
 press | atmospheric pressure | kPa
+
+daily file:
+
+Variable | Description | Units
+--- | --- | ---
+year | |
+doy  | day of year  | [0-365/6]
+tair | (daylight) air temperature | deg C
+rain | rainfall | mm 30 min<sup>-1</sup>
+tsoil | soil temperature | deg C
+tam | morning air temperature | deg C
+tpm | afternoon air temperature | deg C
+tmin | minimum (day) air temperature | deg C
+tmax | minimum (day) air temperature | deg C
+tday | day average air temperature (24 hrs) | deg C
+vpd_am | morning vapour pressure deficit | kPa
+vpd_pm | afternoon vapour pressure deficit | kPa
+vpd | daylight average vapour pressure deficit | kPa
+co2 | CO<sub>2</sub> concentration | ppm
+ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
+wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
+atmos_press | atmospheric pressure | kPa
+wind_am | morning wind speed | m<sup>-2</sup> s<sup>-1</sup>
+wind_pm | afternoon wind speed | m<sup>-2</sup> s<sup>-1</sup>
+par | daylight photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
+par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
+par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 
 ## Key References
 1. Comins, H. N. and McMurtrie, R. E. (1993) Long-Term Response of Nutrient-Limited Forests to CO2 Enrichment; Equilibrium Behavior of Plant-Soil Models. *Ecological Applications*, 3, 666-681.
