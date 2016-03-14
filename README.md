@@ -50,7 +50,7 @@ Variable | Description | Units
 --- | --- | ---
 year | |
 doy  | day of year  | [0-365/6]
-rain | | mm 30 min<sup>-1</sup>
+rain | precipitation<sup>*</sup> | mm 30 min<sup>-1</sup>
 par | photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 tair | air temperature | deg C
 tsoil | soil temperature | deg C
