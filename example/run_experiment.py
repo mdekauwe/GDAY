@@ -14,10 +14,10 @@ __author__  = "Martin De Kauwe"
 __version__ = "1.0 (11.02.2014)"
 __email__   = "mdekauwe@gmail.com"
 
-def main(experiment_id, site, treatment, ascii):
+def main(experiment_id, site, treatment):
 
     # run new simulations
-    example.main(experiment_id, site, treatment, ascii)
+    example.ambient_sim(experiment_id, site, treatment)
 
     # load data
     amb = read_data("outputs/D1GDAY%s%s.csv" % (site, treatment.upper()))
@@ -87,5 +87,4 @@ if __name__ == "__main__":
     experiment_id = "NCEAS"
     site = "DUKE"
     treatment="amb"
-    ascii = True
     main(experiment_id, site, treatment, ascii)
