@@ -40,6 +40,18 @@ $ gday -p param_file.cfg
 
 When the model is run it expects to find its "model state" (i.e. from a previous spin-up) in the parameter file. This state is automatically written the parameter file after the initial spin-up when the "print_options" flag has been set to "end", rather than "daily".
 
+## Parameter file
+
+GDAY expects a parameter file to be supplied as an argument (-p filename) on the command line. Parameter files follow the standard [.ini](https://en.wikipedia.org/wiki/INI_file) format, although only a relatively simple implementation has been coded into GDAY.
+
+Parameter files are broken down into 6 section, namely [git], [files], [params], [control], [state] and [print]. The order of these sections shouldn't make any difference. The basic element contained in the parameter file is the key or property. Every key has a name and a value, delimited by an equals sign (=). The name appears to the left of the equals sign.
+
+<source lang="ini">
+eac = 79430.0
+</source>
+
+
+
 ## Meteorological driving file
 
 **30-minute file:**
