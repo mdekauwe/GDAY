@@ -45,7 +45,7 @@ When the model is run it expects to find its "model state" (i.e. from a previous
 
 ## Parameter file
 
-GDAY expects a parameter file to be supplied as an argument (-p filename) on the command line. Parameter files follow the standard [.ini](https://en.wikipedia.org/wiki/INI_file) format, although only a relatively simple implementation has been coded into GDAY.
+GDAY expects a parameter file to be supplied as an argument (-p filename) on the command line. Parameter files follow the standard [.INI](https://en.wikipedia.org/wiki/INI_file) format, although only a simple INI parser has been coded into GDAY.
 
 Parameter files are broken down into 6 section, namely [git], [files], [params], [control], [state] and [print]. The order of these sections shouldn't make any difference. The basic element contained in the parameter file is the key or property. Every key has a name and a value, delimited by an equals sign (=). The name appears to the left of the equals sign.
 
@@ -77,6 +77,7 @@ Finally, (I need to check), but the options to vary the state and flux variables
 
 When I have time I will write something more extensive (ha), but information about what different variable names refer to are listed in the [header file](src/include/gday.h), which documents the different structures (i.e. control, state, params).
 
+The git hash allows you to connect which version of the model code produced which version of the model output. I'd argue for maintaining this functionality, but if you don't use git or wish to ignore me, filling this line with gibberish and disabling the shell command in the Makefile should allow you to do this. 
 
 ## Meteorological driving file
 
