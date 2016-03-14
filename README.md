@@ -71,9 +71,11 @@ out_fname = outputs/D1GDAYDUKEAMB.csv
 out_param_fname = params/NCEAS_DUKE_model_simulation_amb.cfg
 ```
 
-As all the model parameters are accessible via this file, these files can be quite long. Clearly it isn't necessary to list every parameter. The recommended approach is to use the [base file](example/params/base_start.cfg) and then customise whichever parameters are required via a shell script, e.g. see the python [wrapper script](example/example.py). This file just lists the parameters which needs to be changed and calls adjust_gday_param_file.py to swap the param from the shell script with the default parameter. Clearly it would be trivial to write an alternative version in another language. I should highlight that I wouldn't necessarily trust the default values :).
+As all the model parameters are accessible via this file, these files can be quite long. Clearly it isn't necessary to list every parameter. The recommended approach is to use the [base file](example/params/base_start.cfg) and then customise whichever parameters are required via a shell script, e.g. see the python [wrapper script](example/example.py). This file just lists the parameters which needs to be changed and calls [adjust_gday_param_file.py](scripts/adjust_gday_param_file.py) to swap the parameters (listed as a python dictionary) with the default parameter. Clearly it would be trivial to write an alternative version in another language. I should highlight that I wouldn't necessarily trust the default values :).
 
 Finally, (I need to check), but the options to vary the state and flux variables on the fly is a nice hangover from the python implementation. This functionality doesn't actually exist in the C code, instead all the state and flux variables used in the FACE intercomparisons are dumped as standard.
+
+When I have time I will write something more extensive (ha), but information about what different variable names refer to are listed in the [header file](src/include/gday.h), which documents the different structures (i.e. control, state, params). 
 
 
 ## Meteorological driving file
