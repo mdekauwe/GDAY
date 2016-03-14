@@ -7,6 +7,8 @@ GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulate
 <p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
 
 ## Installation
+To get the code your best route is probably to fork the repository, there is a nice [explanation on github](https://help.github.com/articles/fork-a-repo/).
+
 The model is coded entirely in C without any dependancies. The wrapper files
 for the example scripts and the script used to change parameter options,
 are written in python. The old python version is still [online](https://github.com/mdekauwe/pygday).
