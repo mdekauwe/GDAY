@@ -20,7 +20,7 @@ __author__  = "Martin De Kauwe"
 __version__ = "1.0 (27.02.2015)"
 __email__   = "mdekauwe@gmail.com"
 
-def main(experiment_id, site, treatment, ascii=True):
+def ambient_sim(experiment_id, site, treatment, ascii=True):
 
     GDAY_EXE = "../src/gday -p "
 
@@ -35,7 +35,7 @@ def main(experiment_id, site, treatment, ascii=True):
     otag   = "%s_%s_model_simulation_%s" % (experiment_id, site, treatment)
     mtag   = "%s_met_data_%s_co2.csv" % (site, treatment)
     out_fn = "D1GDAY%s%s" + (".csv" if ascii else ".bin")
-
+    #import pdb; pdb.set_trace()
     out_fn = out_fn % (site, treatment.upper())
 
     out_param_fname = os.path.join(param_dir, otag + ".cfg")
@@ -69,7 +69,6 @@ def main(experiment_id, site, treatment, ascii=True):
                          "print_options": "daily",
                          "ps_pathway": "c3",
                          "respiration_model": "fixed",
-                         "sub_daily": "false",
                          "strfloat": "0",
                          "trans_model": "1",
                          "use_eff_nc": "0",
