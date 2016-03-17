@@ -231,6 +231,19 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown fixed_stem_nc option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "fixed_lai")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->fixed_lai = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->fixed_lai = TRUE;
+        else {
+            fprintf(stderr, "Unknown fixed_lai option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "fixleafnc")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -601,6 +614,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->fhw = atof(value);
     } else if (MATCH("params", "finesoil")) {
         p->finesoil = atof(value);
+    } else if (MATCH("params", "fix_lai")) {
+        p->fix_lai = atof(value);
     } else if (MATCH("params", "fracfaeces")) {
         p->fracfaeces = atof(value);
     } else if (MATCH("params", "fracteaten")) {

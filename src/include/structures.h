@@ -20,6 +20,7 @@ typedef struct {
     int   deciduous_model;
     int   disturbance;
     int   fixed_stem_nc;
+    int   fixed_lai;
     int   fixleafnc;
     int   grazing;
     int   gs_model;
@@ -190,6 +191,7 @@ typedef struct {
     double fdecaydry;                       /* Foliage turnover rate - dry soil (1/yr) */
     double fhw;                             /* n:c ratio of stemwood - immobile pool and new ring */
     double finesoil;                        /* clay+silt fraction */
+    double fix_lai;                       /* value to fix LAI to, control fixed_lai flag must be set */
     double fracfaeces;                      /* Fractn of grazd C that ends up in faeces (0..1) */
     double fracteaten;                      /* Fractn of leaf prodn eaten by grazers */
     double fractosoil;                      /* Fractn of grazed N recycled to soil:faeces+urine */

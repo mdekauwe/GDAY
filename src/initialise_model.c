@@ -23,6 +23,7 @@ void initialise_control(control *c) {
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
+    c->fixed_lai = FALSE;           /* Fix LAI */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
@@ -104,6 +105,7 @@ void initialise_params(params *p) {
     p->fdecay = 0.59988;
     p->fdecaydry = 0.59988;
     p->fhw = 0.8;
+    p->fix_lai = -999.9;
     p->finesoil = 0.51;
     p->fracfaeces = 0.3;
     p->fracteaten = 0.5;

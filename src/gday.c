@@ -243,8 +243,12 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     s->pawater_root = p->wcapac_root;
     s->pawater_topsoil = p->wcapac_topsoil;
 
-    s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
-                        p->cfracts * s->shoot));
+    if (c->fixed_lai) {
+        s->lai = p->fix_lai;
+    } else {
+        s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
+                            p->cfracts * s->shoot));
+    }
 
     if (c->disturbance) {
         if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
