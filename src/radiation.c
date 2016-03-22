@@ -113,7 +113,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
     /* Diffuse irradiance absorbed by sunlit leaves - de P & F, eqn 20c */
-    Id = par * cw->diffuse_frac;
+    Id = par * cw->direct_frac;
     shaded = (Id * (1.0 - rho_cd) * (1.0 - exp(-(k_dash_d + kb) * lai)) *
               (k_dash_d / (k_dash_d + kb)));
 
