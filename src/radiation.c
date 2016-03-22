@@ -107,6 +107,11 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     double lai = s->lai;
     double lad = p->lad;
 
+    /*
+    ** NB: The total irradiance absorbed by the canopy and the sunlit/shaded
+    ** components are all expressed on a ground-area basis
+    */
+
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * cw->direct_frac;
     beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
