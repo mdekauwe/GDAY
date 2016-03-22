@@ -108,16 +108,16 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     double lai = s->lai;
     double lad = p->lad;
 
-    /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
+    /* Direct-beam irradiance absorbed by sunlit leaves - de P & F, eqn 20b */
     Ib = par * cw->direct_frac;
     beam = Ib * (1.0 - omega_PAR) * (1.0 - exp(-kb * lai));
 
-    /* Diffuse beam irradiance - de Pury & Farquhar (1997), eqn 20c */
+    /* Diffuse irradiance absorbed by sunlit leaves - de P & F, eqn 20c */
     Id = par * cw->diffuse_frac;
     shaded = (Id * (1.0 - rho_cd) * (1.0 - exp(-(k_dash_d + kb) * lai)) *
               (k_dash_d / (k_dash_d + kb)));
 
-    /* scattered-beam irradiance - de Pury & Farquhar (1997), eqn 20d */
+    /* Scattered-beam irradiance abs. by sunlit leaves - de P & F, eqn 20d */
     scattered = (Ib * ((1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + kb) * lai)) *
                         k_dash_b / (k_dash_b + kb) - (1.0 - omega_PAR) *
                         (1.0 - exp(-2.0 * kb * lai)) / 2.0));
