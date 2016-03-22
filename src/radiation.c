@@ -83,7 +83,8 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
                                   double par) {
     /*
         Calculate absorded irradiance of sunlit and shaded fractions of
-        the canopy
+        the canopy. The total irradiance absorbed by the canopy and the
+        sunlit/shaded components are all expressed on a ground-area basis!
 
         NB:  sin_beta == cos_zenith
 
@@ -106,11 +107,6 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     double k_dash_d = 0.718;     /* diffuse & scattered PAR extinction coeff  */
     double lai = s->lai;
     double lad = p->lad;
-
-    /*
-    ** NB: The total irradiance absorbed by the canopy and the sunlit/shaded
-    ** components are all expressed on a ground-area basis
-    */
 
     /* Direct beam irradiance - de Pury & Farquhar (1997), eqn 20b */
     Ib = par * cw->direct_frac;
