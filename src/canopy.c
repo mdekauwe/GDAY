@@ -56,6 +56,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         calculate_solar_geometry(cw, p, doy, hod);
         get_diffuse_frac(cw, doy, m->sw_rad);
 
+        /*printf("%d %lf %lf\n", hod, cw->direct_frac, cw->diffuse_frac);*/
         /* Is the sun up? */
         if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->par);
@@ -135,7 +136,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
-
+    exit(1);
     return;
 }
 

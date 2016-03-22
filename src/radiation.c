@@ -51,6 +51,8 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
 
     /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
     if (cw->cos_zenith > 0.17) {
+
+        /* Spitters formula */
         R = 0.847 - 1.61 * cw->cos_zenith + 1.04 * cos_zen_sq;
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
@@ -62,6 +64,7 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
         } else {
             cw->diffuse_frac = R;
         }
+
     } else {
         cw->diffuse_frac = 1.0;
     }
