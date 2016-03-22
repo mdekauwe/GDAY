@@ -122,7 +122,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
                         k_dash_b / (k_dash_b + kb) - (1.0 - omega_PAR) *
                         (1.0 - exp(-2.0 * kb * lai)) / 2.0));
 
-    /* Irradiance absorbed by the canopy - de Pury & Farquhar (1997), eqn 13 */
+    /* Total irradiance absorbed by the canopy - de P & F, eqn 13 */
     Ic = ((1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai)) +
           (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai)));
 
