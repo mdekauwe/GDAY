@@ -288,7 +288,7 @@ void sum_hourly_carbon_fluxes(canopy_wk *cw, fluxes *f, params *p) {
     f->auto_resp = f->gpp - f->npp;
 
     /* umol m-2 s-1 -> J m-2 s-1 -> MJ m-2 30 min-1 */
-    f->apar += cw->apar_canopy / UMOLPERJ * J_TO_MJ * 1800.0;
+    f->apar += cw->apar_canopy * UMOL_2_JOL * J_TO_MJ * SEC_2_HLFHR;
     f->gs_mol_m2_sec += cw->gsc_canopy;
 
     return;
