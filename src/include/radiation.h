@@ -18,7 +18,7 @@ double calculate_solar_declination(int, double);
 double calculate_eqn_of_time(double);
 void   get_diffuse_frac(canopy_wk *, int, double);
 void   spitters(canopy_wk *, int, double);
-double calc_extra_terrestrial_irradiance(double, double);
+double calc_extra_terrestrial_rad(double, double);
 double estimate_clearness(double, double);
 void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double);
 double calculate_solar_noon(double, double);

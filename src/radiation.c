@@ -15,21 +15,22 @@ void get_diffuse_frac(canopy_wk *cw, int doy, double sw_rad) {
 void spitters(canopy_wk *cw, int doy, double sw_rad) {
 
     /*
-
     Spitters algorithm to estimate the diffuse component from the measured
     irradiance.
+
+    Eqn 20a-d.
 
     Parameters:
     ----------
     doy : int
         day of year
-    par : double
-        total par measured [umol m-2 s-1]
+    sw_rad : double
+        total incident radiation [J m-2 s-1]
 
     Returns:
     -------
     diffuse : double
-        diffuse component of incoming radiation
+        diffuse component of incoming radiation (returned in cw structure)
 
     References:
     ----------
@@ -38,19 +39,18 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
       implications for modeling canopy photosynthesis. Part I. Components of
       incoming radiation. Agricultural Forest Meteorol., 38:217-229.
     */
-
     double So, tau, R, K, diffuse_frac, cos_zen_sq;
 
-    cos_zen_sq = cw->cos_zenith * cw->cos_zenith;
-
-    So = calc_extra_terrestrial_irradiance(doy, cw->cos_zenith);
+    /* sine of the elev of the sun above the horizon is the same as cos_zen */
+    So = calc_extra_terrestrial_rad(doy, cw->cos_zenith);
 
     /* atmospheric transmisivity */
     tau = estimate_clearness(sw_rad, So);
 
+    cos_zen_sq = cw->cos_zenith * cw->cos_zenith;
+
     /* For zenith angles > 80 degrees, diffuse_frac = 1.0 */
     if (cw->cos_zenith > 0.17) {
-        /* the ratio between diffuse and total Solar irradiance (R), eqn 20 */
         R = 0.847 - 1.61 * cw->cos_zenith + 1.04 * cos_zen_sq;
         K = (1.47 - R) / 1.66;
         if (tau <= 0.22) {
@@ -66,6 +66,7 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
         cw->diffuse_frac = 1.0;
     }
 
+    /* doubt we need this, should check */
     if (cw->diffuse_frac <= 0.0) {
         cw->diffuse_frac = 0.0;
     } else if (cw->diffuse_frac >= 1.0) {
@@ -346,7 +347,7 @@ double calculate_eqn_of_time(double gamma) {
 
 
 
-double calc_extra_terrestrial_irradiance(double doy, double cos_zenith) {
+double calc_extra_terrestrial_rad(double doy, double cos_zenith) {
     /* Solar radiation incident outside the earth's atmosphere, e.g.
     extra-terrestrial radiation. The value varies a little with the earths
     orbit.
@@ -364,17 +365,27 @@ double calc_extra_terrestrial_irradiance(double doy, double cos_zenith) {
     --------
     So : float
         solar radiation normal to the sun's bean outside the Earth's atmosphere
-        (W m-2)
+        (J m-2 s-1)
 
     Reference:
     ----------
     * Spitters et al. (1986) AFM, 38, 217-229, equation 1.
     */
-    double So, Sc = 1370.0; /* W m-2 */
 
-    /* remember sin_beta = cos_zenith; trig funcs are cofuncs of each other
-       sin(x) = cos(90-x) and cos(x) = sin(90-x). */
-    So = Sc * (1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI)) * cos_zenith;
+    double So, Sc;
+
+    /* Solar constant (J m-2 s-1) */
+    Sc = 1370.0;
+
+    if (cos_zenith > 0.0) {
+        /*
+        ** remember sin_beta = cos_zenith; trig funcs are cofuncs of each other
+        ** sin(x) = cos(90-x) and cos(x) = sin(90-x).
+        */
+        So = Sc * (1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI)) * cos_zenith;
+    } else {
+        So = 0.0;
+    }
 
     return (So);
 
@@ -382,18 +393,23 @@ double calc_extra_terrestrial_irradiance(double doy, double cos_zenith) {
 
 
 double estimate_clearness(double sw_rad, double So) {
-    /* estimate atmospheric transmisivity - the amount of diffuse radiation
-    is a function of the amount of haze and/or clouds in the sky. Estimate
-    a proxy for this, i.e. the ratio between global solar radiation on a
-    horizontal surface at the ground and the extraterrestrial solar
-    radiation */
+    /*
+        estimate atmospheric transmisivity - the amount of diffuse radiation
+        is a function of the amount of haze and/or clouds in the sky. Estimate
+        a proxy for this, i.e. the ratio between global solar radiation on a
+        horizontal surface at the ground and the extraterrestrial solar
+        radiation
+    */
+
+    /* Fraction of global radiation that is PAR */
+    double fpar = 0.5;
     double tau;
 
     /* catch possible divide by zero when zenith = 90. */
     if (So <= 0.0)
         tau = 0.0;
     else
-        tau = sw_rad / So ;
+        tau = sw_rad * fpar / So ;
 
     if (tau > 1.0) {
         tau = 1.0;
