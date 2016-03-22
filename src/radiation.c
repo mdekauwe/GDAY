@@ -196,14 +196,14 @@ void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
     hod /= 2.0;
 
     gamma = day_angle(doy);
-    dec = calculate_solar_declination(doy, gamma);
+    rdec = calculate_solar_declination(doy, gamma);
     et = calculate_eqn_of_time(gamma);
     t0 = calculate_solar_noon(et, p->longitude);
     h = calculate_hour_angle(hod, t0);
     rlat = DEG2RAD(p->latitude);
 
     /* A13 - De Pury & Farquhar */
-    sin_beta = sin(rlat) * sin(dec) + cos(rlat) * cos(dec) * cos(h);
+    sin_beta = sin(rlat) * sin(rdec) + cos(rlat) * cos(rdec) * cos(h);
     cw->cos_zenith = sin_beta; /* The same thing, going to use throughout */
     if (cw->cos_zenith > 1.0)
         cw->cos_zenith = 1.0;
@@ -295,17 +295,10 @@ double calculate_solar_declination(int doy, double gamma) {
     */
     double decl;
 
-    /* declination (radians) */
-    /*decl = 0.006918 - 0.399912 * cos(gamma) + 0.070257 * sin(gamma) - \
-           0.006758 * cos(2.0 * gamma) + 0.000907 * sin(2.0 * gamma) -\
-           0.002697 * cos(3.0 * gamma) + 0.00148 * sin(3.0 * gamma);*/
-
-
-    /* (radians) A14 - De Pury & Farquhar  */
+    /* Solar Declination Angle (radians) A14 - De Pury & Farquhar  */
     decl = -23.4 * (M_PI / 180.) * cos(2.0 * M_PI * (doy + 10) / 365);
 
     return (decl);
-
 }
 
 double calculate_eqn_of_time(double gamma) {
