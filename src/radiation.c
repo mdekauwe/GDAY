@@ -420,7 +420,7 @@ double estimate_clearness(double sw_rad, double So) {
     if (So <= 0.0)
         tau = 0.0;
     else
-        tau = sw_rad * fpar / So ;
+        tau = (sw_rad / fpar) / So ;
 
     if (tau > 1.0) {
         tau = 1.0;
