@@ -190,10 +190,16 @@ void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
 
     */
 
-    double dec, et, lc, t0, h, gamma, zenith_angle, hour_angle, rlat, sin_beta;
+    double rdec, et, lc, t0, h, gamma, zenith_angle, hour_angle, rlat, sin_beta;
 
     /* need to convert 30 min data, 0-47 to 0-23.5 */
     hod /= 2.0;
+
+    /* de pury worked example */
+    /*hod = 10.5;
+    p->longitude = 147.2;
+    p->latitude = -35.3;
+    doy = 298;*/
 
     gamma = day_angle(doy);
     rdec = calculate_solar_declination(doy, gamma);
@@ -204,6 +210,10 @@ void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
 
     /* A13 - De Pury & Farquhar */
     sin_beta = sin(rlat) * sin(rdec) + cos(rlat) * cos(rdec) * cos(h);
+
+    /* de pury worked example */
+    /*printf("%lf %lf %lf %lf %lf %lf\n", rdec, et, t0, h, rlat, sin_beta);*/
+
     cw->cos_zenith = sin_beta; /* The same thing, going to use throughout */
     if (cw->cos_zenith > 1.0)
         cw->cos_zenith = 1.0;
@@ -265,8 +275,7 @@ double day_angle(int doy) {
     ---------
     gamma - day angle in radians.
     */
-
-    return (2.0 * M_PI * (doy - 1.0) / 365.0);
+    return (2.0 * M_PI * ((float)doy - 1.0) / 365.0);
 }
 
 double calculate_solar_declination(int doy, double gamma) {
@@ -296,7 +305,7 @@ double calculate_solar_declination(int doy, double gamma) {
     double decl;
 
     /* Solar Declination Angle (radians) A14 - De Pury & Farquhar  */
-    decl = -23.4 * (M_PI / 180.) * cos(2.0 * M_PI * (doy + 10) / 365);
+    decl = -23.4 * (M_PI / 180.) * cos(2.0 * M_PI * ((float)doy + 10.) / 365.);
 
     return (decl);
 }
@@ -325,19 +334,24 @@ double calculate_eqn_of_time(double gamma) {
     */
     double et, f, A;
 
-    /* radians */
-    /*et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
-         0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);*/
+    /*
+    ** from Spencer '71. This better matches the de Pury worked example (pg 554)
+    ** The de Pury version is this essentially with the 229.18 already applied
+    ** It probably doesn't matter which is used, but there is some rounding
+    ** error below (radians)
+    */
+    et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
+         0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);
 
     /* radians to minutes */
-    /*et *= 229.18; */
+    et *= 229.18;
 
     /* radians to hours */
     /*et *= 24.0 / (2.0 * M_PI);*/
 
     /* minutes - de Pury and Farquhar, 1997 - A17 */
-    et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *
-          cos(2.0 * gamma) - 9.731  * sin(gamma));
+    /*et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *
+          cos(2.0 * gamma) - 9.731 * sin(gamma));*/
 
     return (et);
 }
