@@ -111,10 +111,27 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
             }
         }
+
+        if (ma->year[c->hour_idx] >= 1999.0 &&
+            ma->year[c->hour_idx] < 2000.0 &&
+            ma->doy[c->hour_idx] >= 213 &&
+            ma->doy[c->hour_idx] <= 220) {
+
+            printf("%d,%d,%d,%lf,%lf\n", \
+                  (int)ma->year[c->hour_idx], \
+                  (int)ma->doy[c->hour_idx], hod, \
+                  cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED], \
+                  cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED]);
+        }
+
+
+
         scale_leaf_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);
         calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
                                 cw->omega_canopy, cw->rnet_canopy);
+
+
 
         c->hour_idx++;
         sunlight_hrs++;
@@ -135,7 +152,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
-    
+
     return;
 }
 

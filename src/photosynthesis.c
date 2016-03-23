@@ -214,8 +214,13 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     scale_to_canopy(cw, &scalar_sun, &scalar_sha);
 
     if (c->modeljm == 0) {
-        *jmax = p->jmax;
-        *vcmax = p->vcmax;
+        if (cw->ileaf == SUNLIT) {
+            *jmax = p->jmax * scalar_sun;
+            *vcmax = p->vcmax * scalar_sun;
+        } else {
+            *jmax = p->jmax * scalar_sha;
+            *vcmax = p->vcmax * scalar_sha;
+        }
     } else if (c->modeljm == 1) {
         /*
         if (cw->ileaf == SUNLIT) {

@@ -322,7 +322,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
-
+            
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
                  /*Allocation is annually for deciduous "tree" model, but we
