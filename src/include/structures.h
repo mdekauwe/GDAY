@@ -576,6 +576,7 @@ typedef struct {
 typedef struct {
     int    ileaf;
     double an_leaf[2];
+    double rd_leaf[2];
     double gsc_leaf[2];
     double apar_leaf[2];
     double trans_leaf[2];
@@ -583,6 +584,7 @@ typedef struct {
     double lai_leaf[2];
     double omega_leaf[2];
     double an_canopy;
+    double rd_canopy;
     double gsc_canopy;
     double apar_canopy;
     double omega_canopy;

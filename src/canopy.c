@@ -121,7 +121,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                   (int)ma->year[c->hour_idx], \
                   (int)ma->doy[c->hour_idx], hod, \
                   cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED], \
-                  cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED]);
+                  cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED]);
         }
 
 
@@ -272,6 +272,7 @@ void zero_hourly_fluxes(canopy_wk *cw) {
     /* sunlit / shaded loop */
     for (i = 0; i < NUM_LEAVES; i++) {
         cw->an_leaf[i] = 0.0;
+        cw->rd_leaf[i] = 0.0;
         cw->gsc_leaf[i] = 0.0;
         cw->trans_leaf[i] = 0.0;
         cw->rnet_leaf[i] = 0.0;
@@ -284,8 +285,8 @@ void zero_hourly_fluxes(canopy_wk *cw) {
 
 void scale_leaf_to_canopy(canopy_wk *cw) {
 
-
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
+    cw->rd_canopy = cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED];
     cw->gsc_canopy = cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED];
     cw->apar_canopy = cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED];
     cw->trans_canopy = cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED];

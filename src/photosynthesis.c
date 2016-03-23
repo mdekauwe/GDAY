@@ -116,6 +116,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
             Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
         }
         cw->an_leaf[idx] = MIN(Ac, Aj) - rd;
+        cw->rd_leaf[idx] = rd;
         cw->gsc_leaf[idx] = MAX(g0, g0 + gs_over_a * cw->an_leaf[idx]);
     }
     return;
