@@ -574,32 +574,32 @@ typedef struct {
 } fluxes;
 
 typedef struct {
-    int    ileaf;
-    double an_leaf[2];
-    double rd_leaf[2];
-    double gsc_leaf[2];
-    double apar_leaf[2];
-    double trans_leaf[2];
-    double rnet_leaf[2];
-    double lai_leaf[2];
-    double omega_leaf[2];
-    double tleaf[2];
-    double an_canopy;
-    double rd_canopy;
-    double gsc_canopy;
-    double apar_canopy;
-    double omega_canopy;
-    double trans_canopy;
-    double rnet_canopy;
-    double N0;
-    double elevation;      /* degrees */
-    double cos_zenith;     /* radians */
-    double diffuse_frac;
-    double direct_frac;
-    /*double tleaf;*/
-    double tleaf_new;
-    double dleaf;
-    double Cs;
+    /* 2 member arrays are for the sunlit (0) and shaded (1) components */
+    int    ileaf;           /* sunlit (0) or shaded (1) leaf index */
+    double an_leaf[2];      /* leaf net photosynthesis (umol m-2 s-1) */
+    double rd_leaf[2];      /* leaf respiration in the light (umol m-2 s-1) */
+    double gsc_leaf[2];     /* leaf stomatal conductance to CO2 (mol m-2 s-1) */
+    double apar_leaf[2];    /* leaf abs photosyn. active rad. (umol m-2 s-1) */
+    double trans_leaf[2];   /* leaf transpiration (mol m-2 s-1) */
+    double rnet_leaf[2];    /* leaf net radiation (W m-2) */
+    double lai_leaf[2];     /* sunlit and shaded leaf area (m2 m-2) */
+    double omega_leaf[2];   /* leaf decoupling coefficient (-) */
+    double tleaf[2];        /* leaf temperature (deg C) */
+    double an_canopy;       /* canopy net photosynthesis (umol m-2 s-1) */
+    double rd_canopy;       /* canopy respiration in the light (umol m-2 s-1) */
+    double gsc_canopy;      /* canopy stomatal conductance to CO2 (mol m-2 s-1) */
+    double apar_canopy;     /* canopy abs photosyn. active rad. (umol m-2 s-1) */
+    double omega_canopy;    /* canopy decoupling coefficient (-) */
+    double trans_canopy;    /* canopy transpiration (mm 30min-1) */
+    double rnet_canopy;     /* canopy net radiation (W m-2) */
+    double N0;              /* top of canopy nitrogen (g N m-2)) */
+    double elevation;       /* sun elevation angle in degrees */
+    double cos_zenith;      /* cos(zenith angle of sun) in radians */
+    double diffuse_frac;    /* Fraction of incident rad which is diffuse (-) */
+    double direct_frac;     /* Fraction of incident rad which is beam (-) */
+    double tleaf_new;       /* new leaf temperature (deg C) */
+    double dleaf;           /* leaf VPD (Pa) */
+    double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
 } canopy_wk;
 
 
