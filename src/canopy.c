@@ -90,17 +90,21 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     if (iter >= itermax) {
                         fprintf(stderr, "No convergence in canopy loop:\n");
                         exit(EXIT_FAILURE);
-                    } else if (fabs(cw->tleaf - cw->tleaf_new) < 0.02) {
+                    } else if (fabs(cw->tleaf[cw->ileaf] - cw->tleaf_new) < 0.02) {
                         break;
                     }
 
                     /* Update temperature & do another iteration */
-                    cw->tleaf = cw->tleaf_new;
+                    cw->tleaf[cw->ileaf] = cw->tleaf_new;
                     iter++;
                 } /* end of leaf temperature loop */
             } /* end of sunlit/shaded leaf loop */
         } else {
             zero_hourly_fluxes(cw);
+
+            /* set tleaf to tair during the night */
+            cw->tleaf[SUNLIT] = m->tair;
+            cw->tleaf[SHADED] = m->tair;
 
             /*
              * pre-dawn soil water potential, clearly one should link this
@@ -117,11 +121,14 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ma->doy[c->hour_idx] >= 213 &&
             ma->doy[c->hour_idx] <= 220) {
 
-            printf("%d,%d,%d,%lf,%lf\n", \
+            printf("%d,%d,%d,%lf,%lf,%lf,%lf,%lf\n", \
                   (int)ma->year[c->hour_idx], \
                   (int)ma->doy[c->hour_idx], hod, \
                   cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED], \
-                  cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED]);
+                  cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED],\
+                  cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED],\
+                  cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED],\
+                  (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2. );
         }
 
 
@@ -176,7 +183,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
 
     cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd, sw_rad);
-    penman_leaf_wrapper(m, p, s, cw->tleaf, cw->rnet_leaf[idx],
+    penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
                         cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
                         &omega);
 
@@ -314,7 +321,7 @@ void sum_hourly_carbon_fluxes(canopy_wk *cw, fluxes *f, params *p) {
 
 void initialise_leaf_surface(canopy_wk *cw, met *m) {
     /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
-    cw->tleaf = m->tair;
+    cw->tleaf[cw->ileaf] = m->tair;
     cw->dleaf = m->vpd;
     cw->Cs = m->Ca;
 }

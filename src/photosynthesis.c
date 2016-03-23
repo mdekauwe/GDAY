@@ -39,7 +39,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     idx = cw->ileaf;
     par = cw->apar_leaf[idx];
     Cs = cw->Cs;
-    tleaf = cw->tleaf;
+    tleaf = cw->tleaf[idx];
     dleaf = cw->dleaf;
 
     /* Calculate photosynthetic parameters from leaf temperature. */

@@ -583,6 +583,7 @@ typedef struct {
     double rnet_leaf[2];
     double lai_leaf[2];
     double omega_leaf[2];
+    double tleaf[2];
     double an_canopy;
     double rd_canopy;
     double gsc_canopy;
@@ -595,7 +596,7 @@ typedef struct {
     double cos_zenith;     /* radians */
     double diffuse_frac;
     double direct_frac;
-    double tleaf;
+    /*double tleaf;*/
     double tleaf_new;
     double dleaf;
     double Cs;
