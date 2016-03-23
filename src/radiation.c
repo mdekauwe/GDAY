@@ -411,16 +411,14 @@ double estimate_clearness(double sw_rad, double So) {
         horizontal surface at the ground and the extraterrestrial solar
         radiation
     */
-
-    /* Fraction of global radiation that is PAR */
-    double fpar = 0.5;
     double tau;
 
     /* catch possible divide by zero when zenith = 90. */
-    if (So <= 0.0)
+    if (So <= 0.0) {
         tau = 0.0;
-    else
-        tau = (sw_rad / fpar) / So ;
+    } else {
+        tau = sw_rad / So;
+    }
 
     if (tau > 1.0) {
         tau = 1.0;
