@@ -116,15 +116,50 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     lad = p->lad;        /* NB. default is to assume spherical LAD=0 */
 
     /*
-    ** Gross is the ratio of the projected area of leaves in the direction
-    ** perpendicular to the direction of incident solar radiation and
-    ** the actual leaf area. Calculation following Sellers (1985), taken from
-    ** CABLE code (Kowalczyk '06, eqn 28/29)
+    ** Ross-Goudriaan function is the ratio of the projected area of leaves
+    ** in the direction perpendicular to the direction of incident solar
+    ** radiation and the actual leaf area. See Sellers (1985), eqn 13/
+    ** note this is taken from CABLE code (Kowalczyk '06, eqn 28/29)
     */
     psi1 = 0.5 - 0.633 * lad;
     psi2 = 0.877 * (1.0 - 2.0 * psi1);
     Gross = psi1 + psi2 * cw->cos_zenith;
+
+    /* beam extinction coefficient for black leaves */
     cw->kb = Gross / cw->cos_zenith;
+
+    /* following Kowalczyk 2006, turns out a lot lower, must be an error 
+    double q1, q2, kd, xk_15, xk_45, xk_75, rho_ch, rho_tb, rho_td, Sb, Sd;
+
+    xk_15 = psi1 / cos(DEG2RAD(15.0)) + psi2;
+    xk_45 = psi1 / cos(DEG2RAD(45.0)) + psi2;
+    xk_75 = psi1 / cos(DEG2RAD(75.0)) + psi2;
+    kd = (-1.0 / lai) * log(0.308 * exp(-xk_15 * lai) + \
+                            0.514 * exp(-xk_45 * lai) + \
+                            0.178 * exp(-xk_75 * lai));
+
+    k_dash_b = cw->kb * sqrt(1.0 - 0.1);
+    k_dash_d = kd * sqrt(1.0 - 0.1);
+
+    rho_ch = (1.0 - sqrt(1.0 - 0.2)) / (1.0 + sqrt(1.0 - 0.2));
+    rho_cb = 2.0 * cw->kb / (cw->kb + kd) * rho_ch;
+    rho_cd = 2.0 * \
+            ((0.308 * rho_cb * sin(DEG2RAD(15.0)) * cos(DEG2RAD(15.0))) + \
+             (0.514 * rho_cb * sin(DEG2RAD(45.0)) * cos(DEG2RAD(45.0))) + \
+             (0.178 * rho_cb * sin(DEG2RAD(75.0)) * cos(DEG2RAD(75.0))));
+    rho_tb = rho_cb + (0.1 - rho_cb) * exp(-2.0 * cw->kb * lai);
+    rho_td = rho_cd + (0.1 - rho_cd) * exp(-2.0 * kd * lai);
+
+    Sd = par * cw->diffuse_frac;
+    Sb = par * cw->direct_frac;
+    q2 = (1.0 - rho_td) * k_dash_d * exp(-kd * lai) * \
+         (Sd * cw->diffuse_frac) + \
+         ((1.0 - rho_tb) * k_dash_b * exp(-k_dash_b * lai) - \
+         (1 - 0.1) * cw->kb * exp(-cw->kb * lai)) * (Sb * cw->direct_frac);
+    q1 = q2 + cw->kb * (1 - 0.1) * (Sb * cw->direct_frac);
+    cw->apar_leaf[SUNLIT] = q1;
+    cw->apar_leaf[SHADED] = q2;
+    */
 
     /* Direct-beam irradiance absorbed by sunlit leaves - de P & F, eqn 20b */
     Ib = par * cw->direct_frac;

@@ -309,7 +309,7 @@ void scale_to_canopy(canopy_wk *cw, double *scalar_sun, double *scalar_sha) {
 
     kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
     lai = cw->lai_leaf[cw->ileaf];
-    
+
     *scalar_sun = (1.0 - exp(-(cw->kb + kn) * lai)) / (cw->kb + kn);
     *scalar_sha = (1.0 - exp(-kn * lai)) / kn - *scalar_sun;
 
