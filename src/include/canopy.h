@@ -27,7 +27,7 @@ void    sum_hourly_carbon_fluxes(canopy_wk *, fluxes *, params *);
 void    scale_leaf_to_canopy(canopy_wk *);
 double  calc_leaf_net_rad(params *, state *, double, double, double);
 void    calculate_top_of_canopy_leafn(canopy_wk *, params *, state *);
-
+void    calc_leaf_to_canopy_scalar(canopy_wk *);
 
 
 #endif /* CANOPY_H */

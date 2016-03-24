@@ -199,7 +199,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         vcmax : float
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
-    double jmax25, vcmax25, lai_leaf, scalar_sun, scalar_sha;
+    double jmax25, vcmax25, lai_leaf;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
@@ -207,20 +207,15 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double jmaxnb = p->jmaxnb;
     double vcmaxna = p->vcmaxna;
     double vcmaxnb = p->vcmaxnb;
-
-    /*
-    ** Scaling photosynthetic parameters from single leaf to canopy,
-    ** see Wang & Leuning 1998: inserting eqn C6 & C7 into B5
-    */
-    scale_to_canopy(cw, &scalar_sun, &scalar_sha);
+    double cscalar = cw->cscalar[cw->ileaf];
 
     if (c->modeljm == 0) {
         if (cw->ileaf == SUNLIT) {
-            *jmax = p->jmax * scalar_sun;
-            *vcmax = p->vcmax * scalar_sun;
+            *jmax = p->jmax * cscalar;
+            *vcmax = p->vcmax * cscalar;
         } else {
-            *jmax = p->jmax * scalar_sha;
-            *vcmax = p->vcmax * scalar_sha;
+            *jmax = p->jmax * cscalar;
+            *vcmax = p->vcmax * cscalar;
         }
     } else if (c->modeljm == 1) {
         /*
@@ -233,27 +228,27 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         }
         */
         if (cw->ileaf == SUNLIT) {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sun;
-            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * scalar_sun;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
         } else {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sha;
-            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * scalar_sha;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
         if (cw->ileaf == SUNLIT) {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sun;
-            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * scalar_sun;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * cscalar;
         } else {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalar_sha;
-            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * scalar_sha;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * cscalar;
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 3) {
-        jmax25 = p->jmax;
-        vcmax25 = p->vcmax;
+        jmax25 = p->jmax * cscalar;
+        vcmax25 = p->vcmax * cscalar;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else {
@@ -277,44 +272,6 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     return;
 }
 
-void scale_to_canopy(canopy_wk *cw, double *scalar_sun, double *scalar_sha) {
-    /*
-        Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
-        values. Following Wang & Leuning, as long as sunlit and shaded
-        leaves are treated seperately, values of parameters in the coupled
-        model for the two big leaves can be closely approximated by
-        integrating values for individual leaves.
-
-        - Inserting eqn C6 & C7 into B5
-
-        per unit ground area
-
-        Parameters:
-        ----------
-        canopy_wk : structure
-            various canopy values: in this case the sunlit or shaded LAI &
-            cos_zenith angle.
-        scalar_sun : float
-            scalar for sunlit leaves, values returned in unit ground area
-            (returned)
-        scalar_sha : float
-            scalar for shaded leaves, values returned in unit ground area
-            (returned)
-
-        References:
-        ----------
-        * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
-    */
-    double kn, lai;
-
-    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
-    lai = cw->lai_leaf[cw->ileaf];
-
-    *scalar_sun = (1.0 - exp(-(cw->kb + kn) * lai)) / (cw->kb + kn);
-    *scalar_sha = (1.0 - exp(-kn * lai)) / kn - *scalar_sun;
-
-    return;
-}
 
 double integrate_sunlit_frac(canopy_wk *cw, double a, double b) {
 

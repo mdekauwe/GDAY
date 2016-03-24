@@ -601,6 +601,7 @@ typedef struct {
     double dleaf;           /* leaf VPD (Pa) */
     double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
     double kb;              /* beam radiation ext coeff of canopy */
+    double cscalar[2];      /* scale from single leaf to canopy */
 } canopy_wk;
 
 

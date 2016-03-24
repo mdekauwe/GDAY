@@ -60,6 +60,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->par);
             calculate_top_of_canopy_leafn(cw, p, s);
+            calc_leaf_to_canopy_scalar(cw);
 
             /* sunlit / shaded loop */
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
@@ -114,7 +115,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 calc_soil_water_potential(c, p, s);
                 /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
             }
+
         }
+
 
         if (ma->year[c->hour_idx] >= 1999.0 &&
             ma->year[c->hour_idx] < 2000.0 &&
@@ -324,4 +327,43 @@ void initialise_leaf_surface(canopy_wk *cw, met *m) {
     cw->tleaf[cw->ileaf] = m->tair;
     cw->dleaf = m->vpd;
     cw->Cs = m->Ca;
+}
+
+void calc_leaf_to_canopy_scalar(canopy_wk *cw) {
+    /*
+        Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
+        values. Following Wang & Leuning, as long as sunlit and shaded
+        leaves are treated seperately, values of parameters in the coupled
+        model for the two big leaves can be closely approximated by
+        integrating values for individual leaves.
+
+        - Inserting eqn C6 & C7 into B5
+
+        per unit ground area
+
+        Parameters:
+        ----------
+        canopy_wk : structure
+            various canopy values: in this case the sunlit or shaded LAI &
+            cos_zenith angle.
+        scalar_sun : float
+            scalar for sunlit leaves, values returned in unit ground area
+            (returned)
+        scalar_sha : float
+            scalar for shaded leaves, values returned in unit ground area
+            (returned)
+
+        References:
+        ----------
+        * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
+    */
+    double kn, lai_sun, lai_sha;
+    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
+    lai_sun = cw->lai_leaf[SUNLIT];
+    lai_sha = cw->lai_leaf[SHADED];
+
+    cw->cscalar[SUNLIT] = (1.0 - exp(-(cw->kb + kn) * lai_sun)) / (cw->kb + kn);
+    cw->cscalar[SHADED] = (1.0 - exp(-kn * lai_sha)) / kn - cw->cscalar[SUNLIT];
+
+    return;
 }
