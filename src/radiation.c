@@ -101,15 +101,19 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     */
 
     int    i;
-    double Ib, Id, Is, Ic, scattered, shaded, beam, psi1, psi2, Gross;
-    double arg1, arg2, arg3;
-    double rho_cd = 0.036;    /* canopy reflection coeffcient for diffuse PAR */
-    double rho_cb = 0.029;     /* canopy reflection coeffcient for direct PAR */
-    double omega = 0.15;                /* leaf scattering coefficient of PAR */
-    double k_dash_b = 0.46 / cw->cos_zenith;      /* beam & scat PAR ext coef */
-    double k_dash_d = 0.719;     /* diffuse & scattered PAR extinction coeff  */
-    double lai = s->lai;
-    double lad = p->lad;        /* default is to assume spherical LAD=0 */
+    double Ib, Id, Is, scattered, shaded, beam, psi1, psi2, Gross, lai, lad;
+    double total_canopy_irradiance, arg1, arg2, arg3, rho_cd, rho_cb, omega;
+    double k_dash_b, k_dash_d;
+
+    rho_cd = 0.036;    /* canopy reflection coeffcient for diffuse PAR */
+    rho_cb = 0.029;     /* canopy reflection coeffcient for direct PAR */
+    omega = 0.15;                /* leaf scattering coefficient of PAR */
+    k_dash_b = 0.46 / cw->cos_zenith;      /* beam & scat PAR ext coef */
+    k_dash_d = 0.719;     /* diffuse & scattered PAR extinction coeff  */
+
+    /* unpack local variables */
+    lai = s->lai;
+    lad = p->lad;        /* NB. default is to assume spherical LAD=0 */
 
     /*
     ** Gross is the ratio of the projected area of leaves in the direction
@@ -139,11 +143,10 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     arg3 = (1.0 - omega) * (1.0 - exp(-2.0 * cw->kb * lai)) / 2.0;
     scattered = Ib * (arg1 * arg2 - arg3);
 
-
-    /* Total irradiance absorbed by the canopy - de P & F, eqn 13 */
+    /* Total irradiance absorbed by the canopy (Ic) - de P & F, eqn 13 */
     arg1 = (1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai));
     arg2 = (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai));
-    Ic = arg1 + arg2;
+    total_canopy_irradiance = arg1 + arg2;
 
     /*
     ** Irradiance absorbed by the sunlit fraction of the canopy is the sum of
@@ -158,7 +161,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     **  irradiacne absorbed by the canopy and the irradiance absorbed by the
     **  sunlit leaf area
     */
-    cw->apar_leaf[SHADED] = Ic - cw->apar_leaf[SUNLIT];
+    cw->apar_leaf[SHADED] = total_canopy_irradiance - cw->apar_leaf[SUNLIT];
 
     /*
     ** Scale leaf fluxes to the canopy
