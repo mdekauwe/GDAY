@@ -148,33 +148,15 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     arg2 = (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai));
     total_canopy_irradiance = arg1 + arg2;
 
-    /*
-    ** Irradiance absorbed by the sunlit fraction of the canopy is the sum of
-    ** direct-beam, diffuse and scattered-beam components
-    */
+    /* Irradiance absorbed by the sunlit fraction of the canopy */
     cw->apar_leaf[SUNLIT] = beam + scattered + shaded;
 
-    /*
-    **  Irradiance absorbed by the shaded leaf area of the canopy is the
-    **  integral of absorbed irradiance in the shade (Eqn A7) and the shdaded
-    **  leaf area fraction. Or simply, the difference between the total
-    **  irradiacne absorbed by the canopy and the irradiance absorbed by the
-    **  sunlit leaf area
-    */
+    /* Irradiance absorbed by the shaded fraction of the canopy */
     cw->apar_leaf[SHADED] = total_canopy_irradiance - cw->apar_leaf[SUNLIT];
 
-    /*
-    ** Scale leaf fluxes to the canopy
-    ** - The direct radiation on sunlit leaves is assumed to be equal at
-    **   all canopy depths but with the fraction of sunlit leaves
-    **   decreasing with canopy depth. De Pury & Farquhar 1997, eqn 18.
-    */
+    /* Calculate sunlit &shdaded LAI of the canopy - de P * F eqn 18*/
     cw->lai_leaf[SUNLIT] = (1.0 - exp(-cw->kb * lai)) / cw->kb;
     cw->lai_leaf[SHADED] = lai - cw->lai_leaf[SUNLIT];
-
-    /* convert apar from unit ground to leaf area */
-    /*cw->apar_leaf[SUNLIT] /= cw->lai_leaf[SUNLIT];
-    cw->apar_leaf[SHADED] /= cw->lai_leaf[SHADED];*/
 
     return;
 }
