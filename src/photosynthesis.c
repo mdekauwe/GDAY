@@ -305,13 +305,13 @@ void scale_to_canopy(canopy_wk *cw, double *scalar_sun, double *scalar_sha) {
         ----------
         * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
     */
-    double kb, kn, lai;
+    double kn, lai;
 
-    kb = 0.5 / cw->cos_zenith; /* beam radiation ext coef of canopy  */
     kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
     lai = cw->lai_leaf[cw->ileaf];
+    kn = 0.001;
 
-    *scalar_sun = (1.0 - exp(-(kb + kn) * lai)) / (kb + kn);
+    *scalar_sun = (1.0 - exp(-(cw->kb + kn) * lai)) / (cw->kb + kn);
     *scalar_sha = (1.0 - exp(-kn * lai)) / kn - *scalar_sun;
 
     return;

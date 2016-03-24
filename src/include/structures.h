@@ -600,6 +600,7 @@ typedef struct {
     double tleaf_new;       /* new leaf temperature (deg C) */
     double dleaf;           /* leaf VPD (Pa) */
     double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
+    double kb;              /* beam radiation ext coeff of canopy */
 } canopy_wk;
 
 
