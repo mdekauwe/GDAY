@@ -127,8 +127,8 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     /* beam extinction coefficient for black leaves */
     cw->kb = Gross / cw->cos_zenith;
-
-    /* following Kowalczyk 2006, turns out a lot lower, must be an error 
+    
+    /* following Kowalczyk 2006, turns out a lot lower, must be an error
     double q1, q2, kd, xk_15, xk_45, xk_75, rho_ch, rho_tb, rho_td, Sb, Sd;
 
     xk_15 = psi1 / cos(DEG2RAD(15.0)) + psi2;

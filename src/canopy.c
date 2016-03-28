@@ -124,14 +124,16 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ma->doy[c->hour_idx] >= 213 &&
             ma->doy[c->hour_idx] <= 220) {
 
-            printf("%d,%d,%d,%lf,%lf,%lf,%lf,%lf\n", \
+            printf("%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", \
                   (int)ma->year[c->hour_idx], \
                   (int)ma->doy[c->hour_idx], hod, \
                   cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED], \
                   cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED],\
                   cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED],\
                   cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED],\
-                  (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2. );
+                  (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2.,\
+                  cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED], \
+                  cw->lai_leaf[SUNLIT] + cw->lai_leaf[SHADED]);
         }
 
 
