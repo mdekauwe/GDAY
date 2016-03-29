@@ -117,33 +117,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
         }
-
-
-        if (ma->year[c->hour_idx] >= 1999.0 &&
-            ma->year[c->hour_idx] < 2000.0 &&
-            ma->doy[c->hour_idx] >= 182 &&
-            ma->doy[c->hour_idx] <= 189) {
-
-            printf("%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", \
-                  (int)ma->year[c->hour_idx], \
-                  (int)ma->doy[c->hour_idx], hod, \
-                  cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED], \
-                  cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED],\
-                  cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED],\
-                  cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED],\
-                  (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2.,\
-                  cw->apar_leaf[SUNLIT] + cw->apar_leaf[SHADED], \
-                  cw->lai_leaf[SUNLIT] + cw->lai_leaf[SHADED]);
-        }
-
-
-
         scale_leaf_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);
         calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
                                 cw->omega_canopy, cw->rnet_canopy);
-
-
 
         c->hour_idx++;
         sunlight_hrs++;
