@@ -219,7 +219,7 @@ typedef struct {
     double kdec6;                           /* slow pool decay rate (1/yr) */
     double kdec7;                           /* passive pool decay rate (1/yr) */
     double kext;                            /* extinction coefficient */
-    double kn;                              /* extinction coefficient of nitrogen in the canopy */
+    double kn;                              /* extinction coefficient of nitrogen in the canopy, assumed to be 0.3 by defaul which comes half from Belinda's head and is supported by fig 10 in Lloyd et al. Biogeosciences, 7, 1833–1859, 2010 */
     double knl;
     double ko25;                            /* Base rate for oxygenation by Rubisco at 25degC [umol mol-1]. Note value in Bernacchie 2001 is in mmol!! */
     double kq10;                            /* exponential coefficient for Rm vs T */

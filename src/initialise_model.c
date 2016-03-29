@@ -134,8 +134,7 @@ void initialise_params(params *p) {
     p->kdec6 = 0.198279;
     p->kdec7 = 0.006783;
     p->kext = 0.5;
-    p->kn = 0.3;
-    p->knl = 0.01;
+    p->kn = 0.3;         /* extinction coefficient of nitrogen in the canopy, assumed to be 0.3 by defaul which comes half from Belinda's head and is supported by fig 10 in Lloyd et al. Biogeosciences, 7, 1833–1859, 2010 */
     p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;
     p->kr = 0.5;

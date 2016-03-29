@@ -121,8 +121,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
         if (ma->year[c->hour_idx] >= 1999.0 &&
             ma->year[c->hour_idx] < 2000.0 &&
-            ma->doy[c->hour_idx] >= 213 &&
-            ma->doy[c->hour_idx] <= 220) {
+            ma->doy[c->hour_idx] >= 182 &&
+            ma->doy[c->hour_idx] <= 189) {
 
             printf("%d,%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n", \
                   (int)ma->year[c->hour_idx], \

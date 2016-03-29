@@ -670,8 +670,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->kdec6 = atof(value);
     } else if (MATCH("params", "kdec7")) {
         p->kdec7 = atof(value);
-    } else if (MATCH("params", "knl")) {
-        p->knl = atof(value);
     } else if (MATCH("params", "ko25")) {
         p->ko25 = atof(value);
     } else if (MATCH("params", "kq10")) {
