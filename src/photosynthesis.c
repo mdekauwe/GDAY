@@ -228,12 +228,13 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
+        /* NB when using the fixed JV reln, we only apply scalar to Vcmax */
         if (cw->ileaf == SUNLIT) {
             vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * cscalar;
+            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         } else {
             vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept) * cscalar;
+            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
