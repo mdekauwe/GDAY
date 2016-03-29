@@ -134,6 +134,7 @@ void initialise_params(params *p) {
     p->kdec6 = 0.198279;
     p->kdec7 = 0.006783;
     p->kext = 0.5;
+    p->kn = 0.3;
     p->knl = 0.01;
     p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;

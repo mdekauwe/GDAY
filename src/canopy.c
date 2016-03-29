@@ -60,7 +60,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->par);
             calculate_top_of_canopy_leafn(cw, p, s);
-            calc_leaf_to_canopy_scalar(cw);
+            calc_leaf_to_canopy_scalar(cw, p);
 
             /* sunlit / shaded loop */
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
@@ -259,7 +259,6 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
 
     */
     double Ntot, N0;
-    double kn = 0.3; /* extinction coefficent for Nitrogen less steep */
 
     /* leaf mass per area (g C m-2 leaf) */
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
@@ -269,7 +268,7 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
         Ntot = s->shootnc * LMA * s->lai;
 
         /* top of canopy leaf N (gN m-2) */
-        cw->N0 = Ntot * kn / (1.0 - exp(-kn * s->lai));
+        cw->N0 = Ntot * p->kn / (1.0 - exp(-p->kn * s->lai));
     } else {
         cw->N0 = 0.0;
     }
@@ -331,7 +330,7 @@ void initialise_leaf_surface(canopy_wk *cw, met *m) {
     cw->Cs = m->Ca;
 }
 
-void calc_leaf_to_canopy_scalar(canopy_wk *cw) {
+void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
     /*
         Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
         values. Following Wang & Leuning, as long as sunlit and shaded
@@ -360,7 +359,7 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw) {
         * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
     */
     double kn, lai_sun, lai_sha;
-    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
+    kn = p->kn;
     lai_sun = cw->lai_leaf[SUNLIT];
     lai_sha = cw->lai_leaf[SHADED];
 
