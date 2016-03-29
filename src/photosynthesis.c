@@ -218,15 +218,6 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
             *vcmax = p->vcmax * cscalar;
         }
     } else if (c->modeljm == 1) {
-        /*
-        if (cw->ileaf == SUNLIT) {
-            jmax25 = integrate_sunlit_frac(cw, jmaxna, jmaxnb);
-            vcmax25 = integrate_sunlit_frac(cw, vcmaxna, vcmaxnb);
-        } else {
-            jmax25 = integrate_shaded_frac(cw, jmaxna, jmaxnb);
-            vcmax25 = integrate_shaded_frac(cw, vcmaxna, vcmaxnb);
-        }
-        */
         if (cw->ileaf == SUNLIT) {
             vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
             jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
@@ -270,105 +261,6 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     }
 
     return;
-}
-
-
-double integrate_sunlit_frac(canopy_wk *cw, double a, double b) {
-
-    /*
-        Integrate over the canopy depth to yeild bulk values of sunlit
-        vcmax/jmax
-
-        Parameters:
-        ----------
-        a : float
-            slope in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
-        b : float
-            intercept in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
-        lai : float
-            sunlit LAI (m2 m-2)
-        cos_zenith : double
-            sun zenith angle (radians)
-
-        Returns:
-        --------
-        sun : float
-            sunlit Vcmax or Jmax (umol m-2 s-1)
-
-        References:
-        ----------
-        * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 37a,b
-    */
-    double sun, arg1, arg2, kb, kn = 0.3;
-    double lai = cw->lai_leaf[cw->ileaf];
-
-    /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cw->cos_zenith;
-    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
-
-    arg1 = a / kb * (1.0 - exp(-kb * lai));
-    arg2 = b * cw->N0 / (kb + kn) * (1.0 - exp(-(kn + kb) * lai));
-    sun = arg1 + arg2;
-
-
-    return (sun);
-}
-
-double integrate_shaded_frac(canopy_wk *cw, double a, double b) {
-
-    /*
-        Integrate over the canopy depth to yeild bulk values of shaded
-        vcmax/jmax
-
-        Parameters:
-        ----------
-        a : float
-            slope in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
-        b : float
-            intercept in Vcmax/N or Jmax/N reln. (umol m-2 s-1)
-        lai : float
-            shaded LAI (m2 m-2)
-        cos_zenith : double
-            sun zenith angle (radians)
-
-        Returns:
-        --------
-        shade : float
-            shaded Vcmax or Jmax (umol m-2 s-1)
-
-
-        References:
-        ----------
-        * Dai et al. (2004) Journal of Climate, 17, 2281-2299., eqn 38a,b
-    */
-    double shade, arg1, arg2, arg3, arg4, kb, kn, k_dash_d;
-    double lai = cw->lai_leaf[cw->ileaf];
-
-    /* beam radiation extinction coefficent of canopy - de P & Far '97, Tab 3 */
-    kb = 0.5 / cw->cos_zenith;
-    kn = 0.3; /* assume less steep N profile - I got this from Belinda's head */
-
-    /* diffuse & scattered PAR extinction coeff - de P & Farq '97, Table 3 */
-    k_dash_d = 0.718;
-
-    /* Jmax use diffuse coefficent, not accounted for in Belinda's calc? */
-    /*if (do_vcmax) {
-        arg1 = (1.0 - exp(-kn * lai)) * 1.0 / kn;
-        arg2 = (1.0 - exp(-(kn + kb) * lai)) * 1.0 / (kn + kb);
-        shade = a * (arg1 - arg2);
-    } else {
-        arg1 = (1.0 - exp(-k_dash_d * lai)) * 1.0 / k_dash_d;
-        arg2 = (1.0 - exp(-(k_dash_d + kb) * lai)) * 1.0 / (k_dash_d + kb);
-        shade = a * (arg1 - arg2);
-    */
-
-    arg1 = a * lai;
-    arg2 = (a / kb) * (exp(-kb * lai) - 1.0);
-    arg3 = b * cw->N0 / kn * (1.0 - exp(-kn * lai));
-    arg4 = b * cw->N0 / (kn + kb) * (exp(-(kn + kb) * lai) - 1.0);
-    shade = arg1 + arg2 - arg2 + arg3;
-
-    return (shade);
 }
 
 double calc_leaf_day_respiration(double tleaf, double Rd0) {

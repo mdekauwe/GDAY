@@ -5,7 +5,7 @@
 #include "constants.h"
 #include "utilities.h"
 
-/* C3 */
+/* Sub-daily funcs */
 void   photosynthesis_C3(control *, canopy_wk *, met *m, params *, state *);
 double calc_co2_compensation_point(params *, double);
 double calculate_michaelis_menten(params *, double);
@@ -15,11 +15,9 @@ double arrhenius(double, double, double, double);
 double peaked_arrhenius(double, double, double, double, double, double);
 double calc_leaf_day_respiration(double, double);
 double quad(double, double, double, bool, int *);
-double integrate_sunlit_frac(canopy_wk *, double, double);
-double integrate_shaded_frac(canopy_wk *, double, double);
 
 
-
+/* Daily funcs */
 void   mate_C3_photosynthesis(control *, fluxes *, met *, params *,
                               state *, double, double);
 
