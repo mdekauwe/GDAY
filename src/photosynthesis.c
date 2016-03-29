@@ -530,9 +530,11 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
+    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
 
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
+    f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
     f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
@@ -1042,8 +1044,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = A_pm - Rd_pm;
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4);
-    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4);
+    lue_am = epsilon(p, asat_am, m->par, alpha_am);
+    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -1054,16 +1056,19 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     else
         f->apar = m->par * s->fipar;
 
-    /* convert umol m-2 d-1 -> gC m-2 d-1 */
-    conv = UMOL_2_GRAMS_C * (60.0 * 60.0 * daylen);
+    /* convert umol m-2 s-1 -> gC m-2 d-1 */
+    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
 
     /* g C m-2 to tonnes hectare-1 day-1 */
-    f->gpp = f->gpp_gCm2 * GRAM_C_2_TONNES_HA;
-    f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
+    f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
+
+    /* save apar in MJ m-2 d-1 */
+    f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
 
     return;
 }
