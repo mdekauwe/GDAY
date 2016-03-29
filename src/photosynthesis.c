@@ -946,8 +946,9 @@ double epsilon(params *p, double asat, double par, double alpha) {
             arg1 = sinx;
             arg2 = 1.0 + q * sinx;
             arg3 = (sqrt(pow((1.0 + q * sinx), 2) - 4.0 * p->theta * q * sinx));
-            integral_g += arg1 / (arg2 + arg3) * delta;
+            integral_g += arg1 / (arg2 + arg3);
         }
+        integral_g *= delta;
         lue = alpha * integral_g * M_PI;
     } else {
         lue = 0.0;
