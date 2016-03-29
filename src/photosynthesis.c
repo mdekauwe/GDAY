@@ -934,7 +934,7 @@ double epsilon(params *p, double asat, double par, double alpha) {
     double delta, q, integral_g, sinx, arg1, arg2, arg3, lue;
     int i;
 
-    /* subintervals scaler, i.e. 6 intervals */
+    /* subintervals scalar, i.e. 6 intervals */
     delta = 0.16666666667;
 
     if (asat > 0.0) {
