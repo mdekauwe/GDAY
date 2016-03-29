@@ -1044,8 +1044,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = A_pm - Rd_pm;
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, alpha_am);
-    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm);
+    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4);
+    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
