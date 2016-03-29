@@ -534,6 +534,9 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
+    /* save apar in MJ m-2 d-1 */
+    f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
+
     return;
 }
 
