@@ -79,6 +79,7 @@ The git hash allows you to connect which version of the model code produced whic
 ## Potential gotchas
 - The parameter alpha_j which represents the quantum yield of electron transport (mol mol-1) is the intrinsic quantum yield (i.e. per unit APAR). For the two-leaf version of the model alpha_j should be divided by (1.0 - omega), where omega is the leaf scattering coefficient of PAR (leaf reflectance and transmittance combined). Currently we are assuming omega = 0.15 (radiation.c), this is currently hardwired.
 
+- The deciduous phenology scheme does not currently work with the two-leaf version of the model (can be fixed).
 
 ## Meteorological driving file
 
