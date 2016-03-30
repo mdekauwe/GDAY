@@ -63,7 +63,7 @@ void initialise_params(params *p) {
     p->ageyoung = 0.0;
     p->albedo = 0.123;
     p->alpha_c4 = 0.06;
-    p->alpha_j = 0.26;        /* quantum yield of electron transport (mol mol-1). This is the intrinsic quantum yield (i.e. per unit APAR). */
+    p->alpha_j = 0.26;
     p->b_root = -999.9;
     p->b_topsoil =-999.9;
     p->bdecay = 0.02;
@@ -171,7 +171,6 @@ void initialise_params(params *p) {
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
     p->oi = 210000.0;       /* oxygen partial pressure (umol mol-1) */
-    p->omega = 0.15;        /* leaf scattering coefficient of PAR (reflectance + transmittance) */
     p->passivesoilnz = 1.0;
     p->passivesoilz = 1.0;
     p->passncmax = 0.142857;

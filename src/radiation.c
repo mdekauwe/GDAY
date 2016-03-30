@@ -102,11 +102,12 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     int    i;
     double Ib, Id, Is, scattered, shaded, beam, psi1, psi2, Gross, lai, lad;
-    double total_canopy_irradiance, arg1, arg2, arg3, rho_cd, rho_cb;
+    double total_canopy_irradiance, arg1, arg2, arg3, rho_cd, rho_cb, omega;
     double k_dash_b, k_dash_d;
 
     rho_cd = 0.036;    /* canopy reflection coeffcient for diffuse PAR */
     rho_cb = 0.029;     /* canopy reflection coeffcient for direct PAR */
+    omega = 0.15;                /* leaf scattering coefficient of PAR */
     k_dash_b = 0.46 / cw->cos_zenith;      /* beam & scat PAR ext coef */
     k_dash_d = 0.719;     /* diffuse & scattered PAR extinction coeff  */
 
@@ -162,7 +163,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     /* Direct-beam irradiance absorbed by sunlit leaves - de P & F, eqn 20b */
     Ib = par * cw->direct_frac;
-    beam = Ib * (1.0 - p->omega) * (1.0 - exp(-cw->kb * lai));
+    beam = Ib * (1.0 - omega) * (1.0 - exp(-cw->kb * lai));
 
     /* Diffuse irradiance absorbed by sunlit leaves - de P & F, eqn 20c */
     Id = par * cw->diffuse_frac;
@@ -174,7 +175,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     /* Scattered-beam irradiance abs. by sunlit leaves - de P & F, eqn 20d */
     arg1 = (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + cw->kb) * lai));
     arg2 = k_dash_b / (k_dash_b + cw->kb);
-    arg3 = (1.0 - p->omega) * (1.0 - exp(-2.0 * cw->kb * lai)) / 2.0;
+    arg3 = (1.0 - omega) * (1.0 - exp(-2.0 * cw->kb * lai)) / 2.0;
     scattered = Ib * (arg1 * arg2 - arg3);
 
     /* Total irradiance absorbed by the canopy (Ic) - de P & F, eqn 13 */
