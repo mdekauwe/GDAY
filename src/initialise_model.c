@@ -63,7 +63,7 @@ void initialise_params(params *p) {
     p->ageyoung = 0.0;
     p->albedo = 0.123;
     p->alpha_c4 = 0.06;
-    p->alpha_j = 0.26;
+    p->alpha_j = 0.26;        /* quantum yield of electron transport (mol mol-1). This is the intrinsic quantum yield (i.e. per unit APAR). */
     p->b_root = -999.9;
     p->b_topsoil =-999.9;
     p->bdecay = 0.02;
