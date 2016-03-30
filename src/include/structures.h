@@ -323,6 +323,7 @@ typedef struct {
     double root_exu_CUE;
     double leaf_width;
     double leaf_abs;
+    double omega;                           /* leaf scattering coefficient of PAR (reflectance + transmittance) */
 } params;
 
 typedef struct {

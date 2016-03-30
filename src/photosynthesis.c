@@ -31,6 +31,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
 
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
     double A, B, C, arg1, arg2, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
+    double alpha;
     double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
     int    idx, qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
@@ -41,6 +42,9 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     Cs = cw->Cs;
     tleaf = cw->tleaf[idx];
     dleaf = cw->dleaf;
+
+    /* quantum yield */
+    alpha = p->alpha_j / (1.0 - p->omega);
 
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
@@ -54,8 +58,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     /* actual electron transport rate */
     qudratic_error = FALSE;
     large_root = FALSE;
-    J = quad(p->theta, -(p->alpha_j * par + jmax),
-             p->alpha_j * par * jmax, large_root, &qudratic_error);
+    J = quad(p->theta, -(alpha * par + jmax), alpha * par * jmax,
+            large_root, &qudratic_error);
 
     /* RuBP regeneration rate */
     Vj = J / 4.0;

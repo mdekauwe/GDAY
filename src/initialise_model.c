@@ -171,6 +171,7 @@ void initialise_params(params *p) {
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
     p->oi = 210000.0;       /* oxygen partial pressure (umol mol-1) */
+    p->omega = 0.15;        /* leaf scattering coefficient of PAR (reflectance + transmittance) */
     p->passivesoilnz = 1.0;
     p->passivesoilz = 1.0;
     p->passncmax = 0.142857;
