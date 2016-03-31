@@ -174,10 +174,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     if (c->deciduous_model) {
-<<<<<<< HEAD
-=======
 
->>>>>>> sub_daily
         /* Are we reading in last years average growing season? */
         if (float_eq(s->avg_alleaf, 0.0) &&
             float_eq(s->avg_alstem, 0.0) &&
@@ -232,12 +229,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     */
     if (s->prev_sma < -900)
         s->prev_sma = 1.0;
-<<<<<<< HEAD
-    
-=======
 
-
->>>>>>> sub_daily
     /*
         params are defined in per year, needs to be per day. Important this is
         done here as rate constants elsewhere in the code are assumed to be in
@@ -296,10 +288,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     sma(SMA_ADD, hw, s->prev_sma);
                 }
             }
-<<<<<<< HEAD
 
-=======
->>>>>>> sub_daily
             zero_stuff(c, s);
         }
         /* =================== **
@@ -331,17 +320,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
-<<<<<<< HEAD
-            calculate_csoil_flows(c, f, p, s, m->tsoil[project_day], doy);
-            calculate_nsoil_flows(c, f, p, s, m->ndep[project_day], doy);
-
-            /*printf("%f\n", f->gpp*100.);*/
-
-=======
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
-            
->>>>>>> sub_daily
+
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
                  /*Allocation is annually for deciduous "tree" model, but we
@@ -385,12 +366,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-<<<<<<< HEAD
-        
-=======
 
-
->>>>>>> sub_daily
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
