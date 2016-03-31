@@ -553,17 +553,9 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
         c->grazing = TRUE;
     }
 
-
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
     double nsurf, nsoil, active_nc_slope, slow_nc_slope, passive_nc_slope;
-
-    /* need to store grazing flag. Allows us to switch on the annual
-       grazing event, but turn it off for every other day of the year.  */
-    int cntrl_grazing = c->grazing;
-    if (c->grazing == 2 && p->disturbance_doy == doy+1) {
-        c->grazing = TRUE;
-    }
 
     grazer_inputs(c, f, p);
     inputs_from_plant_litter(f, p, &nsurf, &nsoil);
