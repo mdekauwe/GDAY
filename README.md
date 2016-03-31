@@ -2,19 +2,11 @@
 
 GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b). The model can be run at either a daily time step, or sub-daily (i.e. 30-minutes). When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESTRA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. GDAY uses a modified version of the CENTURY model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993). The water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone.
 
-<<<<<<< HEAD
-**NOTE** the sub-daily version of the model is still in the development branch, but will be pulled into the main code asap.
-
 <p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
 
 ## Installation
 To get the code your best route is probably to fork the repository, there is a nice [explanation on github](https://help.github.com/articles/fork-a-repo/).
 
-=======
-<p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
-
-## Installation
->>>>>>> sub_daily
 The model is coded entirely in C without any dependancies. The wrapper files
 for the example scripts and the script used to change parameter options,
 are written in python. The old python version is still [online](https://github.com/mdekauwe/pygday).
@@ -50,10 +42,7 @@ $ gday -p param_file.cfg
 
 When the model is run it expects to find its "model state" (i.e. from a previous spin-up) in the parameter file. This state is automatically written the parameter file after the initial spin-up when the "print_options" flag has been set to "end", rather than "daily".
 
-<<<<<<< HEAD
 
-=======
->>>>>>> sub_daily
 ## Parameter file
 
 GDAY expects a parameter file to be supplied as an argument (-p filename) on the command line. Parameter files follow the standard [.INI](https://en.wikipedia.org/wiki/INI_file) format, although only a simple INI parser has been coded into GDAY.
@@ -93,11 +82,8 @@ The git hash allows you to connect which version of the model code produced whic
 ## Potential gotchas
 - The parameter alpha_j which represents the quantum yield of electron transport (mol mol-1) is the intrinsic quantum yield (i.e. per unit APAR). For the two-leaf version of the model, alpha_j should be divided by (1.0 - omega), where omega is the leaf scattering coefficient of PAR (leaf reflectance and transmittance combined). Currently we are assuming omega = 0.15 (radiation.c), this is currently hardwired.
 
-<<<<<<< HEAD
-=======
 - The deciduous phenology scheme does not currently work with the two-leaf version of the model (can be fixed).
 
->>>>>>> sub_daily
 ## Meteorological driving file
 
 **30-minute file:**
@@ -144,10 +130,6 @@ par | daylight photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-
 par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 
-<<<<<<< HEAD
-
-=======
->>>>>>> sub_daily
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
 
