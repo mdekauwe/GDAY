@@ -677,11 +677,11 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         if (mis_match > 1.0) {
             /* Root=Leaf biomass in out of balance, borrow from the stem to try
                and alleviate this difference and move towards a functional
-               balance. I've set an aribitary max borrowing fraction of 0.5*/
+               balance. */
             spare = 1.0 - f->alleaf - f->albranch - f->alcroot - min_stem_alloc;
             adj = f->alroot * mis_match;
             f->alroot += MAX(p->c_alloc_rmin, MIN(spare, adj));
-            f->alroot = MIN(0.5, f->alroot);
+            f->alroot = MIN(p->c_alloc_rmax, f->alroot);
 
         } else if (mis_match < 1.0) {
             /* Root=Leaf biomass in out of balance, borrow from the root to try
