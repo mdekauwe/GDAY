@@ -346,7 +346,6 @@ typedef struct {
     double *tday;
     double *vpd_am;
     double *vpd_pm;
-    double *vpd_avg;
     double *wind_am;
     double *wind_pm;
     double *par_am;

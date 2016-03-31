@@ -139,7 +139,6 @@ int main(int argc, char **argv)
         free(ma->tmax);
         free(ma->vpd_am);
         free(ma->vpd_pm);
-        free(ma->vpd_avg);
         free(ma->wind_am);
         free(ma->wind_pm);
         free(ma->par_am);
@@ -733,8 +732,8 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
         m->tair = ma->tair[c->day_idx];
         m->tair_am = ma->tam[c->day_idx];
         m->tair_pm = ma->tpm[c->day_idx];
-        m->par = ma->par[c->day_idx];
-        m->sw_rad = ma->par[c->day_idx] * PAR_2_SW;
+        m->par = ma->par_am[c->day_idx] + ma->par_pm[c->day_idx];
+        m->sw_rad = m->par * PAR_2_SW;
         m->sw_rad_am = ma->par_am[c->day_idx] * PAR_2_SW;
         m->sw_rad_pm = ma->par_pm[c->day_idx] * PAR_2_SW;
         m->rain = ma->rain[c->day_idx];

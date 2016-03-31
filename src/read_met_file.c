@@ -6,7 +6,7 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
     char   line[STRING_LENGTH];
     int    file_len = 0;
     int    i = 0;
-    int    nvars = 22;
+    int    nvars = 20;
     int    skipped_lines = 0;
     double current_yr;
 
@@ -87,11 +87,6 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
-    if ((ma->vpd_avg = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for vpd_avg array\n");
-		exit(EXIT_FAILURE);
-    }
-
     if ((ma->co2 = (double *)calloc(c->num_days, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for co2 array\n");
 		exit(EXIT_FAILURE);
@@ -154,16 +149,15 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
-                          %lf,%lf,%lf,\
-                          %lf,%lf", \
+                          %lf,%lf,%lf", \
                           &(ma->year[i]), &(ma->prjday[i]), \
                           &(ma->tair[i]), &(ma->rain[i]), &(ma->tsoil[i]), \
                           &(ma->tam[i]), &(ma->tpm[i]), &(ma->tmin[i]), \
                           &(ma->tmax[i]), &(ma->tday[i]), &(ma->vpd_am[i]), \
-                          &(ma->vpd_pm[i]), &(ma->vpd_avg[i]), &(ma->co2[i]), \
-                          &(ma->ndep[i]), &(ma->wind[i]), &(ma->press[i]), \
-                          &(ma->wind_am[i]), &(ma->wind_pm[i]), &(ma->par[i]), \
-                          &(ma->par_am[i]), &(ma->par_pm[i])) != nvars) {
+                          &(ma->vpd_pm[i]), &(ma->co2[i]), &(ma->ndep[i]), \
+                          &(ma->wind[i]), &(ma->press[i]), &(ma->wind_am[i]), \
+                          &(ma->wind_pm[i]), &(ma->par_am[i]), \
+                          &(ma->par_pm[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);

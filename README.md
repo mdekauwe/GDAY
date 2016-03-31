@@ -119,14 +119,12 @@ tmax | minimum (day) air temperature | deg C
 tday | day average air temperature (24 hrs) | deg C
 vpd_am | morning vapour pressure deficit | kPa
 vpd_pm | afternoon vapour pressure deficit | kPa
-vpd | daylight average vapour pressure deficit | kPa
 co2 | CO<sub>2</sub> concentration | ppm
 ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
 wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
-atmos_press | atmospheric pressure | kPa
+press | atmospheric pressure | kPa
 wind_am | morning wind speed | m<sup>-2</sup> s<sup>-1</sup>
 wind_pm | afternoon wind speed | m<sup>-2</sup> s<sup>-1</sup>
-par | daylight photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
 
