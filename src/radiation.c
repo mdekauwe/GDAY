@@ -15,29 +15,30 @@ void get_diffuse_frac(canopy_wk *cw, int doy, double sw_rad) {
 void spitters(canopy_wk *cw, int doy, double sw_rad) {
 
     /*
-    Spitters algorithm to estimate the diffuse component from the measured
-    irradiance.
+        Spitters algorithm to estimate the diffuse component from the measured
+        irradiance.
 
-    Eqn 20a-d.
+        Eqn 20a-d.
 
-    Parameters:
-    ----------
-    doy : int
-        day of year
-    sw_rad : double
-        total incident radiation [J m-2 s-1]
+        Parameters:
+        ----------
+        doy : int
+            day of year
+        sw_rad : double
+            total incident radiation [J m-2 s-1]
 
-    Returns:
-    -------
-    diffuse : double
-        diffuse component of incoming radiation (returned in cw structure)
+        Returns:
+        -------
+        diffuse : double
+            diffuse component of incoming radiation (returned in cw structure)
 
-    References:
-    ----------
-    * Spitters, C. J. T., Toussaint, H. A. J. M. and Goudriaan, J. (1986)
-      Separating the diffuse and direct component of global radiation and its
-      implications for modeling canopy photosynthesis. Part I. Components of
-      incoming radiation. Agricultural Forest Meteorol., 38:217-229.
+        References:
+        ----------
+        * Spitters, C. J. T., Toussaint, H. A. J. M. and Goudriaan, J. (1986)
+          Separating the diffuse and direct component of global radiation and
+          its implications for modeling canopy photosynthesis. Part I.
+          Components of incoming radiation. Agricultural Forest Meteorol.,
+          38:217-229.
     */
     double So, tau, R, K, diffuse_frac, cos_zen_sq;
 
@@ -127,39 +128,6 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     /* beam extinction coefficient for black leaves */
     cw->kb = Gross / cw->cos_zenith;
-
-    /* following Kowalczyk 2006, turns out a lot lower, must be an error
-    double q1, q2, kd, xk_15, xk_45, xk_75, rho_ch, rho_tb, rho_td, Sb, Sd;
-
-    xk_15 = psi1 / cos(DEG2RAD(15.0)) + psi2;
-    xk_45 = psi1 / cos(DEG2RAD(45.0)) + psi2;
-    xk_75 = psi1 / cos(DEG2RAD(75.0)) + psi2;
-    kd = (-1.0 / lai) * log(0.308 * exp(-xk_15 * lai) + \
-                            0.514 * exp(-xk_45 * lai) + \
-                            0.178 * exp(-xk_75 * lai));
-
-    k_dash_b = cw->kb * sqrt(1.0 - 0.1);
-    k_dash_d = kd * sqrt(1.0 - 0.1);
-
-    rho_ch = (1.0 - sqrt(1.0 - 0.2)) / (1.0 + sqrt(1.0 - 0.2));
-    rho_cb = 2.0 * cw->kb / (cw->kb + kd) * rho_ch;
-    rho_cd = 2.0 * \
-            ((0.308 * rho_cb * sin(DEG2RAD(15.0)) * cos(DEG2RAD(15.0))) + \
-             (0.514 * rho_cb * sin(DEG2RAD(45.0)) * cos(DEG2RAD(45.0))) + \
-             (0.178 * rho_cb * sin(DEG2RAD(75.0)) * cos(DEG2RAD(75.0))));
-    rho_tb = rho_cb + (0.1 - rho_cb) * exp(-2.0 * cw->kb * lai);
-    rho_td = rho_cd + (0.1 - rho_cd) * exp(-2.0 * kd * lai);
-
-    Sd = par * cw->diffuse_frac;
-    Sb = par * cw->direct_frac;
-    q2 = (1.0 - rho_td) * k_dash_d * exp(-kd * lai) * \
-         (Sd * cw->diffuse_frac) + \
-         ((1.0 - rho_tb) * k_dash_b * exp(-k_dash_b * lai) - \
-         (1 - 0.1) * cw->kb * exp(-cw->kb * lai)) * (Sb * cw->direct_frac);
-    q1 = q2 + cw->kb * (1 - 0.1) * (Sb * cw->direct_frac);
-    cw->apar_leaf[SUNLIT] = q1;
-    cw->apar_leaf[SHADED] = q2;
-    */
 
     /* Direct-beam irradiance absorbed by sunlit leaves - de P & F, eqn 20b */
     Ib = par * cw->direct_frac;
