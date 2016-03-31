@@ -23,6 +23,7 @@ void initialise_control(control *c) {
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
+    c->fixed_lai = FALSE;           /* Fix LAI */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
@@ -37,7 +38,6 @@ void initialise_control(control *c) {
     c->respiration_model = FIXED;   /* Plant respiration ... Fixed, TEMPERATURE or BIOMASS */
     c->strfloat = 0;                /* Structural pool input N:C varies=1, fixed=0 */
     c->sw_stress_model = 1;         /* JULES type linear stress func, or Landsberg and Waring non-linear func */
-    c->trans_model = 0;             /* 0=trans from WUE, 1=Penman-Monteith, 2=Priestley-Taylor */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
@@ -47,6 +47,8 @@ void initialise_control(control *c) {
     c->num_days = 0;                /* Number of days in a year: 365/366 */
     c->PRINT_GIT = FALSE;           /* print the git hash to the cmd line and exit? Called from cmd line parsar */
 
+    c->sub_daily = FALSE;           /* Run at daily or 30 minute timestep */
+    c->num_hlf_hrs = 48;
     return;
 }
 
@@ -92,10 +94,10 @@ void initialise_params(params *p) {
     p->displace_ratio = 0.78;
     p->disturbance_doy = 1.0;
     p->dz0v_dh = 0.075;
-    p->eac = 79430.0;
+    p->eac = 79430.0;   /* Temp. response of Kc (J mol-1) */
     p->eag = 37830.0;
     p->eaj = 43790.0;
-    p->eao = 36380.0;
+    p->eao = 36380.0;   /* Temp. response of Ko (J mol-1) */
     p->eav = 51560.0;
     p->edj = 200000.0;
     p->faecescn = 25.0;
@@ -103,6 +105,7 @@ void initialise_params(params *p) {
     p->fdecay = 0.59988;
     p->fdecaydry = 0.59988;
     p->fhw = 0.8;
+    p->fix_lai = -999.9;
     p->finesoil = 0.51;
     p->fracfaeces = 0.3;
     p->fracteaten = 0.5;
@@ -122,7 +125,7 @@ void initialise_params(params *p) {
     p->jmaxnb = 0.0;
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
-    p->kc25 = 404.9;
+    p->kc25 = 404.9;    /* MM coefft of Rubisco for CO2 (umol mol-1) */
     p->kdec1 = 3.965571;
     p->kdec2 = 14.61;
     p->kdec3 = 4.904786;
@@ -131,12 +134,13 @@ void initialise_params(params *p) {
     p->kdec6 = 0.198279;
     p->kdec7 = 0.006783;
     p->kext = 0.5;
-    p->knl = 0.01;
-    p->ko25 = 278400.0;
+    p->kn = 0.3;         /* extinction coefficient of nitrogen in the canopy, assumed to be 0.3 by defaul which comes half from Belinda's head and is supported by fig 10 in Lloyd et al. Biogeosciences, 7, 1833–1859, 2010 */
+    p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;
     p->kr = 0.5;
     p->lai_closed = 0.5;
     p->latitude = 35.9;
+    p->leaf_width = 0.01;
     p->leafsap0 = 8000.0;
     p->leafsap1 = 3060.0;
     p->ligfaeces = 0.25;
@@ -166,7 +170,7 @@ void initialise_params(params *p) {
     p->ntheta_root = 3.0;
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
-    p->oi = 205000.0;
+    p->oi = 210000.0;       /* oxygen partial pressure (umol mol-1) */
     p->passivesoilnz = 1.0;
     p->passivesoilz = 1.0;
     p->passncmax = 0.142857;
@@ -198,8 +202,12 @@ void initialise_params(params *p) {
     p->structrat = 0.0;
     p->targ_sens = 0.5;
     p->theta = 0.7;
-    p->theta_sat_root = -999.9;
-    p->theta_sat_topsoil = -999.9;
+    p->theta_fc_root = -999.9;
+    p->theta_fc_topsoil = -999.9;
+    p->theta_sp_root = -999.9;
+    p->theta_sp_topsoil = -999.9;
+    p->theta_wp_root = -999.9;
+    p->theta_wp_topsoil = -999.9;
     p->topsoil_depth = 350.0;
     strcpy(p->topsoil_type, "clay_loam");
     p->vcmax = -999.9;
@@ -217,10 +225,13 @@ void initialise_params(params *p) {
     p->fmroot = 0.0;
     p->fmfaeces = 0.0;
     p->growing_seas_len = 0;
+    p->lad = 0.0; /* spherical leaf angle distribution */
 
     for (i = 0; i < 7; i++) {
         p->decayrate[i] = 0.0;
     }
+    /* absorptance of solar radiation (0-1), typically 0.4-0.6 */
+    p->leaf_abs = 0.5;
 }
 
 
@@ -256,8 +267,9 @@ void initialise_fluxes(fluxes *f) {
     f->et = 0.0;
     f->soil_evap = 0.0;
     f->transpiration = 0.0;
-    f->erain = 0.0;
     f->interception = 0.0;
+    f->throughfall = 0.0;
+    f->canopy_evap = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
     f->ga_mol_m2_sec = 0.0;
@@ -402,8 +414,6 @@ void initialise_state(state *s) {
     s->crootn = 0.0;
     s->cstore = 0.01;
     s->inorgn = 0.0274523714275;
-    s->max_lai = -999.9;
-    s->max_shoot = -999.9;
     s->metabsoil = 0.135656771805;
     s->metabsoiln = 0.00542627087221;
     s->metabsurf = 0.0336324759951;
@@ -431,6 +441,7 @@ void initialise_state(state *s) {
     s->structsoiln = 0.00611418800245;
     s->structsurf = 7.10566198821;
     s->structsurfn = 0.0473710799214;
+    s->canopy_store = 0.0;
 
     s->wtfac_root = 1.0;
     return;

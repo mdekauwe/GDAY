@@ -60,7 +60,7 @@ void write_output_header(control *c, FILE **fp) {
     */
 
     /* water */
-    fprintf(*fp, "et,transpiration,soil_evap,interception,runoff,");
+    fprintf(*fp, "et,transpiration,soil_evap,canopy_evap,runoff,");
     fprintf(*fp, "gs_mol_m2_sec,ga_mol_m2_sec,");
 
     /* litter */
@@ -89,8 +89,19 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "co2_rel_from_slow_pool,");
     fprintf(*fp, "co2_rel_from_passive_pool,");
 
+    /* extra priming stuff */
+    fprintf(*fp, "root_exc,");
+    fprintf(*fp, "root_exn,");
+    fprintf(*fp, "co2_released_exud,");
+    fprintf(*fp, "factive,");
+    fprintf(*fp, "rtslow,");
+    fprintf(*fp, "rexc_cue,");
+
+
+
     /* Misc */
     fprintf(*fp, "leafretransn\n");
+
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
@@ -124,6 +135,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->shoot,s->lai,s->branch,s->stem,s->root,s->croot,
                     s->shootn,s->branchn,s->stemn);
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
                     s->rootn,s->crootn,s->cstore,s->nstore);
 
@@ -132,17 +144,16 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
                     s->soilc,s->soiln,s->inorgn,s->litterc,s->littercag,
                     s->littercbg);
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->litternag,s->litternbg,s->activesoiln,s->slowsoiln,
-                    s->passivesoiln,s->activesoiln,s->slowsoiln,
+                    s->litternag,s->litternbg,s->activesoil,s->slowsoil,
+                    s->passivesoil,s->activesoiln,s->slowsoiln,
                     s->passivesoiln);
-
     /*
     ** FLUXES
     */
 
     /* water */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
-                    f->et,f->transpiration,f->soil_evap,f->interception);
+                    f->et,f->transpiration,f->soil_evap,f->canopy_evap);
     fprintf(c->ofp, "%.10f,%.10f,%.10f,",
                     f->runoff,f->gs_mol_m2_sec,f->ga_mol_m2_sec);
 
@@ -186,7 +197,13 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,", f->co2_rel_from_slow_pool);
     fprintf(c->ofp, "%.10f,", f->co2_rel_from_passive_pool);
 
-
+    /* extra priming stuff */
+    fprintf(c->ofp, "%.10f,", f->root_exc);
+    fprintf(c->ofp, "%.10f,", f->root_exn);
+    fprintf(c->ofp, "%.10f,", f->co2_released_exud);
+    fprintf(c->ofp, "%.10f,", f->factive);
+    fprintf(c->ofp, "%.10f,", f->rtslow);
+    fprintf(c->ofp, "%.10f,", f->rexc_cue);
 
     /* Misc */
     fprintf(c->ofp, "%.10f\n", f->leafretransn);
@@ -262,7 +279,7 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     fwrite(&(f->et), sizeof(double), 1, c->ofp);
     fwrite(&(f->transpiration), sizeof(double), 1, c->ofp);
     fwrite(&(f->soil_evap), sizeof(double), 1, c->ofp);
-    fwrite(&(f->interception), sizeof(double), 1, c->ofp);
+    fwrite(&(f->canopy_evap), sizeof(double), 1, c->ofp);
     fwrite(&(f->runoff), sizeof(double), 1, c->ofp);
     fwrite(&(f->gs_mol_m2_sec), sizeof(double), 1, c->ofp);
     fwrite(&(f->ga_mol_m2_sec), sizeof(double), 1, c->ofp);

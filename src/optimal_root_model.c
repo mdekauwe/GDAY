@@ -18,7 +18,7 @@
 *   17.02.2015
 *
 * =========================================================================== */
-#include "mate.h"
+#include "photosynthesis.h"
 
 #include "optimal_root_model.h"
 

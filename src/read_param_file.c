@@ -128,7 +128,20 @@ int handler(char *section, char *name, char *value, control *c,
     /*
     ** CONTROL
     */
-    if (MATCH("control", "alloc_model")) {
+    if (MATCH("control", "adjust_rtslow")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->adjust_rtslow = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->adjust_rtslow = TRUE;
+        else {
+            fprintf(stderr, "Unknown adjust_rtslow option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "alloc_model")) {
         if (strcmp(temp, "FIXED") == 0||
             strcmp(temp, "fixed") == 0)
             c->alloc_model = FIXED;
@@ -179,6 +192,32 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown deciduous option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "disturbance")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->disturbance = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->disturbance = TRUE;
+        else {
+            fprintf(stderr, "Unknown disturbance option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "exudation")) {
+            if (strcmp(temp, "False") == 0 ||
+                strcmp(temp, "FALSE") == 0 ||
+                strcmp(temp, "false") == 0)
+                c->exudation = FALSE;
+            else if (strcmp(temp, "True") == 0 ||
+                strcmp(temp, "TRUE") == 0 ||
+                strcmp(temp, "true") == 0)
+                c->exudation = TRUE;
+            else {
+                fprintf(stderr, "Unknown exudation option: %s\n", temp);
+                exit(EXIT_FAILURE);
+            }
     } else if (MATCH("control", "fixed_stem_nc")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -190,6 +229,19 @@ int handler(char *section, char *name, char *value, control *c,
             c->fixed_stem_nc = TRUE;
         else {
             fprintf(stderr, "Unknown fixed_stem_nc option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "fixed_lai")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->fixed_lai = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->fixed_lai = TRUE;
+        else {
+            fprintf(stderr, "Unknown fixed_lai option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "fixleafnc")) {
@@ -213,6 +265,19 @@ int handler(char *section, char *name, char *value, control *c,
             c->gs_model = MEDLYN;
         else {
             fprintf(stderr, "Unknown gs model: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "hurricane")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->hurricane = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->hurricane = TRUE;
+        else {
+            fprintf(stderr, "Unknown hurricane option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "model_optroot")) {
@@ -310,6 +375,19 @@ int handler(char *section, char *name, char *value, control *c,
              fprintf(stderr, "Unknown respiration model: %s\n", temp);
              exit(EXIT_FAILURE);
          }
+    } else if (MATCH("control", "sub_daily")) {
+            if (strcmp(temp, "False") == 0 ||
+                strcmp(temp, "FALSE") == 0 ||
+                strcmp(temp, "false") == 0)
+                c->sub_daily = FALSE;
+            else if (strcmp(temp, "True") == 0 ||
+                strcmp(temp, "TRUE") == 0 ||
+                strcmp(temp, "true") == 0)
+                c->sub_daily = TRUE;
+            else {
+                fprintf(stderr, "Unknown sub_daily option: %s\n", temp);
+                exit(EXIT_FAILURE);
+            }
     } else if (MATCH("control", "strfloat")) {
         c->strfloat = atoi(value);
         /*if (strcmp(temp, "False") == 0 ||
@@ -326,8 +404,6 @@ int handler(char *section, char *name, char *value, control *c,
         }*/
     } else if (MATCH("control", "sw_stress_model")) {
         c->sw_stress_model = atoi(value);
-    } else if (MATCH("control", "trans_model")) {
-        c->trans_model = atoi(value);
     } else if (MATCH("control", "use_eff_nc")) {
         c->use_eff_nc = atoi(value);
     } else if (MATCH("control", "water_stress")) {
@@ -538,6 +614,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->fhw = atof(value);
     } else if (MATCH("params", "finesoil")) {
         p->finesoil = atof(value);
+    } else if (MATCH("params", "fix_lai")) {
+        p->fix_lai = atof(value);
     } else if (MATCH("params", "fracfaeces")) {
         p->fracfaeces = atof(value);
     } else if (MATCH("params", "fracteaten")) {
@@ -592,14 +670,16 @@ int handler(char *section, char *name, char *value, control *c,
         p->kdec6 = atof(value);
     } else if (MATCH("params", "kdec7")) {
         p->kdec7 = atof(value);
-    } else if (MATCH("params", "knl")) {
-        p->knl = atof(value);
     } else if (MATCH("params", "ko25")) {
         p->ko25 = atof(value);
     } else if (MATCH("params", "kq10")) {
         p->kq10 = atof(value);
     } else if (MATCH("params", "kr")) {
         p->kr = atof(value);
+    } else if (MATCH("params", "kn")) {
+        p->kn = atof(value);
+    } else if (MATCH("params", "lad")) {
+        p->lad = atof(value);
     } else if (MATCH("params", "lai_closed")) {
         p->lai_closed = atof(value);
     } else if (MATCH("params", "latitude")) {
@@ -616,6 +696,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->ligshoot = atof(value);
     } else if (MATCH("params", "liteffnc")) {
         p->liteffnc = atof(value);
+    } else if (MATCH("params", "longitude")) {
+        p->longitude = atof(value);
     } else if (MATCH("params", "max_intercep_lai")) {
         p->max_intercep_lai = atof(value);
     } else if (MATCH("params", "measurement_temp")) {
@@ -680,6 +762,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->psi_sat_root = atof(value);
     } else if (MATCH("params", "psi_sat_topsoil")) {
         p->psi_sat_topsoil = atof(value);
+    } else if (MATCH("params", "prime_y")) {
+        p->prime_y = atof(value);
+    } else if (MATCH("params", "prime_z")) {
+        p->prime_z = atof(value);
     } else if (MATCH("params", "qs")) {
         p->qs = atof(value);
     } else if (MATCH("params", "r0")) {
@@ -700,6 +786,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->rooting_depth = atof(value);
     } else if (MATCH("params", "rootsoil_type")) {
         strcpy(p->rootsoil_type, value);
+    } else if (MATCH("params", "root_exu_CUE")) {
+        p->root_exu_CUE = atof(value);
     } else if (MATCH("params", "rretrans")) {
         p->rretrans = atof(value);
     } else if (MATCH("params", "sapturnover")) {
@@ -724,10 +812,18 @@ int handler(char *section, char *name, char *value, control *c,
         p->targ_sens = atof(value);
     } else if (MATCH("params", "theta")) {
         p->theta = atof(value);
-    } else if (MATCH("params", "theta_sat_root")) {
-        p->theta_sat_root = atof(value);
-    } else if (MATCH("params", "theta_sat_topsoil")) {
-        p->theta_sat_topsoil = atof(value);
+    } else if (MATCH("params", "theta_fc_root")) {
+        p->theta_fc_root = atof(value);
+    } else if (MATCH("params", "theta_fc_topsoil")) {
+        p->theta_fc_topsoil = atof(value);
+    } else if (MATCH("params", "theta_sp_root")) {
+        p->theta_sp_root = atof(value);
+    } else if (MATCH("params", "theta_sp_topsoil")) {
+        p->theta_sp_topsoil = atof(value);
+    } else if (MATCH("params", "theta_wp_root")) {
+        p->theta_wp_root = atof(value);
+    } else if (MATCH("params", "theta_wp_topsoil")) {
+        p->theta_wp_topsoil = atof(value);
     } else if (MATCH("params", "topsoil_depth")) {
         p->topsoil_depth = atof(value);
     } else if (MATCH("params", "topsoil_type")) {

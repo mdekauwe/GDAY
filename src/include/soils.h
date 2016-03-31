@@ -46,4 +46,10 @@ void   calculate_npools(control *c, fluxes *, params *, state *, double,
 double nc_limit(fluxes *, double, double, double, double);
 double nc_flux(double, double, double);
 void   precision_control_soil_n(fluxes *, state *);
+
+/* priming/exudation */
+void calc_root_exudation_uptake_of_C(fluxes *, params *, state *);
+void calc_root_exudation_uptake_of_N(fluxes *, state *);
+void adjust_residence_time_of_slow_pool(fluxes *, params *);
+
 #endif /* SOILS_H */

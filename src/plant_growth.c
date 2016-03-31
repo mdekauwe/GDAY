@@ -16,28 +16,31 @@
 *
 * =========================================================================== */
 #include "plant_growth.h"
+#include "water_balance.h"
 
 
 
 
-void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
-                     int project_day, double day_length, int doy, double fdecay,
-                     double rdecay)
+void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
+                     met *m, params *p, state *s, double day_length, int doy,
+                     double fdecay, double rdecay)
 {
-    double previous_topsoil_store,
+    double previous_topsoil_store, dummy,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
-
-    /* calculate GPP, NPP and plant respiration */
-    carbon_production(c, f, m, p, s, project_day, day_length);
-
-    /* calculate water balance. We also need to store the previous days
-       soil water store */
+    /* Store the previous days soil water store */
     previous_topsoil_store = s->pawater_topsoil;
     previous_rootzone_store = s->pawater_root;
 
-    calculate_water_balance(c, f, m, p, s, project_day, day_length);
+    if (c->sub_daily) {
+        /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
+        canopy(cw, c, f, ma, m, p, s);
+    } else {
+        /* calculate daily GPP/NPP, respiration and update water balance */
+        carbon_daily_production(c, f, m, p, s, day_length);
+        calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy, dummy);
+    }
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
        foliage in young stand */
@@ -77,30 +80,77 @@ void calc_day_growth(control *c, fluxes *f, met *m, params *p, state *s,
     recalc_wb = nitrogen_allocation(c, f, p, s, ncbnew, nccnew, ncwimm, ncwnew,
                                     fdecay, rdecay, doy);
 
+    if (c->exudation) {
+        calc_root_exudation_release(f, s);
+    }
+
     /* If we didn't have enough N available to satisfy wood demand, NPP
        is down-regulated and thus so is GPP. We also need to recalculate the
        water balance given the lower GPP. */
     if (recalc_wb) {
         s->pawater_topsoil = previous_topsoil_store;
         s->pawater_root = previous_rootzone_store;
-        calculate_water_balance(c, f, m, p, s, project_day, day_length);
+
+        if (c->sub_daily) {
+            /* reduce transpiration to match cut back GPP
+                -there isn't an obvious way to make this work at the 30 min
+                 timestep, so invert T from WUE assumption and use that
+                 to recalculate the end day water balance
+            */
+            f->transpiration = f->gpp_gCm2 / f->wue;
+            update_water_storage_recalwb(c, f, p, s, m);
+
+        } else {
+            calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy,
+                                    dummy);
+        }
+
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
-
     precision_control(f, s);
 
     return;
 }
 
+void calc_root_exudation_release(fluxes *f, state *s) {
+    /* Root exudation modelled to occur: with (1) fine root growth or (2)
+       as a result of excess C. A fraction of fine root growth is allocated
+       to stimulate exudation. This fraction increases with N stress. */
+    double leaf_CN, frac_to_rexc, presc_leaf_CN, fine_root_NC;
 
-void carbon_production(control *c, fluxes *f, met *m, params *p, state *s,
-                       int project_day, double daylen) {
-    /* Calculate GPP, NPP and plant respiration
+    if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
+        /* nothing happens during leaf off period */
+        leaf_CN = 0.0;
+        frac_to_rexc = 0.0;
+    } else {
+        leaf_CN = 1.0 / s->shootnc;
+        presc_leaf_CN = 30.0; /* make a parameter */
+
+        /* fraction varies between 0 and 50 % as a function of leaf CN */
+        frac_to_rexc = MAX(0.0, MIN(0.5, (leaf_CN / presc_leaf_CN) - 1.0));
+    }
+    /*printf("%f %f\n", s->shootnc, 1./30.);*/
+    f->root_exc = frac_to_rexc * f->cproot;
+    if (float_eq(f->cproot, 0.0)) {
+        f->root_exn = 0.0;
+    } else {
+        fine_root_NC = f->nproot / f->cproot;
+        f->root_exn = f->root_exc * fine_root_NC;
+    }
+
+    /* Need to exudation C & N fluxes from fine root growth fluxes so that
+       things balance. */
+    f->cproot -= f->root_exc;
+    f->nproot -= f->root_exn;
+
+    return;
+}
+void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
+                             double daylen) {
+    /* Calculate GPP, NPP and plant respiration at the daily timestep
 
     Parameters:
     -----------
-    project_day : integer
-        simulation day
     daylen : float
         daytime length (hrs)
 
@@ -149,15 +199,20 @@ void carbon_production(control *c, fluxes *f, met *m, params *p, state *s,
     }
     /* Estimate photosynthesis */
     if (c->assim_model == BEWDY){
-        fprintf(stderr,"Not implemented, use MATE");
         exit(EXIT_FAILURE);
     } else if (c->assim_model == MATE) {
         if (c->ps_pathway == C3) {
+<<<<<<< HEAD
             mate_C3_photosynthesis(c, f, m, p, s, project_day, daylen,
                                    ncontent);
         } else {
             mate_C4_photosynthesis(c, f, m, p, s, project_day, daylen,
                                    ncontent);
+=======
+            mate_C3_photosynthesis(c, f, m, p, s, daylen, ncontent);
+        } else {
+            mate_C4_photosynthesis(c, f, m, p, s, daylen, ncontent);
+>>>>>>> sub_daily
         }
     } else {
         fprintf(stderr,"Unknown photosynthesis model'");
@@ -271,7 +326,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
 
     int    recalc_wb;
     double nsupply, rtot, ntot, arg, lai_inc = 0.0, conv;
-    double depth_guess = 1.0;
+    double depth_guess = 1.0, total_req;
 
     /* default is we don't need to recalculate the water balance,
        however if we cut back on NPP due to available N below then we do
@@ -337,14 +392,15 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
            woody tissue) */
         f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
         f->npbranch = f->npp * f->albranch * ncbnew;
-
         f->npcroot = f->npp * f->alcroot * nccnew;
 
         /* If we have allocated more N than we have available
-            - cut back N prodn */
+            - cut back C prodn */
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
-        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
+
+        if (arg > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
+
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
@@ -358,7 +414,8 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                            (f->deadleaves + f->ceaten) * s->lai / s->shoot);
             }
 
-            f->npp *= ntot / (f->npstemimm + f->npstemmob + f->npbranch);
+            f->npp *= ntot / (f->npstemimm + f->npstemmob + \
+                              f->npbranch + f->npcroot);
 
             /* need to adjust growth values accordingly as well */
             f->cpleaf = f->npp * f->alleaf;
@@ -372,6 +429,9 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
             f->npcroot = f->npp * f->alcroot * nccnew;
 
+            /* Save WUE before cut back */
+            f->wue = f->gpp_gCm2 / f->transpiration;
+
             /* Also need to recalculate GPP and thus Ra and return a flag
                so that we know to recalculate the water balance. */
             f->gpp = f->npp / p->cue;
@@ -379,6 +439,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->gpp_gCm2 = f->gpp / conv;
             f->gpp_am = f->gpp_gCm2 / 2.0;
             f->gpp_pm = f->gpp_gCm2 / 2.0;
+
 
             /* New respiration flux */
             f->auto_resp =  f->gpp - f->npp;
@@ -391,7 +452,8 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                 } else if (s->leaf_out_days[doy] > 0.0) {
                     s->lai -= lai_inc;
                     s->lai += (f->cpleaf *
-                               (p->sla * M2_AS_HA / (KG_AS_TONNES * p->cfracts)) -
+                               (p->sla * M2_AS_HA / \
+                               (KG_AS_TONNES * p->cfracts)) -
                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
                 } else {
                     s->lai = 0.0;
@@ -403,11 +465,15 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
                 } else {
                     s->lai -= lai_inc;
                     s->lai += (f->cpleaf *
-                               (p->sla * M2_AS_HA / (KG_AS_TONNES * p->cfracts)) -
+                               (p->sla * M2_AS_HA / \
+                               (KG_AS_TONNES * p->cfracts)) -
                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
                 }
             }
+
+
         }
+
         ntot -= f->npbranch + f->npstemimm + f->npstemmob + f->npcroot;
         ntot = MAX(0.0, ntot);
 
@@ -447,7 +513,6 @@ double calculate_growth_stress_limitation(params *p, state *s) {
        that have a flexible bucket depth. Minimum constraint is limited to
        0.1, following Zaehle et al. 2010 (supp), eqn 18. */
     current_limitation = MAX(0.1, MIN(nlim, s->wtfac_root));
-
     return (current_limitation);
 }
 
@@ -480,7 +545,10 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     double min_leaf_alloc, adj, arg1, arg2, arg3, arg4, leaf2sa_target,
            sap_cross_sec_area, lr_max, stress, mis_match, orig_af, orig_ar,
            reduction, target_branch, coarse_root_target, left_over,
-           total_alloc, leaf2sap;
+           total_alloc, leaf2sap, spare;
+
+    /* this is obviously arbitary */
+    double min_stem_alloc = 0.01;
 
     if (c->alloc_model == FIXED){
         f->alleaf = (p->c_alloc_fmax + nitfac *
@@ -549,11 +617,15 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         arg1 = s->sapwood * TONNES_AS_KG * M2_AS_HA;
         arg2 = s->canht * p->density * p->cfracts;
         sap_cross_sec_area = arg1 / arg2;
+<<<<<<< HEAD
 
         if (c->deciduous_model)
             leaf2sap = s->lai / sap_cross_sec_area;
         else
             leaf2sap = s->lai / sap_cross_sec_area;
+=======
+        leaf2sap = s->lai / sap_cross_sec_area;
+>>>>>>> sub_daily
 
         /* Allocation to leaves dependant on height. Modification of pipe
            theory, leaf-to-sapwood ratio is not constant above a certain
@@ -575,6 +647,18 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         }
         f->alleaf = alloc_goal_seek(leaf2sap, leaf2sa_target, p->c_alloc_fmax,
                                     p->targ_sens);
+
+        /* Allocation to branch dependent on relationship between the stem
+           and branch */
+        target_branch = p->branch0 * pow(s->stem, p->branch1);
+        f->albranch = alloc_goal_seek(s->branch, target_branch, p->c_alloc_bmax,
+                                      p->targ_sens);
+
+        coarse_root_target = p->croot0 * pow(s->stem, p->croot1);
+        f->alcroot = alloc_goal_seek(s->croot, coarse_root_target,
+                                      p->c_alloc_cmax, p->targ_sens);
+
+
 
         /* figure out root allocation given available water & nutrients
            hyperbola shape to allocation, this is adjusted below as we aim
@@ -607,12 +691,18 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
 
 
         if (mis_match > 1.0) {
-            /* reduce leaf allocation fraction */
-            orig_af = f->alleaf;
-            adj = f->alleaf / mis_match;
-            f->alleaf = MAX(p->c_alloc_fmin, MIN(p->c_alloc_fmax, adj));
-            f->alroot += (MAX(p->c_alloc_rmin, orig_af - f->alleaf));
+            /* Root=Leaf biomass in out of balance, borrow from the stem to try
+               and alleviate this difference and move towards a functional
+               balance. */
+            spare = 1.0 - f->alleaf - f->albranch - f->alcroot - min_stem_alloc;
+            adj = f->alroot * mis_match;
+            f->alroot += MAX(p->c_alloc_rmin, MIN(spare, adj));
+            f->alroot = MIN(p->c_alloc_rmax, f->alroot);
+
         } else if (mis_match < 1.0) {
+            /* Root=Leaf biomass in out of balance, borrow from the root to try
+               and alleviate this difference and move towards a functional
+               balance */
             /* reduce root allocation */
             orig_ar = f->alroot;
             adj = f->alroot * mis_match;
@@ -621,18 +711,9 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
             f->alleaf += MAX(p->c_alloc_fmax, reduction);
         }
 
-        /* Allocation to branch dependent on relationship between the stem
-           and branch */
-        target_branch = p->branch0 * pow(s->stem, p->branch1);
-        f->albranch = alloc_goal_seek(s->branch, target_branch, p->c_alloc_bmax,
-                                      p->targ_sens);
-
-        coarse_root_target = p->croot0 * pow(s->stem, p->croot1);
-        f->alcroot = alloc_goal_seek(s->croot, coarse_root_target,
-                                      p->c_alloc_cmax, p->targ_sens);
 
         /* Ensure we don't end up with alloc fractions that make no
-           physical sense. In such a situation assume a bl */
+           physical sense. */
         left_over = 1.0 - f->alroot - f->alleaf;
         if (f->albranch + f->alcroot > left_over) {
             if (float_eq(s->croot, 0.0)) {
@@ -664,6 +745,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
+    /*printf("%f %f %f %f %f\n", f->alleaf, f->albranch + f->alstem, f->alroot,  f->alcroot, s->canht);*/
 
     /* Total allocation should be one, if not print warning */
     total_alloc = f->alroot + f->alleaf + f->albranch + f->alstem + f->alcroot;
@@ -705,9 +787,6 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         f->cpstem = f->wrate * days_left;
         f->cproot = s->c_to_alloc_root * 1.0 / c->num_days;
         f->cpcroot = f->crate * days_left;
-
-
-
     } else {
         f->cpleaf = f->npp * f->alleaf;
         f->cproot = f->npp * f->alroot;
@@ -745,6 +824,10 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         }
     }
 
+    if (c->fixed_lai) {
+        s->lai = p->fix_lai;
+    }
+
     return;
 }
 
@@ -768,7 +851,6 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     ** Carbon pools
     */
     s->shoot += f->cpleaf - f->deadleaves - f->ceaten;
-
     s->root += f->cproot - f->deadroots;
     s->croot += f->cpcroot - f->deadcroots;
     s->branch += f->cpbranch - f->deadbranch;
@@ -787,6 +869,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
         s->sapwood += f->cpstem - f->deadsapwood;
     }
 
+
     /*
     ** Nitrogen pools
     */
@@ -796,6 +879,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     } else {
         s->shootn += f->npleaf - fdecay * s->shootn - f->neaten;
     }
+
     s->branchn += f->npbranch - p->bdecay * s->branchn;
     s->rootn += f->nproot - rdecay * s->rootn;
     s->crootn += f->npcroot - p->crdecay * s->crootn;
@@ -945,6 +1029,8 @@ void calculate_cn_store(fluxes *f, state *s) {
 
 
 void calculate_average_alloc_fractions(fluxes *f, state *s, int days) {
+    double excess;
+
     s->avg_alleaf /= (float) days;
     s->avg_alroot /= (float) days;
     s->avg_alcroot /= (float) days;
@@ -956,6 +1042,14 @@ void calculate_average_alloc_fractions(fluxes *f, state *s, int days) {
     f->alcroot = s->avg_alcroot;
     f->albranch = s->avg_albranch;
     f->alstem = s->avg_alstem;
+
+    /*
+        Because we are taking the average growing season fracs the total may
+        end up being just under 1, due to rounding. So put the missing
+        bit into the leaves - arbitary decision there
+    */
+    excess = 1.0 - f->alleaf - f->alroot - f->alcroot - f->albranch - f->alstem;
+    f->alleaf += excess;
 
     return;
 }

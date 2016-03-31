@@ -8,12 +8,13 @@
 #include <string.h>
 #include <ctype.h>
 #include "gday.h"
-
+#include "constants.h"
 
 
 
 
 /* utilities */
+double round_to_value(double, double);
 double day_length(int, int, double);
 void   calculate_daylength(int, double, double *);
 int    is_leap_year(int);

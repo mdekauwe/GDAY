@@ -127,3 +127,7 @@ char *strncpy0(char* dest, char* src, size_t size)
     dest[size - 1] = '\0';
     return dest;
 }
+
+double round_to_value(double number, double roundto) {
+    return (round(number / roundto) * roundto);
+}

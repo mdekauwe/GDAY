@@ -10,6 +10,8 @@
 
 
 #define EPSILON 1E-08
+#define DEG2RAD(DEG) (DEG * M_PI / 180.0)
+#define RAD2DEG(RAD) (180.0 * RAD / M_PI)
 
 #ifndef TRUE
 #define TRUE 1
@@ -55,6 +57,7 @@
 #define SAND 1
 #define CLAY 2
 
+<<<<<<< HEAD
 
 
 
@@ -539,16 +542,33 @@ typedef struct {
     double cnrate;
 } fluxes;
 
+=======
+#include "structures.h"
+#include "initialise_model.h"
+#include "simple_moving_average.h"
+#include "plant_growth.h"
+#include "litter_production.h"
+#include "write_output_file.h"
+#include "read_param_file.h"
+#include "read_met_file.h"
+#include "disturbance.h"
+#include "phenology.h"
+#include "soils.h"
+#include "version.h"
+>>>>>>> sub_daily
 
 
 void   clparser(int, char **, control *);
 void   usage(char **);
 
-void   run_sim(control *, fluxes *, met *, params *p, state *);
-void   spin_up_pools(control *, fluxes *, met *, params *p, state *);
+void   run_sim(canopy_wk *, control *, fluxes *, met_arrays *, met *,
+               params *p, state *);
+void   spin_up_pools(canopy_wk *, control *, fluxes *, met_arrays *, met *,
+                     params *p, state *);
 void   correct_rate_constants(params *, int output);
 void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   zero_stuff(control *, state *);
 void   day_end_calculations(control *, params *, state *, int, int);
+void   unpack_met_data(control *, met_arrays *, met *, int);
 
 #endif /* GDAY_H */

@@ -1,5 +1,6 @@
 ##############################################################################
-HOME     = /Users/mdekauwe
+USER    := $(shell whoami)
+HOME     = /Users/$(USER)
 #CFLAGS   = -g -Wall -Wformat -fsanitize=bounds -fsanitize-undefined-trap-on-error -O0#-Wextra
 CFLAGS   = -O3
 ARCH     =  x86_64
@@ -10,10 +11,10 @@ PROGRAM  =  gday
 
 
 SOURCES  =  \
-$(PROGRAM).c version.c read_param_file.c read_met_file.c \
-litter_production.c utilities.c plant_growth.c mate.c water_balance.c \
+$(PROGRAM).c version.c read_param_file.c read_met_file.c litter_production.c \
+utilities.c plant_growth.c photosynthesis.c water_balance.c \
 simple_moving_average.c soils.c optimal_root_model.c initialise_model.c \
-write_output_file.c phenology.c
+write_output_file.c phenology.c disturbance.c canopy.c radiation.c
 
 OBJECTS = $(SOURCES:.c=.o)
 RM       =  rm -f

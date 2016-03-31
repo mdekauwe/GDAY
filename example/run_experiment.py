@@ -87,4 +87,8 @@ if __name__ == "__main__":
     experiment_id = "NCEAS"
     site = "DUKE"
     treatment="amb"
+<<<<<<< HEAD
     main(experiment_id, site, treatment)
+=======
+    main(experiment_id, site, treatment, ascii)
+>>>>>>> sub_daily
