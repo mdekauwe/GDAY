@@ -202,17 +202,9 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         exit(EXIT_FAILURE);
     } else if (c->assim_model == MATE) {
         if (c->ps_pathway == C3) {
-<<<<<<< HEAD
-            mate_C3_photosynthesis(c, f, m, p, s, project_day, daylen,
-                                   ncontent);
-        } else {
-            mate_C4_photosynthesis(c, f, m, p, s, project_day, daylen,
-                                   ncontent);
-=======
             mate_C3_photosynthesis(c, f, m, p, s, daylen, ncontent);
         } else {
             mate_C4_photosynthesis(c, f, m, p, s, daylen, ncontent);
->>>>>>> sub_daily
         }
     } else {
         fprintf(stderr,"Unknown photosynthesis model'");
@@ -617,15 +609,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         arg1 = s->sapwood * TONNES_AS_KG * M2_AS_HA;
         arg2 = s->canht * p->density * p->cfracts;
         sap_cross_sec_area = arg1 / arg2;
-<<<<<<< HEAD
-
-        if (c->deciduous_model)
-            leaf2sap = s->lai / sap_cross_sec_area;
-        else
-            leaf2sap = s->lai / sap_cross_sec_area;
-=======
         leaf2sap = s->lai / sap_cross_sec_area;
->>>>>>> sub_daily
 
         /* Allocation to leaves dependant on height. Modification of pipe
            theory, leaf-to-sapwood ratio is not constant above a certain
