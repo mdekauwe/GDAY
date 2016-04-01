@@ -604,10 +604,6 @@ void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
     epsilon = slope / gamma;
     *omega = (1.0 + epsilon) / (1.0 + epsilon + gbv / gsv);
 
-    /*
-    printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", m->press, m->vpd, rnet, slope, lambda, gamma, gh, gv, LE);
-    */
-
     return;
 }
 

@@ -726,6 +726,7 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
             m->ndep += ma->ndep[c->hour_idx];
             m->tsoil += ma->tsoil[c->hour_idx];
         }
+
     } else {
         m->Ca = ma->co2[c->day_idx];
         m->tair = ma->tair[c->day_idx];
