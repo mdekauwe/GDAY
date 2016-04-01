@@ -163,7 +163,6 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
 
     idx = cw->ileaf;
     sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
-
     cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd, sw_rad);
     penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
                         cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
@@ -200,6 +199,11 @@ double calc_leaf_net_rad(params *p, state *s, double tair, double vpd,
 
     /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
     ea = calc_sat_water_vapour_press(tair) - vpd;
+
+    /* catch for AWAP diurnal stuff until I better connect VPD and Tair */
+    if (ea < 0.0) {
+        ea = 0.0;
+    }
 
     /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
     emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
