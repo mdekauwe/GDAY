@@ -127,7 +127,9 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     */
     double trans_frac, transpiration_topsoil, transpiration_root, previous,
-           delta_topsoil;
+           delta_topsoil, infiltration;
+
+    infiltration = f->throughfall;
 
     /* reduce transpiration fraction extracted from topsoil if it is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
@@ -135,7 +137,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* Total soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += f->throughfall - transpiration_topsoil - f->soil_evap;
+    s->pawater_topsoil += infiltration - transpiration_topsoil - f->soil_evap;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
@@ -154,11 +156,15 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     delta_topsoil = MAX(0.0, previous - s->pawater_topsoil);
 
+    /* reduce water available to rootzone */
+    infiltration -= delta_topsoil;
 
     /* Total root zone */
     previous = s->pawater_root;
+
+    /* account for transpiration lost via the topsoil */
     transpiration_root = f->transpiration - transpiration_topsoil;
-    s->pawater_root += (f->throughfall - delta_topsoil) - transpiration_root;
+    s->pawater_root += infiltration - transpiration_root;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
