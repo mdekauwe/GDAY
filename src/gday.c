@@ -77,7 +77,6 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
-
     initialise_control(c);
     initialise_params(p);
     initialise_fluxes(f);
@@ -101,7 +100,6 @@ int main(int argc, char **argv)
         read_subdaily_met_data(argv, c, ma);
     else
         read_daily_met_data(argv, c, ma);
-
 
     if (c->spin_up)
         spin_up_pools(cw, c, f, ma, m, p, s);
@@ -319,6 +317,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
+            /*printf("%lf %lf %lf %lf\n", m->rain, f->et, f->transpiration, s->pawater_root);
+
+            if (doy ==1) {
+                exit(1);
+            }*/
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
 

@@ -30,7 +30,7 @@ void write_output_header(control *c, FILE **fp) {
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    int ncols = 86;
+    int ncols = 87;
     int nrows = c->num_days;
 
     /* Git version */
@@ -44,7 +44,7 @@ void write_output_header(control *c, FILE **fp) {
     */
 
     /* water*/
-    fprintf(*fp, "wtfac_root,pawater_root,");
+    fprintf(*fp, "wtfac_root,pawater_root,pawater_topsoil,");
 
     /* plant */
     fprintf(*fp, "shoot,lai,branch,stem,root,croot,shootn,branchn,stemn,");
@@ -129,7 +129,8 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     */
 
     /* water*/
-    fprintf(c->ofp, "%.10f,%.10f,", s->wtfac_root,s->pawater_root);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
+                    s->wtfac_root,s->pawater_root,s->pawater_topsoil);
 
     /* plant */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",

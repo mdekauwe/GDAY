@@ -6,7 +6,8 @@
 #include "utilities.h"
 
 void    update_water_storage(control *, fluxes *, params *, state *, double,
-                             double, double *, double *, double *, double *);
+                             double, double, double *, double *, double *,
+                             double *);
 double  calc_canopy_evaporation(met *, params *, state *, double);
 void    calculate_water_balance(control *, fluxes *, met *, params *,
                               state *, int, double, double, double);

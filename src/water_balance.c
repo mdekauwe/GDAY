@@ -99,7 +99,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     et = transpiration + soil_evap + canopy_evap;
 
-    update_water_storage(c, f, p, s, throughfall, interception,
+    update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
                          &transpiration, &soil_evap, &et, &runoff);
 
     if (c->sub_daily) {
@@ -115,8 +115,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
 void update_water_storage(control *c, fluxes *f, params *p, state *s,
                           double throughfall, double interception,
-                          double *transpiration, double *soil_evap,
-                          double *et, double *runoff) {
+                          double canopy_evap, double *transpiration,
+                          double *soil_evap, double *et, double *runoff) {
     /* Calculate root and top soil plant available water and runoff.
 
     Soil drainage is estimated using a "leaky-bucket" approach with two
@@ -129,26 +129,26 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     double trans_frac, transpiration_topsoil, transpiration_root, previous,
            delta_topsoil, infiltration;
 
-    infiltration = f->throughfall;
+    infiltration = throughfall;
 
     /* reduce transpiration fraction extracted from topsoil if it is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
-    transpiration_topsoil = trans_frac * f->transpiration;
+    transpiration_topsoil = trans_frac * *transpiration;
 
     /* Total soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += infiltration - transpiration_topsoil - f->soil_evap;
+    s->pawater_topsoil += infiltration - transpiration_topsoil - *soil_evap;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
 
         /* use any available water to meet soil evap demands first */
-        if (f->soil_evap > previous) {
-            f->soil_evap = previous;
+        if (*soil_evap > previous) {
+            *soil_evap = previous;
             transpiration_topsoil = 0.0;
         } else {
-            f->soil_evap = previous;
-            transpiration_topsoil = previous - f->soil_evap;
+            *soil_evap = previous;
+            transpiration_topsoil = previous - *soil_evap;
         }
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
@@ -162,29 +162,25 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     /* Total root zone */
     previous = s->pawater_root;
 
-    /* account for transpiration lost via the topsoil */
-    transpiration_root = f->transpiration - transpiration_topsoil;
+    /* account for transpiration already extracted from the topsoil */
+    transpiration_root = *transpiration - transpiration_topsoil;
     s->pawater_root += infiltration - transpiration_root;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
-        f->runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= f->runoff;
+        *runoff = s->pawater_root - p->wcapac_root;
+        s->pawater_root -= *runoff;
     } else if (s->pawater_root < 0.0) {
         s->pawater_root = 0.0;
         transpiration_root = previous;
-        f->runoff = 0.0;
+        *runoff = 0.0;
     } else {
-        f->runoff = 0.0;
+        *runoff = 0.0;
     }
 
-    f->transpiration = transpiration_topsoil + transpiration_root;
-    f->et = f->transpiration + f->soil_evap + f->canopy_evap;
-
-
-
-
-
+    /*printf("%lf %lf\n", s->pawater_root, transpiration_root);*/
+    *transpiration += transpiration_topsoil + transpiration_root;
+    *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
 
     /* calculated at the end of the day for sub_daily */
