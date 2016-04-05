@@ -183,7 +183,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
 
-    printf("%lf %lf %lf\n", s->pawater_root, transpiration_root, s->delta_sw_store);
+    /*printf("%lf %lf %lf\n", s->pawater_root, transpiration_root, s->delta_sw_store);*/
 
     /* calculated at the end of the day for sub_daily */
     if (! c->sub_daily) {
