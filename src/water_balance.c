@@ -129,43 +129,58 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     outflow : float
         outflow [mm d-1]
     */
-    double trans_frac, previous;
+    double transpiration_topsil, transpiration_root, previous, delta_topsoil;
 
     /* reduce transpiration from the top soil if it is dry */
-    trans_frac = p->fractup_soil * s->wtfac_topsoil;
+    transpiration_topsil = p->fractup_soil * s->wtfac_topsoil * f->transpiration;
 
     /* Total soil layer */
-    s->pawater_topsoil += throughfall - (*transpiration * trans_frac) - \
-                          *soil_evap;
+    previous = s->pawater_topsoil;
+    s->pawater_topsoil += f->throughfall - transpiration_topsil - f->soil_evap;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
+
+        /* use any available water to meet soil evap demands first */
+        if (f->soil_evap > previous) {
+            f->soil_evap = previous;
+            transpiration_topsil = 0.0;
+        } else {
+            f->soil_evap = previous;
+            transpiration_topsil = previous - f->soil_evap;
+        }
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
 
+    delta_topsoil = MAX(0.0, previous - s->pawater_topsoil);
+
+
     /* Total root zone */
     previous = s->pawater_root;
-    s->pawater_root += throughfall - *transpiration - *soil_evap;
+    transpiration_root = f->transpiration - transpiration_topsil;
+    s->pawater_root += (f->throughfall - delta_topsoil) - transpiration_root;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
-        *runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= *runoff;
+        f->runoff = s->pawater_root - p->wcapac_root;
+        s->pawater_root -= f->runoff;
     } else {
-        *runoff = 0.0;
+        f->runoff = 0.0;
     }
 
     if (s->pawater_root < 0.0) {
-        *transpiration = 0.0;
-        *soil_evap = 0.0;
-        *et = interception;
-    }
-
-    if (s->pawater_root < 0.0)
         s->pawater_root = 0.0;
-    else if (s->pawater_root > p->wcapac_root)
+        transpiration_root = previous;
+    } else if (s->pawater_root > p->wcapac_root)
         s->pawater_root = p->wcapac_root;
+
+    f->transpiration = transpiration_topsil + transpiration_root;
+    f->et = f->transpiration + f->soil_evap + f->canopy_evap;
+
+
+
+
 
     s->delta_sw_store = s->pawater_root - previous;
 
@@ -287,7 +302,7 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
     * Landsberg and Sands
 
     */
-    double canopy_spill, canopy_capacity;
+    double canopy_spill, canopy_capacity, max_interception;
 
     if (c->sub_daily) {
 
@@ -297,7 +312,8 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
 
         /* Calculate canopy intercepted rainfall */
         if (m->rain > 0.0) {
-            *interception = MAX(0.0, canopy_capacity - s->canopy_store);
+            max_interception = MIN(m->rain, canopy_capacity - s->canopy_store);
+            *interception = MAX(0.0, max_interception);
             if (m->tair < 0.0) {
                 *interception = 0.0;
             }
