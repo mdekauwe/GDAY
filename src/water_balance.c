@@ -97,6 +97,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
         f->ga_mol_m2_sec = ga_am + ga_pm;
     }
 
+    /*
+    ** NB. et, transpiration & soil evap may all be adjusted in
+    ** update_water_storage if we don't have sufficient water
+    */
     et = transpiration + soil_evap + canopy_evap;
 
     update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
@@ -117,26 +121,24 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
                           double throughfall, double interception,
                           double canopy_evap, double *transpiration,
                           double *soil_evap, double *et, double *runoff) {
-    /* Calculate root and top soil plant available water and runoff.
+    /*
+        Calculate top soil, root zone plant available water & runoff.
 
-    Soil drainage is estimated using a "leaky-bucket" approach with two
-    soil layers. In reality this is a combined drainage and runoff
-    calculation, i.e. "outflow". There is no drainage out of the "bucket"
-    soil.
-
+        NB. et, transpiration & soil evap may all be adjusted in
+        if we don't have sufficient water
 
     */
     double trans_frac, transpiration_topsoil, transpiration_root, previous,
-           delta_topsoil, top_soil_loss;
+           delta_topsoil, topsoil_loss;
 
-    /* reduce transpiration fraction extracted from topsoil if it is dry */
+    /* reduce trans frac extracted from the topsoil if the layer is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
     transpiration_topsoil = trans_frac * *transpiration;
 
-    /* Total soil layer */
+    /* Top soil layer */
     previous = s->pawater_topsoil;
-    top_soil_loss = transpiration_topsoil + *soil_evap;
-    s->pawater_topsoil += throughfall - top_soil_loss;
+    topsoil_loss = transpiration_topsoil + *soil_evap;
+    s->pawater_topsoil += throughfall - topsoil_loss;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
@@ -154,15 +156,14 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     }
     delta_topsoil = MAX(0.0, s->pawater_topsoil + top_soil_loss - previous);
 
-    /* reduce water available to rootzone */
+    /* Account for water lost from the topsoil from throughfall to rootzone */
     throughfall -= delta_topsoil;
     throughfall = MAX(0.0, throughfall);
 
-
-    /* account for transpiration already extracted from the topsoil */
+    /* Account for transpiration already extracted from the topsoil */
     transpiration_root = *transpiration - transpiration_topsoil;
 
-    /* Total root zone */
+    /* Root zone */
     previous = s->pawater_root;
     s->pawater_root += throughfall - transpiration_root;
 
@@ -178,11 +179,11 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
         *runoff = 0.0;
     }
 
-
+    /* Update transpiration & et accounting for the actual available water */
     *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
-
+    
     /* calculated at the end of the day for sub_daily */
     if (! c->sub_daily) {
         if (c->water_stress) {
