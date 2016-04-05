@@ -102,6 +102,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
                          &transpiration, &soil_evap, &et, &runoff);
 
+    printf("%lf %lf %lf %lf %lf %lf %lf %lf\n", m->rain, et, transpiration, soil_evap, canopy_evap, runoff, s->pawater_root, s->pawater_topsoil);
+
     if (c->sub_daily) {
         sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                                 throughfall, canopy_evap, runoff, omega_leaf);
@@ -127,7 +129,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     */
     double trans_frac, transpiration_topsoil, transpiration_root, previous,
-           delta_topsoil;
+           delta_topsoil, top_soil_loss;
 
     /* reduce transpiration fraction extracted from topsoil if it is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
@@ -135,7 +137,8 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* Total soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += throughfall - transpiration_topsoil - *soil_evap;
+    top_soil_loss = transpiration_topsoil + *soil_evap;
+    s->pawater_topsoil += throughfall - top_soil_loss;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
@@ -151,8 +154,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
-
-    delta_topsoil = MAX(0.0, previous - s->pawater_topsoil);
+    delta_topsoil = MAX(0.0, s->pawater_topsoil + top_soil_loss - previous);
 
     /* reduce water available to rootzone */
     throughfall -= delta_topsoil;
