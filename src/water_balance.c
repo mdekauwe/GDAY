@@ -127,9 +127,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     */
     double trans_frac, transpiration_topsoil, transpiration_root, previous,
-           delta_topsoil, infiltration;
-
-    infiltration = throughfall;
+           delta_topsoil;
 
     /* reduce transpiration fraction extracted from topsoil if it is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
@@ -137,7 +135,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* Total soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += infiltration - transpiration_topsoil - *soil_evap;
+    s->pawater_topsoil += throughfall - transpiration_topsoil - *soil_evap;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
@@ -157,14 +155,16 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     delta_topsoil = MAX(0.0, previous - s->pawater_topsoil);
 
     /* reduce water available to rootzone */
-    infiltration -= delta_topsoil;
+    throughfall -= delta_topsoil;
 
-    /* Total root zone */
-    previous = s->pawater_root;
+
 
     /* account for transpiration already extracted from the topsoil */
     transpiration_root = *transpiration - transpiration_topsoil;
-    s->pawater_root += infiltration - transpiration_root;
+
+    /* Total root zone */
+    previous = s->pawater_root;
+    s->pawater_root += throughfall - transpiration_root;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
@@ -178,10 +178,12 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
         *runoff = 0.0;
     }
 
-    /*printf("%lf %lf\n", s->pawater_root, transpiration_root);*/
-    *transpiration += transpiration_topsoil + transpiration_root;
+
+    *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
+
+    printf("%lf %lf %lf\n", s->pawater_root, transpiration_root, s->delta_sw_store);
 
     /* calculated at the end of the day for sub_daily */
     if (! c->sub_daily) {
