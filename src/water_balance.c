@@ -124,19 +124,18 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     calculation, i.e. "outflow". There is no drainage out of the "bucket"
     soil.
 
-    Returns:
-    --------
-    outflow : float
-        outflow [mm d-1]
-    */
-    double transpiration_topsil, transpiration_root, previous, delta_topsoil;
 
-    /* reduce transpiration from the top soil if it is dry */
-    transpiration_topsil = p->fractup_soil * s->wtfac_topsoil * f->transpiration;
+    */
+    double trans_frac, transpiration_topsoil, transpiration_root, previous,
+           delta_topsoil;
+
+    /* reduce transpiration fraction extracted from topsoil if it is dry */
+    trans_frac = p->fractup_soil * s->wtfac_topsoil;
+    transpiration_topsoil = trans_frac * f->transpiration;
 
     /* Total soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += f->throughfall - transpiration_topsil - f->soil_evap;
+    s->pawater_topsoil += f->throughfall - transpiration_topsoil - f->soil_evap;
 
     if (s->pawater_topsoil < 0.0) {
         s->pawater_topsoil = 0.0;
@@ -144,10 +143,10 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
         /* use any available water to meet soil evap demands first */
         if (f->soil_evap > previous) {
             f->soil_evap = previous;
-            transpiration_topsil = 0.0;
+            transpiration_topsoil = 0.0;
         } else {
             f->soil_evap = previous;
-            transpiration_topsil = previous - f->soil_evap;
+            transpiration_topsoil = previous - f->soil_evap;
         }
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
@@ -158,24 +157,22 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* Total root zone */
     previous = s->pawater_root;
-    transpiration_root = f->transpiration - transpiration_topsil;
+    transpiration_root = f->transpiration - transpiration_topsoil;
     s->pawater_root += (f->throughfall - delta_topsoil) - transpiration_root;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
         f->runoff = s->pawater_root - p->wcapac_root;
         s->pawater_root -= f->runoff;
+    } else if (s->pawater_root < 0.0) {
+        s->pawater_root = 0.0;
+        transpiration_root = previous;
+        f->runoff = 0.0;
     } else {
         f->runoff = 0.0;
     }
 
-    if (s->pawater_root < 0.0) {
-        s->pawater_root = 0.0;
-        transpiration_root = previous;
-    } else if (s->pawater_root > p->wcapac_root)
-        s->pawater_root = p->wcapac_root;
-
-    f->transpiration = transpiration_topsil + transpiration_root;
+    f->transpiration = transpiration_topsoil + transpiration_root;
     f->et = f->transpiration + f->soil_evap + f->canopy_evap;
 
 
