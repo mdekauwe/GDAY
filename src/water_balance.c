@@ -102,8 +102,6 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
                          &transpiration, &soil_evap, &et, &runoff);
 
-    printf("%lf %lf %lf %lf %lf %lf %lf %lf\n", m->rain, et, transpiration, soil_evap, canopy_evap, runoff, s->pawater_root, s->pawater_topsoil);
-
     if (c->sub_daily) {
         sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                                 throughfall, canopy_evap, runoff, omega_leaf);

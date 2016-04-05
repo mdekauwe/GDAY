@@ -318,10 +318,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                             doy, fdecay, rdecay);
 
 
-
-            if (doy ==8) {
-                exit(1);
-            }
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
 
