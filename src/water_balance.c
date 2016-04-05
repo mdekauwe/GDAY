@@ -156,7 +156,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* reduce water available to rootzone */
     throughfall -= delta_topsoil;
-
+    throughfall = MAX(0.0, throughfall);
 
 
     /* account for transpiration already extracted from the topsoil */
@@ -182,8 +182,6 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
-
-    /*printf("%lf %lf %lf\n", s->pawater_root, transpiration_root, s->delta_sw_store);*/
 
     /* calculated at the end of the day for sub_daily */
     if (! c->sub_daily) {
