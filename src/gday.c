@@ -190,7 +190,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
         allocate_stored_c_and_n(f, p, s);
     }
-
+    
     /* Setup output file */
     if (c->print_options == DAILY && c->spin_up == FALSE) {
         /* Daily outputs */

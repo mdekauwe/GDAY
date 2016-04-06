@@ -39,6 +39,7 @@ typedef struct {
     int   use_eff_nc;
     int   water_stress;
     int   num_days;
+    int   total_num_days;
     char  git_code_ver[STRING_LENGTH];
     int   spin_up;
     int   PRINT_GIT;

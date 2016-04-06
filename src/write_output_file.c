@@ -31,8 +31,8 @@ void write_output_header(control *c, FILE **fp) {
         data, units and nice header information.
     */
     int ncols = 13;
-    int nrows = c->num_days;
-
+    int nrows = c->total_num_days;
+    
     /* Git version */
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
