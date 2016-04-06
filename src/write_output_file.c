@@ -46,7 +46,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "BETA,SWC,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
 
     /* C fluxes */
-    fprintf(*fp, "NPP,");
+    fprintf(*fp, "NPP\n");
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
