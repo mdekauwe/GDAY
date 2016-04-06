@@ -201,7 +201,8 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         file_len++;
     }
     rewind(fp);
-    c->total_num_days = file_len;
+    /* output is daily, so correct for n_timesteps */
+    c->total_num_days = file_len / 48;
 
     /* allocate memory for meteorological arrays */
     if ((ma->year = (double *)calloc(file_len, sizeof(double))) == NULL) {
