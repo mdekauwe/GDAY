@@ -154,7 +154,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
-    delta_topsoil = MAX(0.0, s->pawater_topsoil + top_soil_loss - previous);
+    delta_topsoil = MAX(0.0, s->pawater_topsoil + topsoil_loss - previous);
 
     /* Account for water lost from the topsoil from throughfall to rootzone */
     throughfall -= delta_topsoil;
@@ -183,7 +183,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
-    
+
     /* calculated at the end of the day for sub_daily */
     if (! c->sub_daily) {
         if (c->water_stress) {
