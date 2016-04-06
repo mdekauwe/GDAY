@@ -30,9 +30,9 @@ void write_output_header(control *c, FILE **fp) {
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    int ncols = 13;
+    int ncols = 14;
     int nrows = c->total_num_days;
-    
+
     /* Git version */
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
@@ -40,7 +40,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "YEAR,DOY,");
 
     /* plant */
-    fprintf(*fp, "CF,LAI,CW,CR,");
+    fprintf(*fp, "CF,LAI,CB,CW,CR,");
 
     /* water*/
     fprintf(*fp, "BETA,SWC,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
