@@ -27,10 +27,13 @@ void initialise_control(control *c) {
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
+    c->input_ascii = TRUE;          /* If this is false the code expects and input binary file with the met data. */
     c->model_optroot = FALSE;       /* Ross's optimal root model...not sure if this works yet...0=off, 1=on */
     c->modeljm = 2;                 /* modeljm=0, Jmax and Vcmax parameters are read in, modeljm=1, parameters are calculated from leaf N content, modeljm=2, Vcmax is calculated from leaf N content but Jmax is related to Vcmax */
     c->ncycle = TRUE;               /* Nitrogen cycle on or off? */
     c->nuptake_model = 2;           /* 0=constant uptake, 1=func of N inorgn, 2=depends on rate of soil N availability */
+    c->nrows = 0;                   /* Number of rows in binary file, only relevant if input_ascii = FALSE */
+    c->ncols = 0;                   /* Number of cols in binary file, only relevant if input_ascii = FALSE */
     c->output_ascii = TRUE;         /* If this is false you get a binary file as an output. */
     c->passiveconst = FALSE;        /* hold passive pool at passivesoil */
     c->print_options = DAILY;       /* DAILY=every timestep, END=end of run */

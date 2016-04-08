@@ -9,6 +9,7 @@
 
 void    read_daily_met_data(char **, control *, met_arrays *);
 void    read_subdaily_met_data(char **, control *, met_arrays *);
+void    read_subdaily_met_data_binary(char **, control *, met_arrays *);
 
 
 #endif /* READ_MET_H */

@@ -24,11 +24,14 @@ typedef struct {
     int   fixleafnc;
     int   grazing;
     int   gs_model;
+    int   input_ascii;
     int   model_optroot;
     int   modeljm;
     int   ncycle;
     int   num_years;
     int   nuptake_model;
+    int   nrows;
+    int   ncols;
     int   output_ascii;
     int   passiveconst;
     int   print_options;

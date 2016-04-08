@@ -97,7 +97,10 @@ int main(int argc, char **argv)
     }
 
     if (c->sub_daily)
-        read_subdaily_met_data(argv, c, ma);
+        if (c->input_ascii)
+            read_subdaily_met_data(argv, c, ma);
+        else
+            read_subdaily_met_data_binary(argv, c, ma);
     else
         read_daily_met_data(argv, c, ma);
 
@@ -190,7 +193,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
         allocate_stored_c_and_n(f, p, s);
     }
-    
+
     /* Setup output file */
     if (c->print_options == DAILY && c->spin_up == FALSE) {
         /* Daily outputs */
