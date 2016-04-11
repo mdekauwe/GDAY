@@ -95,8 +95,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "\n%s\n", c->git_code_ver);
         exit(EXIT_FAILURE);
     }
-    printf("%d %d\n", c->sub_daily, c->input_ascii);
-    exit(1);
+    
     if (c->sub_daily) {
         if (c->input_ascii) {
             read_subdaily_met_data(argv, c, ma);
