@@ -323,6 +323,10 @@ int handler(char *section, char *name, char *value, control *c,
         }
     } else if (MATCH("control", "nuptake_model")) {
         c->nuptake_model = atoi(value);
+    } else if (MATCH("control", "ncols")) {
+        c->ncols = atoi(value);
+    } else if (MATCH("control", "nrows")) {
+        c->nrows = atoi(value);
     } else if (MATCH("control", "output_ascii")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||

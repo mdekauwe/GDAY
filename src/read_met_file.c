@@ -328,7 +328,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 	}
 
     /* work out how big the file is */
-    file_len = c->ncols;
+    file_len = c->nrows*c->ncols;
 
     /* output is daily, so correct for n_timesteps */
     c->total_num_days = file_len / 48;
