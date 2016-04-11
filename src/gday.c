@@ -95,14 +95,17 @@ int main(int argc, char **argv)
         fprintf(stderr, "\n%s\n", c->git_code_ver);
         exit(EXIT_FAILURE);
     }
-
-    if (c->sub_daily)
-        if (c->input_ascii)
+    printf("%d %d\n", c->sub_daily, c->input_ascii);
+    exit(1);
+    if (c->sub_daily) {
+        if (c->input_ascii) {
             read_subdaily_met_data(argv, c, ma);
-        else
+        } else {
             read_subdaily_met_data_binary(argv, c, ma);
-    else
+        }
+    } else {
         read_daily_met_data(argv, c, ma);
+    }
 
     if (c->spin_up)
         spin_up_pools(cw, c, f, ma, m, p, s);

@@ -280,6 +280,19 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown hurricane option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "input_ascii")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->input_ascii = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->input_ascii = TRUE;
+        else {
+            fprintf(stderr, "Unknown input_ascii option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "model_optroot")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
