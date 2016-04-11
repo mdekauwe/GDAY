@@ -433,7 +433,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         c->disturbance = cntrl_flag;
     }
 
-    fprintf(stderr, "Spinning up the model...\n");
+    /*fprintf(stderr, "Spinning up the model...\n");*/
     while (TRUE) {
         if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
             fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
@@ -448,9 +448,10 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
             /* Have we reached a steady state? */
-            fprintf(stderr,
+            /*fprintf(stderr,
               "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
                s->plantc, s->soilc, s->plantn, s->soiln);
+            */
         }
     }
     write_final_state(c, p, s);
