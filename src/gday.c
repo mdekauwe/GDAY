@@ -103,11 +103,8 @@ int main(int argc, char **argv)
             read_subdaily_met_data_binary(argv, c, ma);
         }
     } else {
-        printf("SHOULD NOT BE HERE %d\n", c->sub_daily);
         read_daily_met_data(argv, c, ma);
     }
-
-
 
     if (c->spin_up)
         spin_up_pools(cw, c, f, ma, m, p, s);
