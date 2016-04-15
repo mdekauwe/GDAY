@@ -318,8 +318,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         **   D A Y   L O O P   **
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
-
-            printf("%d %d\n", year, doy+1);
             if (! c->sub_daily) {
                 unpack_met_data(c, ma, m, dummy);
             }
@@ -395,13 +393,15 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ** ======================= */
         }
 
+        printf("GOT TO HERE\n");
+
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
             allocate_stored_c_and_n(f, p, s);
         }
     }
-
+    printf("GOT TO END OF YEAR\n");
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
@@ -410,6 +410,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     if (c->print_options == END && c->spin_up == FALSE) {
         write_final_state(c, p, s);
     }
+    printf("MADE IT TO FWRITE\n");
 
     sma(SMA_FREE, hw);
     free(day_length);
@@ -428,12 +429,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 	        exit(EXIT_FAILURE);
         }
     }
+    printf("OH NO\n");
+
     fclose(c->ofp);
     if (odata) {
         printf("OH NO\n");
         free(odata);
     }
-
+    printf("YES\n");
     return;
 
 
