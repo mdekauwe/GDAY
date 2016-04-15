@@ -421,12 +421,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
     }
 
-    fclose(c->ofp);
     if (odata != NULL) {
-        printf("OH NO\n");
         free(odata);
     }
-    printf("YES\n");
+    
     return;
 
 
