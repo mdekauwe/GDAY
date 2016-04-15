@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     }
 
     printf("** %d\n", c->sub_daily);
-    exit(1);
+    
 
     if (c->sub_daily) {
         if (c->input_ascii) {
