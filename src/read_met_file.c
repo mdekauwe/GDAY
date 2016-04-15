@@ -327,7 +327,6 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
 	}
 
-
     /* output is daily, so correct for n_timesteps */
     c->total_num_days = c->nrows / 48;
 
@@ -392,9 +391,6 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
     cnt = 0;
     c->num_years = 0;
     current_yr = data[0];
-    printf("%lf\n", data[0]);
-    printf("%lf\n", data[1]);
-    printf("%lf\n", data[2]);
 
     for (i = 0; i < c->nrows * c->ncols; i += c->ncols) {
 
@@ -412,17 +408,12 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
             ma->press[cnt] = data[i+11];
 
             /* Build an array of the unique years as we loop over the input file */
-            printf("%lf %lf\n", current_yr, ma->year[cnt]);
             if (current_yr != ma->year[cnt]) {
                 c->num_years++;
                 current_yr = ma->year[cnt];
-                printf("HERE\n");
             }
-            exit(1);
-
             cnt++;
     }
-    exit(1);
     /* tidy up */
     free(data);
 
