@@ -406,6 +406,7 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown sub_daily option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+        printf("%s\n", c->sub_daily);
     } else if (MATCH("control", "strfloat")) {
         c->strfloat = atoi(value);
         /*if (strcmp(temp, "False") == 0 ||
