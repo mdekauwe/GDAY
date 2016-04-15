@@ -393,7 +393,7 @@ int handler(char *section, char *name, char *value, control *c,
              exit(EXIT_FAILURE);
          }
     } else if (MATCH("control", "sub_daily")) {
-        printf("%d\n", temp);
+        printf("* %d\n", temp);
         exit(1);
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
