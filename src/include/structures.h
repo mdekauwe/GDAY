@@ -33,6 +33,7 @@ typedef struct {
     int   nrows;
     int   ncols;
     int   output_ascii;
+    int   ovars;
     int   passiveconst;
     int   print_options;
     int   ps_pathway;

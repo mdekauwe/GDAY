@@ -163,9 +163,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    nyr, doy, window_size, i, dummy;
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
-
-    double fdecay, rdecay, current_limitation, nitfac, year;
     int   *disturbance_yrs = NULL;
+    long   ocnt;
+    double fdecay, rdecay, current_limitation, nitfac, year;
+    double *odata = NULL; /* for binary output */
+
 
     /* potentially allocating 1 extra spot, but will be fine as we always
        index by num_days */
@@ -206,6 +208,18 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         } else {
             open_output_file(c, c->out_fname_hdr, &(c->ofp_hdr));
             write_output_header(c, &(c->ofp_hdr));
+
+            /*
+            ** set a block of memory to save daily binary outputs, we will
+            ** use a single fwrite call at the end, we should set the ncols
+            ** somewhere, but for now copying 14 from write_output_header
+            */
+            if ((odata = (double *)calloc(c->total_num_days*c->ovars,
+                                          sizeof(double))) == NULL) {
+        		fprintf(stderr,"Error allocating space for odata\n");
+        		exit(EXIT_FAILURE);
+        	}
+
         }
     } else if (c->print_options == END && c->spin_up == FALSE) {
         /* Final state + param file */
@@ -265,6 +279,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     ** ====================== */
     c->day_idx = 0;
     c->hour_idx = 0;
+    ocnt = 0;
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
         if (c->sub_daily) {
@@ -362,9 +377,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 else
-                    write_daily_outputs_binary(c, f, s, year, doy+1);
+                    save_daily_outputs_binary(c, f, s, year, doy+1, *(&odata),
+                                               ocnt);
             }
             c->day_idx++;
+            ocnt += c->ovars;
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
@@ -390,6 +407,22 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     free(day_length);
     if (c->disturbance) {
         free(disturbance_yrs);
+    }
+
+    if (c->print_options == DAILY &&
+        c->spin_up == FALSE &&
+        c->output_ascii == FALSE) {
+
+        if (fwrite(odata, sizeof(float), c->total_num_days*c->ovars, c->ofp) !=\
+                                         c->total_num_days*c->ovars) {
+            fprintf(stderr, "Error writing binary output file: %s\n", \
+                    c->out_fname);
+	        exit(EXIT_FAILURE);
+        }
+    }
+    fclose(c->ofp);
+    if (odata) {
+        free(odata);
     }
 
     return;

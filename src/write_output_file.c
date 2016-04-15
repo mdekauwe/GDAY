@@ -30,7 +30,7 @@ void write_output_header(control *c, FILE **fp) {
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    int ncols = 14;
+    int ncols = c->ovars; /* this is hardwired, but obv should match below! */
     int nrows = c->total_num_days;
 
     /* Git version */
@@ -92,40 +92,24 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
 }
 
 
-void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
-                                int doy) {
-    /*
-        Write daily state and fluxes headers to an output CSV file. Note we
-        are not writing anything useful like units as there is a wrapper
-        script to translate the outputs to a nice CSV file with input met
-        data, units and nice header information.
-    */
-    double temp;
+void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
+                                int doy, double *odata, long ocnt) {
 
-    /* time stuff */
-    temp = (double)year;
-    fwrite(&temp, sizeof(double), 1, c->ofp);
-    temp = (double)doy;
-    fwrite(&temp, sizeof(double), 1, c->ofp);
-
-
-    /* plant */
-    fwrite(&(s->shoot), sizeof(double), 1, c->ofp);
-    fwrite(&(s->lai), sizeof(double), 1, c->ofp);
-    fwrite(&(s->branch), sizeof(double), 1, c->ofp);
-    fwrite(&(s->stem), sizeof(double), 1, c->ofp);
-    fwrite(&(s->root), sizeof(double), 1, c->ofp);
-
-    /* water */
-    fwrite(&(s->wtfac_root), sizeof(double), 1, c->ofp);
-    fwrite(&(s->pawater_root), sizeof(double), 1, c->ofp);
-    fwrite(&(f->transpiration), sizeof(double), 1, c->ofp);
-    fwrite(&(f->soil_evap), sizeof(double), 1, c->ofp);
-    fwrite(&(f->canopy_evap), sizeof(double), 1, c->ofp);
-    fwrite(&(f->runoff), sizeof(double), 1, c->ofp);
-
-    /* C fluxes */
-    fwrite(&(f->npp), sizeof(double), 1, c->ofp);
+    /* save everything and do a single big dump at the end */
+    odata[ocnt] = (double)year;
+    odata[ocnt+1] = (double)doy;
+    odata[ocnt+2] = s->shoot;
+    odata[ocnt+3] = s->lai;
+    odata[ocnt+4] = s->branch;
+    odata[ocnt+5] = s->stem;
+    odata[ocnt+6] = s->root;
+    odata[ocnt+7] = s->wtfac_root;
+    odata[ocnt+8] = s->pawater_root;
+    odata[ocnt+9] = f->transpiration;
+    odata[ocnt+10] = f->soil_evap;
+    odata[ocnt+11] = f->canopy_evap;
+    odata[ocnt+12] = f->runoff;
+    odata[ocnt+13] = f->npp;
 
     return;
 }

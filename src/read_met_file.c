@@ -302,7 +302,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
 void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 {
     FILE  *fp;
-    float *data = NULL;
+    double *data = NULL;
     char   line[STRING_LENGTH];
     int    i = 0, j = 0;
     int    nvars = 12;
@@ -317,7 +317,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
-    if ((data = (float *)calloc(c->nrows*c->ncols, sizeof(float))) == NULL) {
+    if ((data = (double *)calloc(c->nrows*c->ncols, sizeof(double))) == NULL) {
 		fprintf(stderr,"%s: error allocating met data for read\n",argv[0]);
 		exit(EXIT_FAILURE);
 	}
@@ -417,7 +417,10 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 
             cnt++;
     }
+    /* tidy up */
+    free(data);
 
     fclose(fp);
+
     return;
 }
