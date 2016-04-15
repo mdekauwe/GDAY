@@ -380,11 +380,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
-                if(c->output_ascii)
+                printf("SHOULD NOT BE HERE\n");
+                if(c->output_ascii) {
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
-                else
+                } else {
                     save_daily_outputs_binary(c, f, s, year, doy+1, *(&odata),
                                                ocnt);
+                }
             }
             c->day_idx++;
             ocnt += c->ovars;
@@ -392,8 +394,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-
-        printf("GOT TO HERE\n");
 
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
