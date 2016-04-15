@@ -10,6 +10,8 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
     int    skipped_lines = 0;
     double current_yr;
 
+    printf(" in CSV ver\n");
+    exit(1);
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
                 c->met_fname);
@@ -186,6 +188,8 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     long   file_len;
     double hod_dummy;
 
+    printf(" in CSV -subdailyver\n");
+    exit(1);
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
                 c->met_fname);
