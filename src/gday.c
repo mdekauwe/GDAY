@@ -288,6 +288,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     ocnt = 0;
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
+        printf("%d\n", c->num_years);
+        exit(1);
         if (c->sub_daily) {
             year = ma->year[c->hour_idx];
         } else {
