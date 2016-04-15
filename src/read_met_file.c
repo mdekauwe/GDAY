@@ -313,7 +313,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
-                );
+                c->met_fname);
 		exit(EXIT_FAILURE);
     }
 
