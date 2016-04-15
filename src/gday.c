@@ -97,7 +97,7 @@ int main(int argc, char **argv)
     }
 
     printf("** %d\n", c->sub_daily);
-    
+
 
     if (c->sub_daily) {
         if (c->input_ascii) {
@@ -109,6 +109,8 @@ int main(int argc, char **argv)
         printf("SHOULD NOT BE HERE %d\n", c->sub_daily);
         read_daily_met_data(argv, c, ma);
     }
+
+    printf("HERE\n");
 
     if (c->spin_up)
         spin_up_pools(cw, c, f, ma, m, p, s);
