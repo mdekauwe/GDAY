@@ -394,7 +394,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-        printf("%ld %ld %ld\n", c->hour_idx, c->day_idx, ocnt);
+        printf("%ld %ld %ld %ld\n", c->hour_idx, c->hour_idx/48, c->day_idx, ocnt);
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
