@@ -287,9 +287,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     c->hour_idx = 0;
     ocnt = 0;
     for (nyr = 0; nyr < c->num_years; nyr++) {
-
-        printf("%d\n", c->num_years);
-        exit(1);
         if (c->sub_daily) {
             year = ma->year[c->hour_idx];
         } else {
@@ -382,7 +379,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
             if (c->print_options == DAILY && c->spin_up == FALSE) {
-                printf("SHOULD NOT BE HERE\n");
                 if(c->output_ascii) {
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 } else {
@@ -396,14 +392,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-        printf("%ld %ld %ld %ld\n", c->hour_idx, c->hour_idx/48, c->day_idx, ocnt);
+
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
             allocate_stored_c_and_n(f, p, s);
         }
     }
-    printf("GOT TO END OF YEAR\n");
+    
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
