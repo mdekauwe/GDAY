@@ -308,7 +308,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
     int    nvars = 12;
     int    skipped_lines = 0;
     double current_yr, temp_HOD;
-    long   file_len, cnt;
+    long   cnt;
     double hod_dummy;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
@@ -327,11 +327,9 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
 	}
 
-    /* work out how big the file is */
-    file_len = c->nrows*c->ncols;
 
     /* output is daily, so correct for n_timesteps */
-    c->total_num_days = file_len / 48;
+    c->total_num_days = c->nrows / 48;
 
     /* allocate memory for meteorological arrays */
     if ((ma->year = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
