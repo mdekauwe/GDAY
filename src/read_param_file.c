@@ -116,8 +116,9 @@ int handler(char *section, char *name, char *value, control *c,
 	    temp[strlen(temp)-1] = 0;  removes last quote */
         strcpy(c->cfg_fname, temp);
     } else if (MATCH("files", "met_fname")) {
-        printf("%s %s\n", c->met_fname, temp); 
+        printf("%s %s\n", c->met_fname, temp);
         strcpy(c->met_fname, temp);
+        printf("%s\n", c->met_fname); 
     } else if (MATCH("files", "out_fname")) {
         strcpy(c->out_fname, temp);
     } else if (MATCH("files", "out_fname_hdr")) {
