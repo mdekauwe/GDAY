@@ -96,9 +96,6 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    printf("** %d\n", c->sub_daily);
-
-
     if (c->sub_daily) {
         if (c->input_ascii) {
             read_subdaily_met_data(argv, c, ma);

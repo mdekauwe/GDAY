@@ -45,7 +45,7 @@ void initialise_control(control *c) {
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->ovars = 14;                  /* Number of vars in output binary file */
-    
+
     /* Internal calculated */
     c->num_years = 0;               /* Total number of years simulated */
     c->num_days = 0;                /* Number of days in a year: 365/366 */
