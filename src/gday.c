@@ -752,6 +752,7 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
 
 void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
 
+    printf("%ld\n", c->hour_idx);
     /* unpack met forcing */
     if (c->sub_daily) {
         m->rain = ma->rain[c->hour_idx];
