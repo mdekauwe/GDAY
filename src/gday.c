@@ -110,7 +110,7 @@ int main(int argc, char **argv)
         read_daily_met_data(argv, c, ma);
     }
 
-    printf("HERE\n");
+
 
     if (c->spin_up)
         spin_up_pools(cw, c, f, ma, m, p, s);
@@ -318,6 +318,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         **   D A Y   L O O P   **
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
+
+            printf("%d %d\n", year, doy+1);
             if (! c->sub_daily) {
                 unpack_met_data(c, ma, m, dummy);
             }
