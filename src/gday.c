@@ -103,6 +103,7 @@ int main(int argc, char **argv)
             read_subdaily_met_data_binary(argv, c, ma);
         }
     } else {
+        printf("SHOULD NOT BE HERE %d\n", c->sub_daily);
         read_daily_met_data(argv, c, ma);
     }
 
@@ -484,7 +485,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             fprintf(stderr,
               "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
                s->plantc, s->soilc, s->plantn, s->soiln);
-            
+
         }
     }
     write_final_state(c, p, s);
