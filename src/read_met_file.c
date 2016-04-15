@@ -415,6 +415,8 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 
             cnt++;
     }
+    printf("%ld %ld %ld\n", c->nrows, c->ncols, cnt);
+    exit(1);
     /* tidy up */
     free(data);
 
