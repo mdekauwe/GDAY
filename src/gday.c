@@ -430,7 +430,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
     fclose(c->ofp);
     if (odata) {
-        printf("OH NO\n);
+        printf("OH NO\n");
         free(odata);
     }
 
