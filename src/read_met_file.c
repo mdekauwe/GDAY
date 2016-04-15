@@ -312,7 +312,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
     double hod_dummy;
 
     printf("%s\n", c->met_fname);
-    exit(1);
+    
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
                 c->met_fname);
