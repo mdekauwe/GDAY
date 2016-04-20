@@ -391,7 +391,10 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
 
-        if (arg > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
+        if (arg > ntot &&
+            c->fixleafnc == FALSE &&
+            c->fixed_lai != 0 &&
+            c->ncycle) {
 
 
             /* Need to readjust the LAI for the reduced growth as this will
@@ -808,7 +811,7 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         }
     }
 
-    if (c->fixed_lai) {
+    if (c->fixed_lai != 0) {
         s->lai = p->fix_lai;
     }
 

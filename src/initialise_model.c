@@ -16,6 +16,7 @@ void initialise_control(control *c) {
     strcpy(c->met_fname, "*NOT SET*");
     strcpy(c->out_fname, "*NOT SET*");
     strcpy(c->out_fname_hdr, "*NOT SET*");
+    strcpy(c->lai_fname, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
 
     c->alloc_model = ALLOMETRIC;    /* C allocation scheme: FIXED, GRASSES, ALLOMETRIC */
@@ -23,7 +24,7 @@ void initialise_control(control *c) {
     c->calc_sw_params = FALSE;      /* false=user supplies field capacity and wilting point, true=calculate them based on cosby et al. */
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
-    c->fixed_lai = FALSE;           /* Fix LAI */
+    c->fixed_lai = 0;           /* Fix LAI */
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */

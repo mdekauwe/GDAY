@@ -164,18 +164,20 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
     int   *disturbance_yrs = NULL;
-    long   ocnt;
+    long   ocnt, lai_offset;
     double fdecay, rdecay, current_limitation, nitfac, year;
     double *odata = NULL; /* for binary output */
-
+    double *lai_data = NULL;
+    FILE   *lai_fp;
 
     /* potentially allocating 1 extra spot, but will be fine as we always
        index by num_days */
-    double *day_length = NULL;
+    double *day_length;
     if ((day_length = (double *)calloc(366, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for day_length\n");
 		exit(EXIT_FAILURE);
     }
+
 
     if (c->deciduous_model) {
 
@@ -258,12 +260,32 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     s->pawater_root = p->wcapac_root;
     s->pawater_topsoil = p->wcapac_topsoil;
 
-    if (c->fixed_lai) {
-        s->lai = p->fix_lai;
-    } else {
+    if (c->fixed_lai == 0) {
         s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                             p->cfracts * s->shoot));
+    } else if (c->fixed_lai == 1) {
+        s->lai = p->fix_lai;
+    } else if (c->fixed_lai == 2) {
+        if ((lai_fp = fopen(c->lai_fname, "r")) == NULL) {
+    		fprintf(stderr, "Error: couldn't open LAI file %s for read\n",
+                    c->lai_fname);
+    		exit(EXIT_FAILURE);
+        }
+
+        if ((lai_data = (double *)calloc(366*2, sizeof(double))) == NULL) {
+    		fprintf(stderr,"Error allocating lai data for read\n");
+    		exit(EXIT_FAILURE);
+    	}
+
+        if (fread(lai_data, sizeof(float), 366*2, lai_fp) != 366*2){
+    		fprintf(stderr, "Error in reading lai binary file: %s\n",
+                    c->lai_fname);
+    		exit(EXIT_FAILURE);
+    	}
+
     }
+
+
 
     if (c->disturbance) {
         if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
@@ -313,6 +335,17 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         for (doy = 0; doy < c->num_days; doy++) {
             if (! c->sub_daily) {
                 unpack_met_data(c, ma, m, dummy);
+                if (c->fixed_lai == 2) {
+                    /* we want the first column, offset = i * ncols + j */
+                    lai_offset = doy * 2 + 0;
+                    s->lai = lai_data[lai_offset];
+
+                    /*
+                    ** this is not tidy, but will suffice for now. In plant
+                    ** growth fixed_lai will be reset to fix_lai
+                    */
+                    p->fix_lai = lai_data[lai_offset];
+                }
             }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
@@ -405,6 +438,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
     sma(SMA_FREE, hw);
     free(day_length);
+
+
+    if (c->fixed_lai == 2) {
+        free(lai_data);
+        fclose(lai_fp);
+    }
+
     if (c->disturbance) {
         free(disturbance_yrs);
     }

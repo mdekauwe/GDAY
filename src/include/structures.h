@@ -13,6 +13,7 @@ typedef struct {
     char  out_fname_hdr[STRING_LENGTH];
     char  out_param_fname[STRING_LENGTH];
     char  git_hash[STRING_LENGTH];
+    char  lai_fname[STRING_LENGTH];
     int   adjust_rtslow;
     int   alloc_model;
     int   assim_model;

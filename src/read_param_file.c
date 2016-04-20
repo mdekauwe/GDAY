@@ -121,6 +121,8 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(c->out_fname, temp);
     } else if (MATCH("files", "out_fname_hdr")) {
         strcpy(c->out_fname_hdr, temp);
+    } else if (MATCH("files", "lai_fname")) {
+        strcpy(c->lai_fname, temp);
     } else if (MATCH("files", "out_param_fname")) {
         strcpy(c->out_param_fname, temp);
     }
@@ -232,18 +234,7 @@ int handler(char *section, char *name, char *value, control *c,
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "fixed_lai")) {
-        if (strcmp(temp, "False") == 0 ||
-            strcmp(temp, "FALSE") == 0 ||
-            strcmp(temp, "false") == 0)
-            c->fixed_lai = FALSE;
-        else if (strcmp(temp, "True") == 0 ||
-            strcmp(temp, "TRUE") == 0 ||
-            strcmp(temp, "true") == 0)
-            c->fixed_lai = TRUE;
-        else {
-            fprintf(stderr, "Unknown fixed_lai option: %s\n", temp);
-            exit(EXIT_FAILURE);
-        }
+        c->fixed_lai = atoi(value);
     } else if (MATCH("control", "fixleafnc")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
