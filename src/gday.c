@@ -335,18 +335,20 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         for (doy = 0; doy < c->num_days; doy++) {
             if (! c->sub_daily) {
                 unpack_met_data(c, ma, m, dummy);
-                if (c->fixed_lai == 2) {
-                    /* we want the first column, offset = i * ncols + j */
-                    lai_offset = doy * 2 + 0;
-                    s->lai = lai_data[lai_offset];
-
-                    /*
-                    ** this is not tidy, but will suffice for now. In plant
-                    ** growth fixed_lai will be reset to fix_lai
-                    */
-                    p->fix_lai = lai_data[lai_offset];
-                }
             }
+            if (c->fixed_lai == 2) {
+                /* we want the first column, offset = i * ncols + j */
+                lai_offset = doy * 2 + 0;
+                s->lai = lai_data[lai_offset];
+
+                /*
+                ** this is not tidy, but will suffice for now. In plant
+                ** growth fixed_lai will be reset to fix_lai
+                */
+                p->fix_lai = lai_data[lai_offset];
+            }
+
+
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
             if (c->disturbance && p->disturbance_doy == doy+1) {
@@ -368,7 +370,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
-
+            printf("%lf\n", f->gpp*100);
+            
 
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
@@ -521,11 +524,11 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
             /* Have we reached a steady state? */
-            /*
+
             fprintf(stderr,
               "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
                s->plantc, s->soilc, s->plantn, s->soiln);
-            */
+
         }
     }
     write_final_state(c, p, s);

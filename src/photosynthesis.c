@@ -88,8 +88,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         qudratic_error = FALSE;
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
-
-        if (qudratic_error || Ci <= 0.0 || Ci > Cs) {
+        if (qudratic_error || Ci <= 0.0 || Ci > Cs || isnan(Ci)) {
             Ac = 0.0;
         } else {
             Ac = vcmax * (Ci - gamma_star) / (Ci + km);
@@ -107,17 +106,21 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         qudratic_error = FALSE;
         large_root = TRUE;
         Ci = quad(A, B, C, large_root, &qudratic_error);
-
-        Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
-
-        /* Below light compensation point? */
-        if (Aj - rd < 1E-6) {
-            Ci = Cs;
+        if (qudratic_error || Ci <= 0.0 || Ci > Cs || isnan(Ci)) {
+            Aj = 0.0;
+        } else {
             Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
+            /* Below light compensation point? */
+            if (Aj - rd < 1E-6) {
+                Ci = Cs;
+                Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
+            }
         }
+
         cw->an_leaf[idx] = MIN(Ac, Aj) - rd;
         cw->rd_leaf[idx] = rd;
         cw->gsc_leaf[idx] = MAX(g0, g0 + gs_over_a * cw->an_leaf[idx]);
+
     }
     return;
 }
