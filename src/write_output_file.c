@@ -86,7 +86,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
 
 
     /* C fluxes */
-    fprintf(c->ofp, "%.10f,%.10f\n", f->npp, f->nee);
+    fprintf(c->ofp, "%.10f,%.10f\n", f->npp, f->nep);
 
     return;
 }
