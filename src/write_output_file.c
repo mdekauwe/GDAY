@@ -46,7 +46,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "BETA,SWC,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
 
     /* C fluxes */
-    fprintf(*fp, "NPP\n");
+    fprintf(*fp, "NPP,NEE\n");
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
@@ -72,8 +72,8 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
 
 
     /* plant */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f",
-                    s->shoot, s->lai, s->stem,s->branch, s->root);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->shoot, s->lai, s->stem, s->branch, s->root);
 
     /*
     ** FLUXES
@@ -81,12 +81,12 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
 
     /* water */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-            s->wtfac_root,s->pawater_root,f->transpiration,f->soil_evap,
-            f->canopy_evap,f->runoff);
+            s->wtfac_root, s->pawater_root, f->transpiration, f->soil_evap,
+            f->canopy_evap, f->runoff);
 
 
     /* C fluxes */
-    fprintf(c->ofp, "%.10f\n", f->npp);
+    fprintf(c->ofp, "%.10f,%.10f\n", f->npp, f->nee);
 
     return;
 }
