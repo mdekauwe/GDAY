@@ -200,6 +200,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         allocate_stored_c_and_n(f, p, s);
     }
 
+
+
     /* Setup output file */
     if (c->print_options == DAILY && c->spin_up == FALSE) {
         /* Daily outputs */
@@ -260,17 +262,21 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     s->pawater_root = p->wcapac_root;
     s->pawater_topsoil = p->wcapac_topsoil;
 
+
     if (c->fixed_lai == 0) {
         s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                             p->cfracts * s->shoot));
     } else if (c->fixed_lai == 1) {
         s->lai = p->fix_lai;
     } else if (c->fixed_lai == 2) {
+
         if ((lai_fp = fopen(c->lai_fname, "r")) == NULL) {
     		fprintf(stderr, "Error: couldn't open LAI file %s for read\n",
                     c->lai_fname);
     		exit(EXIT_FAILURE);
         }
+
+
 
         if ((lai_data = (double *)calloc(366*2, sizeof(double))) == NULL) {
     		fprintf(stderr,"Error allocating lai data for read\n");
@@ -284,8 +290,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     	}
 
     }
-
-
 
     if (c->disturbance) {
         if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
@@ -430,7 +434,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             allocate_stored_c_and_n(f, p, s);
         }
     }
-    
+
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */

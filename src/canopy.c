@@ -69,7 +69,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 initialise_leaf_surface(cw, m);
 
 
-                
+
                 /* Leaf temperature loop */
                 while (TRUE) {
 
@@ -79,14 +79,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
-                    }
-
-                    if isnan(cw->an_leaf[cw->ileaf]) {
-                        printf("%lf %lf %lf %lf %lf %lf %lf %lf %lf\n",
-                                    m->rain, m->wind, m->press/1000., m->vpd/1000., m->tair,
-                                    m->par, m->sw_rad, m->Ca, s->lai);
-                        printf("%lf %lf\n",f->gpp, s->shoot);
-                        exit(1);
                     }
 
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
