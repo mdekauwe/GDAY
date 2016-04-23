@@ -43,7 +43,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "CF,LAI,CB,CW,CR,");
 
     /* water*/
-    fprintf(*fp, "BETA,SWC,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
+    fprintf(*fp, "BETA,SWC,ET,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
 
     /* C fluxes */
     fprintf(*fp, "NPP,NEE\n");
@@ -80,9 +80,9 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     */
 
     /* water */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-            s->wtfac_root, s->pawater_root, f->transpiration, f->soil_evap,
-            f->canopy_evap, f->runoff);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+            s->wtfac_root, s->pawater_root, f->et, f->transpiration,
+            f->soil_evap, f->canopy_evap, f->runoff);
 
 
     /* C fluxes */
