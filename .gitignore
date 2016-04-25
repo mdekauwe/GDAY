@@ -12,3 +12,5 @@
 
 src/gday
 src/version.c
+
+src/gday.dSYM*
