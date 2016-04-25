@@ -40,7 +40,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
-    int    hod, iter = 0, itermax = 100, dummy, sunlight_hrs;
+    int    hod, iter = 0, itermax = 100, dummy=-999, sunlight_hrs;
     double doy;
 
     /* loop through the day */
@@ -161,7 +161,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
 
     */
     int    idx;
-    double omega, transpiration, LE, Tdiff, gv, gbc, gh, Tk, sw_rad;
+    double omega, transpiration, LE, Tdiff, gv, gbc, gh, sw_rad;
 
     idx = cw->ileaf;
     sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
@@ -241,7 +241,7 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
     * Chen et al 93, Oecologia, 93,63-69.
 
     */
-    double Ntot, N0;
+    double Ntot;
 
     /* leaf mass per area (g C m-2 leaf) */
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;

@@ -40,7 +40,7 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
           Components of incoming radiation. Agricultural Forest Meteorol.,
           38:217-229.
     */
-    double So, tau, R, K, diffuse_frac, cos_zen_sq;
+    double So, tau, R, K, cos_zen_sq;
 
     /* sine of the elev of the sun above the horizon is the same as cos_zen */
     So = calc_extra_terrestrial_rad(doy, cw->cos_zenith);
