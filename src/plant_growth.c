@@ -25,7 +25,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
                      met *m, params *p, state *s, double day_length, int doy,
                      double fdecay, double rdecay)
 {
-    double previous_topsoil_store, dummy,
+    double previous_topsoil_store, dummy=-999.9,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
@@ -318,7 +318,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
 
     int    recalc_wb;
     double nsupply, rtot, ntot, arg, lai_inc = 0.0, conv;
-    double depth_guess = 1.0, total_req;
+    double depth_guess = 1.0;
 
     /* default is we don't need to recalculate the water balance,
        however if we cut back on NPP due to available N below then we do
@@ -538,7 +538,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     McMurtrie, R. E. et al (2000) Plant and Soil, 224, 135-152.
     */
     double min_leaf_alloc, adj, arg1, arg2, arg3, arg4, leaf2sa_target,
-           sap_cross_sec_area, lr_max, stress, mis_match, orig_af, orig_ar,
+           sap_cross_sec_area, lr_max, stress, mis_match, orig_ar,
            reduction, target_branch, coarse_root_target, left_over,
            total_alloc, leaf2sap, spare;
 
