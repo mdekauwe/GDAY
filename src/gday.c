@@ -160,7 +160,7 @@ int main(int argc, char **argv)
 void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              params *p, state *s){
 
-    int    nyr, doy, window_size, i, dummy;
+    int    nyr, doy, window_size, i, dummy=-999;
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
     int   *disturbance_yrs = NULL;

@@ -182,9 +182,9 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     int    i = 0;
     int    nvars = 12;
     int    skipped_lines = 0;
-    double current_yr, temp_HOD;
+    double current_yr;
     long   file_len;
-    double hod_dummy;
+    double hod_dummy = -999.9;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
@@ -277,7 +277,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf", \
-                          &(ma->year[i]), &(ma->doy[i]), &temp_HOD, \
+                          &(ma->year[i]), &(ma->doy[i]), &hod_dummy, \
                           &(ma->rain[i]), &(ma->par[i]), &(ma->tair[i]), \
                           &(ma->tsoil[i]), &(ma->vpd[i]), &(ma->co2[i]), \
                           &(ma->ndep[i]), &(ma->wind[i]), \
@@ -303,13 +303,10 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 {
     FILE  *fp;
     float *data = NULL;
-    char   line[STRING_LENGTH];
-    int    i = 0, j = 0;
-    int    nvars = 12;
-    int    skipped_lines = 0;
-    double current_yr, temp_HOD;
+    int    i = 0;
+    double current_yr;
     long   cnt;
-    double hod_dummy;
+    double hod_dummy = -999.9;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
@@ -396,7 +393,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 
             ma->year[cnt] = data[i];
             ma->doy[cnt] = data[i+1];
-            temp_HOD = data[i+2];
+            hod_dummy = data[i+2];
             ma->rain[cnt] = data[i+3];
             ma->par[cnt] = data[i+4];
             ma->tair[cnt] = data[i+5];
