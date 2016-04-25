@@ -64,8 +64,6 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    float tonnes_per_ha_to_g_m2 = 100.0;
-    int half_yr, offset;
 
     /* time stuff */
     fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
