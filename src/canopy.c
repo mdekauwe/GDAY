@@ -68,8 +68,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 initialise_leaf_surface(cw, m);
 
-
-
                 /* Leaf temperature loop */
                 while (TRUE) {
 

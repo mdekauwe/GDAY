@@ -980,6 +980,8 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
         get_soil_params(p->rootsoil_type, &p->ctheta_root, &p->ntheta_root);
     }
     /*
+    printf("%f %f %f\n", p->topsoil_depth, p->theta_fc_topsoil,  p->theta_wp_topsoil);
+    printf("%f %f %f\n", p->rooting_depth, p->theta_fc_root,  p->theta_wp_root);
     printf("%f\n", p->wcapac_topsoil);
     printf("%f\n\n", p->wcapac_root);
 
@@ -989,7 +991,7 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
     printf("%f\n", p->ntheta_root);
     printf("%f\n", p->rooting_depth);
 
-    exit(1); */
+    exit(1);*/
 
 
 
