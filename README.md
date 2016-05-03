@@ -111,7 +111,7 @@ Variable | Description | Units
 year | |
 doy  | day of year  | [0-365/6]
 tair | (daylight) air temperature | deg C
-rain | rainfall | mm 30 min<sup>-1</sup>
+rain | rainfall | mm day<sup>-1</sup>
 tsoil | soil temperature | deg C
 tam | morning air temperature | deg C
 tpm | afternoon air temperature | deg C
