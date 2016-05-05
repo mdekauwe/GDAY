@@ -462,9 +462,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     if (c->print_options == DAILY &&
         c->spin_up == FALSE &&
         c->output_ascii == FALSE) {
-
-        if (fwrite(odata, sizeof(float), c->total_num_days*c->ovars, c->ofp) !=\
-                                         c->total_num_days*c->ovars) {
+        if (fwrite(odata, sizeof(double), c->total_num_days*c->ovars, c->ofp) !=\
+                                          c->total_num_days*c->ovars) {
             fprintf(stderr, "Error writing binary output file: %s\n", \
                     c->out_fname);
 	        exit(EXIT_FAILURE);
