@@ -378,8 +378,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
-            if (c->spin_up == FALSE)
-                printf("%lf %lf\n", year, f->gpp*100);
+            /*if (c->spin_up == FALSE)
+                printf("%lf %lf\n", year, f->gpp*100);*/
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
 
@@ -531,11 +531,11 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
             /* Have we reached a steady state? */
-
+            /*
             fprintf(stderr,
               "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
                s->plantc, s->soilc, s->plantn, s->soiln);
-
+            */
         }
     }
     write_final_state(c, p, s);
