@@ -103,11 +103,13 @@ void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     odata[ocnt+6] = s->root;
     odata[ocnt+7] = s->wtfac_root;
     odata[ocnt+8] = s->pawater_root;
-    odata[ocnt+9] = f->transpiration;
-    odata[ocnt+10] = f->soil_evap;
-    odata[ocnt+11] = f->canopy_evap;
-    odata[ocnt+12] = f->runoff;
-    odata[ocnt+13] = f->npp;
+    odata[ocnt+9] = f->et;
+    odata[ocnt+10] = f->transpiration;
+    odata[ocnt+11] = f->soil_evap;
+    odata[ocnt+12] = f->canopy_evap;
+    odata[ocnt+13] = f->runoff;
+    odata[ocnt+14] = f->npp;
+    odata[ocnt+15] = f->nee;
 
     return;
 }
