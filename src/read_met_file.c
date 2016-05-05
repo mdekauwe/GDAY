@@ -383,37 +383,35 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
-
     /* Divide up met chunk */
     cnt = 0;
-    c->num_years = 0;
+    c->num_years = 1;
     current_yr = data[0];
 
     for (i = 0; i < c->nrows * c->ncols; i += c->ncols) {
 
-            ma->year[cnt] = data[i];
-            ma->doy[cnt] = data[i+1];
-            hod_dummy = data[i+2];
-            ma->rain[cnt] = data[i+3];
-            ma->par[cnt] = data[i+4];
-            ma->tair[cnt] = data[i+5];
-            ma->tsoil[cnt] = data[i+6];
-            ma->vpd[cnt] = data[i+7];
-            ma->co2[cnt] = data[i+8];
-            ma->ndep[cnt] = data[i+9];
-            ma->wind[cnt] = data[i+10];
-            ma->press[cnt] = data[i+11];
+        ma->year[cnt] = data[i];
+        ma->doy[cnt] = data[i+1];
+        hod_dummy = data[i+2];
+        ma->rain[cnt] = data[i+3];
+        ma->par[cnt] = data[i+4];
+        ma->tair[cnt] = data[i+5];
+        ma->tsoil[cnt] = data[i+6];
+        ma->vpd[cnt] = data[i+7];
+        ma->co2[cnt] = data[i+8];
+        ma->ndep[cnt] = data[i+9];
+        ma->wind[cnt] = data[i+10];
+        ma->press[cnt] = data[i+11];
 
-            /* Build an array of the unique years as we loop over the input file */
-            if (current_yr != ma->year[cnt]) {
-                c->num_years++;
-                current_yr = ma->year[cnt];
-            }
-            cnt++;
+        /* Build an array of the unique years as we loop over the input file */
+        if (current_yr != ma->year[cnt]) {
+            c->num_years++;
+            current_yr = ma->year[cnt];
+        }
+        cnt++;
     }
     /* tidy up */
     free(data);
-
     fclose(fp);
 
     return;
