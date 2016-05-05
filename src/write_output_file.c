@@ -46,7 +46,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "BETA,SWC,ET,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
 
     /* C fluxes */
-    fprintf(*fp, "NPP,NEE\n");
+    fprintf(*fp, "NPP,NEP\n");
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
@@ -109,7 +109,7 @@ void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     odata[ocnt+12] = f->canopy_evap;
     odata[ocnt+13] = f->runoff;
     odata[ocnt+14] = f->npp;
-    odata[ocnt+15] = f->nee;
+    odata[ocnt+15] = f->nep;
 
     return;
 }
