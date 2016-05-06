@@ -118,11 +118,6 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
-    if ((ma->par = (double *)calloc(file_len, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for par array\n");
-		exit(EXIT_FAILURE);
-    }
-
     if ((ma->par_am = (double *)calloc(file_len, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for par_am array\n");
 		exit(EXIT_FAILURE);
@@ -298,6 +293,178 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     fclose(fp);
     return;
 }
+
+void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
+{
+    FILE  *fp;
+    float *data = NULL;
+    int    i = 0;
+    double current_yr;
+    long   cnt;
+    double hod_dummy = -999.9;
+
+    if ((fp = fopen(c->met_fname, "r")) == NULL) {
+		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
+                c->met_fname);
+		exit(EXIT_FAILURE);
+    }
+
+    if ((data = (float *)calloc(c->nrows*c->ncols, sizeof(float))) == NULL) {
+		fprintf(stderr,"%s: error allocating met data for read\n",argv[0]);
+		exit(EXIT_FAILURE);
+	}
+
+    if (fread(data, sizeof(float), c->nrows*c->ncols, fp) != c->nrows*c->ncols){
+		fprintf(stderr,"Error in reading met binary file: %s\n", c->met_fname);
+		exit(EXIT_FAILURE);
+	}
+
+    c->total_num_days = c->nrows;
+
+    /* allocate memory for meteorological arrays */
+    if ((ma->year = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for year array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->prjday = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for prjday array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tair = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tair array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->rain = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for rain array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tsoil = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tsoil array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tam = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tam array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tpm = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tpm array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tmin = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tmin array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tmax = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tmax array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->tday = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for tday array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->vpd_am = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for vpd_am array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->vpd_pm = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for vpd_pm array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->co2 = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for co2 array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->ndep = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for ndep array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->wind = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for wind array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->press = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for press array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->wind_am = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for wind_am array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->wind_pm = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for wind_pm array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->par_am = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for par_am array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    if ((ma->par_pm = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for par_pm array\n");
+		exit(EXIT_FAILURE);
+    }
+
+    /* Divide up met chunk */
+    cnt = 0;
+    c->num_years = 1;
+    current_yr = data[0];
+
+    for (i = 0; i < c->nrows * c->ncols; i += c->ncols) {
+
+        ma->year[cnt] = data[i];
+        ma->prjday[cnt] = data[i+1];
+        ma->tair[cnt] = data[i+2];
+        ma->rain[cnt] = data[i+3];
+        ma->tsoil[cnt] = data[i+4];
+        ma->tam[cnt] = data[i+5];
+        ma->tpm[cnt] = data[i+6];
+        ma->tmin[cnt] = data[i+7];
+        ma->tmax[cnt] = data[i+8];
+        ma->tday[cnt] = data[i+9];
+        ma->vpd_am[cnt] = data[i+10];
+        ma->vpd_pm[cnt] = data[i+11];
+        ma->co2[cnt] = data[i+12];
+        ma->ndep[cnt] = data[i+13];
+        ma->wind[cnt] = data[i+14];
+        ma->press[cnt] = data[i+15];
+        ma->wind_am[cnt] = data[i+16];
+        ma->wind_pm[cnt] = data[i+17];
+        ma->par_am[cnt] = data[i+18];
+        ma->par_pm[cnt] = data[i+19];
+
+
+        /* Build an array of the unique years as we loop over the input file */
+        if (current_yr != ma->year[cnt]) {
+            c->num_years++;
+            current_yr = ma->year[cnt];
+        }
+        cnt++;
+    }
+    /* tidy up */
+    free(data);
+    fclose(fp);
+
+    return;
+}
+
 
 void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma)
 {

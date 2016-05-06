@@ -103,7 +103,13 @@ int main(int argc, char **argv)
             read_subdaily_met_data_binary(argv, c, ma);
         }
     } else {
-        read_daily_met_data(argv, c, ma);
+        if (c->input_ascii) {
+            read_daily_met_data(argv, c, ma);
+        } else {
+            read_daily_met_data_binary(argv, c, ma);
+        }
+
+
     }
 
     if (c->spin_up)
