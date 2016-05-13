@@ -8,11 +8,9 @@ if (!require("ini")){
     library(ini)
 }
 
-
-g <- read.ini(in_fname)
-
-
 adjust_gday_params <- function(in_fname, out_fname, replacements) {
+
+  g <- read.ini(in_fname)
 
   for (key in names(replacements)) {
 
@@ -35,7 +33,6 @@ adjust_gday_params <- function(in_fname, out_fname, replacements) {
     }
 
   }
-
   write.ini(g, out_fname)
 }
 
