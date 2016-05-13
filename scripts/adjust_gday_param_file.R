@@ -8,17 +8,42 @@ if (!require("ini")){
     library(ini)
 }
 
+adjust_gday_params <- function(in_fname, out_fname, replacements) {
+
+  g <- read.ini(in_fname)
+
+  for (key in names(replacements)) {
+
+    match_git <- key %in% names(g$git)
+    match_files <- key %in% names(g$files)
+    match_params <- key %in% names(g$params)
+    match_state <- key %in% names(g$state)
+    match_control <- key %in% names(g$control)
+
+    if (match_git) {
+      g$git[key] <- replacements[key]
+    } else if (match_files) {
+      g$files[key] <- replacements[key]
+    } else if (match_params) {
+      g$params[key] <- replacements[key]
+    } else if (match_state) {
+      g$state[key] <- replacements[key]
+    } else if (match_control) {
+      g$control[key] <- replacements[key]
+    }
+
+  }
+  write.ini(g, out_fname)
+}
+
+
 in_fname <- "base_start.cfg"
 out_fname <- "test.ini"
-g <- read.ini(in_fname)
 
-# Change control
-g$control$ncycle <- "true"
-g$control$modeljm <- 3
-g$control$print_options <- "end"
+replacements <- list("ncycle" = "true",
+                     "modeljm" = "3",
+                     "print_options" = "end",
+                     "jmax" = "110.0",
+                     "vcmax" = "55.0")
 
-g$params$vcmax <- "55.0"
-g$control$jmax <- "110.0"
-
-
-write.ini(g, out_fname)
+adjust_gday_params(in_fname, out_fname, replacements)
