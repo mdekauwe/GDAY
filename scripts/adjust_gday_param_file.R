@@ -2,13 +2,26 @@
 # Author: Martin De Kauwe
 # Date: 12.05.2016
 # Email: mdekauwe@gmail.com
-
-if (!require("ini")){
-    install.packages("ini")
-    library(ini)
-}
+#
+# e.g....
+#
+# in_fname <- "base_start.cfg"
+# out_fname <- "test.ini"
+#
+# replacements <- list("ncycle" = "true",
+#                     "modeljm" = "3",
+#                     "print_options" = "end",
+#                     "jmax" = "110.0",
+#                     "vcmax" = "55.0")
+#
+# adjust_gday_params(in_fname, out_fname, replacements)
 
 adjust_gday_params <- function(in_fname, out_fname, replacements) {
+
+  if (!require("ini")){
+      install.packages("ini")
+      library(ini)
+  }
 
   g <- read.ini(in_fname)
 
@@ -35,15 +48,3 @@ adjust_gday_params <- function(in_fname, out_fname, replacements) {
   }
   write.ini(g, out_fname)
 }
-
-
-in_fname <- "base_start.cfg"
-out_fname <- "test.ini"
-
-replacements <- list("ncycle" = "true",
-                     "modeljm" = "3",
-                     "print_options" = "end",
-                     "jmax" = "110.0",
-                     "vcmax" = "55.0")
-
-adjust_gday_params(in_fname, out_fname, replacements)
