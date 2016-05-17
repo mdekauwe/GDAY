@@ -461,7 +461,7 @@ void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
     /* tidy up */
     free(data);
     fclose(fp);
-
+    
     return;
 }
 
