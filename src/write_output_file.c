@@ -30,29 +30,83 @@ void write_output_header(control *c, FILE **fp) {
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    int ncols = 14;
-    int nrows = c->total_num_days;
+    int ncols = 86;
+    int nrows = c->num_days;
 
     /* Git version */
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
     /* time stuff */
-    fprintf(*fp, "YEAR,DOY,");
+    fprintf(*fp, "year,doy,");
 
-    /* plant */
-    fprintf(*fp, "CF,LAI,CB,CW,CR,");
+    /*
+    ** STATE
+    */
 
     /* water*/
-    fprintf(*fp, "BETA,SWC,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
+    fprintf(*fp, "wtfac_root,pawater_root,");
+
+    /* plant */
+    fprintf(*fp, "shoot,lai,branch,stem,root,croot,shootn,branchn,stemn,");
+    fprintf(*fp, "rootn,crootn,cstore,nstore,");
+
+    /* belowground */
+    fprintf(*fp, "soilc,soiln,inorgn,litterc,littercag,littercbg,");
+    fprintf(*fp, "litternag,litternbg,activesoil,slowsoil,");
+    fprintf(*fp, "passivesoil,activesoiln,slowsoiln,passivesoiln,");
+
+    /*
+    ** FLUXES
+    */
+
+    /* water */
+    fprintf(*fp, "et,transpiration,soil_evap,canopy_evap,runoff,");
+    fprintf(*fp, "gs_mol_m2_sec,ga_mol_m2_sec,");
+
+    /* litter */
+    fprintf(*fp, "deadleaves,deadbranch,deadstems,deadroots,deadcroots,");
+    fprintf(*fp, "deadleafn,deadbranchn,deadstemn,deadrootn,deadcrootn,");
 
     /* C fluxes */
-    fprintf(*fp, "NPP\n");
+    fprintf(*fp, "nep,gpp,npp,hetero_resp,auto_resp,apar,");
+
+    /* C & N growth */
+    fprintf(*fp, "cpleaf,cpbranch,cpstem,cproot,cpcroot,");
+    fprintf(*fp, "npleaf,npbranch,npstemimm,npstemmob,nproot,npcroot,");
+
+    /* N stuff */
+    fprintf(*fp, "nuptake,ngross,nmineralisation,nloss,");
+
+    /* traceability stuff */
+    fprintf(*fp, "tfac_soil_decomp,c_into_active,c_into_slow,");
+    fprintf(*fp, "c_into_passive,active_to_slow,active_to_passive,");
+    fprintf(*fp, "slow_to_active,slow_to_passive,passive_to_active,");
+    fprintf(*fp, "co2_rel_from_surf_struct_litter,");
+    fprintf(*fp, "co2_rel_from_soil_struct_litter,");
+    fprintf(*fp, "co2_rel_from_surf_metab_litter,");
+    fprintf(*fp, "co2_rel_from_soil_metab_litter,");
+    fprintf(*fp, "co2_rel_from_active_pool,");
+    fprintf(*fp, "co2_rel_from_slow_pool,");
+    fprintf(*fp, "co2_rel_from_passive_pool,");
+
+    /* extra priming stuff */
+    fprintf(*fp, "root_exc,");
+    fprintf(*fp, "root_exn,");
+    fprintf(*fp, "co2_released_exud,");
+    fprintf(*fp, "factive,");
+    fprintf(*fp, "rtslow,");
+    fprintf(*fp, "rexc_cue,");
+
+
+
+    /* Misc */
+    fprintf(*fp, "leafretransn\n");
+
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
         fprintf(*fp, "ncols=%d\n", ncols);
     }
-
     return;
 }
 
@@ -64,33 +118,98 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    float tonnes_per_ha_to_g_m2 = 100.0;
-    int half_yr, offset;
+
 
     /* time stuff */
     fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
 
+    /*
+    ** STATE
+
+    */
+
+    /* water*/
+    fprintf(c->ofp, "%.10f,%.10f,", s->wtfac_root,s->pawater_root);
 
     /* plant */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f",
-                    s->shoot, s->lai, s->stem,s->branch, s->root);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->shoot,s->lai,s->branch,s->stem,s->root,s->croot,
+                    s->shootn,s->branchn,s->stemn);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
+                    s->rootn,s->crootn,s->cstore,s->nstore);
 
+    /* belowground */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->soilc,s->soiln,s->inorgn,s->litterc,s->littercag,
+                    s->littercbg);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->litternag,s->litternbg,s->activesoil,s->slowsoil,
+                    s->passivesoil,s->activesoiln,s->slowsoiln,
+                    s->passivesoiln);
     /*
     ** FLUXES
     */
 
     /* water */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-            s->wtfac_root,s->pawater_root,f->transpiration,f->soil_evap,
-            f->canopy_evap,f->runoff);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
+                    f->et,f->transpiration,f->soil_evap,f->canopy_evap);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
+                    f->runoff,f->gs_mol_m2_sec,f->ga_mol_m2_sec);
 
+    /* litter */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->deadleaves,f->deadbranch,f->deadstems,f->deadroots,
+                    f->deadcroots);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->deadleafn,f->deadbranchn,f->deadstemn,f->deadrootn,
+                    f->deadcrootn);
 
     /* C fluxes */
-    fprintf(c->ofp, "%.10f\n", f->npp);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->nep,f->gpp,f->npp,f->hetero_resp,f->auto_resp,
+                    f->apar);
+
+    /* C & N growth */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->cpleaf,f->cpbranch,f->cpstem,f->cproot,f->cpcroot);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->npleaf,f->npbranch,f->npstemimm,f->npstemmob,f->nproot,
+                    f->npcroot);
+
+    /* N stuff */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
+                    f->nuptake,f->ngross,f->nmineralisation,f->nloss);
+
+
+    /* traceability stuff */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
+                    f->tfac_soil_decomp,f->c_into_active,f->c_into_slow);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
+                    f->c_into_passive,f->active_to_slow,f->active_to_passive);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
+                    f->slow_to_active,f->slow_to_passive,f->passive_to_active);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_surf_struct_litter);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_soil_struct_litter);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_surf_metab_litter);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_soil_metab_litter);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_active_pool);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_slow_pool);
+    fprintf(c->ofp, "%.10f,", f->co2_rel_from_passive_pool);
+
+    /* extra priming stuff */
+    fprintf(c->ofp, "%.10f,", f->root_exc);
+    fprintf(c->ofp, "%.10f,", f->root_exn);
+    fprintf(c->ofp, "%.10f,", f->co2_released_exud);
+    fprintf(c->ofp, "%.10f,", f->factive);
+    fprintf(c->ofp, "%.10f,", f->rtslow);
+    fprintf(c->ofp, "%.10f,", f->rexc_cue);
+
+    /* Misc */
+    fprintf(c->ofp, "%.10f\n", f->leafretransn);
+
 
     return;
 }
-
 
 void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
                                 int doy) {
