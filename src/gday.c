@@ -317,6 +317,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
+            /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
 
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
@@ -745,6 +746,15 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
         m->tsoil = ma->tsoil[c->day_idx];
         m->Tk_am = ma->tam[c->day_idx] + DEG_TO_KELVIN;
         m->Tk_pm = ma->tpm[c->day_idx] + DEG_TO_KELVIN;
+
+
+
+        /*printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+               m->Ca, m->tair, m->tair_am, m->tair_pm, m->par, m->sw_rad,
+               m->sw_rad_am, m->sw_rad_pm, m->rain, m->vpd_am, m->vpd_pm,
+               m->wind_am, m->wind_pm, m->press, m->ndep, m->tsoil, m->Tk_am,
+               m->Tk_pm);*/
+
     }
 
     return;

@@ -512,9 +512,13 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
 
-    /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, alpha_am);
-    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm);
+    /* Covert solar irradiance to PAR (umol PAR MJ-1) */
+    conv = MJ_TO_J * J_2_UMOL;
+    m->par *= conv;
+
+    /* LUE (umol C umol-1 PAR) ; note conversion in epsilon */
+    lue_am = epsilon(p, asat_am, m->par, alpha_am, daylen);
+    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm, daylen);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -525,8 +529,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     else
         f->apar = m->par * s->fipar;
 
-    /* convert umol m-2 s-1 -> gC m-2 d-1 */
-    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
+    /* convert umol m-2 d-1 -> gC m-2 d-1 */
+    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
@@ -537,7 +541,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
-    f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
+    f->apar *= UMOL_2_JOL * J_TO_MJ;
 
     return;
 }
@@ -882,7 +886,8 @@ double assim(double ci, double gamma_star, double a1, double a2) {
 
 }
 
-double epsilon(params *p, double asat, double par, double alpha) {
+double epsilon(params *p, double asat, double par, double alpha,
+               double daylen) {
     /*
     Canopy scale LUE using method from Sands 1995, 1996.
 
@@ -931,15 +936,18 @@ double epsilon(params *p, double asat, double par, double alpha) {
       22, 601-14.
 
     */
-    double delta, q, integral_g, sinx, arg1, arg2, arg3, lue;
+    double delta, q, integral_g, sinx, arg1, arg2, arg3, lue, h;
     int i;
 
     /* subintervals scalar, i.e. 6 intervals */
     delta = 0.16666666667;
 
+    /* number of seconds of daylight */
+    h = daylen * SECS_IN_HOUR;
+
     if (asat > 0.0) {
         /* normalised daily irradiance */
-        q = M_PI * p->kext * alpha * par / (2.0 * asat);
+        q = M_PI * p->kext * alpha * par / (2.0 * h * asat);
         integral_g = 0.0;
         for (i = 1; i < 13; i+=2) {
             sinx = sin(M_PI * i / 24.);
@@ -1022,8 +1030,12 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     calculate_vcmax_parameter(p, s, m->Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
     calculate_vcmax_parameter(p, s, m->Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
 
-    /* Rubisco and light-limited capacity (Appendix, 2B) */
+    /* Covert solar irradiance to PAR (umol PAR MJ-1) */
+    conv = MJ_TO_J * J_2_UMOL;
+    m->par *= conv;
     par_per_sec = m->par / (60.0 * 60.0 * daylen);
+
+    /* Rubisco and light-limited capacity (Appendix, 2B) */
     M_am = quadratic(beta1, -(vcmax_am + p->alpha_c4 * par_per_sec),
                     (vcmax_am * p->alpha_c4 * par_per_sec));
     M_pm = quadratic(beta1, -(vcmax_pm + p->alpha_c4 * par_per_sec),
@@ -1045,8 +1057,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = A_pm - Rd_pm;
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4);
-    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4);
+    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4, daylen);
+    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4, daylen);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -1057,8 +1069,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     else
         f->apar = m->par * s->fipar;
 
-    /* convert umol m-2 s-1 -> gC m-2 d-1 */
-    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
+    /* convert umol m-2 d-1 -> gC m-2 d-1 */
+    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
@@ -1069,7 +1081,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
-    f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
+    f->apar *= UMOL_2_JOL * J_TO_MJ;
 
     return;
 }

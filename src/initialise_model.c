@@ -110,7 +110,7 @@ void initialise_params(params *p) {
     p->fracfaeces = 0.3;
     p->fracteaten = 0.5;
     p->fractosoil = 0.85;
-    p->fractup_soil = 0.2;
+    p->fractup_soil = 0.5;
     p->fretrans = 0.5;
     p->g1 = 2.74;
     p->gamstar25 = 42.75;

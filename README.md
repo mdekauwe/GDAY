@@ -126,8 +126,8 @@ wind | wind speed | m s<sup>-1</sup>
 press | atmospheric pressure | kPa
 wind_am | morning wind speed | m s<sup>-1</sup>
 wind_pm | afternoon wind speed | m s<sup>-1</sup>
-par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
-par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
+par_am | morning photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
+par_am | afternoon photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
 
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
