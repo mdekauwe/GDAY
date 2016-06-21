@@ -704,7 +704,7 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
 void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
                      double day_length) {
 
-    double conv;
+    double c1, c2;
 
     /* unpack met forcing */
     if (c->sub_daily) {
@@ -736,15 +736,15 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->tair = ma->tair[c->day_idx];
         m->tair_am = ma->tam[c->day_idx];
         m->tair_pm = ma->tpm[c->day_idx];
-
-        /* Convert PAR units MJ m-2 d-1 to umol m-2 d-1 */
-        conv = MJ_TO_J * J_2_UMOL;
         m->par = ma->par_am[c->day_idx] + ma->par_pm[c->day_idx];
-        m->sw_rad = m->par * conv / (day_length * 60.0 * 60.0) * PAR_2_SW;
-        m->sw_rad_am = (ma->par_am[c->day_idx] * conv / \
-                        (day_length / 2.0 * 60.0 * 60.0) * PAR_2_SW);
-        m->sw_rad_pm = (ma->par_pm[c->day_idx] * conv / \
-                        (day_length / 2.0 * 60.0 * 60.0) * PAR_2_SW);
+
+        /* Conversion factor for PAR to SW rad */
+        c1 = MJ_TO_J * J_2_UMOL / (day_length * 60.0 * 60.0) * PAR_2_SW;
+        c2 = MJ_TO_J * J_2_UMOL / (day_length / 2.0 * 60.0 * 60.0) * PAR_2_SW;
+        m->sw_rad = m->par * c1;
+        m->sw_rad_am = ma->par_am[c->day_idx] * c2;
+        m->sw_rad_pm = ma->par_pm[c->day_idx] * c2;
+        
         m->rain = ma->rain[c->day_idx];
         m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
         m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;
