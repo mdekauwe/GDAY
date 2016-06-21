@@ -16,6 +16,7 @@
 #define M2_AS_HA 1E-4
 #define KG_AS_G 1E+3
 #define WATT_HR_TO_MJ 0.0036
+#define MJ_TO_WATT_HR 1.0 / 0.0036
 #define MM_TO_M  0.001
 #define GRAMS_C_TO_MOL_C 1.0 / 12.0
 #define UMOL_TO_MOL 1E-6

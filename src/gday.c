@@ -190,7 +190,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
         allocate_stored_c_and_n(f, p, s);
     }
-    
+
     /* Setup output file */
     if (c->print_options == DAILY && c->spin_up == FALSE) {
         /* Daily outputs */
@@ -293,7 +293,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
             if (! c->sub_daily) {
-                unpack_met_data(c, ma, m, dummy);
+                unpack_met_data(c, ma, m, dummy, day_length[doy]);
             }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
@@ -318,6 +318,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                             doy, fdecay, rdecay);
 
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
+
 
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
@@ -700,7 +701,10 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     return;
 }
 
-void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
+void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
+                     double day_length) {
+
+    double conv;
 
     /* unpack met forcing */
     if (c->sub_daily) {
@@ -732,10 +736,15 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod) {
         m->tair = ma->tair[c->day_idx];
         m->tair_am = ma->tam[c->day_idx];
         m->tair_pm = ma->tpm[c->day_idx];
+
+        /* Convert PAR units MJ m-2 d-1 to umol m-2 d-1 */
+        conv = MJ_TO_J * J_2_UMOL;
         m->par = ma->par_am[c->day_idx] + ma->par_pm[c->day_idx];
-        m->sw_rad = m->par * PAR_2_SW;
-        m->sw_rad_am = ma->par_am[c->day_idx] * PAR_2_SW;
-        m->sw_rad_pm = ma->par_pm[c->day_idx] * PAR_2_SW;
+        m->sw_rad = m->par * conv / (day_length * 60.0 * 60.0) * PAR_2_SW;
+        m->sw_rad_am = (ma->par_am[c->day_idx] * conv / \
+                        (day_length / 2.0 * 60.0 * 60.0) * PAR_2_SW);
+        m->sw_rad_pm = (ma->par_pm[c->day_idx] * conv / \
+                        (day_length / 2.0 * 60.0 * 60.0) * PAR_2_SW);
         m->rain = ma->rain[c->day_idx];
         m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
         m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;

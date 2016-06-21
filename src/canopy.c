@@ -41,7 +41,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy, sunlight_hrs;
-    double doy;
+    double doy, dummy2;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -50,7 +50,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     doy = ma->doy[c->hour_idx];
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        unpack_met_data(c, ma, m, hod);
+        unpack_met_data(c, ma, m, hod, dummy2);
 
         /* calculates diffuse frac from half-hourly incident radiation */
         calculate_solar_geometry(cw, p, doy, hod);
