@@ -141,7 +141,7 @@ void calculate_decay_rates(fluxes *f, params *p, state *s) {
 
     /* abiotic decomposition factor - impact of soil moisture
        and soil temperature on microbial activity */
-    adfac = s->wtfac_topsoil * f->tfac_soil_decomp;
+    adfac = s->wtfac_root * f->tfac_soil_decomp;
 
     /*  Effect of soil texture (silt + clay content) on active SOM turnover
         -> higher turnover for sandy soils */

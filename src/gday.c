@@ -744,7 +744,7 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->sw_rad = m->par * c1;
         m->sw_rad_am = ma->par_am[c->day_idx] * c2;
         m->sw_rad_pm = ma->par_pm[c->day_idx] * c2;
-        
+
         m->rain = ma->rain[c->day_idx];
         m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
         m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;
