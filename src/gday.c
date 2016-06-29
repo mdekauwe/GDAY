@@ -260,6 +260,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     ** ====================== */
     c->day_idx = 0;
     c->hour_idx = 0;
+
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
         if (c->sub_daily) {
@@ -446,8 +447,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* Have we reached a steady state? */
             fprintf(stderr,
-              "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
-               s->plantc, s->soilc, s->plantn, s->soiln);
+              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
     }
     write_final_state(c, p, s);
@@ -713,23 +713,18 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->press = ma->press[c->hour_idx] * KPA_2_PA;
         m->vpd = ma->vpd[c->hour_idx] * KPA_2_PA;
         m->tair = ma->tair[c->hour_idx];
+        m->tsoil = ma->tsoil[c->hour_idx];
         m->par = ma->par[c->hour_idx];
         m->sw_rad = ma->par[c->hour_idx] * PAR_2_SW; /* W m-2 */
         m->Ca = ma->co2[c->hour_idx];
 
-        /*
-        * NDEP is per 30 min so need to sum 30 min data
-        *
-        * TSOIL - need to take the average of tsoil, so sum day and we will
-        * average outside of this function call.
-        */
+        /* NDEP is per 30 min so need to sum 30 min data */
         if (hod == 0) {
             m->ndep = ma->ndep[c->hour_idx];
-            m->tsoil = ma->tsoil[c->hour_idx];
         } else {
             m->ndep += ma->ndep[c->hour_idx];
-            m->tsoil += ma->tsoil[c->hour_idx];
         }
+
 
     } else {
         m->Ca = ma->co2[c->day_idx];

@@ -11,7 +11,7 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
     double current_yr;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
-		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
+		fprintf(stderr, "Error: couldn't open daily Met file %s for read\n",
                 c->met_fname);
 		exit(EXIT_FAILURE);
 	 }
@@ -187,7 +187,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     double hod_dummy;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
-		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
+		fprintf(stderr, "Error: couldn't open sub-daily Met file %s for read\n",
                 c->met_fname);
 		exit(EXIT_FAILURE);
 	 }
@@ -201,6 +201,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         file_len++;
     }
     rewind(fp);
+
     /* output is daily, so correct for n_timesteps */
     c->total_num_days = file_len / 48;
 
@@ -294,7 +295,8 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         }
         i++;
     }
-
+    printf("%d"c->num_years);
+    exit(1);
     fclose(fp);
     return;
 }
