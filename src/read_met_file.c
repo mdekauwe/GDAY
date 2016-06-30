@@ -295,8 +295,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         }
         i++;
     }
-    printf("%d"c->num_years);
-    exit(1);
+    
     fclose(fp);
     return;
 }
