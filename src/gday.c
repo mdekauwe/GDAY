@@ -717,7 +717,7 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->par = ma->par[c->hour_idx];
         m->sw_rad = ma->par[c->hour_idx] * PAR_2_SW; /* W m-2 */
         m->Ca = ma->co2[c->hour_idx];
-
+        
         /* NDEP is per 30 min so need to sum 30 min data */
         if (hod == 0) {
             m->ndep = ma->ndep[c->hour_idx];

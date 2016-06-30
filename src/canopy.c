@@ -129,9 +129,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* work out average omega for the day over sunlight hours */
     f->omega /= sunlight_hrs;
 
-    /* work out average omega for the day, including the night */
-    m->tsoil /= c->num_hlf_hrs;
-
     if (c->water_stress) {
         /* Calculate the soil moisture availability factors [0,1] in the
            topsoil and the entire root zone */
