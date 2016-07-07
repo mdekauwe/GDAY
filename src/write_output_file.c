@@ -38,7 +38,7 @@ void write_output_subdaily_header(control *c, FILE **fp) {
     ** Canopy stuff...
     */
     fprintf(*fp, "an_canopy,rd_canopy,gsc_canopy,");
-    fprintf(*fp, "apar_canopy,trans_canopy,tleaf_new\n");
+    fprintf(*fp, "apar_canopy,trans_canopy,tleaf\n");
     return;
 }
 
@@ -134,7 +134,7 @@ void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
     /*
         Write sub-daily canopy fluxes - very basic for now
     */
-    
+
     /* time stuff */
     fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,", year, doy, (double)hod);
 
