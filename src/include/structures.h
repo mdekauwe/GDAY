@@ -6,10 +6,12 @@
 typedef struct {
     FILE *ifp;
     FILE *ofp;
+    FILE *ofp_sd;
     FILE *ofp_hdr;
     char  cfg_fname[STRING_LENGTH];
     char  met_fname[STRING_LENGTH];
     char  out_fname[STRING_LENGTH];
+    char  out_subdaily_fname[STRING_LENGTH];
     char  out_fname_hdr[STRING_LENGTH];
     char  out_param_fname[STRING_LENGTH];
     char  git_hash[STRING_LENGTH];

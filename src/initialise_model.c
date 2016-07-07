@@ -15,6 +15,7 @@ void initialise_control(control *c) {
     strcpy(c->cfg_fname, "*NOT SET*");
     strcpy(c->met_fname, "*NOT SET*");
     strcpy(c->out_fname, "*NOT SET*");
+    strcpy(c->out_subdaily_fname, "*NOT SET*");
     strcpy(c->out_fname_hdr, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
 

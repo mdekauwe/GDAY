@@ -22,6 +22,25 @@ void open_output_file(control *c, char *fname, FILE **fp) {
         prog_error("Error opening output file for write on line", __LINE__);
 }
 
+void write_output_subdaily_header(control *c, FILE **fp) {
+    /*
+        Write 30 min fluxes headers to an output CSV file. This is very basic
+        for now...
+    */
+
+    /* Git version */
+    fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
+
+    /* time stuff */
+    fprintf(*fp, "year,doy,hod,");
+
+    /*
+    ** Canopy stuff...
+    */
+    fprintf(*fp, "an_canopy,rd_canopy,gsc_canopy,");
+    fprintf(*fp, "apar_canopy,trans_canopy,tleaf_new\n");
+    return;
+}
 
 void write_output_header(control *c, FILE **fp) {
     /*
@@ -107,6 +126,24 @@ void write_output_header(control *c, FILE **fp) {
         fprintf(*fp, "nrows=%d\n", nrows);
         fprintf(*fp, "ncols=%d\n", ncols);
     }
+    return;
+}
+
+void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
+                                  double doy, int hod) {
+    /*
+        Write sub-daily canopy fluxes - very basic for now
+    */
+    
+    /* time stuff */
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,", year, doy, (double)hod);
+
+    /* Canopy stuff */
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,",
+                       cw->an_canopy, cw->rd_canopy, cw->gsc_canopy);
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f\n",
+                       cw->apar_canopy, cw->trans_canopy, cw->tleaf_new);
+
     return;
 }
 
