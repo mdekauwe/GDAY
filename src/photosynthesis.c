@@ -512,7 +512,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
 
-    /* Covert solar irradiance to PAR (umol PAR MJ-1) */
+    /* Covert PAR units (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
     m->par *= conv;
 
