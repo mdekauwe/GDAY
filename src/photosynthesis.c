@@ -923,11 +923,10 @@ double epsilon(params *p, double asat, double par, double alpha,
 
     Notes:
     ------
-    NB. I've removed some of the unit conversions as they are unnecessary.
-    Sands had gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
+    NB. I've removed solar irradiance to PAR conversion. Sands had
+    gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
     umol PAR on the basis that 1 MJ m-2 = 2.08 mol m-2 & mol to umol = 1E6.
-    He then has a divide by h (where h is in seconds) to go from day to seconds
-    of PAR. But if we just pass PAR in umol m-2 s-1 we don't need all of this
+    We are passing PAR in umol m-2 d-1, thus avoiding the above. 
 
     References:
     -----------
