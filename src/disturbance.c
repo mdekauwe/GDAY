@@ -10,7 +10,7 @@ void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
         (*yrs)[0] = p->burn_specific_yr;
     } else {
         yrs_till_event = time_till_next_disturbance();
-        year = (int)ma->year[prjday];
+        year = (int)ma->year[c->day_idx];
         /*year_of_disturbance = year + yrs_till_event; */
         year_of_disturbance = 1996;
 
@@ -19,7 +19,7 @@ void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
         prjday = 0;
 
         for (nyr = 0; nyr < c->num_years - 1; nyr++) {
-            year = (int)ma->year[prjday];
+            year = (int)ma->year[c->day_idx];
             if (is_leap_year(year))
                 prjday+=366;
             else
@@ -27,9 +27,9 @@ void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
 
             if (year == year_of_disturbance) {
                 yrs_till_event = time_till_next_disturbance();
-
                 if (*cnt == 0) {
                     (*yrs)[0] = year_of_disturbance;
+                    *cnt += 1;
                 } else {
                     *cnt += 1;
                     if ((yrs = (int **)realloc(yrs, (1 + *cnt) * sizeof(int))) == NULL) {
@@ -125,9 +125,10 @@ void fire(control *c, fluxes *f, params *p, state *s) {
     s->prev_sma = 1.0;
     s->root = 0.001;
     s->rootn = 0.00004;
-    s->shoot = 0.001;
+    s->shoot = 0.01;
+
     s->lai = p->sla * M2_AS_HA / KG_AS_TONNES / p->cfracts * s->shoot;
-    s->shootn = 0.00004;
+    s->shootn = 0.004;
     s->structsurf = 0.001;
     s->structsurfn = 0.00004;
 
@@ -154,6 +155,7 @@ void fire(control *c, fluxes *f, params *p, state *s) {
         s->rootnc = 0.0;
     else
         s->rootnc = MAX(0.0, s->rootn / s->root);
+
     return;
 }
 

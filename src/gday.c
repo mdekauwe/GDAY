@@ -247,13 +247,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     if (c->disturbance) {
-        if ((disturbance_yrs = (int *)calloc(1, sizeof(double))) == NULL) {
+        if ((disturbance_yrs = (int *)calloc(1, sizeof(int))) == NULL) {
             fprintf(stderr,"Error allocating space for disturbance_yrs\n");
     		exit(EXIT_FAILURE);
         }
         figure_out_years_with_disturbances(c, ma, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
+
 
     /* ====================== **
     **   Y E A R    L O O P   **
@@ -306,12 +307,20 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                 if (fire_found) {
                     fire(c, f, p, s);
+                    /* This will only work for evergreen, but that is fine
+                       this should be removed after KSCO is done */
                     sma(SMA_FREE, hw);
-                    hw = sma(SMA_NEW, p->growing_seas_len).handle;
+                    hw = sma(SMA_NEW, window_size).handle;
+                    if (s->prev_sma > -900) {
+                        for (i = 0; i < window_size; i++) {
+                            sma(SMA_ADD, hw, s->prev_sma);
+                        }
+                    }
                 }
             } else if (c->hurricane &&
                 p->hurricane_yr == year &&
                 p->hurricane_doy == doy) {
+
                 /* Hurricane? */
                 hurricane(f, p, s);
             }
@@ -319,7 +328,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                             doy, fdecay, rdecay);
 
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
-
 
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
@@ -724,6 +732,7 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         } else {
             m->ndep += ma->ndep[c->hour_idx];
         }
+
 
     } else {
         m->Ca = ma->co2[c->day_idx];
