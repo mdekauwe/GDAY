@@ -119,6 +119,8 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(c->met_fname, temp);
     } else if (MATCH("files", "out_fname")) {
         strcpy(c->out_fname, temp);
+    } else if (MATCH("files", "out_subdaily_fname")) {
+        strcpy(c->out_subdaily_fname, temp);
     } else if (MATCH("files", "out_fname_hdr")) {
         strcpy(c->out_fname_hdr, temp);
     } else if (MATCH("files", "out_param_fname")) {
@@ -337,7 +339,11 @@ int handler(char *section, char *name, char *value, control *c,
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "print_options")) {
-        if (strcmp(temp, "Daily") == 0 ||
+        if (strcmp(temp, "Subdaily") == 0 ||
+            strcmp(temp, "SUBDAILY") == 0 ||
+            strcmp(temp, "subdaily") == 0)
+            c->print_options = SUBDAILY;
+        else if (strcmp(temp, "Daily") == 0 ||
             strcmp(temp, "DAILY") == 0 ||
             strcmp(temp, "daily") == 0)
             c->print_options = DAILY;

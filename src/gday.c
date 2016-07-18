@@ -108,6 +108,9 @@ int main(int argc, char **argv)
 
     /* clean up */
     fclose(c->ofp);
+    if (c->print_options == SUBDAILY ) {
+        fclose(c->ofp_sd);
+    }
     fclose(c->ifp);
     if (c->output_ascii == FALSE) {
         fclose(c->ofp_hdr);
@@ -192,7 +195,19 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     /* Setup output file */
-    if (c->print_options == DAILY && c->spin_up == FALSE) {
+    if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
+        /* open the 30 min outputs file and the daily output files */
+        open_output_file(c, c->out_subdaily_fname, &(c->ofp_sd));
+        open_output_file(c, c->out_fname, &(c->ofp));
+
+        if (c->output_ascii) {
+            write_output_subdaily_header(c, &(c->ofp_sd));
+            write_output_header(c, &(c->ofp));
+        } else {
+            fprintf(stderr, "Nothing implemented for sub-daily binary\n");
+            exit(EXIT_FAILURE);
+        }
+    } else if (c->print_options == DAILY && c->spin_up == FALSE) {
         /* Daily outputs */
         open_output_file(c, c->out_fname, &(c->ofp));
 
@@ -364,7 +379,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-            if (c->print_options == DAILY && c->spin_up == FALSE) {
+            if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
+                write_daily_outputs_ascii(c, f, s, year, doy+1);
+            } else if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 else
@@ -423,7 +440,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int i, cntrl_flag;
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
-
 
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));

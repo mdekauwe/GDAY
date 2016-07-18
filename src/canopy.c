@@ -41,13 +41,14 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy, sunlight_hrs;
-    double doy, dummy2;
+    double doy, year, dummy2;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
+    year = ma->year[c->hour_idx];
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, ma, m, hod, dummy2);
@@ -122,6 +123,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
                                 cw->omega_canopy, cw->rnet_canopy);
 
+        if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
+            write_subdaily_outputs_ascii(c, cw, year, doy, hod);
+        }
         c->hour_idx++;
         sunlight_hrs++;
     } /* end of hour loop */

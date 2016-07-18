@@ -512,7 +512,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
 
-    /* Covert solar irradiance to PAR (umol PAR MJ-1) */
+    /* Covert PAR units (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
     m->par *= conv;
 
@@ -923,11 +923,10 @@ double epsilon(params *p, double asat, double par, double alpha,
 
     Notes:
     ------
-    NB. I've removed some of the unit conversions as they are unnecessary.
-    Sands had gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
+    NB. I've removed solar irradiance to PAR conversion. Sands had
+    gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
     umol PAR on the basis that 1 MJ m-2 = 2.08 mol m-2 & mol to umol = 1E6.
-    He then has a divide by h (where h is in seconds) to go from day to seconds
-    of PAR. But if we just pass PAR in umol m-2 s-1 we don't need all of this
+    We are passing PAR in umol m-2 d-1, thus avoiding the above. 
 
     References:
     -----------
