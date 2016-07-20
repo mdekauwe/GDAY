@@ -615,21 +615,45 @@ void calc_root_exudation_uptake_of_N(fluxes *f, state *s) {
     */
     double N_available, active_NC_ratio, delta_Nact, N_miss, N_to_active_pool;
 
-    N_available = f->nmineralisation;
+    /* To stop N pool going exactly zero */
+    double exhaustion_catch = 0.05;
 
+    N_available = MAX(0.0, s->inorgn + f->nmineralisation - exhaustion_catch);
     active_NC_ratio = s->activesoiln / s->activesoil;
     delta_Nact = f->root_exc * f->rexc_cue * active_NC_ratio;
 
+    /*
+    ** Demand for N from exudation to meet the C:N ratio of the active pool,
+    ** given the amount of N you add.
+    */
     N_miss = delta_Nact - f->root_exn;
+
     if (N_miss <= 0.0) {
-        N_to_active_pool = f->root_exn;
-    } else if (N_miss <= N_available) {
+        /*
+        ** Root exudation includes more N than is needed by the microbes, the
+        ** excess is mineralised
+        */
         f->nmineralisation -= N_miss;
         N_to_active_pool = f->root_exn + N_miss;
-    } else if (f->nmineralisation <= N_miss) {
-        N_to_active_pool = f->root_exn + N_available;
-        f->nmineralisation = 0.0;
+    } else {
+        /*
+        ** Not enough N in the soil to meet demand, so we are providing all
+        ** the N we have, which means that the C:N ratio of the active pool
+        ** changes.
+        */
+        if (N_miss > N_available) {
+            N_to_active_pool = f->root_exn + N_available;
+            f->nmineralisation -= N_available;
+        } else {
+            /*
+            ** Enough N to meet demand, so takes N from the mineralisation
+            ** and the active pool maintains the same C:N ratio.
+            */
+            N_to_active_pool = f->root_exn + N_miss;
+            f->nmineralisation -= N_miss;
+        }
     }
+
 
     /* update active pool */
     s->activesoiln += N_to_active_pool;
