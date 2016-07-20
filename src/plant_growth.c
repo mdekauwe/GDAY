@@ -80,7 +80,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     recalc_wb = nitrogen_allocation(c, f, p, s, ncbnew, nccnew, ncwimm, ncwnew,
                                     fdecay, rdecay, doy);
 
-    if (c->exudation) {
+    if (c->exudation && c->alloc_model != GRASSES) {
         calc_root_exudation_release(f, s);
     }
 
@@ -126,8 +126,8 @@ void calc_root_exudation_release(fluxes *f, state *s) {
         leaf_CN = 1.0 / s->shootnc;
         presc_leaf_CN = 30.0; /* make a parameter */
 
-        /* fraction varies between 0 and 50 % as a function of leaf CN */
-        frac_to_rexc = MAX(0.0, MIN(0.5, (leaf_CN / presc_leaf_CN) - 1.0));
+        /* fraction varies between 5 and 25 % as a function of leaf CN */
+        frac_to_rexc = MAX(0.05, MIN(0.25, (leaf_CN / presc_leaf_CN) - 1.0));
     }
     /*printf("%f %f\n", s->shootnc, 1./30.);*/
     f->root_exc = frac_to_rexc * f->cproot;

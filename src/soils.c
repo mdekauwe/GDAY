@@ -74,7 +74,7 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     /* switch off grazing if this was just activated as an annual event */
     c->grazing = cntrl_grazing;
 
-    if (c->exudation) {
+    if (c->exudation && c->alloc_model != GRASSES) {
         calc_root_exudation_uptake_of_C(f, p, s);
     }
 
@@ -586,12 +586,15 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     /* switch off grazing if this was just activated as an annual event */
     c->grazing = cntrl_grazing;
 
-    if (c->exudation) {
+    if (c->exudation && c->alloc_model != GRASSES) {
         calc_root_exudation_uptake_of_N(f, s);
     }
 
     if (c->adjust_rtslow) {
         adjust_residence_time_of_slow_pool(f, p);
+    } else {
+        /* Need to correct units of rate constant */
+        f->rtslow = 1.0 / (p->kdec6 * NDAYS_IN_YR);
     }
 
     return;
@@ -642,20 +645,22 @@ void adjust_residence_time_of_slow_pool(fluxes *f, params *p) {
     double rt_slow_pool;
 
     /* total flux out of the factive pool */
-    f->factive = f->active_to_slow + f->active_to_passive + f->co2_to_air[4];
+    f->factive = (f->active_to_slow + f->active_to_passive + \
+                  f->co2_to_air[4] + f->co2_released_exud);
 
     if (float_eq(f->factive, 0.0)) {
         /* Need to correct units of rate constant */
         rt_slow_pool = 1.0 / (p->kdec6 * NDAYS_IN_YR);
     } else {
-        rt_slow_pool = (1.0 / p->prime_y  *
-                        (f->factive / (f->factive + p->prime_z)));
+        rt_slow_pool = (1.0 / p->prime_y) / \
+                        MAX(0.3, (f->factive / (f->factive + p->prime_z)));
 
         /* GDAY uses decay rates rather than residence times... */
         p->kdec6 = 1.0 / rt_slow_pool;
 
         /* rate constant needs to be per day inside GDAY */
         p->kdec6 /= NDAYS_IN_YR;
+
     }
 
     /* Save for outputting purposes only */
