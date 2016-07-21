@@ -558,7 +558,12 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     double nsurf, nsoil, active_nc_slope, slow_nc_slope, passive_nc_slope;
 
     /* N deposition + N fixation */
-    f->n_inflow = ndep + (p->nfix / NDAYS_IN_YR);
+    if (p->nfix > 0.0) {
+        f->n_inflow = ndep + (p->nfix / NDAYS_IN_YR);
+    } else {
+        f->n_inflow = ndep;
+    }
+
 
     grazer_inputs(c, f, p);
     inputs_from_plant_litter(f, p, &nsurf, &nsoil);
@@ -579,15 +584,8 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     calculate_n_immobilisation(f, p, s, &(f->nimmob), &active_nc_slope,
                                &slow_nc_slope, &passive_nc_slope);
 
-    /* Update model soil N pools */
-    calculate_npools(c, f, p, s, active_nc_slope, slow_nc_slope,
-                     passive_nc_slope);
-
     /* calculate N net mineralisation */
     calc_net_mineralisation(f);
-
-    /* switch off grazing if this was just activated as an annual event */
-    c->grazing = cntrl_grazing;
 
     if (c->exudation && c->alloc_model != GRASSES) {
         calc_root_exudation_uptake_of_N(f, s);
@@ -599,6 +597,17 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
         /* Need to correct units of rate constant */
         f->rtslow = 1.0 / (p->kdec6 * NDAYS_IN_YR);
     }
+
+    /* Update model soil N pools */
+    calculate_npools(c, f, p, s, active_nc_slope, slow_nc_slope,
+                     passive_nc_slope);
+
+
+
+    /* switch off grazing if this was just activated as an annual event */
+    c->grazing = cntrl_grazing;
+
+
 
     return;
 }
@@ -616,14 +625,13 @@ void calc_root_exudation_uptake_of_N(fluxes *f, state *s) {
     The amount of N added to the active pool is independent of the CUE of
     the microbial pool in response to root exudation (REXCUE).
     */
-    double N_available, active_NC_ratio, delta_Nact, N_miss, N_to_active_pool;
+    double N_available, active_NC, delta_Nact, N_miss, N_to_active_pool;
 
-    /* To stop N pool going exactly zero */
-    double exhaustion_catch = 0.05;
+    N_available = s->inorgn + (f->n_inflow + f->nurine + f->nmineralisation -
+                               f->nloss - f->nuptake);
 
-    N_available = MAX(0.0, s->inorgn + f->nmineralisation - exhaustion_catch);
-    active_NC_ratio = s->activesoiln / s->activesoil;
-    delta_Nact = f->root_exc * f->rexc_cue * active_NC_ratio;
+    active_NC = s->activesoiln / s->activesoil;
+    delta_Nact = f->root_exc * f->rexc_cue * active_NC;
 
     /*
     ** Demand for N from exudation to meet the C:N ratio of the active pool,
@@ -656,7 +664,6 @@ void calc_root_exudation_uptake_of_N(fluxes *f, state *s) {
             f->nmineralisation -= N_miss;
         }
     }
-
 
     /* update active pool */
     s->activesoiln += N_to_active_pool;
@@ -969,8 +976,7 @@ void calculate_n_immobilisation(fluxes *f, params *p, state *s, double *nimmob,
 
 
 void calc_net_mineralisation(fluxes *f) {
-    /* N Net mineralisation from microbial activity
-       i.e. excess of N outflows over inflows */
+    /* N Net mineralisation from microbial activity */
     f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;
 
     return;
@@ -1108,13 +1114,13 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
     fixn = nc_flux(f->c_into_passive, n_into_passive, pass_nc);
     s->passivesoiln += n_into_passive + fixn - n_out_of_passive;
 
-
     /* Daily increment of soil inorganic N pool, diff btw in and effluxes
        (grazer urine n goes directly into inorganic pool) nb inorgn may be
        unstable if rateuptake is large */
-    s->inorgn += ((f->ngross + f->n_inflow + f->nurine - f->nimmob -
-                   f->nloss - f->nuptake) + f->nlittrelease);
+    s->inorgn += (f->n_inflow + f->nurine + f->nmineralisation -
+                  f->nloss - f->nuptake);
 
+    /*f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;*/
     return;
 }
 

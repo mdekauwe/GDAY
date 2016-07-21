@@ -124,7 +124,7 @@ void calc_root_exudation_release(fluxes *f, state *s) {
         frac_to_rexc = 0.0;
     } else {
         leaf_CN = 1.0 / s->shootnc;
-        presc_leaf_CN = 30.0; /* make a parameter */
+        presc_leaf_CN = 42.0; /* 25 for broadleaf; 42 for conifer make a parameter */
 
         /* fraction varies between 5 and 25 % as a function of leaf CN */
         frac_to_rexc = MAX(0.05, MIN(0.25, (leaf_CN / presc_leaf_CN) - 1.0));
