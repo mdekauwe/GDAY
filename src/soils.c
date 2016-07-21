@@ -557,6 +557,9 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
     double nsurf, nsoil, active_nc_slope, slow_nc_slope, passive_nc_slope;
 
+    /* N deposition + N fixation */
+    f->n_inflow = ndep + (p->nfix / NDAYS_IN_YR);
+
     grazer_inputs(c, f, p);
     inputs_from_plant_litter(f, p, &nsurf, &nsoil);
     partition_plant_litter_n(c, f, p, nsurf, nsoil);
@@ -578,7 +581,7 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
 
     /* Update model soil N pools */
     calculate_npools(c, f, p, s, active_nc_slope, slow_nc_slope,
-                     passive_nc_slope, ndep);
+                     passive_nc_slope);
 
     /* calculate N net mineralisation */
     calc_net_mineralisation(f);
@@ -1003,7 +1006,7 @@ double calculate_nc_slope(params *p, double ncmax, double ncmin) {
 
 void calculate_npools(control *c, fluxes *f, params *p, state *s,
                       double active_nc_slope, double slow_nc_slope,
-                      double passive_nc_slope, double ndep) {
+                      double passive_nc_slope) {
     /*
     Update N pools in the soil
 
@@ -1109,7 +1112,7 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
     /* Daily increment of soil inorganic N pool, diff btw in and effluxes
        (grazer urine n goes directly into inorganic pool) nb inorgn may be
        unstable if rateuptake is large */
-    s->inorgn += ((f->ngross + ndep + f->nurine - f->nimmob -
+    s->inorgn += ((f->ngross + f->n_inflow + f->nurine - f->nimmob -
                    f->nloss - f->nuptake) + f->nlittrelease);
 
     return;

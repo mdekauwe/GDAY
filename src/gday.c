@@ -343,7 +343,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                             doy, fdecay, rdecay);
 
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
-
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
 
@@ -748,8 +747,6 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         } else {
             m->ndep += ma->ndep[c->hour_idx];
         }
-
-
     } else {
         m->Ca = ma->co2[c->day_idx];
         m->tair = ma->tair[c->day_idx];
@@ -774,8 +771,6 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->tsoil = ma->tsoil[c->day_idx];
         m->Tk_am = ma->tam[c->day_idx] + DEG_TO_KELVIN;
         m->Tk_pm = ma->tpm[c->day_idx] + DEG_TO_KELVIN;
-
-
 
         /*printf("%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
                m->Ca, m->tair, m->tair_am, m->tair_pm, m->par, m->sw_rad,

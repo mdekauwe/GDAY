@@ -732,6 +732,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->ncwnew = atof(value);
     } else if (MATCH("params", "ncwnewz")) {
         p->ncwnewz = atof(value);
+    } else if (MATCH("params", "nfix")) {
+        p->nfix = atof(value);
     } else if (MATCH("params", "nf_crit")) {
         p->nf_crit = atof(value);
     } else if (MATCH("params", "nf_min")) {

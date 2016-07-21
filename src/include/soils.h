@@ -42,7 +42,7 @@ void   calculate_n_immobilisation(fluxes *, params *, state *, double *,
 void   calc_net_mineralisation(fluxes *);
 double calculate_nc_slope(params *, double, double);
 void   calculate_npools(control *c, fluxes *, params *, state *, double,
-                        double, double, double);
+                        double, double);
 double nc_limit(fluxes *, double, double, double, double);
 double nc_flux(double, double, double);
 void   precision_control_soil_n(fluxes *, state *);
