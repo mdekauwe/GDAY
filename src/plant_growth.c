@@ -134,7 +134,10 @@ void calc_root_exudation_release(fluxes *f, state *s) {
         CN_ref = 42.0;
         /*CN_ref = 25.0;*/
 
-        /* The fraction of growth allocated to rhizodeposition */
+        /*
+            The fraction of growth allocated to rhizodeposition, constrained
+            to < 0.5
+        */
         arg = MAX(0.0, (CN_leaf / CN_ref) - 1.0);
         frac_to_rexc = MIN(0.5, a0rhizo + a1rhizo * arg);
         /*frac_to_rexc = MAX(0.05, MIN(0.25, (leaf_CN / presc_leaf_CN) - 1.0));*/
