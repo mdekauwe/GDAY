@@ -116,18 +116,28 @@ void calc_root_exudation_release(fluxes *f, state *s) {
     /* Root exudation modelled to occur: with (1) fine root growth or (2)
        as a result of excess C. A fraction of fine root growth is allocated
        to stimulate exudation. This fraction increases with N stress. */
-    double leaf_CN, frac_to_rexc, presc_leaf_CN, fine_root_NC;
+    double CN_leaf, frac_to_rexc, CN_ref, fine_root_NC;
+
+    /* minimum allocation to rhizodeposition */
+    double a0rhizo = 0.05;
+
+    /* slope of allocation to rhizodeposition */
+    double a1rhizo = 0.6;
 
     if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
         /* nothing happens during leaf off period */
-        leaf_CN = 0.0;
+        CN_leaf = 0.0;
         frac_to_rexc = 0.0;
     } else {
-        leaf_CN = 1.0 / s->shootnc;
-        presc_leaf_CN = 42.0; /* 25 for broadleaf; 42 for conifer make a parameter */
+        CN_leaf = 1.0 / s->shootnc;
+        /* 25 for broadleaf; 42 for conifer make a parameter */
+        CN_ref = 42.0;
+        /*CN_ref = 25.0;*/
 
-        /* fraction varies between 5 and 25 % as a function of leaf CN */
-        frac_to_rexc = MAX(0.05, MIN(0.25, (leaf_CN / presc_leaf_CN) - 1.0));
+        /* The fraction of growth allocated to rhizodeposition */
+        arg = MAX(0.0, (CN_leaf / CN_ref) - 1.0);
+        frac_to_rexc = MIN(0.5, a0rhizo + a1rhizo * arg);
+        /*frac_to_rexc = MAX(0.05, MIN(0.25, (leaf_CN / presc_leaf_CN) - 1.0));*/
     }
     /*printf("%f %f\n", s->shootnc, 1./30.);*/
     f->root_exc = frac_to_rexc * f->cproot;
