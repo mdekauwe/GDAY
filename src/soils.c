@@ -90,7 +90,6 @@ void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
 
     REXCUE determines which fraction of REXC enters the active pool as C
     (delta_Cact). The remaining fraction of REXC is respired as CO2.
-
     */
     double active_CN, rex_NC, C_to_active_pool;
 
@@ -116,8 +115,13 @@ void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
     C_to_active_pool = f->root_exc * f->rexc_cue;
     s->activesoil += C_to_active_pool;
 
-    /* update respiration fluxes. */
-    f->co2_released_exud = f->root_exc * (1.0 - f->rexc_cue);
+    /* Update respiration fluxes. */
+
+    /*
+    ** CUE of microbial rhizodeposition uptake is constant, so the fraction
+    ** of the rhizodeposition will be used for immediate respiration
+    */
+    f->co2_released_exud = (1.0 - f->rexc_cue) * f->root_exc;
     f->hetero_resp += f->co2_released_exud;
 
     return;

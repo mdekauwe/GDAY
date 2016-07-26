@@ -81,7 +81,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
                                     fdecay, rdecay, doy);
 
     if (c->exudation && c->alloc_model != GRASSES) {
-        calc_root_exudation_release(f, s);
+        calc_root_exudation(c, f, p, s);
     }
 
     /* If we didn't have enough N available to satisfy wood demand, NPP
@@ -112,47 +112,54 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     return;
 }
 
-void calc_root_exudation_release(fluxes *f, state *s) {
-    /* Root exudation modelled to occur: with (1) fine root growth or (2)
-       as a result of excess C. A fraction of fine root growth is allocated
-       to stimulate exudation. This fraction increases with N stress. */
-    double CN_leaf, frac_to_rexc, CN_ref, fine_root_NC;
-
-    /* minimum allocation to rhizodeposition */
-    double a0rhizo = 0.05;
-
-    /* slope of allocation to rhizodeposition */
-    double a1rhizo = 0.6;
+void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
+    /*
+        Rhizodeposition (f->root_exc) is assumed to be a fraction of the
+        current root growth rate (f->cproot), which increases with increasing
+        N stress of the plant.
+    */
+    double CN_leaf, frac_to_rexc, CN_ref, arg;
 
     if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
         /* nothing happens during leaf off period */
         CN_leaf = 0.0;
         frac_to_rexc = 0.0;
     } else {
-        CN_leaf = 1.0 / s->shootnc;
-        /* 25 for broadleaf; 42 for conifer make a parameter */
-        CN_ref = 42.0;
-        /*CN_ref = 25.0;*/
+
+        if (c->deciduous_model) {
+            /* broadleaf */
+            CN_ref = 25.0;
+        } else {
+            /* conifer */
+            CN_ref = 42.0;
+        }
 
         /*
-            The fraction of growth allocated to rhizodeposition, constrained
-            to < 0.5
+        ** The fraction of growth allocated to rhizodeposition, constrained
+        ** to solutions lower than 0.5
         */
-        arg = MAX(0.0, (CN_leaf / CN_ref) - 1.0);
-        frac_to_rexc = MIN(0.5, a0rhizo + a1rhizo * arg);
-        /*frac_to_rexc = MAX(0.05, MIN(0.25, (leaf_CN / presc_leaf_CN) - 1.0));*/
+        CN_leaf = 1.0 / s->shootnc;
+        arg = MAX(0.0, (CN_leaf - CN_ref) / CN_ref);
+        frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg);
     }
-    /*printf("%f %f\n", s->shootnc, 1./30.);*/
+
+    /* Rhizodeposition */
     f->root_exc = frac_to_rexc * f->cproot;
     if (float_eq(f->cproot, 0.0)) {
         f->root_exn = 0.0;
     } else {
-        fine_root_NC = f->nproot / f->cproot;
-        f->root_exn = f->root_exc * fine_root_NC;
+        /*
+        ** N flux associated with rhizodeposition is based on the assumption
+        ** that the CN ratio of rhizodeposition is equal to that of fine root
+        ** growth
+        */
+        f->root_exn = f->root_exc * (f->nproot / f->cproot);
     }
 
-    /* Need to exudation C & N fluxes from fine root growth fluxes so that
-       things balance. */
+    /*
+    ** Need to remove exudation C & N fluxes from fine root growth fluxes so
+    ** that things balance.
+    */
     f->cproot -= f->root_exc;
     f->nproot -= f->root_exn;
 

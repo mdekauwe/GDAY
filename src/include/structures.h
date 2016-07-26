@@ -144,6 +144,8 @@ typedef struct {
 } state;
 
 typedef struct {
+    double a0rhizo; /* minimum allocation to rhizodeposition [0.0-0.1] */
+    double a1rhizo; /* slope of allocation to rhizodeposition [0.2-1] */
     double actncmax;                        /* Active pool (=1/3) N:C ratio of new SOM - maximum [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double actncmin;                        /* Active pool (=1/15) N:C of new SOM - when Nmin=Nmin0 [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double adapt;

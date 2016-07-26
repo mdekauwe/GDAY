@@ -59,6 +59,8 @@ void initialise_params(params *p) {
     *** Default values for params structure.
     */
     int i;
+    p->a0rhizo = 0.05;
+    p->a1rhizo = 0.6;
     p->actncmax = 0.333333;
     p->actncmin = 0.066667;
     p->ageold = 10000.0;
