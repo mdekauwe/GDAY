@@ -27,7 +27,7 @@ void   precision_control_soil_c(fluxes *, state *);
 
 
 /* N stuff */
-void   calculate_nsoil_flows(control *, fluxes *, params *, state *, double, int);
+void   calculate_nsoil_flows(control *, fluxes *, params *, state *, int);
 void   grazer_inputs(control *, fluxes *, params *);
 void   inputs_from_plant_litter(fluxes *, params *, double *, double *);
 void   partition_plant_litter_n(control *, fluxes *, params *, double, double);

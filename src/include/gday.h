@@ -84,6 +84,6 @@ void   correct_rate_constants(params *, int output);
 void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   zero_stuff(control *, state *);
 void   day_end_calculations(control *, params *, state *, int, int);
-void   unpack_met_data(control *, met_arrays *, met *, int, double);
+void   unpack_met_data(control *, fluxes *f, met_arrays *, met *, int, double);
 
 #endif /* GDAY_H */

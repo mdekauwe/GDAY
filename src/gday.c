@@ -310,7 +310,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
             if (! c->sub_daily) {
-                unpack_met_data(c, ma, m, dummy, day_length[doy]);
+                unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
             }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
@@ -344,7 +344,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
-            calculate_nsoil_flows(c, f, p, s, m->ndep, doy);
+            calculate_nsoil_flows(c, f, p, s, doy);
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
@@ -724,7 +724,7 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     return;
 }
 
-void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
+void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
                      double day_length) {
 
     double c1, c2;
@@ -744,8 +744,10 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         /* NDEP is per 30 min so need to sum 30 min data */
         if (hod == 0) {
             m->ndep = ma->ndep[c->hour_idx];
+            m->nfix = ma->nfix[c->hour_idx];
         } else {
             m->ndep += ma->ndep[c->hour_idx];
+            m->nfix += ma->nfix[c->hour_idx];
         }
     } else {
         m->Ca = ma->co2[c->day_idx];
@@ -760,7 +762,6 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->sw_rad = m->par * c1;
         m->sw_rad_am = ma->par_am[c->day_idx] * c2;
         m->sw_rad_pm = ma->par_pm[c->day_idx] * c2;
-
         m->rain = ma->rain[c->day_idx];
         m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
         m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;
@@ -768,6 +769,7 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
         m->wind_pm = ma->wind_pm[c->day_idx];
         m->press = ma->press[c->day_idx] * KPA_2_PA;
         m->ndep = ma->ndep[c->day_idx];
+        m->nfix = ma->nfix[c->day_idx];
         m->tsoil = ma->tsoil[c->day_idx];
         m->Tk_am = ma->tam[c->day_idx] + DEG_TO_KELVIN;
         m->Tk_pm = ma->tpm[c->day_idx] + DEG_TO_KELVIN;
@@ -779,6 +781,9 @@ void unpack_met_data(control *c, met_arrays *ma, met *m, int hod,
                m->Tk_pm);*/
 
     }
+
+    /* N deposition + biological N fixation */
+    f->ninflow = m->ndep + m->nfix;
 
     return;
 }

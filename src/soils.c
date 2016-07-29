@@ -548,7 +548,7 @@ void precision_control_soil_c(fluxes *f, state *s) {
 
 
 void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
-                           double ndep, int doy) {
+                           int doy) {
 
     /* need to store grazing flag. Allows us to switch on the annual
        grazing event, but turn it off for every other day of the year.  */
@@ -560,14 +560,6 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
     double nsurf, nsoil, active_nc_slope, slow_nc_slope, passive_nc_slope;
-
-    /* N deposition + N fixation */
-    if (p->nfix > 0.0) {
-        f->n_inflow = ndep + (p->nfix / NDAYS_IN_YR);
-    } else {
-        f->n_inflow = ndep;
-    }
-
 
     grazer_inputs(c, f, p);
     inputs_from_plant_litter(f, p, &nsurf, &nsoil);
@@ -631,7 +623,7 @@ void calc_root_exudation_uptake_of_N(fluxes *f, state *s) {
     */
     double N_available, active_NC, delta_Nact, N_miss, N_to_active_pool;
 
-    N_available = s->inorgn + (f->n_inflow + f->nurine + f->nmineralisation -
+    N_available = s->inorgn + (f->ninflow + f->nurine + f->nmineralisation -
                                f->nloss - f->nuptake);
 
     active_NC = s->activesoiln / s->activesoil;
@@ -1121,7 +1113,7 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
     /* Daily increment of soil inorganic N pool, diff btw in and effluxes
        (grazer urine n goes directly into inorganic pool) nb inorgn may be
        unstable if rateuptake is large */
-    s->inorgn += (f->n_inflow + f->nurine + f->nmineralisation -
+    s->inorgn += (f->ninflow + f->nurine + f->nmineralisation -
                   f->nloss - f->nuptake);
 
     /*f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;*/

@@ -147,8 +147,7 @@ int handler(char *section, char *name, char *value, control *c,
         if (strcmp(temp, "FIXED") == 0||
             strcmp(temp, "fixed") == 0)
             c->alloc_model = FIXED;
-        else if (strcmp(temp, "GRASSES") == 0||
-                 strcmp(temp, "grasses") == 0)
+        else if (strcmp(temp, "GRASSES") == 0 || strcmp(temp, "grasses") == 0)
             c->alloc_model = GRASSES;
         else if (strcmp(temp, "ALLOMETRIC") == 0 ||
                  strcmp(temp, "allometric") == 0)
@@ -736,8 +735,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->ncwnew = atof(value);
     } else if (MATCH("params", "ncwnewz")) {
         p->ncwnewz = atof(value);
-    } else if (MATCH("params", "nfix")) {
-        p->nfix = atof(value);
     } else if (MATCH("params", "nf_crit")) {
         p->nf_crit = atof(value);
     } else if (MATCH("params", "nf_min")) {

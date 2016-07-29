@@ -253,7 +253,6 @@ typedef struct {
     double ncwimmz;                         /* N alloc param: Immobile stem N C at zero leaf N C */
     double ncwnew;                          /* N alloc param: New stem ring N:C at critical leaf N:C (mob) */
     double ncwnewz;                         /* N alloc param: New stem ring N:C at zero leaf N:C (mobile) */
-    double nfix;                            /* N inputs from biological fixation (t/ha/yr) */
     double nf_crit;                         /* leaf N:C below which N availability limits productivity  */
     double nf_min;                          /* leaf N:C minimum N concentration which allows productivity */
     double nmax;
@@ -340,6 +339,7 @@ typedef struct {
     double *tsoil;
     double *co2;
     double *ndep;
+    double *nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
     double *wind;
     double *press;
 
@@ -378,6 +378,7 @@ typedef struct {
     double par;
     double Ca;
     double ndep;
+    double nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
     double tsoil;
 
     /* daily */
@@ -578,7 +579,7 @@ typedef struct {
     double rtslow;
     double rexc_cue;
 
-    double n_inflow;
+    double ninflow;
 } fluxes;
 
 typedef struct {

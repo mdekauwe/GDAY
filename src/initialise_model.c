@@ -165,7 +165,6 @@ void initialise_params(params *p) {
     p->ncwimmz = 0.003;
     p->ncwnew = 0.003;
     p->ncwnewz = 0.003;
-    p->nfix = 0.0;
     p->nf_crit = 0.015;
     p->nf_min = 0.005;
     p->nmax = 0.24;
