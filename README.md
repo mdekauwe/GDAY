@@ -100,6 +100,7 @@ tsoil | soil temperature | deg C
 vpd | vapour pressure deficit | kPa
 co2 | CO<sub>2</sub> concentration | ppm
 ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
+nfix | biological nitrogen fixation | t ha<sup>-1</sup> 30 min<sup>-1</sup>
 wind | wind speed | m s<sup>-1</sup>
 press | atmospheric pressure | kPa
 
@@ -122,6 +123,7 @@ vpd_am | morning vapour pressure deficit | kPa
 vpd_pm | afternoon vapour pressure deficit | kPa
 co2 | CO<sub>2</sub> concentration | ppm
 ndep | nitrogen deposition | t ha<sup>-1</sup> day<sup>-1</sup>
+nfix | biological nitrogen fixation | t ha<sup>-1</sup> day<sup>-1</sup>
 wind | wind speed | m s<sup>-1</sup>
 press | atmospheric pressure | kPa
 wind_am | morning wind speed | m s<sup>-1</sup>
