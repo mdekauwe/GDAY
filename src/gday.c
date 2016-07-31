@@ -25,8 +25,8 @@ int main(int argc, char **argv)
     int error = 0;
 
     /*
-    ** Setup structures, initialise stuff, e.g. zero fluxes.
-    */
+     * Setup structures, initialise stuff, e.g. zero fluxes.
+     */
     canopy_wk *cw;
     control *c;
     fluxes *f;
@@ -84,8 +84,8 @@ int main(int argc, char **argv)
 
     clparser(argc, argv, c);
     /*
-    ** Read .ini parameter file and meterological data
-    */
+     * Read .ini parameter file and meterological data
+     */
     error = parse_ini_file(c, p, s);
     if (error != 0) {
         prog_error("Error reading .INI file on line", __LINE__);
@@ -165,8 +165,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double fdecay, rdecay, current_limitation, nitfac, year;
     int   *disturbance_yrs = NULL;
 
-    /* potentially allocating 1 extra spot, but will be fine as we always
-       index by num_days */
+    /*
+     * potentially allocating 1 extra spot, but will be fine as we always
+     * index by num_days
+     */
     double *day_length = NULL;
     if ((day_length = (double *)calloc(366, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for day_length\n");
@@ -223,10 +225,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     /*
-        Window size = root lifespan in days...
-        For deciduous species window size is set as the length of the
-        growing season in the main part of the code
-    */
+     * Window size = root lifespan in days...
+     * For deciduous species window size is set as the length of the
+     * growing season in the main part of the code
+     */
     window_size = (int)(1.0 / p->rdecay * NDAYS_IN_YR);
     sma_obj *hw = sma(SMA_NEW, window_size).handle;
     if (s->prev_sma > -900) {
@@ -235,18 +237,18 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
     }
     /* Set up SMA
-    **  - If we don't have any information about the N & water limitation, i.e.
-    **    as would be the case with spin-up, assume that there is no limitation
-    **    to begin with.
-    */
+     *  - If we don't have any information about the N & water limitation, i.e.
+     *    as would be the case with spin-up, assume that there is no limitation
+     *    to begin with.
+     */
     if (s->prev_sma < -900)
         s->prev_sma = 1.0;
 
     /*
-        params are defined in per year, needs to be per day. Important this is
-        done here as rate constants elsewhere in the code are assumed to be in
-        units of days not years
-    */
+     * Params are defined in per year, needs to be per day. Important this is
+     * done here as rate constants elsewhere in the code are assumed to be in
+     * units of days not years
+     */
     correct_rate_constants(p, FALSE);
     day_end_calculations(c, p, s, -99, TRUE);
 
@@ -322,8 +324,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                 if (fire_found) {
                     fire(c, f, p, s);
-                    /* This will only work for evergreen, but that is fine
-                       this should be removed after KSCO is done */
+                    /*
+                     * This will only work for evergreen, but that is fine
+                     * this should be removed after KSCO is done
+                     */
                     sma(SMA_FREE, hw);
                     hw = sma(SMA_NEW, window_size).handle;
                     if (s->prev_sma > -900) {
@@ -348,11 +352,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
-                 /*Allocation is annually for deciduous "tree" model, but we
-                   need to keep a check on stresses during the growing season
-                   and the LAI figure out limitations during leaf growth period.
-                   This also applies for deciduous grasses, need to do the
-                   growth stress calc for grasses here too. */
+                 /*
+                  * Allocation is annually for deciduous "tree" model, but we
+                  * need to keep a check on stresses during the growing season
+                  * and the LAI figure out limitations during leaf growth period.
+                  * This also applies for deciduous grasses, need to do the
+                  * growth stress calc for grasses here too.
+                  */
                 current_limitation = calculate_growth_stress_limitation(p, s);
                 sma(SMA_ADD, hw, current_limitation);
                 s->prev_sma = sma(SMA_MEAN, hw).sma;
@@ -363,9 +369,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
             /*
-                if grazing took place need to reset "stress" running mean
-                calculation for grasses
-            */
+             * if grazing took place need to reset "stress" running mean
+             * calculation for grasses
+             */
             if (c->grazing == 2 && p->disturbance_doy == doy+1) {
                 sma(SMA_FREE, hw);
                 hw = sma(SMA_NEW, p->growing_seas_len).handle;
@@ -578,9 +584,10 @@ void correct_rate_constants(params *p, int output) {
 
 
 void reset_all_n_pools_and_fluxes(fluxes *f, state *s) {
-    /* If the N-Cycle is turned off the way I am implementing this is to
-       do all the calculations and then reset everything at the end. This is
-       a waste of resources but saves on multiple IF statements.
+    /*
+        If the N-Cycle is turned off the way I am implementing this is to
+        do all the calculations and then reset everything at the end. This is
+        a waste of resources but saves on multiple IF statements.
     */
 
     /*
