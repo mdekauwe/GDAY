@@ -398,7 +398,7 @@ void cfluxes_from_structural_pool(fluxes *f, params *p, state *s) {
 }
 
 void cfluxes_from_metabolic_pool(fluxes *f, params *p, state *s) {
-    /* Send metabolic c fluxes to other SOM pools */
+    /* Send C from metabolic pools to other SOM pools */
 
     /* C flux surface metabolic pool -> active pool */
     f->surf_metab_to_active = s->metabsurf * p->decayrate[1] * 0.45;
@@ -415,7 +415,7 @@ void cfluxes_from_metabolic_pool(fluxes *f, params *p, state *s) {
 
 void cfluxes_from_active_pool(fluxes *f, params *p, state *s,
                               double frac_microb_resp) {
-    /* C fluxes from active pools */
+    /* Send C fluxes from active pool to other SOM pools */
 
     double activeout = s->activesoil * p->decayrate[4];
 
