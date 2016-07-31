@@ -5,7 +5,7 @@
 #include "utilities.h"
 #include "constants.h"
 
-void   soil_temp_factor(fluxes *, double);
+double calc_soil_temp_factor(double);
 void   calculate_csoil_flows(control *, fluxes *, params *, state *,
                              double, int);
 void   calculate_decay_rates(fluxes *, params *, state *);

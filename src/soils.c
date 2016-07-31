@@ -32,7 +32,7 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
         c->grazing = TRUE;
     }
 
-    soil_temp_factor(f, tsoil);
+    f->tfac_soil_decomp = calc_soil_temp_factor(tsoil);
 
     /* calculate model decay rates */
     calculate_decay_rates(f, p, s);
@@ -178,7 +178,7 @@ void calculate_decay_rates(fluxes *f, params *p, state *s) {
     return;
 }
 
-void soil_temp_factor(fluxes *f, double tsoil) {
+double calc_soil_temp_factor(double tsoil) {
     /*
     Soil-temperature activity factor (A9). Fit to Parton's fig 2a
 
@@ -189,23 +189,21 @@ void soil_temp_factor(fluxes *f, double tsoil) {
 
     Returns:
     --------
-    tfac : float
+    tfac : double
         soil temperature factor [degC]
 
     */
-
+    double tfac;
     if (tsoil > 0.0) {
-        f->tfac_soil_decomp = (0.0326 + 0.00351 * pow(tsoil, 1.652) -
-                                pow((tsoil / 41.748), 7.19));
-        if (f->tfac_soil_decomp < 0.0)
-        f->tfac_soil_decomp = 0.0;
+        tfac = MAX(0.0, 0.0326 + 0.00351 * pow(tsoil, 1.652) - \
+                        pow((tsoil / 41.748), 7.19));
     } else {
         /* negative number cannot be raised to a fractional power
            number would need to be complex */
-        f->tfac_soil_decomp = 0.0;
+        tfac = 0.0;
     }
 
-    return;
+    return (tfac);
 }
 
 void flux_from_grazers(control *c, fluxes *f, params *p) {
