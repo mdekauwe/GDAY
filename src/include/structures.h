@@ -372,7 +372,7 @@ typedef struct {
     double rain;
     double wind;
     double press;
-    double vpd;;
+    double vpd;
     double tair;
     double sw_rad;
     double par;
