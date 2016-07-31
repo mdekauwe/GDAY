@@ -132,12 +132,14 @@ void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
                           double gdd_thresh) {
 
     double ppt_sum_next, ppt_sum, ppt_sum_prev, Tmean, Tsoil, Tsoil_next_3days,
-           Tair_next_3days, Tmin_boxcar, Tmax, Tday;
+           Tday;
+    /*double Tmax; */
     double accumulated_ncd = 0.0;
     double accum_gdd = 0.0;
+    /*double Tmin_boxcar; */
     int    drop_leaves = FALSE;
     int    d, dd, st, en, nov_doy;
-    int project_day_save = project_day;
+
 
     *leaf_on_found = FALSE;
     *leaf_off_found = FALSE;
@@ -152,7 +154,7 @@ void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
         Tmean = ma->tair[project_day];
         Tday = ma->tday[project_day];
         Tsoil = ma->tsoil[project_day];
-        Tmax = ma->tmax[project_day];
+        /*Tmax = ma->tmax[project_day];*/
         ppt_sum += ma->rain[project_day];
 
         /* Calculate ppt total from the next 7 days */
@@ -185,18 +187,13 @@ void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
                                  ma->tsoil[project_day+1] +
                                  ma->tsoil[project_day+2]) / 3.0);
 
-            Tair_next_3days = ((ma->tair[project_day] +
-                                ma->tair[project_day+1] +
-                                ma->tair[project_day+2]) / 3.0);
-
-            Tmin_boxcar = ((ma->tmin[project_day-1] +
+            /*Tmin_boxcar = ((ma->tmin[project_day-1] +
                             ma->tmin[project_day] +
-                            ma->tmin[project_day+1]) / 3.0);
+                            ma->tmin[project_day+1]) / 3.0);*/
 
         } else {
             /* i.e. end of year, didn't find this so have no effect */
             Tsoil_next_3days = 999.9;
-            Tair_next_3days = 999.9;
         }
 
         /* Sum the daily mean air temperature above 5degC starting on Jan 1 */
@@ -285,8 +282,9 @@ void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
             }
         }
         /* Calculated NCD from fixed date following Murray et al 1989. */
-        if (d+1 >= nov_doy)
+        if (d+1 >= nov_doy) {
             accumulated_ncd += calc_ncd(Tmean);
+        }
         project_day++;
     }
 
@@ -368,12 +366,10 @@ void calc_ini_grass_pheno_stuff(control *c, met_arrays *ma, int project_day,
     double tmin_ann = 70.0;
     double tavg_ann = 0.0;
     double ppt_sum = 0.0;
-    double tair, tam, tpm, tmin, tmax, Trange;
+    double tair, tmin, tmax, Trange;
 
     for (d = 0; d < c->num_days; d++) {
         tair = ma->tair[project_day];
-        tam = ma->tam[project_day];
-        tpm = ma->tpm[project_day];
         tmax = ma->tmax[project_day];
         tmin = ma->tmin[project_day];
         ppt_sum += ma->rain[project_day];
