@@ -48,7 +48,7 @@ void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
     return;
 }
 
-int time_till_next_disturbance() {
+int time_till_next_disturbance(void) {
     /* calculate the number of years until a disturbance event occurs
     assuming a return interval of X years
 

@@ -21,7 +21,7 @@
 
 void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
                            double tsoil, int doy) {
-    double lnleaf, lnroot, nc_leaf_litter;
+    double lnleaf, lnroot;
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
 
@@ -44,7 +44,6 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     ligin_nratio(c, f, p, &lnleaf, &lnroot);
     p->fmleaf = metafract(lnleaf);
     p->fmroot = metafract(lnroot);
-    nc_leaf_litter = ratio_of_litternc_to_live_leafnc(c, f, p);
 
     /* input from faeces */
     flux_from_grazers(c, f, p);
