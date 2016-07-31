@@ -590,8 +590,7 @@ void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
 
 
     */
-    double slope, epsilon, lambda, arg1, arg2, gradn, gbhu, gbhf, gbh,
-           gbv, gsv, gamma, Tdiff, sensible_heat, ema;
+    double slope, epsilon, lambda, gradn, gbhu, gbhf, gbh, gbv, gsv, gamma;
 
     /* Radiation conductance (mol m-2 s-1) */
     gradn = calc_radiation_conductance(m->tair);
@@ -668,7 +667,7 @@ void penman_monteith(double press, double vpd, double rnet, double slope,
         ------------
         * Medlyn et al. (2007), Tree Physiology, 27, 1687-1699.
     */
-    double arg1, arg2, epsilon;
+    double arg1, arg2;
 
     if (*gv > 0.0) {
         arg1 = slope * rnet + vpd * *gh * CP * MASS_AIR;
@@ -854,7 +853,6 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
         See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
     */
     double cmolar, Tk, gbh, grashof, leaf_width_cubed;
-    double tolerance = 1E-08;
 
     Tk = tair + DEG_TO_KELVIN;
     cmolar = press / (RGAS * Tk);
@@ -1208,7 +1206,8 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         water availability factor for the root zone [0,1]
     */
 
-    double moisture_ratio_topsoil, moisture_ratio_root, psi_swp_topsoil, theta;
+    double moisture_ratio_topsoil, moisture_ratio_root;
+    /*double psi_swp_topsoil;*/
 
     if (c->sw_stress_model == 0) {
         /* JULES type model, see Egea et al. (2011) */
