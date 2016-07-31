@@ -8,7 +8,7 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
     int    i = 0;
     int    nvars = 21;
     int    skipped_lines = 0;
-    double current_yr;
+    double current_yr = -999.9;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open daily Met file %s for read\n",

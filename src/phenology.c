@@ -49,7 +49,8 @@ void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s,
     int leaf_on = 0, leaf_off = 0, len_groloss = 0.0;
     int leaf_on_found, leaf_off_found;
     int project_day = c->day_idx;
-    double grass_temp_threshold, tmax_ann, Tmin_avg, ppt_sum_crit, gdd_thresh;
+    double grass_temp_threshold, tmax_ann, Tmin_avg, ppt_sum_crit;
+    double gdd_thresh=-999.9;
 
 
     /*
