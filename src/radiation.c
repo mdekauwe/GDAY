@@ -40,7 +40,7 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
           Components of incoming radiation. Agricultural Forest Meteorol.,
           38:217-229.
     */
-    double So, tau, R, K, diffuse_frac, cos_zen_sq;
+    double So, tau, R, K, cos_zen_sq;
 
     /* sine of the elev of the sun above the horizon is the same as cos_zen */
     So = calc_extra_terrestrial_rad(doy, cw->cos_zenith);
@@ -100,9 +100,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
         * Wang and Leuning (1998) AFm, 91, 89-111.
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
     */
-
-    int    i;
-    double Ib, Id, Is, scattered, shaded, beam, psi1, psi2, Gross, lai, lad;
+    double Ib, Id, scattered, shaded, beam, psi1, psi2, Gross, lai, lad;
     double total_canopy_irradiance, arg1, arg2, arg3, rho_cd, rho_cb, omega;
     double k_dash_b, k_dash_d;
 
@@ -194,7 +192,7 @@ void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
 
     */
 
-    double rdec, et, lc, t0, h, gamma, zenith_angle, hour_angle, rlat, sin_beta;
+    double rdec, et, t0, h, gamma, zenith_angle, rlat, sin_beta;
 
     /* need to convert 30 min data, 0-47 to 0-23.5 */
     hod /= 2.0;
@@ -336,7 +334,7 @@ double calculate_eqn_of_time(double gamma) {
       "The Equation of Time", Monthly Notices of the Royal Astronomical
       Society 238: 1529–1535
     */
-    double et, f, A;
+    double et;
 
     /*
     ** from Spencer '71. This better matches the de Pury worked example (pg 554)
