@@ -30,8 +30,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     */
 
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
-    double A, B, C, arg1, arg2, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
-    double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
+    double A, B, C, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
+    /*double Rd0 = 0.92;  Dark respiration rate make a paramater! */
     int    idx, qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
@@ -199,14 +199,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         vcmax : float
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
-    double jmax25, vcmax25, lai_leaf;
+    double jmax25, vcmax25;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
-    double jmaxna = p->jmaxna;
-    double jmaxnb = p->jmaxnb;
-    double vcmaxna = p->vcmaxna;
-    double vcmaxnb = p->vcmaxnb;
     double cscalar = cw->cscalar[cw->ileaf];
 
     if (c->modeljm == 0) {
@@ -298,9 +294,6 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* exponential coefficient of the temperature response of foliage
        respiration */
     double q10f = 0.067;
-
-    /* Temperature sensitivity of Rd. */
-    double Q10 = 2.0;
 
     if (tleaf >= tbelow)
         Rd = Rd0 * day_resp * exp(q10f * (tleaf - rtemp));
@@ -926,7 +919,7 @@ double epsilon(params *p, double asat, double par, double alpha,
     NB. I've removed solar irradiance to PAR conversion. Sands had
     gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
     umol PAR on the basis that 1 MJ m-2 = 2.08 mol m-2 & mol to umol = 1E6.
-    We are passing PAR in umol m-2 d-1, thus avoiding the above. 
+    We are passing PAR in umol m-2 d-1, thus avoiding the above.
 
     References:
     -----------
@@ -1003,7 +996,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, vcmax_am, vcmax_pm,
            ci_am, ci_pm, asat_am, asat_pm, lue_am, lue_pm, lue_avg,
            vcmax25_am, vcmax25_pm, par_per_sec, M_am, M_pm, A_am, A_pm,
-           Rd_am, Rd_pm, apar_half_day, SEC_2_HALF_DAY, conv;
+           Rd_am, Rd_pm, conv;
 
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 

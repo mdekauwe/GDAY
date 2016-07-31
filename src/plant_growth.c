@@ -25,7 +25,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
                      met *m, params *p, state *s, double day_length, int doy,
                      double fdecay, double rdecay)
 {
-    double previous_topsoil_store, dummy,
+    double previous_topsoil_store, dummy=0.0,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
@@ -1049,6 +1049,7 @@ void calculate_cn_store(control *c, fluxes *f, state *s) {
     }
 
     s->cstore += f->npp;
+    */
     /*
     if (s->cstore/nstore_max > CN_max) {
         excess = s->cstore - (nstore_max * CN_max);
