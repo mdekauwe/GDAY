@@ -12,6 +12,7 @@
 #define EPSILON 1E-08
 #define DEG2RAD(DEG) (DEG * M_PI / 180.0)
 #define RAD2DEG(RAD) (180.0 * RAD / M_PI)
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifndef TRUE
 #define TRUE 1
