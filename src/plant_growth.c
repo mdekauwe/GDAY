@@ -948,7 +948,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     }
     /* Update deciduous storage pools */
     if (c->deciduous_model)
-        calculate_cn_store(f, s);
+        calculate_cn_store(c, f, s);
 
     return;
 }
@@ -1016,17 +1016,46 @@ void precision_control(fluxes *f, state *s) {
 }
 
 
-void calculate_cn_store(fluxes *f, state *s) {
+void calculate_cn_store(control *c, fluxes *f, state *s) {
     /*
-    Deciduous trees store carbohydrate during the winter which they then
-    use in the following year to build new leaves (buds & budburst are
-    implied)
+    Calculate labile C & N stores from which growth is allocated in the
+    following year.
     */
 
-    /* Total C & N storage to allocate annually. */
+
     s->cstore += f->npp;
     s->nstore += f->nuptake + f->retrans;
     s->anpp += f->npp;
+
+    /*
+    double nstore_max, excess, k;
+    double leaf_nc_max = 0.04;
+    double CN_max = 100.0;
+
+
+    if (c->alloc_model == GRASSES) {
+        k = 0.3;
+        nstore_max = MAX(1E-04, k * s->root * leaf_nc_max);
+    } else {
+        k = 0.15;
+        nstore_max = MAX(1E-04, k * s->sapwood * leaf_nc_max);
+    }
+
+    s->nstore += f->nuptake + f->retrans;
+    if (s->nstore > nstore_max) {
+        s->nstore = nstore_max;
+        f->nuptake = 0.0;
+        f->retrans = 0.0;
+    }
+
+    s->cstore += f->npp;
+    /*
+    if (s->cstore/nstore_max > CN_max) {
+        excess = s->cstore - (nstore_max * CN_max);
+        s->cstore = nstore_max * CN_max;
+        f->auto_resp += excess;
+    }*/
+
 
     return;
 }

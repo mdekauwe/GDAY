@@ -25,7 +25,7 @@ double  alloc_goal_seek(double, double, double, double);
 void    update_plant_state(control *, fluxes *, params *, state *,
                                                         double, double, int);
 void    precision_control(fluxes *, state *);
-void    calculate_cn_store(fluxes *, state *);
+void    calculate_cn_store(control *, fluxes *, state *);
 void    calculate_average_alloc_fractions(fluxes *, state *, int );
 void    allocate_stored_c_and_n(fluxes *f, params *p, state *s);
 void    carbon_daily_production(control *, fluxes *, met *m, params *, state *,
