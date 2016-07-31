@@ -437,7 +437,7 @@ void cfluxes_from_active_pool(fluxes *f, params *p, state *s,
 }
 
 void cfluxes_from_slow_pool(fluxes *f, params *p, state *s) {
-    /* C fluxes from slow pools */
+    /* Send C fluxes from slow pool to other SOM pools */
 
     double slowout = s->slowsoil * p->decayrate[5];
 
