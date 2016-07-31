@@ -138,8 +138,6 @@ void calculate_decay_rates(fluxes *f, params *p, state *s) {
     -----------
     Knorr et al. (2005) Nature, 433, 298-301.
     Connell et al. (1995) Biol. Fert. Soils, 20, 213-220.
-
-
     */
     double adfac, soil_text, lignin_cont_leaf, lignin_cont_root;
 
@@ -340,15 +338,17 @@ void partition_plant_litter(fluxes *f, params *p) {
     /* Partition litter from the plant (surface) and roots into metabolic
     and structural pools  */
 
+    double leaf_material, wood_material, faeces_material;
     /*
-    ** Surface (leaves, branches, stem) Litter
-    */
+     * Surface (leaves, branches, stem) Litter
+     */
 
     /* ...to the structural pool*/
-    f->surf_struct_litter = (f->deadleaves * (1.0 - p->fmleaf) +
-                             f->deadbranch + f->deadstems + f->faecesc *
-                             (1.0 - p->fmfaeces));
-
+    leaf_material = f->deadleaves * (1.0 - p->fmleaf);
+    wood_material = f->deadbranch + f->deadstems;
+    faeces_material = f->faecesc * (1.0 - p->fmfaeces);
+    f->surf_struct_litter = leaf_material + wood_material + faeces_material;
+    
     /* ...to the metabolic pool */
     f->surf_metab_litter = f->deadleaves * p->fmleaf + f->faecesc * p->fmfaeces;
 
