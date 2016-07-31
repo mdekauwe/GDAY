@@ -33,10 +33,9 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     double soil_evap, et, interception, runoff, conv,
            transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
-           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, trans_am,
-           omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, gpp_am,
-           gpp_pm, trans_pm, omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm,
-           throughfall, canopy_evap;
+           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
+           gpp_am, gpp_pm, trans_pm, omega_pm, throughfall,
+           canopy_evap;
 
     SEC_2_DAY = 60.0 * 60.0 * daylen;
     DAY_2_SEC = 1.0 / SEC_2_DAY;
@@ -417,7 +416,7 @@ double calc_soil_evaporation(met *m, params *p, state *s, double net_rad) {
         soil evaporation [mm d-1]
 
     */
-    double lambda, gamma, slope, arg1, arg2, soil_evap;
+    double lambda, gamma, slope, soil_evap;
 
     lambda = calc_latent_heat_of_vapourisation(m->tair);
     gamma = calc_pyschrometric_constant(m->press, lambda);
