@@ -190,7 +190,6 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     int    skipped_lines = 0;
     double current_yr, temp_HOD;
     long   file_len;
-    double hod_dummy;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open sub-daily Met file %s for read\n",
