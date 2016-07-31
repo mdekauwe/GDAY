@@ -348,7 +348,7 @@ void partition_plant_litter(fluxes *f, params *p) {
     wood_material = f->deadbranch + f->deadstems;
     faeces_material = f->faecesc * (1.0 - p->fmfaeces);
     f->surf_struct_litter = leaf_material + wood_material + faeces_material;
-    
+
     /* ...to the metabolic pool */
     f->surf_metab_litter = f->deadleaves * p->fmleaf + f->faecesc * p->fmfaeces;
 
@@ -367,7 +367,7 @@ void partition_plant_litter(fluxes *f, params *p) {
 
 void cfluxes_from_structural_pool(fluxes *f, params *p, state *s) {
 
-    /* C fluxes from structural pools */
+    /* Send structural c fluxes to other SOM pools */
 
     double structout_surf = s->structsurf * p->decayrate[0];
     double structout_soil = s->structsoil * p->decayrate[2];
@@ -383,7 +383,6 @@ void cfluxes_from_structural_pool(fluxes *f, params *p, state *s) {
 
     /* soil structural pool -> active pool */
     f->soil_struct_to_active = structout_soil * (1.0 - p->ligroot) * 0.45;
-
 
     /* Respiration fluxes */
 
