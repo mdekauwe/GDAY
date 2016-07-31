@@ -10,7 +10,8 @@ void   calculate_csoil_flows(control *, fluxes *, params *, state *,
                              double, int);
 void   calculate_decay_rates(fluxes *, params *, state *);
 void   flux_from_grazers(control *c, fluxes *, params *);
-void   ligin_nratio(control *c, fluxes *f, params *, double *, double *);
+double calc_ligin_nratio_leaves(control *c, fluxes *f, params *);
+double calc_ligin_nratio_fine_roots(control *c, fluxes *f, params *);
 double ratio_of_litternc_to_live_rootnc(control *, fluxes *, params *);
 double metafract(double);
 void   partition_plant_litter(fluxes *, params *);

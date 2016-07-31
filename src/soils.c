@@ -38,10 +38,11 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     calculate_decay_rates(f, p, s);
 
     /*
-       plant litter inputs to the metabolic and structural pools determined
-       by ratio of lignin/N ratio
-    */
-    ligin_nratio(c, f, p, &lnleaf, &lnroot);
+     * plant litter inputs to the metabolic and structural pools determined
+     * by ratio of lignin/N ratio
+     */
+    lnleaf = calc_ligin_nratio_leaves(c, f, p);
+    lnroot = calc_ligin_nratio_fine_roots(c, f, p);
     p->fmleaf = metafract(lnleaf);
     p->fmroot = metafract(lnroot);
 
@@ -219,9 +220,7 @@ void flux_from_grazers(control *c, fluxes *f, params *p) {
     return;
 }
 
-
-void ligin_nratio(control *c, fluxes *f, params *p, double *lnleaf,
-                  double *lnroot) {
+double calc_ligin_nratio_leaves(control *c, fluxes *f, params *p) {
     /* Estimate Lignin/N ratio, as this dictates the how plant litter is
     seperated between metabolic and structural pools.
 
@@ -229,28 +228,45 @@ void ligin_nratio(control *c, fluxes *f, params *p, double *lnleaf,
     --------
     lnleaf : float
         lignin:N ratio of leaf
+
+    */
+    double lnleaf, nc_leaf_litter;
+
+    nc_leaf_litter = ratio_of_litternc_to_live_leafnc(c, f, p);
+
+    if (float_eq(nc_leaf_litter, 0.0)) {
+        /* catch divide by zero if we have no leaves */
+        lnleaf = 0.0;
+    } else {
+        lnleaf = p->ligshoot / p->cfracts / nc_leaf_litter;
+    }
+
+    return (lnleaf);
+
+}
+
+double calc_ligin_nratio_fine_roots(control *c, fluxes *f, params *p) {
+    /* Estimate Lignin/N ratio, as this dictates the how plant litter is
+    seperated between metabolic and structural pools.
+
+    Returns:
+    --------
     lnroot : float
         lignin:N ratio of fine root
     */
-    double nc_leaf_litter, nc_root_litter;
+    double lnroot, nc_root_litter;
 
-    nc_leaf_litter = ratio_of_litternc_to_live_leafnc(c, f, p);
     nc_root_litter = ratio_of_litternc_to_live_rootnc(c, f, p);
 
-    if (float_eq(nc_leaf_litter, 0.0))
-        /* catch divide by zero if we have no leaves */
-        *lnleaf = 0.0;
-    else
-        *lnleaf = p->ligshoot / p->cfracts / nc_leaf_litter;
 
-    if (float_eq(nc_root_litter, 0.0))
+    if (float_eq(nc_root_litter, 0.0)) {
         /* catch divide by zero if we have no roots */
-        *lnroot = 0.0;
-    else
-        *lnroot = p->ligroot / p->cfracts / nc_root_litter;
+        lnroot = 0.0;
+    } else {
+        lnroot = p->ligroot / p->cfracts / nc_root_litter;
+    }
 
-    return;
-
+    return (lnroot);
 }
 
 double ratio_of_litternc_to_live_leafnc(control *c, fluxes *f, params *p) {
