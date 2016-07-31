@@ -1,12 +1,12 @@
 ##############################################################################
 USER    := $(shell whoami)
 HOME     = /Users/$(USER)
-CFLAGS   = -g -Wall -Wextra -Wpedantic \
+#CFLAGS   = -g -Wall -Wextra -Wpedantic \
            -Wformat=2 -Wno-unused-parameter -Wshadow \
            -Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
            -Wredundant-decls -Wnested-externs -Wmissing-include-dirs \
-		   -fsanitize=bounds -fsanitize-undefined-trap-on-error 
-#CFLAGS   = -O3
+		   -fsanitize=bounds -fsanitize-undefined-trap-on-error
+CFLAGS   = -O3
 ARCH     =  x86_64
 INCLS    = -I./include #-I/opt/local/include
 LIBS     = -lm #-L/opt/local/lib -lgsl -lgslcblas
