@@ -34,7 +34,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
            transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
            LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
-           gpp_am, gpp_pm, trans_pm, omega_pm, throughfall,
+           gpp_am, gpp_pm, omega_pm, throughfall,
            canopy_evap;
 
     SEC_2_DAY = 60.0 * 60.0 * daylen;
@@ -540,7 +540,7 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
 
 
     */
-    double gb, gv, gsc, epsilon, arg1, arg2, slope, gamma, lambda;
+    double gv, gsc, epsilon, slope, gamma, lambda;
 
     /* stomtal conductance to CO2 */
     gsc = calc_stomatal_conductance(p, s, vpd, ca, gpp);
@@ -591,7 +591,7 @@ void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
 
     */
     double slope, epsilon, lambda, arg1, arg2, gradn, gbhu, gbhf, gbh,
-           gbv, gsv, gamma, Tdiff, sensible_heat, ema, Tk;
+           gbv, gsv, gamma, Tdiff, sensible_heat, ema;
 
     /* Radiation conductance (mol m-2 s-1) */
     gradn = calc_radiation_conductance(m->tair);
