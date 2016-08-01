@@ -498,32 +498,31 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
 
 
 double calculate_growth_stress_limitation(params *p, state *s) {
-    /* Calculate level of stress due to nitrogen or water availability """
-       calculate the N limitation based on available canopy N
-       this logic appears counter intuitive, but it works out when
-       applied with the perhaps backwards logic below */
+    /* Calculate level of stress due to nitrogen or water availability */
     double nlim, current_limitation;
+    double nc_opt = 0.04;
 
-    /* case - completely limited by N availability */
+    /* N limitation based on leaf NC ratio */
     if (s->shootnc < p->nf_min) {
         nlim = 0.0;
-    } else if (s->shootnc < p->nf_crit) {
-        nlim = (s->shootnc - p->nf_min) / (p->nf_crit - p->nf_min);
-    /* case - no N limitation */
+    } else if (s->shootnc < nc_opt && s->shootnc > p->nf_min) {
+        nlim = 1.0 - ((nc_opt - s->shootnc) / (nc_opt - p->nf_min));
     } else {
         nlim = 1.0;
     }
 
-    /* Limitation by nitrogen and water. Water constraint is implicit,
-       in that, water stress results in an increase of root mass,
-       which are assumed to spread horizontally within the rooting zone.
-       So in effect, building additional root mass doesnt alleviate the
-       water limitation within the model. However, it does more
-       accurately reflect an increase in root C production at a water
-       limited site. This implementation is also consistent with other
-       approaches, e.g. LPJ. In fact I dont see much evidence for models
-       that have a flexible bucket depth. Minimum constraint is limited to
-       0.1, following Zaehle et al. 2010 (supp), eqn 18. */
+    /*
+     * Limitation by nitrogen and water. Water constraint is implicit,
+     * in that, water stress results in an increase of root mass,
+     * which are assumed to spread horizontally within the rooting zone.
+     * So in effect, building additional root mass doesnt alleviate the
+     * water limitation within the model. However, it does more
+     * accurately reflect an increase in root C production at a water
+     * limited site. This implementation is also consistent with other
+     * approaches, e.g. LPJ. In fact I dont see much evidence for models
+     * that have a flexible bucket depth. Minimum constraint is limited to
+     * 0.1, following Zaehle et al. 2010 (supp), eqn 18.
+     */
     current_limitation = MAX(0.1, MIN(nlim, s->wtfac_root));
     return (current_limitation);
 }
@@ -588,30 +587,30 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alleaf = 1.0 - f->alroot;
 
         /* Now adjust root & leaf allocation to maintain balance, accounting
-           for stress e.g. -> Sitch et al. 2003, GCB. */
+           for stress e.g. -> Sitch et al. 2003, GCB.
 
-        /* leaf-to-root ratio under non-stressed conditons */
-        lr_max = 0.8,
+         leaf-to-root ratio under non-stressed conditons
+        lr_max = 0.8;
 
-        /* Calculate adjustment on lr_max, based on current "stress"
-           calculated from running mean of N and water stress */
+         Calculate adjustment on lr_max, based on current "stress"
+           calculated from running mean of N and water stress
         stress = lr_max * s->prev_sma;
 
-        /* calculate new allocation fractions based on imbalance in *biomass* */
+        calculate new allocation fractions based on imbalance in *biomass*
         mis_match = s->shoot / (s->root * stress);
 
 
         if (mis_match > 1.0) {
-            /* reduce leaf allocation fraction */
+            reduce leaf allocation fraction
             adj = f->alleaf / mis_match;
             f->alleaf = MAX(p->c_alloc_fmin, MIN(p->c_alloc_fmax, adj));
             f->alroot = 1.0 - f->alleaf;
         } else {
-            /* reduce root allocation */
+             reduce root allocation
             adj = f->alroot * mis_match;
             f->alroot = MAX(p->c_alloc_rmin, MIN(p->c_alloc_rmax, adj));
             f->alleaf = 1.0 - f->alroot;
-        }
+        }*/
         f->alstem = 0.0;
         f->albranch = 0.0;
         f->alcroot = 0.0;
@@ -662,8 +661,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alcroot = alloc_goal_seek(s->croot, coarse_root_target,
                                       p->c_alloc_cmax, p->targ_sens);
 
-
-
         /* figure out root allocation given available water & nutrients
            hyperbola shape to allocation, this is adjusted below as we aim
            to maintain a functional balance */
@@ -672,64 +669,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
                      (p->c_alloc_rmin + (p->c_alloc_rmax - p->c_alloc_rmin) *
                       s->prev_sma));
 
-        /* Now adjust root & leaf allocation to maintain balance, accounting
-           for stress e.g. -> Sitch et al. 2003, GCB. */
-
-        /* leaf-to-root ratio under non-stressed conditons */
-        lr_max = 1.0;
-
-        /* Calculate adjustment on lr_max, based on current "stress"
-           calculated from running mean of N and water stress */
-        stress = lr_max * s->prev_sma;
-
-        /* calculate imbalance, based on *biomass* */
-        if (c->deciduous_model) {
-            mis_match = s->shoot / (s->root * stress);
-        } else {
-            /* Catch for floating point reset of root C mass */
-            if (float_eq(s->root, 0.0))
-                mis_match = 1.9;
-            else
-                mis_match = s->shoot / (s->root * stress);
-        }
-
-
-        if (mis_match > 1.0) {
-            /* Root=Leaf biomass in out of balance, borrow from the stem to try
-               and alleviate this difference and move towards a functional
-               balance. */
-            spare = 1.0 - f->alleaf - f->albranch - f->alcroot - min_stem_alloc;
-            adj = f->alroot * mis_match;
-            f->alroot += MAX(p->c_alloc_rmin, MIN(spare, adj));
-            f->alroot = MIN(p->c_alloc_rmax, f->alroot);
-
-        } else if (mis_match < 1.0) {
-            /* Root=Leaf biomass in out of balance, borrow from the root to try
-               and alleviate this difference and move towards a functional
-               balance */
-            /* reduce root allocation */
-            orig_ar = f->alroot;
-            adj = f->alroot * mis_match;
-            f->alroot = MAX(p->c_alloc_rmin, MIN(p->c_alloc_rmax, adj));
-            reduction = MAX(0.0, orig_ar - f->alroot);
-            f->alleaf += MAX(p->c_alloc_fmax, reduction);
-        }
-
-
-        /* Ensure we don't end up with alloc fractions that make no
-           physical sense. */
-        left_over = 1.0 - f->alroot - f->alleaf;
-        if (f->albranch + f->alcroot > left_over) {
-            if (float_eq(s->croot, 0.0)) {
-                f->alcroot = 0.0;
-                f->alstem = 0.5 * left_over;
-                f->albranch = 0.5 * left_over;
-            } else {
-                f->alcroot = 0.3 * left_over;
-                f->alstem = 0.4 * left_over;
-                f->albranch = 0.3 * left_over;
-            }
-        }
         f->alstem = 1.0 - f->alroot - f->albranch - f->alleaf - f->alcroot;
 
         /* minimum allocation to leaves - without it tree would die, as this
