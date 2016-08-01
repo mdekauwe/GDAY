@@ -137,12 +137,10 @@ Nitrogen (N) entering the system via biological N fixation (BNF; (tonnes ha<sup>
 Following Smith et al. (2014), Biogeosciences and Wieder et al. (2015), ERL,
 we also suggest the conservation BNF equation (Fig. 1). For estimates of ET you can either use values by PFT based on Table 1 in Cleveland or use the sum of canopy evaporation and transpiration. Wieder et al (pg 3) argued that using total ET leads to a high bias in BNF estimates in arid regions.
 
-BNF is then calculated as:
+BNF (kg N ha-1 yr-1) is then calculated as a function of ET:
+
 mm_2_cm = 0.1
-bn1 = 0.102
-bn2 = 0.524
-(kg N ha-1 yr-1)
-$bnf = bn1 \times (ET \times mm_2_cm) + bn2$
+$bnf = 0.102 \times (ET \times mm_2_cm) + 0.524$
 
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
