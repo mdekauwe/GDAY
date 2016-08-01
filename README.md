@@ -139,7 +139,9 @@ we also suggest the conservation BNF equation (Fig. 1). For estimates of ET you 
 
 BNF (kg N ha-1 yr-1) is then calculated as a function of ET:
 
-$$bnf = 0.102 \times (ET \times mm_2_cm) + 0.524$$
+```python
+BNF = 0.102 * (ET * mm_2_cm) + 0.524
+```
 
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
