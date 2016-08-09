@@ -96,16 +96,18 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (c->sub_daily)
+    if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
-    else
+    } else {
         read_daily_met_data(argv, c, ma);
+    }
 
-    if (c->spin_up)
+    if (c->spin_up) {
         spin_up_pools(cw, c, f, ma, m, p, s);
-    else
+    } else {
         run_sim(cw, c, f, ma, m, p, s);
-
+    }
+    
     /* clean up */
     fclose(c->ofp);
     if (c->print_options == SUBDAILY ) {
