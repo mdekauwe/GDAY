@@ -152,6 +152,7 @@ typedef struct {
     double *wetting_top;
     double *water_frac;
     double initial_water;
+    double weighted_swp;
 
 } state;
 
@@ -620,6 +621,7 @@ typedef struct {
     double *soil_conduct;
     double *swp;
     double *soilR;
+    double *fraction_uptake;
 
 } fluxes;
 

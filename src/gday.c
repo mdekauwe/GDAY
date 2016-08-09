@@ -141,6 +141,15 @@ int main(int argc, char **argv)
         free(ma->doy);
         /* Clean up hydraulics */
         if (c->water_balance == HYDRAULICS) {
+            free(f->soil_conduct);
+            free(f->swp);
+            free(f->soilR);
+            free(f->fraction_uptake);
+
+            free(s->water_frac);
+            free(s->wetting_bot);
+            free(s->wetting_top);
+            free(s->wetting_top);
             free(s->thickness);
             free(s->root_mass);
             free(s->root_length);
