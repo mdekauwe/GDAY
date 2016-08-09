@@ -49,5 +49,6 @@ void   calc_root_exudation(control *c, fluxes *, params *p, state *);
 
 /* hydraulics */
 void initialise_roots(params *, state *);
+void calc_rooting_distribution(control *, state *, fluxes *, params *);
 
 #endif /* PLANT_GROWTH */

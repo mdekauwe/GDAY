@@ -96,6 +96,12 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    /* House keeping! */
+    if (c->water_balance == HYDRAULICS && c->sub_daily == FALSE) {
+        fprintf(stderr, "You can't run the hydraulics model with daily flag\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (c->sub_daily)
         read_subdaily_met_data(argv, c, ma);
         if (c->water_balance == HYDRAULICS) {
@@ -119,7 +125,6 @@ int main(int argc, char **argv)
         fclose(c->ofp_hdr);
     }
 
-
     free(cw);
     free(c);
     free(f);
@@ -135,6 +140,7 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
+
     } else {
         free(ma->prjday);
         free(ma->tam);
@@ -150,15 +156,16 @@ int main(int argc, char **argv)
     }
     free(ma);
     free(m);
-    free(p);
-    free(s);
+    /*free(p);
+    free(s);*/
 
     /* Clean up hydraulics */
-    if (c->water_balance == HYDRAULICS) {
+    /*if (c->water_balance == HYDRAULICS) {
         free(s->thickness);
         free(s->root_mass);
         free(s->root_length);
-    }
+        free(s->layer_depth);
+    }*/
 
     exit(EXIT_SUCCESS);
 }

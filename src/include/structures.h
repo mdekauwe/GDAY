@@ -147,7 +147,8 @@ typedef struct {
     double *thickness;
     double *root_mass;
     double *root_length;
-    
+    double *layer_depth;
+
 } state;
 
 typedef struct {
@@ -335,8 +336,14 @@ typedef struct {
     double root_exu_CUE;
     double leaf_width;
     double leaf_abs;
+
+    /* hydraulics */
     double layer_thickness;                 /* Soil layer thickness (m) */
     int    n_layers;                        /* Number of soil layers */
+    double root_k;    /* mass of roots for reaching 50% maximum depth (g m-2) */
+    double root_radius;  /* (m) */
+    double root_density; /* g biomass m-3*/
+    double max_depth;    /* (m) */
 } params;
 
 typedef struct {

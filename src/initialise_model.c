@@ -241,6 +241,10 @@ void initialise_params(params *p) {
     /* hydraulics */
     p->layer_thickness = 0.1; /* soil layer thickness (m) */
     p->n_layers = 20; /* soil layer thickness (m) */
+    p->root_k = 100.0;
+    p->root_radius = 0.0005;
+    p->root_density = 0.5e6;
+    p->max_depth = 2.0;
 }
 
 
@@ -453,5 +457,12 @@ void initialise_state(state *s) {
     s->canopy_store = 0.0;
 
     s->wtfac_root = 1.0;
+
+    /* Hydraulics stuff */
+    s->thickness = NULL;
+    s->root_mass = NULL;
+    s->root_length = NULL;
+    s->layer_depth = NULL;
+    
     return;
 }

@@ -412,7 +412,12 @@ int handler(char *section, char *name, char *value, control *c,
     } else if (MATCH("control", "use_eff_nc")) {
         c->use_eff_nc = atoi(value);
     } else if (MATCH("control", "water_balance")) {
-        c->water_balance = atoi(value);
+        if (strcmp(temp, "hydraulics") == 0||
+            strcmp(temp, "HYDRAULICS") == 0)
+            c->water_balance = HYDRAULICS;
+        else {
+            c->water_balance = BUCKET;
+        }
     } else if (MATCH("control", "water_stress")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -711,6 +716,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->liteffnc = atof(value);
     } else if (MATCH("params", "longitude")) {
         p->longitude = atof(value);
+    } else if (MATCH("params", "max_depth")) {
+        p->max_depth = atof(value);
     } else if (MATCH("params", "max_intercep_lai")) {
         p->max_intercep_lai = atof(value);
     } else if (MATCH("params", "measurement_temp")) {
@@ -803,6 +810,12 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(p->rootsoil_type, value);
     } else if (MATCH("params", "root_exu_CUE")) {
         p->root_exu_CUE = atof(value);
+    } else if (MATCH("params", "root_k")) {
+        p->root_k = atof(value);
+    } else if (MATCH("params", "root_density")) {
+        p->root_density = atof(value);
+    } else if (MATCH("params", "root_radius")) {
+        p->root_radius = atof(value);
     } else if (MATCH("params", "rretrans")) {
         p->rretrans = atof(value);
     } else if (MATCH("params", "sapturnover")) {
