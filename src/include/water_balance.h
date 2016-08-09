@@ -62,6 +62,7 @@ void    calc_soil_conductivity(fluxes *, params *, state *);
 void    calc_soil_water_potential(fluxes *, params *, state *);
 void    calc_soil_root_resistance(fluxes *, params *, state *);
 void    calc_water_uptake_per_layer(fluxes *, params *, state *);
+void    calc_wetting_layers(fluxes *, params *, state *, double, double);
 
 
 

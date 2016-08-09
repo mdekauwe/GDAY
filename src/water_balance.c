@@ -276,11 +276,48 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
 
     */
     int i;
+    double soil_evap, et, interception, runoff, conv,
+           transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
+           transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
+           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
+           gpp_am, gpp_pm, omega_pm, throughfall,
+           canopy_evap;
 
     calc_soil_conductivity(f, p, s);
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
     calc_water_uptake_per_layer(f, p, s);
+
+    /* calculate potential canopy evap rate, this may be reduced later
+       depending on canopy water storage */
+    canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
+
+    /* mol m-2 s-1 to mm/day */
+    conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+    canopy_evap *= conv;
+    calc_interception(c, m, p, f, s, &throughfall, &interception,
+                      &canopy_evap);
+
+    net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
+    soil_evap = calc_soil_evaporation(m, p, s, net_rad);
+    soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+
+    /* mol m-2 s-1 to mm/30 min */
+    transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
+                    SEC_2_HLFHR;
+
+
+    /* determine water loss in upper layers due to evaporation */
+    double surface_watermm = 0.1; /* till I work it out */
+    calc_wetting_layers(f, p, s, soil_evap, surface_watermm);
+
+    exit(1);
+    /*
+    ** NB. et, transpiration & soil evap may all be adjusted in
+    ** update_water_storage if we don't have sufficient water
+    */
+    et = transpiration + soil_evap + canopy_evap;
+
 
     /*
     for (i = 0; i < p->n_layers; i++) {
@@ -1725,6 +1762,109 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
 
     if (uptake_check > 1 || uptake_check < 0) {
         fprintf(stderr, "Problem with the uptake fraction\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return;
+}
+
+void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
+                         double surface_watermm) {
+    /*
+        surface wetting and drying determines thickness of dry layer
+        and thus soil evaporation
+    */
+
+    double seconds_per_step = 1800.0;
+    double dmin = 0.001;
+    double drythick = 0.1;/* Thickness of dry soil layer above water table (m)*/
+    double airspace = p->porosity[0];
+    double min_val, netc, diff;
+    int    i, ar1, ar2;
+    /*
+    ** soil LE should be withdrawn from the wetting layer with the
+    ** smallest depth..
+    */
+    ar1 = 0;
+    min_val = 9999.9;
+    for (i = 0; i < p->n_layers; i++) {
+        if (s->wetting_bot[i] > 0.0) {
+            if (s->wetting_bot[i] < min_val) {
+                ar1 = i;
+                min_val = s->wetting_bot[i];
+            }
+        }
+    }
+
+    /* Calulate the net change in wetting in the top zone */
+    netc = soil_evap / airspace + (surface_watermm * 0.001) / airspace;
+
+    /* wetting */
+    if (netc > 0.0) {
+        /*
+        ** resaturate the layer if top is dry and recharge is greater
+        **  than drythick
+        */
+        if ((netc > s->wetting_top[ar1]) && (s->wetting_top[ar1] > 0.0)) {
+            /* extra water to deepen wetting layer */
+            diff = netc - s->wetting_top[ar1];
+            s->wetting_top[ar1] = 0.0;
+            if (ar1 > 0) {
+                /* Not in primary layer (primary layer can't extend deeper) */
+                s->wetting_bot[ar1] += diff;
+            }
+            drythick = dmin;
+        } else {
+            if (s->wetting_top[ar1] == 0.0) {
+                /* surface is already wet, so extend depth of this wet zone */
+                if (ar1 > 0) {
+                    /* not in primary lay (primary layer can't extend deeper) */
+                    s->wetting_bot[ar1] += netc;
+                    if (s->wetting_bot[ar1] >= s->wetting_top[ar1-1]) {
+                        /* Layers are conterminous.. */
+                        s->wetting_top[ar1-1] = s->wetting_top[ar1];
+                        s->wetting_top[ar1] = 0.;     /* remove layer */
+                        s->wetting_bot[ar1] = 0.;    /* remove layer */
+                    }
+                }
+            } else {
+                /* Create a new wetting zone */
+                s->wetting_top[ar1+1] = 0.0;
+                s->wetting_bot[ar1+1] = netc;
+            }
+            drythick = dmin;
+        }
+    /* drying */
+    } else {
+        /* Drying increases the wettingtop depth */
+        s->wetting_top[ar1] -= netc;
+
+        /* Wetting layer is dried out. */
+        if (s->wetting_top[ar1] > s->wetting_bot[ar1]) {
+            /* How much more drying is there? */
+            diff = s->wetting_top[ar1] - s->wetting_bot[ar1];
+            s->wetting_top[ar1] = 0.0;
+            s->wetting_bot[ar1] = 0.0;
+            ar2 = ar1;
+            ar2 -= 1;
+
+            /* Move to deeper wetting layer */
+            if (ar2 > 0.0) {
+                /* dry out deeper layer */
+                s->wetting_top[ar2] += diff;
+                drythick = MAX(dmin, s->wetting_top[ar2]);
+            /* no deeper layer */
+            } else {
+                /* layer 1 is dry */
+                drythick = s->thickness[0];
+            }
+        } else {
+            drythick = MAX(dmin, s->wetting_top[ar1]);
+        }
+    }
+
+    if (drythick == 0.0) {
+        fprintf(stderr, "Problem in drythick\n");
         exit(EXIT_FAILURE);
     }
 
