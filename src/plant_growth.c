@@ -17,7 +17,7 @@
 * =========================================================================== */
 #include "plant_growth.h"
 #include "water_balance.h"
-
+#include "numerical_libs.h"
 
 
 
@@ -108,7 +108,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
     if (c->water_balance == HYDRAULICS) {
-        calc_rooting_distribution(c, p, s);
+        update_roots(c, p, s);
     }
 
     precision_control(f, s);
@@ -1223,7 +1223,7 @@ void initialise_roots(params *p, state *s) {
 }
 
 
-void calc_rooting_distribution(control *c, params *p, state *s) {
+void update_roots(control *c, params *p, state *s) {
     /*
         Given the amount of roots grown by GDAY predict the assoicated rooting
         distribution accross soil layers
@@ -1242,6 +1242,8 @@ void calc_rooting_distribution(control *c, params *p, state *s) {
     double tol = 0.0001;    /* tolerance for brent search */
 
     root_biomass = MAX(min_biomass, s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    /*root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS); */
+
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
 
@@ -1271,15 +1273,10 @@ void calc_rooting_distribution(control *c, params *p, state *s) {
         ** determine slope of root distribution given rooting depth
         ** and ratio of root mass to surface root density
         */
+        slope = zbrent(&calc_root_dist, x1, x2, tol, root_biomass,
+                       surf_biomass, rooted_layers, s->thickness[0],
+                       root_reach);
 
-        /*slope = zbrent(calc_root_dist, x1, x2, tol, root_biomass,
-                      surf_biomass, rooted_layers, thickness[0], root_reach)*/
-
-
-        slope = 0.5;
-
-        printf("%lf\n", slope);
-        exit(1);
         prev = 1.0 / slope;
         cumulative_depth = 0.0;
         for (i = 0; i <= rooted_layers; i++) {
@@ -1297,4 +1294,22 @@ void calc_rooting_distribution(control *c, params *p, state *s) {
     }
 
     return;
+}
+
+
+double calc_root_dist(double slope, double root_biomass, double surf_biomass,
+                      double rooted_layers, double top_lyr_thickness,
+                      double root_reach) {
+    /*
+        This function is used in the in the zbrent numerical algorithm to
+        figure out the slope of the rooting distribution for a given depth
+    */
+    double one, two, arg1, arg2;
+
+    one = (1.0 - exp(-slope * rooted_layers * top_lyr_thickness)) / slope;
+    two = root_biomass / surf_biomass;
+    arg1 = (1.0 - exp(-slope * root_reach)) / slope;
+    arg2 = root_biomass / surf_biomass;
+
+    return (arg1 - arg2);
 }
