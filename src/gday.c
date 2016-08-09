@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     } else {
         run_sim(cw, c, f, ma, m, p, s);
     }
-    
+
     /* clean up */
     fclose(c->ofp);
     if (c->print_options == SUBDAILY ) {
@@ -142,6 +142,13 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
+        /* Clean up hydraulics */
+        if (c->water_balance == HYDRAULICS) {
+            free(s->thickness);
+            free(s->root_mass);
+            free(s->root_length);
+            free(s->layer_depth);
+        }
 
     } else {
         free(ma->prjday);
@@ -158,16 +165,10 @@ int main(int argc, char **argv)
     }
     free(ma);
     free(m);
-    /*free(p);
-    free(s);*/
+    free(p);
+    free(s);
 
-    /* Clean up hydraulics */
-    /*if (c->water_balance == HYDRAULICS) {
-        free(s->thickness);
-        free(s->root_mass);
-        free(s->root_length);
-        free(s->layer_depth);
-    }*/
+
 
     exit(EXIT_SUCCESS);
 }

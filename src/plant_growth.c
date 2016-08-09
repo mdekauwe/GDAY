@@ -107,9 +107,9 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
-    /*if (c->water_balance == HYDRAULICS) {
-        calc_rooting_distribution();
-    }*/
+    if (c->water_balance == HYDRAULICS) {
+        calc_rooting_distribution(c, p, s);
+    }
 
     precision_control(f, s);
 
@@ -1218,12 +1218,12 @@ void initialise_roots(params *p, state *s) {
         s->root_mass[i] = 0.0;
         s->root_length[i] = 0.0;
     }
-    
+
     return;
 }
 
 
-void calc_rooting_distribution(control *c, state *s, fluxes *f, params *p) {
+void calc_rooting_distribution(control *c, params *p, state *s) {
     /*
         Given the amount of roots grown by GDAY predict the assoicated rooting
         distribution accross soil layers
