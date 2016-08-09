@@ -35,7 +35,7 @@ double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_sat_vapour_pressure_curve(double);
 void    calc_soil_water_potential(control *, params *, state *);
 double  calc_sw_modifier(double, double, double);
-void    initialise_soil_moisture_parameters(control *, params *);
+void    initialise_soils(control *, params *, state *);
 double *get_soil_fracs(char *);
 double  calc_beta(double, double, double, double, double);
 void    get_soil_params(char *, double *, double *);

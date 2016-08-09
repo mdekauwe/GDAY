@@ -1,6 +1,90 @@
 #include "water_balance.h"
 #include "numerical_libs.h"
 
+
+void initialise_soils(control *c, params *p, state *s) {
+    /* Initialise soil water state & parameters  */
+
+    double *fsoil_top = NULL, *fsoil_root = NULL;
+    int     i;
+
+    /* site params not known, so derive them based on Cosby et al */
+
+    if (c->calc_sw_params) {
+        fsoil_top = get_soil_fracs(p->topsoil_type);
+        fsoil_root = get_soil_fracs(p->rootsoil_type);
+
+        /* top soil */
+        calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,
+                         &p->theta_sp_topsoil, &p->b_topsoil,
+                         &p->psi_sat_topsoil);
+
+        /* Plant available water in top soil (mm) */
+        p->wcapac_topsoil = p->topsoil_depth  *\
+                            (p->theta_fc_topsoil - p->theta_wp_topsoil);
+        /* Root zone */
+        calc_soil_params(fsoil_root, &p->theta_fc_root, &p->theta_wp_root,
+                         &p->theta_sp_root, &p->b_root, &p->psi_sat_root);
+
+        /* Plant available water in rooting zone (mm) */
+        p->wcapac_root = p->rooting_depth * \
+                            (p->theta_fc_root - p->theta_wp_root);
+    }
+
+
+    /* calculate Landsberg and Waring SW modifier parameters if not
+       specified by the user based on a site calibration */
+    if (p->ctheta_topsoil < -900.0 && p->ntheta_topsoil  < -900.0 &&
+        p->ctheta_root < -900.0 && p->ntheta_root < -900.0) {
+        get_soil_params(p->topsoil_type, &p->ctheta_topsoil, &p->ntheta_topsoil);
+        get_soil_params(p->rootsoil_type, &p->ctheta_root, &p->ntheta_root);
+    }
+    /*
+    printf("%f\n", p->wcapac_topsoil);
+    printf("%f\n\n", p->wcapac_root);
+
+    printf("%f\n", p->ctheta_topsoil);
+    printf("%f\n", p->ntheta_topsoil);
+    printf("%f\n", p->ctheta_root);
+    printf("%f\n", p->ntheta_root);
+    printf("%f\n", p->rooting_depth);
+
+    exit(1); */
+
+    /* Set up all the hydraulics stuff */
+    if (c->water_balance == HYDRAULICS) {
+        calc_saxton_stuff(p, fsoil_root);
+
+        /* Depth to bottom of wet soil layers (m) */
+        s->wettingbot = malloc(p->wetting * sizeof(double));
+        if (s->wettingbot== NULL) {
+            fprintf(stderr, "malloc failed allocating wettingbot\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Depth to top of wet soil layers (m) */
+        s->wettingtop = malloc(p->wetting * sizeof(double));
+        if (s->wettingtop== NULL) {
+            fprintf(stderr, "malloc failed allocating wettingtop\n");
+            exit(EXIT_FAILURE);
+        }
+        for (i = 0; i < p->wetting; i++) {
+            s->wettingbot[i] = 0.0;
+            s->wettingtop[i] = 0.0;
+        }
+
+        /* saturate the top layer */
+        s->wettingbot[0] = s->thickness[0];
+
+    }
+
+    free(fsoil_top);
+    free(fsoil_root);
+
+    return;
+}
+
+
 void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                              state *s, int daylen, double trans_leaf,
                              double omega_leaf, double rnet_leaf) {
@@ -938,65 +1022,6 @@ double calc_sat_water_vapour_press(double tac) {
     return (613.75 * exp(17.502 * tac / (240.97 + tac)));
 }
 
-void initialise_soil_moisture_parameters(control *c, params *p) {
-    /*
-      initialise parameters, if these are not known for the site use
-      values derived from Cosby et al to calculate the amount of plant
-      available water.
-     */
-
-    double *fsoil_top = NULL, *fsoil_root = NULL;
-
-    if (c->calc_sw_params) {
-        fsoil_top = get_soil_fracs(p->topsoil_type);
-        fsoil_root = get_soil_fracs(p->rootsoil_type);
-
-        /* top soil */
-        calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,
-                         &p->theta_sp_topsoil, &p->b_topsoil,
-                         &p->psi_sat_topsoil);
-
-        /* Plant available water in top soil (mm) */
-        p->wcapac_topsoil = p->topsoil_depth  *\
-                            (p->theta_fc_topsoil - p->theta_wp_topsoil);
-        /* Root zone */
-        calc_soil_params(fsoil_root, &p->theta_fc_root, &p->theta_wp_root,
-                         &p->theta_sp_root, &p->b_root, &p->psi_sat_root);
-
-        /* Plant available water in rooting zone (mm) */
-        p->wcapac_root = p->rooting_depth * \
-                            (p->theta_fc_root - p->theta_wp_root);
-    }
-
-
-    /* calculate Landsberg and Waring SW modifier parameters if not
-       specified by the user based on a site calibration */
-    if (p->ctheta_topsoil < -900.0 && p->ntheta_topsoil  < -900.0 &&
-        p->ctheta_root < -900.0 && p->ntheta_root < -900.0) {
-        get_soil_params(p->topsoil_type, &p->ctheta_topsoil, &p->ntheta_topsoil);
-        get_soil_params(p->rootsoil_type, &p->ctheta_root, &p->ntheta_root);
-    }
-    /*
-    printf("%f\n", p->wcapac_topsoil);
-    printf("%f\n\n", p->wcapac_root);
-
-    printf("%f\n", p->ctheta_topsoil);
-    printf("%f\n", p->ntheta_topsoil);
-    printf("%f\n", p->ctheta_root);
-    printf("%f\n", p->ntheta_root);
-    printf("%f\n", p->rooting_depth);
-
-    exit(1); */
-
-    if (c->water_balance == HYDRAULICS) {
-        calc_saxton_stuff(p, fsoil_root);
-    }
-
-    free(fsoil_top);
-    free(fsoil_root);
-
-    return;
-}
 
 
 double *get_soil_fracs(char *soil_type) {
@@ -1479,9 +1504,7 @@ void calc_saxton_stuff(params *p, double *fsoil) {
                                       p->potA[i], p->potB[i],
                                       dummy, dummy, dummy);
 
-        printf("%lf %lf %lf\n", p->field_capacity[i], p->potA[i], p->potB[i] );
     }
-    exit(1);
     return;
 }
 

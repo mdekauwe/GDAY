@@ -27,23 +27,23 @@ int main(int argc, char **argv)
     /*
      * Setup structures, initialise stuff, e.g. zero fluxes.
      */
-    canopy_wk *cw;
     control *c;
+    canopy_wk *cw;
     fluxes *f;
     met_arrays *ma;
     met *m;
     params *p;
     state *s;
 
-    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
-    if (cw == NULL) {
-        fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
-    	exit(EXIT_FAILURE);
-    }
-
     c = (control *)malloc(sizeof(control));
     if (c == NULL) {
         fprintf(stderr, "control structure: Not allocated enough memory!\n");
+    	exit(EXIT_FAILURE);
+    }
+
+    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
+    if (cw == NULL) {
+        fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
@@ -278,7 +278,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     correct_rate_constants(p, FALSE);
     day_end_calculations(c, p, s, -99, TRUE);
 
-    initialise_soil_moisture_parameters(c, p);
+    initialise_soils(c, p, s);
     s->pawater_root = p->wcapac_root;
     s->pawater_topsoil = p->wcapac_topsoil;
 

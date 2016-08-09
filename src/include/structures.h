@@ -148,6 +148,8 @@ typedef struct {
     double *root_mass;
     double *root_length;
     double *layer_depth;
+    double *wettingbot;
+    double *wettingtop;
 
 } state;
 
@@ -353,6 +355,7 @@ typedef struct {
     double *cond3;
     double *porosity;
     double *field_capacity;
+    double wetting;
 
 
 } params;

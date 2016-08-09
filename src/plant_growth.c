@@ -1212,9 +1212,9 @@ void initialise_roots(params *p, state *s) {
     for (i = 0; i < p->n_layers; i++) {
         s->layer_depth[i] = thick;
         thick += p->layer_thickness;
+        s->thickness[i] = p->layer_thickness;
 
         /* also zero things whilst we are in the loop */
-        s->thickness[i] = 0.0;
         s->root_mass[i] = 0.0;
         s->root_length[i] = 0.0;
     }
