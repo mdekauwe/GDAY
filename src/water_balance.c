@@ -67,6 +67,12 @@ void initialise_soils(control *c, fluxes *f, params *p, state *s) {
             exit(EXIT_FAILURE);
         }
 
+        f->soilR = malloc(p->n_layers * sizeof(double));
+        if (f->soilR == NULL) {
+            fprintf(stderr, "malloc failed allocating soilR\n");
+            exit(EXIT_FAILURE);
+        }
+
         /* Depth to bottom of wet soil layers (m) */
         s->water_frac = malloc(p->n_layers * sizeof(double));
         if (s->water_frac == NULL) {
@@ -267,6 +273,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
 
     calc_soil_conductivity(f, p, s);
     calc_soil_water_potential(f, p, s);
+    calc_soil_root_resistance(f, p, s);
     for (i = 0; i < p->n_layers; i++) {
         printf("%lf\n", f->swp[i]);
     }
@@ -1633,4 +1640,43 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     }
     return;
 
+}
+void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
+
+    /* head of pressure (MPa/m) */
+    double head = 0.009807;
+
+    /* saxton water retention equation are off by default */
+    double ab = 1.0;
+    double Lsoil, rs, rs2, soilR1, soilR2;
+    int    i;
+
+    double root_xsec_area = M_PI * p->root_radius * p->root_radius;
+
+    for (i = 0; i < p->n_layers; i++) {
+        /* converts from ms-1 to m2 s-1 MPa-1 */
+        Lsoil = f->soil_conduct[i] / head;
+
+        if (Lsoil < 1e-35) {
+            /* prevent floating point error */
+            f->soilR[i] = 1e35;
+        } else {
+
+            rs = sqrt(1.0 / (s->root_length[i] * M_PI));
+            rs2 = log(rs / p->root_radius) / \
+                     (2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil);
+
+            /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
+            soilR1 = rs2 * 1E-6 * 18 * 0.001;
+
+            /*
+            ** second component of below ground resistance related to root
+            ** hydraulics
+            */
+            soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i] / ab);
+            f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
+        }
+    }
+
+    return;
 }

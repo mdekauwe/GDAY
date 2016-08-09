@@ -806,6 +806,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->rfmult = atof(value);
     } else if (MATCH("params", "rooting_depth")) {
         p->rooting_depth = atof(value);
+    } else if (MATCH("params", "root_resist")) {
+        p->root_resist = atof(value);
     } else if (MATCH("params", "rootsoil_type")) {
         strcpy(p->rootsoil_type, value);
     } else if (MATCH("params", "root_exu_CUE")) {

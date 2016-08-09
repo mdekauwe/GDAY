@@ -348,6 +348,7 @@ typedef struct {
     double root_radius;  /* (m) */
     double root_density; /* g biomass m-3*/
     double max_depth;    /* (m) */
+    double root_resist;
 
     /* not shared via cmd line */
     double *potA;
@@ -358,6 +359,7 @@ typedef struct {
     double *porosity;
     double *field_capacity;
     double wetting;
+
 
 
 } params;
@@ -616,6 +618,7 @@ typedef struct {
     /* hydraulics */
     double *soil_conduct;
     double *swp;
+    double *soilR;
 
 } fluxes;
 

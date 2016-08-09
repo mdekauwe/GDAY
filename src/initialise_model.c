@@ -245,6 +245,7 @@ void initialise_params(params *p) {
     p->root_radius = 0.0005;
     p->root_density = 0.5e6;
     p->max_depth = 2.0;
+    p->root_resist = 20; /* Evergreen value: fine root hydraulic resistivity (MPa s g mmol-1 H2O) */
 
     /* Hydraulics stuff - private */
     p->potA = NULL;
@@ -414,6 +415,7 @@ void initialise_fluxes(fluxes *f) {
     /* Hydraulics stuff */
     f->soil_conduct = NULL;
     f->swp = NULL;
+    f->soilR = NULL;
 
     return;
 }
