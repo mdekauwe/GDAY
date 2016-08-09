@@ -56,26 +56,40 @@ void initialise_soils(control *c, params *p, state *s) {
         calc_saxton_stuff(p, fsoil_root);
 
         /* Depth to bottom of wet soil layers (m) */
-        s->wettingbot = malloc(p->wetting * sizeof(double));
-        if (s->wettingbot== NULL) {
-            fprintf(stderr, "malloc failed allocating wettingbot\n");
+        s->water_frac = malloc(p->n_layers * sizeof(double));
+        if (s->water_frac == NULL) {
+            fprintf(stderr, "malloc failed allocating water_frac\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Depth to bottom of wet soil layers (m) */
+        s->wetting_bot = malloc(p->wetting * sizeof(double));
+        if (s->wetting_bot == NULL) {
+            fprintf(stderr, "malloc failed allocating wetting_bot\n");
             exit(EXIT_FAILURE);
         }
 
         /* Depth to top of wet soil layers (m) */
-        s->wettingtop = malloc(p->wetting * sizeof(double));
-        if (s->wettingtop== NULL) {
-            fprintf(stderr, "malloc failed allocating wettingtop\n");
+        s->wetting_top = malloc(p->wetting * sizeof(double));
+        if (s->wetting_top == NULL) {
+            fprintf(stderr, "malloc failed allocating wetting_top\n");
             exit(EXIT_FAILURE);
         }
         for (i = 0; i < p->wetting; i++) {
-            s->wettingbot[i] = 0.0;
-            s->wettingtop[i] = 0.0;
+            s->wetting_bot[i] = 0.0;
+            s->wetting_top[i] = 0.0;
         }
 
         /* saturate the top layer */
-        s->wettingbot[0] = s->thickness[0];
+        s->wetting_bot[0] = s->thickness[0];
 
+        /* Initalise SW fraction - we should read this from param file */
+        s->initial_water = 0.0;
+        for (i = 0; i < p->n_layers; i++) {
+            s->water_frac[i] = 0.4;
+            s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
+        }
+        
     }
 
     free(fsoil_top);

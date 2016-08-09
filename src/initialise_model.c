@@ -473,6 +473,8 @@ void initialise_state(state *s) {
     s->root_mass = NULL;
     s->root_length = NULL;
     s->layer_depth = NULL;
+    s->water_frac = NULL;
+    s->initial_water = 0.0;
 
     return;
 }

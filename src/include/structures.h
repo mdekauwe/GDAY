@@ -148,8 +148,10 @@ typedef struct {
     double *root_mass;
     double *root_length;
     double *layer_depth;
-    double *wettingbot;
-    double *wettingtop;
+    double *wetting_bot;
+    double *wetting_top;
+    double *water_frac;
+    double initial_water;
 
 } state;
 
