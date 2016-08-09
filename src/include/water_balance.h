@@ -53,6 +53,7 @@ double  calc_bdn_layer_free_conduct(double, double, double, double);
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
 
 /* hydraulics stuff */
-void    calc_saxton_parameters(params *, double *);
+void    calc_saxton_stuff(params *, double *);
+double  saxton_field_capacity(double, double, double, double, double, double);
 
 #endif /* WATER_BALANCE */

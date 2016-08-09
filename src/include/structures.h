@@ -351,6 +351,8 @@ typedef struct {
     double *cond1;
     double *cond2;
     double *cond3;
+    double *porosity;
+    double *field_capacity;
 
 
 } params;

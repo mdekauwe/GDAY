@@ -151,6 +151,8 @@ int main(int argc, char **argv)
             free(p->cond1);
             free(p->cond2);
             free(p->cond3);
+            free(p->porosity);
+            free(p->field_capacity);
         }
 
     } else {
@@ -247,7 +249,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     if (c->water_balance == HYDRAULICS) {
         initialise_roots(p, s);
     }
-    
+
     /*
      * Window size = root lifespan in days...
      * For deciduous species window size is set as the length of the

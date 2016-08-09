@@ -1,5 +1,5 @@
 #include "water_balance.h"
-
+#include "numerical_libs.h"
 
 void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                              state *s, int daylen, double trans_leaf,
@@ -989,7 +989,7 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
     exit(1); */
 
     if (c->water_balance == HYDRAULICS) {
-        calc_saxton_parameters(p, fsoil_root);
+        calc_saxton_stuff(p, fsoil_root);
     }
 
     free(fsoil_top);
@@ -1373,7 +1373,7 @@ void zero_water_day_fluxes(fluxes *f) {
 }
 
 
-void calc_saxton_parameters(params *p, double *fsoil) {
+void calc_saxton_stuff(params *p, double *fsoil) {
     /*
         Calculate the key parameters of the Saxton equations:
         cond1, 2, 3 and potA, B
@@ -1407,6 +1407,12 @@ void calc_saxton_parameters(params *p, double *fsoil) {
     double T = 3.671e-2;
     double U = -0.1103;
     double V = 8.7546E-4;
+    double x1 = 0.1;
+    double x2 = 0.7;
+    double tol = 0.0001;
+    double dummy = 0.0;
+    double sand = fsoil[SAND] * 100.0;
+    double clay = fsoil[CLAY] * 100.0;
 
     p->potA = malloc(p->n_layers * sizeof(double));
     if (p->potA == NULL) {
@@ -1438,17 +1444,56 @@ void calc_saxton_parameters(params *p, double *fsoil) {
         exit(EXIT_FAILURE);
     }
 
-    for (i = 0; i < p->n_layers; i++) {
-        p->potA[i] = exp(A + B * fsoil[CLAY] + CC * fsoil[SAND] * \
-                         fsoil[SAND] + D * fsoil[SAND] * fsoil[SAND] * \
-                         fsoil[CLAY]) * 100.0;
-        p->potB[i]  = E + F * fsoil[CLAY] * fsoil[CLAY] + G * \
-                      fsoil[SAND] * fsoil[SAND] * fsoil[CLAY];
-        p->cond1[i] = mult2;
-        p->cond2[i] = P + Q * fsoil[SAND];
-        p->cond3[i] = R + T * fsoil[SAND] + U * fsoil[CLAY] + \
-                      V * fsoil[CLAY] * fsoil[CLAY];
+    p->porosity = malloc(p->n_layers * sizeof(double));
+    if (p->porosity == NULL) {
+        fprintf(stderr, "malloc failed allocating porosity\n");
+        exit(EXIT_FAILURE);
     }
 
+    p->field_capacity = malloc(p->n_layers * sizeof(double));
+    if (p->field_capacity == NULL) {
+        fprintf(stderr, "malloc failed allocating field_capacity\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /*
+    ** As we aren't currently changing texture by layer, the loop is redundant,
+    ** but it is probably best to leave it under the assumption we change
+    ** this later
+    */
+
+
+    for (i = 0; i < p->n_layers; i++) {
+        p->potA[i] = exp(A + B * clay + CC * sand * \
+                         sand + D * sand * sand * \
+                         clay) * 100.0;
+        p->potB[i]  = E + F * clay * clay + G * sand * sand * clay;
+        p->cond1[i] = mult2;
+        p->cond2[i] = P + Q * sand;
+        p->cond3[i] = R + T * sand + U * clay + V * clay * clay;
+
+        p->porosity[i] = H + J * sand + K * log10(clay);
+
+        /* field capacity is water content at which SWP = -10 kPa */
+        p->field_capacity[i] = zbrent(&saxton_field_capacity, x1, x2, tol,
+                                      p->potA[i], p->potB[i],
+                                      dummy, dummy, dummy);
+
+        printf("%lf %lf %lf\n", p->field_capacity[i], p->potA[i], p->potB[i] );
+    }
+    exit(1);
     return;
+}
+
+double saxton_field_capacity(double xval, double potA, double potB,
+                             double dummy1, double dummy2, double dummy3) {
+    /* field capacity calculations for saxton eqns */
+
+    double air_entry_swp = 10.0; /* (kPa) */
+    double MPa_2_kPa = 1000.0;
+    double swp;
+
+    /* calculate the soil water potential (MPa) */
+    swp = -0.001 * potA * pow(xval, potB);
+    return (MPa_2_kPa * swp + air_entry_swp);
 }
