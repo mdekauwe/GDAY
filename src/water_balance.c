@@ -988,7 +988,9 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
 
     exit(1); */
 
-
+    if (c->water_balance == HYDRAULICS) {
+        calc_saxton_parameters(p, fsoil_root);
+    }
 
     free(fsoil_top);
     free(fsoil_root);
@@ -1366,6 +1368,87 @@ void zero_water_day_fluxes(fluxes *f) {
     f->throughfall = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
+
+    return;
+}
+
+
+void calc_saxton_parameters(params *p, double *fsoil) {
+    /*
+        Calculate the key parameters of the Saxton equations:
+        cond1, 2, 3 and potA, B
+
+        NB: Currently I'm assuming a single texture for the entire root zone,
+            we could set it by layer obviously and we probably should...
+
+        Reference:
+        ---------
+        * Saxton, K. E., Rawls, W. J., Romberger, J. S. & Papendick, R. I.
+          (1986) Estimating generalized soil-water characteristics from texture.
+          Soil Science Society of America Journal, 90, 1031-1036.
+    */
+    int    i;
+    double mult1 = 100.0;
+    double mult2 = 2.778E-6;
+    double mult3 = 1000.0;
+    double A = -4.396;
+    double B = -0.0715;
+    double CC = -4.880E-4;
+    double D = -4.285E-5;
+    double E = -3.140;
+    double F = -2.22E-3;
+    double G = -3.484E-5;
+    double H = 0.332;
+    double J = -7.251E-4;
+    double K = 0.1276;
+    double P = 12.012;
+    double Q = -7.551E-2;
+    double R = -3.895;
+    double T = 3.671e-2;
+    double U = -0.1103;
+    double V = 8.7546E-4;
+
+    p->potA = malloc(p->n_layers * sizeof(double));
+    if (p->potA == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's potA\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->potB = malloc(p->n_layers * sizeof(double));
+    if (p->potB == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's potB\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->cond1 = malloc(p->n_layers * sizeof(double));
+    if (p->cond1 == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's cond1\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->cond2 = malloc(p->n_layers * sizeof(double));
+    if (p->cond1 == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's cond2\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->cond3 = malloc(p->n_layers * sizeof(double));
+    if (p->cond1 == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's cond3\n");
+        exit(EXIT_FAILURE);
+    }
+
+    for (i = 0; i < p->n_layers; i++) {
+        p->potA[i] = exp(A + B * fsoil[CLAY] + CC * fsoil[SAND] * \
+                         fsoil[SAND] + D * fsoil[SAND] * fsoil[SAND] * \
+                         fsoil[CLAY]) * 100.0;
+        p->potB[i]  = E + F * fsoil[CLAY] * fsoil[CLAY] + G * \
+                      fsoil[SAND] * fsoil[SAND] * fsoil[CLAY];
+        p->cond1[i] = mult2;
+        p->cond2[i] = P + Q * fsoil[SAND];
+        p->cond3[i] = R + T * fsoil[SAND] + U * fsoil[CLAY] + \
+                      V * fsoil[CLAY] * fsoil[CLAY];
+    }
 
     return;
 }

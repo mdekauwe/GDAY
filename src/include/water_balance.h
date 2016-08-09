@@ -51,4 +51,8 @@ double  calc_bdn_layer_forced_conduct(double, double, double,double);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
+
+/* hydraulics stuff */
+void    calc_saxton_parameters(params *, double *);
+
 #endif /* WATER_BALANCE */

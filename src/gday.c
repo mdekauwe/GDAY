@@ -104,9 +104,6 @@ int main(int argc, char **argv)
 
     if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
-        if (c->water_balance == HYDRAULICS) {
-            initialise_roots(p, s);
-        }
     } else {
         read_daily_met_data(argv, c, ma);
     }
@@ -148,6 +145,12 @@ int main(int argc, char **argv)
             free(s->root_mass);
             free(s->root_length);
             free(s->layer_depth);
+
+            free(p->potA);
+            free(p->potB);
+            free(p->cond1);
+            free(p->cond2);
+            free(p->cond3);
         }
 
     } else {
@@ -194,7 +197,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     if (c->deciduous_model) {
-
         /* Are we reading in last years average growing season? */
         if (float_eq(s->avg_alleaf, 0.0) &&
             float_eq(s->avg_alstem, 0.0) &&
@@ -242,6 +244,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         open_output_file(c, c->out_param_fname, &(c->ofp));
     }
 
+    if (c->water_balance == HYDRAULICS) {
+        initialise_roots(p, s);
+    }
+    
     /*
      * Window size = root lifespan in days...
      * For deciduous species window size is set as the length of the

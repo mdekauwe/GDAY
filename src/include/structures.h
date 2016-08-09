@@ -344,6 +344,15 @@ typedef struct {
     double root_radius;  /* (m) */
     double root_density; /* g biomass m-3*/
     double max_depth;    /* (m) */
+
+    /* not shared via cmd line */
+    double *potA;
+    double *potB;
+    double *cond1;
+    double *cond2;
+    double *cond3;
+
+
 } params;
 
 typedef struct {

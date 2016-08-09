@@ -245,6 +245,13 @@ void initialise_params(params *p) {
     p->root_radius = 0.0005;
     p->root_density = 0.5e6;
     p->max_depth = 2.0;
+
+    /* Hydraulics stuff - private */
+    p->potA = NULL;
+    p->potB = NULL;
+    p->cond1 = NULL;
+    p->cond2 = NULL;
+    p->cond3 = NULL;
 }
 
 
@@ -463,6 +470,6 @@ void initialise_state(state *s) {
     s->root_mass = NULL;
     s->root_length = NULL;
     s->layer_depth = NULL;
-    
+
     return;
 }
