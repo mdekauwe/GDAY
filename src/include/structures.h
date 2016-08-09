@@ -615,6 +615,7 @@ typedef struct {
 
     /* hydraulics */
     double *soil_conduct;
+    double *swp;
 
 } fluxes;
 

@@ -36,7 +36,7 @@ double  calc_net_radiation(params *, double, double);
 double  calc_latent_heat_of_vapourisation(double);
 double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_sat_vapour_pressure_curve(double);
-void    calc_soil_water_potential(control *, params *, state *);
+void    _calc_soil_water_potential(control *, params *, state *);
 double  calc_sw_modifier(double, double, double);
 void    initialise_soils(control *, fluxes *, params *, state *);
 double *get_soil_fracs(char *);
@@ -59,5 +59,6 @@ double  canopy_boundary_layer_conduct(params *, double, double, double, double);
 void    calc_saxton_stuff(params *, double *);
 double  saxton_field_capacity(double, double, double, double, double, double);
 void    calc_soil_conductivity(fluxes *, params *, state *);
+void    calc_soil_water_potential(fluxes *, params *, state *);
 
 #endif /* WATER_BALANCE */

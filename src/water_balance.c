@@ -55,10 +55,15 @@ void initialise_soils(control *c, fluxes *f, params *p, state *s) {
     if (c->water_balance == HYDRAULICS) {
         calc_saxton_stuff(p, fsoil_root);
 
-        /* Depth to bottom of wet soil layers (m) */
         f->soil_conduct = malloc(p->n_layers * sizeof(double));
         if (f->soil_conduct == NULL) {
             fprintf(stderr, "malloc failed allocating soil_conduct\n");
+            exit(EXIT_FAILURE);
+        }
+
+        f->swp = malloc(p->n_layers * sizeof(double));
+        if (f->swp == NULL) {
+            fprintf(stderr, "malloc failed allocating swp\n");
             exit(EXIT_FAILURE);
         }
 
@@ -261,10 +266,11 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     int i;
 
     calc_soil_conductivity(f, p, s);
-    /*for (i = 0; i < p->n_layers; i++) {
-        printf("%lf\n", f->soil_conduct[i]);
+    calc_soil_water_potential(f, p, s);
+    for (i = 0; i < p->n_layers; i++) {
+        printf("%lf\n", f->swp[i]);
     }
-    exit(1);*/
+    exit(1);
 
 }
 
@@ -1393,7 +1399,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 }
 
 
-void calc_soil_water_potential(control *c, params *p, state *s) {
+void _calc_soil_water_potential(control *c, params *p, state *s) {
     /*
         Estimate pre-dawn soil water potential from soil water content
     */
@@ -1607,4 +1613,24 @@ void calc_soil_conductivity(fluxes *f, params *p, state *s) {
         }
     }
     return;
+}
+
+void calc_soil_water_potential(fluxes *f, params *p, state *s) {
+    /*
+        Calculate the SWP (MPa) without updating the water fraction in each
+        layer
+    */
+    int    i;
+    double arg1, arg2;
+
+    for (i = 0; i < p->n_layers; i++) {
+
+        if (s->water_frac[i] > 0.0) {
+            f->swp[i] = -0.001 * p->potA[i] * pow(s->water_frac[i], p->potB[i]);
+        } else {
+            f->swp[i] = -9999.0;
+        }
+    }
+    return;
+
 }

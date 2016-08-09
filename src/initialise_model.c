@@ -413,7 +413,8 @@ void initialise_fluxes(fluxes *f) {
 
     /* Hydraulics stuff */
     f->soil_conduct = NULL;
-    
+    f->swp = NULL;
+
     return;
 }
 
