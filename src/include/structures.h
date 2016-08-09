@@ -142,6 +142,12 @@ typedef struct {
     double canopy_store;
     double psi_s_topsoil;
     double psi_s_root;
+
+    /* hydraulics */
+    double *thickness;
+    double *root_mass;
+    double *root_length;
+    
 } state;
 
 typedef struct {
@@ -329,6 +335,8 @@ typedef struct {
     double root_exu_CUE;
     double leaf_width;
     double leaf_abs;
+    double layer_thickness;                 /* Soil layer thickness (m) */
+    int    n_layers;                        /* Number of soil layers */
 } params;
 
 typedef struct {

@@ -47,6 +47,7 @@ void   calculate_ncwood_ratios(control *c, params *, state *, double, double *,
 /* Priming/Exudation stuff */
 void   calc_root_exudation(control *c, fluxes *, params *p, state *);
 
-/* misc */
+/* hydraulics */
+void initialise_roots(params *, state *);
 
 #endif /* PLANT_GROWTH */

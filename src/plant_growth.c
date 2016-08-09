@@ -107,6 +107,10 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
+    /*if (c->water_balance == HYDRAULICS) {
+        calc_rooting_distribution();
+    }*/
+
     precision_control(f, s);
 
     return;
@@ -1172,3 +1176,113 @@ double calculate_nuptake(control *c, params *p, state *s) {
 
     return (nuptake);
 }
+
+
+void initialise_roots(params *p, state *s) {
+    /* Set up all the rooting arrays for use with the hydraulics assumptions */
+
+    s->thickness = malloc(p->n_layers * sizeof(double));
+    if (s->thickness == NULL) {
+        fprintf(stderr, "malloc failed allocating thickness\n");
+        exit(EXIT_FAILURE);
+    }
+
+    s->root_mass = malloc(p->n_layers * sizeof(double));
+    if (s->root_mass == NULL) {
+        fprintf(stderr, "malloc failed allocating root_mass\n");
+        exit(EXIT_FAILURE);
+    }
+
+    s->root_length = malloc(p->n_layers * sizeof(double));
+    if (s->root_length == NULL) {
+        fprintf(stderr, "malloc failed allocating root_length\n");
+        exit(EXIT_FAILURE);
+    }
+    return;
+
+}
+
+
+void calc_rooting_distribution(control *c, state *s, fluxes *f, params *p) {
+    /*
+        Given the amount of roots grown by GDAY predict the assoicated rooting
+        distribution accross soil layers
+    */
+    int    n_layers = p->n_layers;
+    double layer_depth[n_layers], soil_layers[n_layers]
+}
+    /*
+
+
+
+    p->n_layers = 20
+    p->layer_thickness = 0.1
+    # I'm ignoring the final core layer and assuming roots in all layers
+
+
+
+
+    thick = 0.1
+    for i in range(n_layers):
+        layer_depth[i] = thick
+        thick += layer_thickness
+
+    # mass of roots for reaching 50% maximum depth (g m-2)
+    root_k = 100.0
+    root_radius = 0.0005 # m
+    root_density = 0.5e6 # g biomass m-3 root)
+
+    # convert from gC to g biomass, assuming a minimum root biomass
+    root_biomass = max(5.0, root_carbon * 2.0)
+    root_cross_sec_area = pi * root_radius * root_radius   # (m2)
+    root_depth = max_depth * root_biomass / ( root_k + root_biomass )
+
+    rooted_layers = 0
+    for i in range(n_layers):
+        if layer_depth[i] > root_depth:
+            rooted_layers = i
+            break
+
+    # how for into the soil do the reach extend?
+    root_reach = layer_depth[rooted_layers]
+
+    # Enforce 50 % of root mass in the top 1/4 of the rooted layers.
+    mult = min(1.0 / thickness[0], max(2.0, 11.0 * exp(-0.006 * root_biomass)))
+
+    # assume surface root density is related to total root biomass by a
+    # scalar dependent on root biomass
+    surf_biomass = root_biomass * mult
+
+    if (rooted_layers > 1):
+        x1 = 0.1
+        x2 = 10.0
+        # determine slope of root distribution given rooting depth
+        # and ratio of root mass to surface root density
+        tol = 0.0001
+        #slope = zbrent(calc_root_dist, x1, x2, tol, root_biomass,
+        #              surf_biomass, rooted_layers, thickness[0], root_reach)
+        #print(slope)
+
+        slope = brentq(calc_root_dist, x1, x2, xtol=tol,
+                       args=(root_biomass, surf_biomass,
+                             rooted_layers, thickness[0], root_reach))
+
+        prev = 1.0 / slope
+        cumulative_depth = 0.0
+        for i in range(rooted_layers+1):
+            cumulative_depth += thickness[i]
+            curr = 1.0 / slope * exp(-slope * cumulative_depth)
+
+            # root_mass is g biomass, i.e. twice the C content
+            root_mass[i] = (prev - curr) * surf_biomass
+
+            # (m m-3 soil)
+            root_length[i] = root_mass[i] / (root_density * root_cross_sec_area)
+            prev = curr
+    else:
+        root_mass[0] = root_biomass
+
+    return (root_mass, root_length, thickness)
+
+}
+*/

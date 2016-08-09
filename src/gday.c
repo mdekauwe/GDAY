@@ -98,6 +98,9 @@ int main(int argc, char **argv)
 
     if (c->sub_daily)
         read_subdaily_met_data(argv, c, ma);
+        if (c->water_balance == HYDRAULICS) {
+            initialise_roots(p, s);
+        }
     else
         read_daily_met_data(argv, c, ma);
 
@@ -150,10 +153,15 @@ int main(int argc, char **argv)
     free(p);
     free(s);
 
+    /* Clean up hydraulics */
+    if (c->water_balance == HYDRAULICS) {
+        free(s->thickness);
+        free(s->root_mass);
+        free(s->root_length);
+    }
+
     exit(EXIT_SUCCESS);
 }
-
-
 
 void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              params *p, state *s){

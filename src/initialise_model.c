@@ -237,6 +237,10 @@ void initialise_params(params *p) {
     }
     /* absorptance of solar radiation (0-1), typically 0.4-0.6 */
     p->leaf_abs = 0.5;
+
+    /* hydraulics */
+    p->layer_thickness = 0.1; /* soil layer thickness (m) */
+    p->n_layers = 20; /* soil layer thickness (m) */
 }
 
 

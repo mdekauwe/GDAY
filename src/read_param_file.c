@@ -695,6 +695,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->lai_closed = atof(value);
     } else if (MATCH("params", "latitude")) {
         p->latitude = atof(value);
+    } else if (MATCH("params", "layer_thickness")) {
+        p->layer_thickness = atof(value);
     } else if (MATCH("params", "leafsap0")) {
         p->leafsap0 = atof(value);
     } else if (MATCH("params", "leafsap1")) {
@@ -741,6 +743,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->nf_crit = atof(value);
     } else if (MATCH("params", "nf_min")) {
         p->nf_min = atof(value);
+    } else if (MATCH("params", "n_layers")) {
+        p->n_layers = atof(value);
     } else if (MATCH("params", "nmax")) {
         p->nmax = atof(value);
     } else if (MATCH("params", "nmin")) {
