@@ -2,7 +2,7 @@
 #include "numerical_libs.h"
 
 
-void initialise_soils(control *c, params *p, state *s) {
+void initialise_soils(control *c, fluxes *f, params *p, state *s) {
     /* Initialise soil water state & parameters  */
 
     double *fsoil_top = NULL, *fsoil_root = NULL;
@@ -56,6 +56,13 @@ void initialise_soils(control *c, params *p, state *s) {
         calc_saxton_stuff(p, fsoil_root);
 
         /* Depth to bottom of wet soil layers (m) */
+        f->soil_conduct = malloc(p->n_layers * sizeof(double));
+        if (f->soil_conduct == NULL) {
+            fprintf(stderr, "malloc failed allocating soil_conduct\n");
+            exit(EXIT_FAILURE);
+        }
+
+        /* Depth to bottom of wet soil layers (m) */
         s->water_frac = malloc(p->n_layers * sizeof(double));
         if (s->water_frac == NULL) {
             fprintf(stderr, "malloc failed allocating water_frac\n");
@@ -89,7 +96,7 @@ void initialise_soils(control *c, params *p, state *s) {
             s->water_frac[i] = 0.4;
             s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
         }
-        
+
     }
 
     free(fsoil_top);
@@ -137,6 +144,12 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     SEC_2_DAY = 60.0 * 60.0 * daylen;
     DAY_2_SEC = 1.0 / SEC_2_DAY;
+
+    if (c->water_balance == HYDRAULICS) {
+        calculate_water_balance_hydraulics(c, f, m, p, s, daylen, trans_leaf,
+                                           omega_leaf, rnet_leaf);
+
+    }
 
     if (c->sub_daily) {
         /* calculate potential canopy evap rate, this may be reduced later
@@ -213,6 +226,48 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     return;
 }
+
+void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
+                                        params *p, state *s, int daylen,
+                                        double trans_leaf, double omega_leaf,
+                                        double rnet_leaf) {
+    /*
+
+    Calculate the water balance (including all water fluxes).
+        - we are using all the hydraulics instead
+
+    Parameters:
+    ----------
+    control : structure
+        control structure
+    fluxes : structure
+        fluxes structure
+    met : structure
+        meteorological drivers structure
+    params : structure
+        parameters structure
+    day : int
+        project day. (Dummy argument, only passed for daily model)
+    daylen : double
+        length of day in hours. (Dummy argument, only passed for daily model)
+    trans_leaf : double
+        leaf transpiration (Dummy argument, only passed for sub-daily model)
+    omega_leaf : double
+        decoupling coefficient (Dummy argument, only passed for sub-daily model)
+    rnet_leaf : double
+        total canopy rnet (Dummy argument, only passed for sub-daily model)
+
+    */
+    int i;
+
+    calc_soil_conductivity(f, p, s);
+    /*for (i = 0; i < p->n_layers; i++) {
+        printf("%lf\n", f->soil_conduct[i]);
+    }
+    exit(1);*/
+
+}
+
 
 void update_water_storage(control *c, fluxes *f, params *p, state *s,
                           double throughfall, double interception,
@@ -1533,4 +1588,23 @@ double saxton_field_capacity(double xval, double potA, double potB,
     /* calculate the soil water potential (MPa) */
     swp = -0.001 * potA * pow(xval, potB);
     return (MPa_2_kPa * swp + air_entry_swp);
+}
+
+void calc_soil_conductivity(fluxes *f, params *p, state *s) {
+    /* Soil conductivity (m s-1 ) per layer */
+    int    i;
+    double arg1, arg2;
+
+    for (i = 0; i < p->n_layers; i++) {
+
+        /* Avoid floating-underflow error */
+        if (s->water_frac[i] < 0.05) {
+            f->soil_conduct[i] = 1E-30;
+        } else {
+            arg1 = p->cond1[i];
+            arg2 = exp(p->cond2[i] + p->cond3[i] / s->water_frac[i]);
+            f->soil_conduct[i] = arg1 * arg2;
+        }
+    }
+    return;
 }

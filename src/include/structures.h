@@ -612,6 +612,10 @@ typedef struct {
     double rexc_cue;
 
     double ninflow;
+
+    /* hydraulics */
+    double *soil_conduct;
+
 } fluxes;
 
 typedef struct {

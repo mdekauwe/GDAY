@@ -411,6 +411,9 @@ void initialise_fluxes(fluxes *f) {
     f->co2_rel_from_slow_pool = 0.0;
     f->co2_rel_from_passive_pool = 0.0;
 
+    /* Hydraulics stuff */
+    f->soil_conduct = NULL;
+    
     return;
 }
 

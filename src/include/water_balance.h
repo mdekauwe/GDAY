@@ -11,6 +11,9 @@ void    update_water_storage(control *, fluxes *, params *, state *, double,
 double  calc_canopy_evaporation(met *, params *, state *, double);
 void    calculate_water_balance(control *, fluxes *, met *, params *,
                               state *, int, double, double, double);
+void    calculate_water_balance_hydraulics(control *, fluxes *, met *,
+                                           params *, state *, int, double,
+                                           double, double);
 void    zero_water_day_fluxes(fluxes *);
 void    update_water_storage_recalwb(control *, fluxes *, params *, state *,
                                      met *);
@@ -35,7 +38,7 @@ double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_sat_vapour_pressure_curve(double);
 void    calc_soil_water_potential(control *, params *, state *);
 double  calc_sw_modifier(double, double, double);
-void    initialise_soils(control *, params *, state *);
+void    initialise_soils(control *, fluxes *, params *, state *);
 double *get_soil_fracs(char *);
 double  calc_beta(double, double, double, double, double);
 void    get_soil_params(char *, double *, double *);
@@ -55,5 +58,6 @@ double  canopy_boundary_layer_conduct(params *, double, double, double, double);
 /* hydraulics stuff */
 void    calc_saxton_stuff(params *, double *);
 double  saxton_field_capacity(double, double, double, double, double, double);
+void    calc_soil_conductivity(fluxes *, params *, state *);
 
 #endif /* WATER_BALANCE */
