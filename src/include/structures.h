@@ -349,6 +349,7 @@ typedef struct {
     double root_density; /* g biomass m-3*/
     double max_depth;    /* (m) */
     double root_resist;
+    double min_lwp;         /* minimum leaf water potential (MPa) */
 
     /* not shared via cmd line */
     double *potA;

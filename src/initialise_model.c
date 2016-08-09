@@ -246,6 +246,7 @@ void initialise_params(params *p) {
     p->root_density = 0.5e6;
     p->max_depth = 2.0;
     p->root_resist = 20; /* Evergreen value: fine root hydraulic resistivity (MPa s g mmol-1 H2O) */
+    p->min_lwp = -2.0;        /* minimum leaf water potential (MPa) */
 
     /* Hydraulics stuff - private */
     p->potA = NULL;

@@ -274,10 +274,15 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     calc_soil_conductivity(f, p, s);
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
+    calc_water_uptake_per_layer(f, p, s);
+
+    /*
     for (i = 0; i < p->n_layers; i++) {
         printf("%lf\n", f->swp[i]);
     }
-    exit(1);
+    exit(1);*/
+
+    /*add_ground = through_fall * hourppt*/
 
 }
 
@@ -1676,6 +1681,46 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i] / ab);
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
         }
+    }
+
+    return;
+}
+
+
+void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
+
+    /* Figure out which layer water is extracted from */
+    int    i;
+    double est_evap[p->n_layers], fraction_uptake[p->n_layers];
+    double total_est_evap, weighted_swp, uptake_check;
+
+    /* Estimate max transpiration from gradient-gravity / soil resistance. */
+    total_est_evap = 0.0;
+    for (i = 0; i < p->n_layers; i++) {
+        est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
+        total_est_evap += est_evap[i];
+
+    }
+
+    /* Water was evaporated from some layers..*/
+    weighted_swp = 0.0;
+    uptake_check = 0.0;
+    if (total_est_evap > 0.0) {
+        for (i = 0; i < p->n_layers; i++) {
+            weighted_swp += f->swp[i] * est_evap[i];
+            /* fraction of water taken from layer */
+            fraction_uptake[i] = est_evap[i] / total_est_evap;
+            uptake_check += fraction_uptake[i];
+        }
+        weighted_swp /= total_est_evap;
+    } else {
+        /* No water was evaporated */
+        fraction_uptake[i] = 1.0 / (double)p->n_layers;
+    }
+
+    if (uptake_check > 1 || uptake_check < 0) {
+        fprintf(stderr, "Problem with the uptake fraction\n");
+        exit(EXIT_FAILURE);
     }
 
     return;

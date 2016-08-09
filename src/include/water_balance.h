@@ -61,6 +61,8 @@ double  saxton_field_capacity(double, double, double, double, double, double);
 void    calc_soil_conductivity(fluxes *, params *, state *);
 void    calc_soil_water_potential(fluxes *, params *, state *);
 void    calc_soil_root_resistance(fluxes *, params *, state *);
+void    calc_water_uptake_per_layer(fluxes *, params *, state *);
+
 
 
 #endif /* WATER_BALANCE */

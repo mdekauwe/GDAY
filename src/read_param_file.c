@@ -722,6 +722,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->max_intercep_lai = atof(value);
     } else if (MATCH("params", "measurement_temp")) {
         p->measurement_temp = atof(value);
+    } else if (MATCH("params", "min_lwp")) {
+        p->min_lwp = atof(value);
     } else if (MATCH("params", "ncbnew")) {
         p->ncbnew = atof(value);
     } else if (MATCH("params", "ncbnewz")) {
