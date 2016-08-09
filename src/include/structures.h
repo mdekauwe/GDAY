@@ -40,6 +40,7 @@ typedef struct {
     int   sw_stress_model;
     int   use_eff_nc;
     int   water_stress;
+    int   water_balance;
     int   num_days;
     int   total_num_days;
     char  git_code_ver[STRING_LENGTH];

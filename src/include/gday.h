@@ -59,6 +59,9 @@
 #define SAND 1
 #define CLAY 2
 
+/* water balance identifiers */
+#define BUCKET 0
+#define HYDRAULICS 1
 
 #include "structures.h"
 #include "initialise_model.h"

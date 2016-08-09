@@ -41,6 +41,7 @@ void initialise_control(control *c) {
     c->sw_stress_model = 1;         /* JULES type linear stress func, or Landsberg and Waring non-linear func */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
+    c->water_balance = 0;            /* Water calculations: 0=simple 2 layered bucket; 1=SPA-style hydraulics */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
 
     /* Internal calculated */

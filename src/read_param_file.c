@@ -411,6 +411,8 @@ int handler(char *section, char *name, char *value, control *c,
         c->sw_stress_model = atoi(value);
     } else if (MATCH("control", "use_eff_nc")) {
         c->use_eff_nc = atoi(value);
+    } else if (MATCH("control", "water_balance")) {
+        c->water_balance = atoi(value);
     } else if (MATCH("control", "water_stress")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
