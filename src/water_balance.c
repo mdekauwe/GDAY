@@ -324,7 +324,6 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
                     SEC_2_HLFHR;
 
-
     /* determine water loss in upper layers due to evaporation */
     double surface_watermm = 0.1; /* till I work it out */
     calc_wetting_layers(f, p, s, soil_evap, surface_watermm);
@@ -340,21 +339,27 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     if (soil_evap > 0.0) {
       /* Evaporation (t m-2 t-1, m t-1) */
       f->water_loss[rr] += MM_TO_M * soil_evap;
-    }
+    } /* ignoring watr gain due to due formation...
 
 
-    et = MAX(0., transpiration + soil_evap + canopy_evap);
-
-    /* water loss from each layer */
+    /* Determing water loss from each layer due to transpiration */
     for (i = 0; i < s->rooted_layers; i++) {
-        f->water_loss[i] += et * f->fraction_uptake[i];
+        f->water_loss[i] += transpiration * f->fraction_uptake[i];
     }
 
     /*
     ** determines water movement between soil layers to due drainage
     ** down the profile
     */
-    /*calc_soil_balance();*/
+    /*for (i = 0; i < p->n_layers; i++) {
+        calc_soil_balance(i);
+    }*/
+
+    /*
+    ** how much surface water infiltrantes the first soil layer in the current
+    ** step. Water which does not infiltrate in a single step is considered
+    ** runoff
+    */
     runoff = calc_infiltration(f, p, s, surface_watermm);
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
@@ -376,21 +381,11 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
 
     }
     exit(1);
-    /*
-    ** NB. et, transpiration & soil evap may all be adjusted in
-    ** update_water_storage if we don't have sufficient water
-    */
+
     et = transpiration + soil_evap + canopy_evap;
 
-
-    /*
-    for (i = 0; i < p->n_layers; i++) {
-        printf("%lf\n", f->swp[i]);
-    }
-    exit(1);*/
-
-    /*add_ground = through_fall * hourppt*/
-
+    sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
+                            throughfall, canopy_evap, runoff, omega_leaf);
 }
 
 
