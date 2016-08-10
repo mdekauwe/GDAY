@@ -324,11 +324,8 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
                     SEC_2_HLFHR;
 
-
-    exit(1);
     /* determine water loss in upper layers due to evaporation */
-    double surface_watermm = 0.1; /* till I work it out */
-    calc_wetting_layers(f, p, s, soil_evap, surface_watermm);
+    calc_wetting_layers(f, p, s, soil_evap);
 
     /*  From which layer is evap water withdrawn? */
     if (s->dry_thick < s->thickness[0]) {
@@ -362,7 +359,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     ** step. Water which does not infiltrate in a single step is considered
     ** runoff
     */
-    runoff = calc_infiltration(f, p, s, surface_watermm);
+    runoff = calc_infiltration(f, p, s);
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
 
@@ -1829,8 +1826,7 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     return;
 }
 
-void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
-                         double surface_watermm) {
+void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap) {
     /*
         surface wetting and drying determines thickness of dry layer
         and thus soil evaporation
@@ -1857,7 +1853,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     }
 
     /* Calulate the net change in wetting in the top zone */
-    netc = soil_evap / airspace + (surface_watermm * 0.001) / airspace;
+    netc = (soil_evap * MM_TO_M) / airspace;
 
     /* wetting */
     if (netc > 0.0) {
@@ -1931,7 +1927,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     return;
 }
 
-double calc_infiltration(fluxes *f, params *p, state *s, double surface_watermm) {
+double calc_infiltration(fluxes *f, params *p, state *s) {
     /*
         Takes surface_watermm and distrubutes it among top layers. Assumes
         total infilatration in timestep.
@@ -1939,7 +1935,7 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_watermm)
     int    i;
     double add, wdiff, runoff;
 
-    add = surface_watermm * 0.001;
+    add = 0.0;
 
     for (i = 0; i < p->n_layers; i++) {
         f->ppt_gain[i] = 0.0;
