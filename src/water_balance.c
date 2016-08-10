@@ -1797,11 +1797,13 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
 
     /* Estimate max transpiration from gradient-gravity / soil resistance. */
     total_est_evap = 0.0;
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < s->rooted_layers; i++) {
         est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
+        printf("%lf %lf %lf %lf\n", est_evap[i], f->swp[i], p->min_lwp, f->soilR[i]);
         total_est_evap += est_evap[i];
     }
-
+    printf("%d\n", s->rooted_layers);
+    exit(1);
     /* Water was evaporated from some layers..*/
     s->weighted_swp = 0.0;
     uptake_check = 0.0;
@@ -1837,6 +1839,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap) {
     double airspace = p->porosity[0];
     double min_val, netc, diff;
     int    i, ar1, ar2;
+
     /*
     ** soil LE should be withdrawn from the wetting layer with the
     ** smallest depth..
@@ -1855,6 +1858,8 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap) {
     /* Calulate the net change in wetting in the top zone */
     netc = (soil_evap * MM_TO_M) / airspace;
 
+    printf("%lf %lf %lf\n", ar1, netc, soil_evap);
+    exit(1);
     /* wetting */
     if (netc > 0.0) {
         /*

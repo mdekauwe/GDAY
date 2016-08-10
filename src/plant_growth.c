@@ -1214,14 +1214,14 @@ void initialise_roots(params *p, state *s) {
         thick += p->layer_thickness;
         s->thickness[i] = p->layer_thickness;
 
-        /* Should set this via param file, these are update on day 1 */
+        /* made up initalisation, following SPA, get replaced second timestep */
         s->root_mass[i] = 0.1;
         s->root_length[i] = 0.1;
+        s->rooted_layers = p->n_layers;
     }
 
     return;
 }
-
 
 void update_roots(control *c, params *p, state *s) {
     /*
@@ -1234,7 +1234,7 @@ void update_roots(control *c, params *p, state *s) {
     int    i;
     double soil_layers[p->n_layers];
     double C_2_BIOMASS = 2.0;
-    double min_biomass = 5.0; /* g C m-2 */
+    double min_biomass = 10.0; /* To exend at least a layer; g C m-2 */
     double root_biomass, root_cross_sec_area, root_depth, root_reach, mult;
     double surf_biomass, prev, curr, slope, cumulative_depth;
     double x1 = 0.1;        /* lower bound for brent search */
@@ -1254,6 +1254,7 @@ void update_roots(control *c, params *p, state *s) {
             break;
         }
     }
+
 
     /* how for into the soil do the reach extend? */
     root_reach = s->layer_depth[s->rooted_layers];
