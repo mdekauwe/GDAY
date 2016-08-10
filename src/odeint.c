@@ -7,8 +7,6 @@
 extern int kmax,kount;
 extern float *xp,**yp,dxsav;
 
-odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
-	   f->soil_conduct[0], unsat, drain_layer, soil_water_store);
 
 void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
 	        float hmin, int *nok, int *nbad,
@@ -16,9 +14,9 @@ void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
 			/*void (*derivs)(float, float [], float []),*/
 			void (*derivs)(float, float *, float *, double, double, double),
 			void (*rkqs)(float [], float [], int, float *, float, float,
-						 float [], float *, float *, void (*)(float,
-					     float [], float [])))
-{
+						 float [], float *, float *,
+						 void (*)(float, float [], float [], double,
+							 	  double, double))) {
 	int nstp,i;
 	float xsav,x,hnext,hdid,h;
 	float *yscal,*y,*dydx;
