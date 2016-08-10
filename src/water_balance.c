@@ -1,5 +1,5 @@
 #include "water_balance.h"
-#include "numerical_libs.h"
+#include "zbrent.h"
 
 
 void initialise_soils(control *c, fluxes *f, params *p, state *s) {
@@ -294,7 +294,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
         total canopy rnet (Dummy argument, only passed for sub-daily model)
 
     */
-    int i;
+    int i, rr;
     double soil_evap, et, interception, runoff, conv,
            transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
@@ -311,7 +311,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
        depending on canopy water storage */
     canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
 
-    /* mol m-2 s-1 to mm/day */
+    /* mol m-2 s-1 to mm d-1 */
     conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
     canopy_evap *= conv;
     calc_interception(c, m, p, f, s, &throughfall, &interception,
@@ -340,7 +340,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     /* determine water loss in upper layers due to evaporation */
     if (soil_evap > 0.0) {
       /* Evaporation (t m-2 t-1, m t-1) */
-      f->water_loss[rr] += MM_2_M * soil_evap;
+      f->water_loss[rr] += MM_TO_M * soil_evap;
     }
 
 
@@ -355,7 +355,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     ** determines water movement between soil layers to due drainage
     ** down the profile
     */
-    calc_soil_balance();
+    /*calc_soil_balance();*/
     calc_infiltration();
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
@@ -1976,3 +1976,45 @@ double infiltrate(fluxes *f, params *p, state *s):
 
     return (runoff);
 }
+
+/*
+void calc_soil_balance(int soil_layer) {
+     ntegrator for soil gravitational drainage
+    double eps = 1.0e-4;
+    double h1 = .001;
+    double hmin = 0.0;
+    double kmax = 100;
+    double x1 = 1.;
+    double x2 = 2.;
+    double dxsav = (x2 - x1) / 20.0;
+    double soilpor = p->porosity[soil_layer];
+    double liquid = s->water_frac[soil_layer];
+    double drainlayer = p->field_capacity[soil_layer];
+    double unsat;
+
+     unsaturated volume of layer below (m3 m-2)..
+    unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
+                      s->water_frac[soil_layer+1]) *\
+                      s->thickness[soil_layer+1] / s->thickness[soil_layer]);
+    slayer = soil_layer;
+
+
+    ** initial conditions; i.e. is there liquid water and more
+    ** water than layer can hold
+
+    if ((liquid > 0.0) && (s->water_frac[soil_layer] > drainlayer) {
+
+        ystart[0] = s->water_frac[soil_layer]
+        ode_int(ystart[0], nvar, x1, x2, eps, h1, hmin, nok,
+                nbad, soil_water_store)
+        newwf = ystart[0]
+
+         convert from water fraction to absolute amount
+        change = (s->waterfrac[soil_layer] - newwf) * thickness[soil_layer];
+        f->water_gain[soil_layer+1] += change;
+        f->waterloss[soil_layer] += change;
+    }
+
+    return;
+}
+*/
