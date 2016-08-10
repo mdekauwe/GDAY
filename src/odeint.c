@@ -13,7 +13,7 @@ void odeint(float *ystart, int nvar, float x1, float x2, float eps, float h1,
 			double aa, double bb, double cc,
 			void (*derivs)(float, float *, float *, double, double, double),
 			void (*rkqs)(float [], float [], int, float *, float, float,
-						 float [], float *, float *, double, double, double
+						 float [], float *, float *, double, double, double,
 						 void (*)(float, float *, float *,
 							 	  double, double, double))) {
 	int nstp,i;

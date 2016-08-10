@@ -14,7 +14,7 @@ void rkqs(float y[], float dydx[], int n, float *x, float htry, float eps,
 {
 	void rkck(float y[], float dydx[], int n, float x, float h,
 		      float yout[], float yerr[], double aa, double bb, double cc,
-		      void (*derivs)(float, float [], float [], double, double, double));
+		      void (*derivs)(float, float *, float *, double, double, double));
 	int i;
 	float errmax,h,xnew,*yerr,*ytemp;
 
@@ -22,7 +22,7 @@ void rkqs(float y[], float dydx[], int n, float *x, float htry, float eps,
 	ytemp=vector(1,n);
 	h=htry;
 	for (;;) {
-		rkck(y,dydx,n,*x,h,ytemp,yerr,aa, bb, cc, derivs);
+		rkck(y,dydx,n,*x,h,ytemp,yerr, aa, bb, cc, derivs);
 		errmax=0.0;
 		for (i=1;i<=n;i++) errmax=FMAX(errmax,fabs(yerr[i]/yscal[i]));
 		errmax /= eps;
