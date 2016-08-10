@@ -1,3 +1,4 @@
+/* fifth-order Runge-Kutta stepping routine */
 #include <math.h>
 #define NRANSI
 #include "nrutil.h"

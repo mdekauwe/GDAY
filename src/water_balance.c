@@ -353,9 +353,9 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     ** determines water movement between soil layers to due drainage
     ** down the profile
     */
-    /*for (i = 0; i < p->n_layers; i++) {
-        calc_soil_balance(i);
-    }*/
+    for (i = 0; i < p->n_layers; i++) {
+        calc_soil_balance(f, p, s, i);
+    }
 
     /*
     ** how much surface water infiltrantes the first soil layer in the current
@@ -1974,44 +1974,92 @@ double calc_infiltration(fluxes *f, params *p, state *s,
     return (runoff);
 }
 
-/*
-void calc_soil_balance(int soil_layer) {
-     ntegrator for soil gravitational drainage
-    double eps = 1.0e-4;
-    double h1 = .001;
-    double hmin = 0.0;
-    double kmax = 100;
-    double x1 = 1.;
-    double x2 = 2.;
-    double dxsav = (x2 - x1) / 20.0;
-    double soilpor = p->porosity[soil_layer];
-    double liquid = s->water_frac[soil_layer];
-    double drainlayer = p->field_capacity[soil_layer];
-    double unsat;
 
-     unsaturated volume of layer below (m3 m-2)..
+void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
+    /* Integrator for soil gravitational drainage */
+
+    int    nbad;                /* N of unsuccessful changes of the step size */
+    int    nok;                 /* N of successful changes of the step size */
+    int    N = 1;               /* Number of first oder differential eqns */
+    int    kmax = 100;          /* maximum number of iterations  */
+    double eps = 1.0e-4;        /* precision */
+    double h1 = .001;           /* first guess at integrator size */
+    double hmin = 0.0;          /* minimum value of the integrator step */
+    double x1 = 1.0;             /* initial time */
+    double x2 = 2.0;             /* final time */
+    /* value affecting the max time interval at which variables should b calc */
+    double soilpor = p->porosity[soil_layer];
+    double unsat, drain_layer, liquid, new_water_frac, change;
+
+    /* required by odeint */
+    int kmax, kount;
+    float *xp, **yp, *ystart, dxsav;
+
+    ystart = vector(1,N);
+    xp = vector(1, 200);
+    yp = matrix(1,10,1,200);
+    kmax = 10000;
+    dxsav = (x2 - x1) / 20.0;
+
+    /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
                       s->water_frac[soil_layer+1]) *\
                       s->thickness[soil_layer+1] / s->thickness[soil_layer]);
-    slayer = soil_layer;
 
+    /* soil water capacity of the current layer */
+    drain_layer = p->field_capacity[soil_layer];
+    liquid = s->water_frac[soil_layer];
 
+    /*
     ** initial conditions; i.e. is there liquid water and more
     ** water than layer can hold
+    */
+    if ( (liquid > 0.0) && (s->water_frac[soil_layer] > drain_layer) ) {
 
-    if ((liquid > 0.0) && (s->water_frac[soil_layer] > drainlayer) {
+        /* there is liquid water */
+        ystart[0] = s->water_frac[soil_layer];
 
-        ystart[0] = s->water_frac[soil_layer]
-        ode_int(ystart[0], nvar, x1, x2, eps, h1, hmin, nok,
-                nbad, soil_water_store)
-        newwf = ystart[0]
+        ode_int(ystart, nvar, x1, x2, eps, h1, hmin, &nok, &nbad,
+                soil_water_store);
 
-         convert from water fraction to absolute amount
-        change = (s->waterfrac[soil_layer] - newwf) * thickness[soil_layer];
+        new_water_frac = ystart[0];
+
+        /* convert from water fraction to absolute amount (m) */
+        change = (s->water_frac[soil_layer] - new_water_frac) * \
+                    s->thickness[soil_layer];
+
+        /* update soil layer below with drained liquid */
         f->water_gain[soil_layer+1] += change;
-        f->waterloss[soil_layer] += change;
+        f->water_loss[soil_layer] += change;
     }
+
+    if (f->water_loss[soil_layer] < 0.0) {
+        fprintf(stderr, "waterloss probem in soil_balance\n");
+        exit(EXIT_FAILURE);
+    }
+    free_vector(ystart, 1, N);
 
     return;
 }
-*/
+
+
+void soil_water_store(float time_dummy, float y[], float dydt[],
+                      double soil_conductivity, double unsat) {
+
+    /* determines gravitational water drainage */
+    float drainage;
+
+    drainage = soil_conductivity;
+
+    /* gravitational drainage above field_capacity */
+    if (y[0] <= drainlayer) {
+        drainage = 0.0;
+    }
+
+    /* layer below cannot accept more water than unsat */
+    if (drainage > unsat) {
+        drainage = unsat;
+    }
+    /* waterloss from this layer */
+    dydt[0] = -drainage;
+}

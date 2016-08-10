@@ -9,7 +9,8 @@ extern float *xp,**yp,dxsav;
 
 void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
 	float hmin, int *nok, int *nbad,
-	void (*derivs)(float, float [], float []),
+	/*void (*derivs)(float, float [], float []),*/
+	void (*derivs)(float, float *, float *, double, double),
 	void (*rkqs)(float [], float [], int, float *, float, float, float [],
 	float *, float *, void (*)(float, float [], float [])))
 {
