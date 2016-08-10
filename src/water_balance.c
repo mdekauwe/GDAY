@@ -1983,7 +1983,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
-    int    N = 1;
+    int    N = 1, max_iter;
     double eps = 1.0e-4;        /* precision */
     double h1 = .001;           /* first guess at integrator size */
     double hmin = 0.0;          /* minimum value of the integrator step */
@@ -1997,10 +1997,12 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     int    kmax, kount;
     float *xp, **yp, *ystart, dxsav;
 
+    kmax = 100;
+    max_iter = 2;
     ystart = vector(1,N);
-    xp = vector(1, 200);
-    yp = matrix(1,10,1,200);
-    kmax = 100;          /* maximum number of iterations  */
+    xp = vector(1, kmax);
+    yp = matrix(1,max_iter,1,kmax);
+
     dxsav = (x2 - x1) / 20.0;
 
 
