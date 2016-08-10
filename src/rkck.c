@@ -1,9 +1,8 @@
+#define NRANSI
 #include "nrutil.h"
 
-void rkck(y,dydx,n,x,h,yout,yerr,derivs)
-float dydx[],h,x,y[],yerr[],yout[];
-int n;
-void (*derivs)();
+void rkck(float y[], float dydx[], int n, float x, float h, float yout[],
+	float yerr[], void (*derivs)(float, float [], float []))
 {
 	int i;
 	static float a2=0.2,a3=0.3,a4=0.6,a5=1.0,a6=0.875,b21=0.2,
@@ -12,7 +11,7 @@ void (*derivs)();
 		b61=1631.0/55296.0,b62=175.0/512.0,b63=575.0/13824.0,
 		b64=44275.0/110592.0,b65=253.0/4096.0,c1=37.0/378.0,
 		c3=250.0/621.0,c4=125.0/594.0,c6=512.0/1771.0,
-		dc5 = -277.00/14336.0;
+		dc5 = -277.0/14336.0;
 	float dc1=c1-2825.0/27648.0,dc3=c3-18575.0/48384.0,
 		dc4=c4-13525.0/55296.0,dc6=c6-0.25;
 	float *ak2,*ak3,*ak4,*ak5,*ak6,*ytemp;
@@ -49,3 +48,4 @@ void (*derivs)();
 	free_vector(ak3,1,n);
 	free_vector(ak2,1,n);
 }
+#undef NRANSI

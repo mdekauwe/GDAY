@@ -1,22 +1,18 @@
-/* Numerical recipies in C funcs */
-#include "odeint.h"
-
-
+#include <math.h>
+#define NRANSI
+#include "nrutil.h"
 #define MAXSTP 10000
 #define TINY 1.0e-30
 
 extern int kmax,kount;
 extern float *xp,**yp,dxsav;
 
-void odeint(ystart,nvar,x1,x2,eps,h1,hmin,nok,nbad,derivs,rkqs)
-float eps,h1,hmin,x1,x2,ystart[];
-int *nbad,*nok,nvar;
-void (*derivs)(),(*rkqs)();
+void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
+	float hmin, int *nok, int *nbad,
+	void (*derivs)(float, float [], float []),
+	void (*rkqs)(float [], float [], int, float *, float, float, float [],
+	float *, float *, void (*)(float, float [], float [])))
 {
-    /*
-    ** Routine for numerical integration of a first order differential equation
-    ** Numerical Recipies in C, chapter 16
-    */
 	int nstp,i;
 	float xsav,x,hnext,hdid,h;
 	float *yscal,*y,*dydx;
@@ -59,3 +55,4 @@ void (*derivs)(),(*rkqs)();
 }
 #undef MAXSTP
 #undef TINY
+#undef NRANSI

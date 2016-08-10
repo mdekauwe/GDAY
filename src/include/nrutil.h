@@ -1,15 +1,7 @@
-/* ANSI C (only) version of the Numerical Recipes utility file nrutil.h.  */
-
 #ifndef _NR_UTILS_H_
 #define _NR_UTILS_H_
 
-#include <string.h>
-
-#define ARRSIZE(x) (sizeof(x) / sizeof((x)[0]))
-
-#define IS_ODD(x) ((x&1) == 1)
-
-static double sqrarg;
+static float sqrarg;
 #define SQR(a) ((sqrarg=(a)) == 0.0 ? 0.0 : sqrarg*sqrarg)
 
 static double dsqrarg;
@@ -23,11 +15,11 @@ static double dminarg1,dminarg2;
 #define DMIN(a,b) (dminarg1=(a),dminarg2=(b),(dminarg1) < (dminarg2) ?\
         (dminarg1) : (dminarg2))
 
-static double maxarg1,maxarg2;
+static float maxarg1,maxarg2;
 #define FMAX(a,b) (maxarg1=(a),maxarg2=(b),(maxarg1) > (maxarg2) ?\
         (maxarg1) : (maxarg2))
 
-static double minarg1,minarg2;
+static float minarg1,minarg2;
 #define FMIN(a,b) (minarg1=(a),minarg2=(b),(minarg1) < (minarg2) ?\
         (minarg1) : (minarg2))
 
@@ -49,31 +41,61 @@ static int iminarg1,iminarg2;
 
 #define SIGN(a,b) ((b) >= 0.0 ? fabs(a) : -fabs(a))
 
+#if defined(__STDC__) || defined(ANSI) || defined(NRANSI) /* ANSI */
+
 void nrerror(char error_text[]);
-double *vector(long nl, long nh);
-void copy_vector(double *src, double *dest, long nl, long nh);
+float *vector(long nl, long nh);
 int *ivector(long nl, long nh);
 unsigned char *cvector(long nl, long nh);
 unsigned long *lvector(long nl, long nh);
 double *dvector(long nl, long nh);
-double **matrix(long nrl, long nrh, long ncl, long nch);
+float **matrix(long nrl, long nrh, long ncl, long nch);
 double **dmatrix(long nrl, long nrh, long ncl, long nch);
 int **imatrix(long nrl, long nrh, long ncl, long nch);
-double **submatrix(double **a, long oldrl, long oldrh, long oldcl, long oldch,
+float **submatrix(float **a, long oldrl, long oldrh, long oldcl, long oldch,
 	long newrl, long newcl);
-double **convert_matrix(double *a, long nrl, long nrh, long ncl, long nch);
-double ***f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh);
-void free_vector(double *v, long nl, long nh);
+float **convert_matrix(float *a, long nrl, long nrh, long ncl, long nch);
+float ***f3tensor(long nrl, long nrh, long ncl, long nch, long ndl, long ndh);
+void free_vector(float *v, long nl, long nh);
 void free_ivector(int *v, long nl, long nh);
 void free_cvector(unsigned char *v, long nl, long nh);
 void free_lvector(unsigned long *v, long nl, long nh);
 void free_dvector(double *v, long nl, long nh);
-void free_matrix(double **m, long nrl, long nrh, long ncl, long nch);
+void free_matrix(float **m, long nrl, long nrh, long ncl, long nch);
 void free_dmatrix(double **m, long nrl, long nrh, long ncl, long nch);
 void free_imatrix(int **m, long nrl, long nrh, long ncl, long nch);
-void free_submatrix(double **b, long nrl, long nrh, long ncl, long nch);
-void free_convert_matrix(double **b, long nrl, long nrh, long ncl, long nch);
-void free_f3tensor(double ***t, long nrl, long nrh, long ncl, long nch,
+void free_submatrix(float **b, long nrl, long nrh, long ncl, long nch);
+void free_convert_matrix(float **b, long nrl, long nrh, long ncl, long nch);
+void free_f3tensor(float ***t, long nrl, long nrh, long ncl, long nch,
 	long ndl, long ndh);
+
+#else /* ANSI */
+/* traditional - K&R */
+
+void nrerror();
+float *vector();
+float **matrix();
+float **submatrix();
+float **convert_matrix();
+float ***f3tensor();
+double *dvector();
+double **dmatrix();
+int *ivector();
+int **imatrix();
+unsigned char *cvector();
+unsigned long *lvector();
+void free_vector();
+void free_dvector();
+void free_ivector();
+void free_cvector();
+void free_lvector();
+void free_matrix();
+void free_submatrix();
+void free_convert_matrix();
+void free_dmatrix();
+void free_imatrix();
+void free_f3tensor();
+
+#endif /* ANSI */
 
 #endif /* _NR_UTILS_H_ */
