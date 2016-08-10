@@ -2065,4 +2065,6 @@ void soil_water_store(float time_dummy, float y[], float dydt[],
     }
     /* waterloss from this layer */
     dydt[0] = -drainage;
+
+    return;
 }
