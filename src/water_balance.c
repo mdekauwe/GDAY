@@ -324,6 +324,8 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
                     SEC_2_HLFHR;
 
+
+    exit(1);
     /* determine water loss in upper layers due to evaporation */
     double surface_watermm = 0.1; /* till I work it out */
     calc_wetting_layers(f, p, s, soil_evap, surface_watermm);
@@ -337,14 +339,14 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
 
     /* determine water loss in upper layers due to evaporation */
     if (soil_evap > 0.0) {
-      /* Evaporation (t m-2 t-1, m t-1) */
-      f->water_loss[rr] += MM_TO_M * soil_evap;
-    } /* ignoring watr gain due to due formation...
+      /* Evaporation (m 30min-1) */
+      f->water_loss[rr] += soil_evap * MM_TO_M;
+    } /* ignoring water gain due to due formation...
 
 
     /* Determing water loss from each layer due to transpiration */
     for (i = 0; i < s->rooted_layers; i++) {
-        f->water_loss[i] += transpiration * f->fraction_uptake[i];
+        f->water_loss[i] += (transpiration * MM_TO_M) * f->fraction_uptake[i];
     }
 
     /*
@@ -1855,7 +1857,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     }
 
     /* Calulate the net change in wetting in the top zone */
-    netc = soil_evap / airspace + (surface_watermm * MM_TO_M) / airspace;
+    netc = soil_evap / airspace + (surface_watermm * 0.001) / airspace;
 
     /* wetting */
     if (netc > 0.0) {
@@ -1937,7 +1939,7 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_watermm)
     int    i;
     double add, wdiff, runoff;
 
-    add = surface_watermm * MM_TO_M;
+    add = surface_watermm * 0.001;
 
     for (i = 0; i < p->n_layers; i++) {
         f->ppt_gain[i] = 0.0;
