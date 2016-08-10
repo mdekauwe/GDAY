@@ -2001,6 +2001,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     kmax = 100;          /* maximum number of iterations  */
     dxsav = (x2 - x1) / 20.0;
 
+
+
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
                       s->water_frac[soil_layer+1]) *\

@@ -9,10 +9,9 @@ extern float *xp,**yp,dxsav;
 
 
 void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
-	        float hmin, int *nok, int *nbad,
+	        float hmin, int *nok, int *nbad, 
 			double soil_conductivity, double unsat, double drain_layer,
-			/*void (*derivs)(float, float [], float []),*/
-			void (*derivs)(float, float *, float *, double, double, double),
+			void (*derivs)(float, float [], float [], double, double, double),
 			void (*rkqs)(float [], float [], int, float *, float, float,
 						 float [], float *, float *,
 						 void (*)(float, float [], float [], double,
