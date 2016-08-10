@@ -2,6 +2,8 @@
 #include "zbrent.h"
 #include "nrutil.h"
 #include "odeint.h"
+#include "rkck.h"
+#include "rkqs.h"
 
 void initialise_soils(control *c, fluxes *f, params *p, state *s) {
     /* Initialise soil water state & parameters  */
@@ -2022,7 +2024,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         ystart[0] = s->water_frac[soil_layer];
 
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
-               f->soil_conduct[0], unsat, drain_layer, soil_water_store);
+               f->soil_conduct[0], unsat, drain_layer, soil_water_store,
+               rkqs);
 
         new_water_frac = ystart[0];
 
@@ -2045,7 +2048,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 }
 
 
-void soil_water_store(float time_dummy, float y[], float dydt[],
+void soil_water_store(float time_dummy, float *y, float *dydt,
                       double soil_conductivity, double unsat,
                       double drain_layer) {
 

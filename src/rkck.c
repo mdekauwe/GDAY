@@ -3,7 +3,8 @@
 #include "nrutil.h"
 
 void rkck(float y[], float dydx[], int n, float x, float h, float yout[],
-	float yerr[], void (*derivs)(float, float [], float []))
+	      float yerr[], double aa, double bb, double cc,
+	      void (*derivs)(float, float *, float *, double, double, double))
 {
 	int i;
 	static float a2=0.2,a3=0.3,a4=0.6,a5=1.0,a6=0.875,b21=0.2,
@@ -25,19 +26,19 @@ void rkck(float y[], float dydx[], int n, float x, float h, float yout[],
 	ytemp=vector(1,n);
 	for (i=1;i<=n;i++)
 		ytemp[i]=y[i]+b21*h*dydx[i];
-	(*derivs)(x+a2*h,ytemp,ak2);
+	(*derivs)(x+a2*h,ytemp,ak2, aa, bb, cc);
 	for (i=1;i<=n;i++)
 		ytemp[i]=y[i]+h*(b31*dydx[i]+b32*ak2[i]);
-	(*derivs)(x+a3*h,ytemp,ak3);
+	(*derivs)(x+a3*h,ytemp,ak3, aa, bb, cc);
 	for (i=1;i<=n;i++)
 		ytemp[i]=y[i]+h*(b41*dydx[i]+b42*ak2[i]+b43*ak3[i]);
-	(*derivs)(x+a4*h,ytemp,ak4);
+	(*derivs)(x+a4*h,ytemp,ak4, aa, bb, cc);
 	for (i=1;i<=n;i++)
 		ytemp[i]=y[i]+h*(b51*dydx[i]+b52*ak2[i]+b53*ak3[i]+b54*ak4[i]);
-	(*derivs)(x+a5*h,ytemp,ak5);
+	(*derivs)(x+a5*h,ytemp,ak5, aa, bb, cc);
 	for (i=1;i<=n;i++)
 		ytemp[i]=y[i]+h*(b61*dydx[i]+b62*ak2[i]+b63*ak3[i]+b64*ak4[i]+b65*ak5[i]);
-	(*derivs)(x+a6*h,ytemp,ak6);
+	(*derivs)(x+a6*h,ytemp,ak6, aa, bb, cc);
 	for (i=1;i<=n;i++)
 		yout[i]=y[i]+h*(c1*dydx[i]+c3*ak3[i]+c4*ak4[i]+c6*ak6[i]);
 	for (i=1;i<=n;i++)

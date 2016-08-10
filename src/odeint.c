@@ -8,14 +8,14 @@ extern int kmax,kount;
 extern float *xp,**yp,dxsav;
 
 
-void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
-	        float hmin, int *nok, int *nbad, 
-			double soil_conductivity, double unsat, double drain_layer,
-			void (*derivs)(float, float [], float [], double, double, double),
+void odeint(float *ystart, int nvar, float x1, float x2, float eps, float h1,
+	        float hmin, int *nok, int *nbad,
+			double aa, double bb, double cc,
+			void (*derivs)(float, float *, float *, double, double, double),
 			void (*rkqs)(float [], float [], int, float *, float, float,
-						 float [], float *, float *,
-						 void (*)(float, float [], float [], double,
-							 	  double, double))) {
+						 float [], float *, float *, double, double, double
+						 void (*)(float, float *, float *,
+							 	  double, double, double))) {
 	int nstp,i;
 	float xsav,x,hnext,hdid,h;
 	float *yscal,*y,*dydx;
@@ -29,7 +29,7 @@ void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
 	for (i=1;i<=nvar;i++) y[i]=ystart[i];
 	if (kmax > 0) xsav=x-dxsav*2.0;
 	for (nstp=1;nstp<=MAXSTP;nstp++) {
-		(*derivs)(x,y,dydx, soil_conductivity, unsat, drain_layer);
+		(*derivs)(x,y,dydx, aa, bb, cc);
 		for (i=1;i<=nvar;i++)
 			yscal[i]=fabs(y[i])+fabs(dydx[i]*h)+TINY;
 		if (kmax > 0 && kount < kmax-1 && fabs(x-xsav) > fabs(dxsav)) {
@@ -38,7 +38,7 @@ void odeint(float ystart[], int nvar, float x1, float x2, float eps, float h1,
 			xsav=x;
 		}
 		if ((x+h-x2)*(x+h-x1) > 0.0) h=x2-x;
-		(*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext,derivs);
+		(*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext, aa, bb, cc, derivs);
 		if (hdid == h) ++(*nok); else ++(*nbad);
 		if ((x-x2)*(x2-x1) >= 0.0) {
 			for (i=1;i<=nvar;i++) ystart[i]=y[i];
