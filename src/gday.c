@@ -145,6 +145,9 @@ int main(int argc, char **argv)
             free(f->swp);
             free(f->soilR);
             free(f->fraction_uptake);
+            free(f->ppt_gain);
+            free(f->water_loss);
+            free(f->water_gain);
 
             free(s->water_frac);
             free(s->wetting_bot);

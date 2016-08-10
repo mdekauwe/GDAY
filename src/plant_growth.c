@@ -1231,7 +1231,7 @@ void update_roots(control *c, params *p, state *s) {
 
         TODO: implement CABLE version.
     */
-    int    i, rooted_layers;
+    int    i;
     double soil_layers[p->n_layers];
     double C_2_BIOMASS = 2.0;
     double min_biomass = 5.0; /* g C m-2 */
@@ -1247,16 +1247,16 @@ void update_roots(control *c, params *p, state *s) {
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
 
-    rooted_layers = 0;
+    s->rooted_layers = 0;
     for (i = 0; i < p->n_layers; i++) {
         if (s->layer_depth[i] > root_depth) {
-            rooted_layers = i;
+            s->rooted_layers = i;
             break;
         }
     }
 
     /* how for into the soil do the reach extend? */
-    root_reach = s->layer_depth[rooted_layers];
+    root_reach = s->layer_depth[s->rooted_layers];
 
     /* Enforce 50 % of root mass in the top 1/4 of the rooted layers. */
     mult = MIN(1.0 / s->thickness[0], \
@@ -1268,18 +1268,18 @@ void update_roots(control *c, params *p, state *s) {
     */
     surf_biomass = root_biomass * mult;
 
-    if (rooted_layers > 1) {
+    if (s->rooted_layers > 1) {
         /*
         ** determine slope of root distribution given rooting depth
         ** and ratio of root mass to surface root density
         */
         slope = zbrent(&calc_root_dist, x1, x2, tol, root_biomass,
-                       surf_biomass, rooted_layers, s->thickness[0],
+                       surf_biomass, s->rooted_layers, s->thickness[0],
                        root_reach);
 
         prev = 1.0 / slope;
         cumulative_depth = 0.0;
-        for (i = 0; i <= rooted_layers; i++) {
+        for (i = 0; i <= s->rooted_layers; i++) {
             cumulative_depth += s->thickness[i];
             curr = 1.0 / slope * exp(-slope * cumulative_depth);
             s->root_mass[i] = (prev - curr) * surf_biomass;

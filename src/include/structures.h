@@ -153,6 +153,9 @@ typedef struct {
     double *water_frac;
     double initial_water;
     double weighted_swp;
+    double dry_thick;   /* Thickness of dry soil layer above water table (m)*/
+    int    rooted_layers;
+
 
 } state;
 
@@ -361,8 +364,6 @@ typedef struct {
     double *porosity;
     double *field_capacity;
     double wetting;
-
-
 
 } params;
 
@@ -622,7 +623,9 @@ typedef struct {
     double *swp;
     double *soilR;
     double *fraction_uptake;
-
+    double *ppt_gain;
+    double *water_loss;
+    double *water_gain;
 } fluxes;
 
 typedef struct {

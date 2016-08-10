@@ -79,6 +79,25 @@ void initialise_soils(control *c, fluxes *f, params *p, state *s) {
             exit(EXIT_FAILURE);
         }
 
+        f->ppt_gain = malloc(p->n_layers * sizeof(double));
+        if (f->ppt_gain == NULL) {
+            fprintf(stderr, "malloc failed allocating ppt_gain\n");
+            exit(EXIT_FAILURE);
+        }
+
+        f->water_loss = malloc(p->n_layers * sizeof(double));
+        if (f->water_loss == NULL) {
+            fprintf(stderr, "malloc failed allocating water_loss\n");
+            exit(EXIT_FAILURE);
+        }
+
+        f->water_gain = malloc(p->n_layers * sizeof(double));
+        if (f->water_gain == NULL) {
+            fprintf(stderr, "malloc failed allocating water_gain\n");
+            exit(EXIT_FAILURE);
+        }
+
+
         /* Depth to bottom of wet soil layers (m) */
         s->water_frac = malloc(p->n_layers * sizeof(double));
         if (s->water_frac == NULL) {
@@ -311,6 +330,52 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     double surface_watermm = 0.1; /* till I work it out */
     calc_wetting_layers(f, p, s, soil_evap, surface_watermm);
 
+    /*  From which layer is evap water withdrawn? */
+    if (s->dry_thick < s->thickness[0]) {
+        rr = 1;     /* The dry zone does not extend beneath the top layer */
+    } else {
+        rr = 2;     /* The dry zone does extend beneath the top layer */
+    }
+
+    /* determine water loss in upper layers due to evaporation */
+    if (soil_evap > 0.0) {
+      /* Evaporation (t m-2 t-1, m t-1) */
+      f->water_loss[rr] += MM_2_M * soil_evap;
+    }
+
+
+    et = MAX(0., transpiration + soil_evap + canopy_evap);
+
+    /* water loss from each layer */
+    for (i = 0; i < s->rooted_layers; i++) {
+        f->waterloss[i] += et * f->fraction_uptake[i];
+    }
+
+    /*
+    ** determines water movement between soil layers to due drainage
+    ** down the profile
+    */
+    calc_soil_balance();
+    calc_infiltration();
+    calc_soil_water_potential(f, p, s);
+    calc_soil_root_resistance(f, p, s);
+
+    for (i = 0; i < p->n_layers; i++) {
+        /* water content of layer (m or tonnes.m-2) */
+        watercontent = s->waterfrac[i] * s->thickness[i];
+
+        /*
+        ** Net change in water content (m or tonnes.m-2);
+        ** max condition to ensure
+        */
+        watercontent = MAX(0.0, watercontent + \
+                                f->water_gain[i] + \
+                                f->ppt_gain[i] - \
+                                f->water_loss[i]);
+        /* Determine new total water content of layer (m or tonnes.m-2) */
+        s->waterfrac[i] = watercontent / thickness[i];
+
+    }
     exit(1);
     /*
     ** NB. et, transpiration & soil evap may all be adjusted in
@@ -1777,7 +1842,6 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
 
     double seconds_per_step = 1800.0;
     double dmin = 0.001;
-    double drythick = 0.1;/* Thickness of dry soil layer above water table (m)*/
     double airspace = p->porosity[0];
     double min_val, netc, diff;
     int    i, ar1, ar2;
@@ -1797,13 +1861,13 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     }
 
     /* Calulate the net change in wetting in the top zone */
-    netc = soil_evap / airspace + (surface_watermm * 0.001) / airspace;
+    netc = soil_evap / airspace + (surface_watermm * MM_2_M) / airspace;
 
     /* wetting */
     if (netc > 0.0) {
         /*
         ** resaturate the layer if top is dry and recharge is greater
-        **  than drythick
+        **  than dry_thick
         */
         if ((netc > s->wetting_top[ar1]) && (s->wetting_top[ar1] > 0.0)) {
             /* extra water to deepen wetting layer */
@@ -1813,7 +1877,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
                 /* Not in primary layer (primary layer can't extend deeper) */
                 s->wetting_bot[ar1] += diff;
             }
-            drythick = dmin;
+            s->dry_thick = dmin;
         } else {
             if (s->wetting_top[ar1] == 0.0) {
                 /* surface is already wet, so extend depth of this wet zone */
@@ -1832,7 +1896,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
                 s->wetting_top[ar1+1] = 0.0;
                 s->wetting_bot[ar1+1] = netc;
             }
-            drythick = dmin;
+            s->dry_thick = dmin;
         }
     /* drying */
     } else {
@@ -1852,21 +1916,63 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
             if (ar2 > 0.0) {
                 /* dry out deeper layer */
                 s->wetting_top[ar2] += diff;
-                drythick = MAX(dmin, s->wetting_top[ar2]);
+                s->dry_thick = MAX(dmin, s->wetting_top[ar2]);
             /* no deeper layer */
             } else {
                 /* layer 1 is dry */
-                drythick = s->thickness[0];
+                s->dry_thick = s->thickness[0];
             }
         } else {
-            drythick = MAX(dmin, s->wetting_top[ar1]);
+            s->dry_thick = MAX(dmin, s->wetting_top[ar1]);
         }
     }
 
-    if (drythick == 0.0) {
-        fprintf(stderr, "Problem in drythick\n");
+    if (s->dry_thick == 0.0) {
+        fprintf(stderr, "Problem in dry_thick\n");
         exit(EXIT_FAILURE);
     }
 
     return;
+}
+
+double infiltrate(fluxes *f, params *p, state *s):
+    /*
+        Takes surface_watermm and distrubutes it among top layers. Assumes
+        total infilatration in timestep.
+    */
+    int    i;
+    double add, wdiff, runoff;
+
+    add = surface_watermm * MM_TO_M;
+
+    for (i = 0; i < p->n_layers; i++) {
+        f->ppt_gain[i] = 0.0;
+    }
+
+    runoff = 0.0;
+    for (i = 0; i < p->n_layers; i++) {
+        wdiff = MAX(0.0, (p->porosity[i] - s->water_frac[i]) * \
+                          s->thickness[i] - f->water_gain[i] + \
+                          f->water_loss[i]);
+        if (add > wdiff) {
+            f->ppt_gain[i] = wdiff;
+            add -= wdiff;
+        } else {
+            f->ppt_gain[i] = add;
+            add = 0.0;
+        }
+
+        if (add < 0.0) {
+            fprintf(stderr, "Error in infiltration calculation\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (add > 0.0) {
+            overflow = add;
+        } else {
+            overflow = 0.0;
+        }
+        runoff += overflow;
+
+    return (runoff);
 }

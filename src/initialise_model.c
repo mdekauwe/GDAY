@@ -257,6 +257,7 @@ void initialise_params(params *p) {
     p->porosity = NULL;
     p->field_capacity = NULL;
     p->wetting = 10;
+
 }
 
 
@@ -417,6 +418,11 @@ void initialise_fluxes(fluxes *f) {
     f->soil_conduct = NULL;
     f->swp = NULL;
     f->soilR = NULL;
+    f->fraction_uptake = NULL;
+    f->ppt_gain = NULL;
+    f->water_loss = NULL;
+    f->water_gain = NULL;
+
 
     return;
 }
@@ -482,6 +488,8 @@ void initialise_state(state *s) {
     s->layer_depth = NULL;
     s->water_frac = NULL;
     s->initial_water = 0.0;
+    s->dry_thick = 0.1;
+    s->rooted_layers = 0;
 
     return;
 }
