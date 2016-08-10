@@ -294,13 +294,12 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
         total canopy rnet (Dummy argument, only passed for sub-daily model)
 
     */
-    int i, rr;
-    double soil_evap, et, interception, runoff, conv,
-           transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
-           transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
-           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
-           gpp_am, gpp_pm, omega_pm, throughfall,
-           canopy_evap;
+    int    i, rr;
+    double soil_evap, et, interception, runoff, conv, transpiration, net_rad;
+    double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
+    double gs_pm, LE_am, LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am;
+    double gpp_am, gpp_pm, omega_pm, throughfall, canopy_evap;
+    double water_content;
 
     calc_soil_conductivity(f, p, s);
     calc_soil_water_potential(f, p, s);
@@ -348,7 +347,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
 
     /* water loss from each layer */
     for (i = 0; i < s->rooted_layers; i++) {
-        f->waterloss[i] += et * f->fraction_uptake[i];
+        f->water_loss[i] += et * f->fraction_uptake[i];
     }
 
     /*
@@ -356,24 +355,24 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     ** down the profile
     */
     /*calc_soil_balance();*/
-    calc_infiltration();
+    runoff = calc_infiltration(f, p, s, surface_watermm);
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
 
     for (i = 0; i < p->n_layers; i++) {
         /* water content of layer (m or tonnes.m-2) */
-        watercontent = s->waterfrac[i] * s->thickness[i];
+        water_content = s->water_frac[i] * s->thickness[i];
 
         /*
         ** Net change in water content (m or tonnes.m-2);
         ** max condition to ensure
         */
-        watercontent = MAX(0.0, watercontent + \
+        water_content = MAX(0.0, water_content + \
                                 f->water_gain[i] + \
                                 f->ppt_gain[i] - \
                                 f->water_loss[i]);
         /* Determine new total water content of layer (m or tonnes.m-2) */
-        s->waterfrac[i] = watercontent / thickness[i];
+        s->water_frac[i] = water_content / s->thickness[i];
 
     }
     exit(1);
@@ -1861,7 +1860,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     }
 
     /* Calulate the net change in wetting in the top zone */
-    netc = soil_evap / airspace + (surface_watermm * MM_2_M) / airspace;
+    netc = soil_evap / airspace + (surface_watermm * MM_TO_M) / airspace;
 
     /* wetting */
     if (netc > 0.0) {
@@ -1935,7 +1934,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     return;
 }
 
-double infiltrate(fluxes *f, params *p, state *s):
+double calc_infiltration(fluxes *f, params *p, state *s, double surface_watermm) {
     /*
         Takes surface_watermm and distrubutes it among top layers. Assumes
         total infilatration in timestep.
@@ -1968,11 +1967,9 @@ double infiltrate(fluxes *f, params *p, state *s):
         }
 
         if (add > 0.0) {
-            overflow = add;
-        } else {
-            overflow = 0.0;
+            runoff += add;
         }
-        runoff += overflow;
+    }
 
     return (runoff);
 }
