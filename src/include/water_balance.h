@@ -65,7 +65,7 @@ void    calc_water_uptake_per_layer(fluxes *, params *, state *);
 void    calc_wetting_layers(fluxes *, params *, state *, double, double);
 double  calc_infiltration(fluxes *, params *, state *, double);
 void    calc_soil_balance(fluxes *, params *, state *, int );
-void    soil_water_store(float, float *, float *, double, double);
+void    soil_water_store(float, float *, float *, double, double, double);
 
 
 

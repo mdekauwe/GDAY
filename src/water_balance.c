@@ -1,6 +1,7 @@
 #include "water_balance.h"
 #include "zbrent.h"
-
+#include "nrutil.h"
+#include "odeint.h"
 
 void initialise_soils(control *c, fluxes *f, params *p, state *s) {
     /* Initialise soil water state & parameters  */
@@ -1980,8 +1981,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
-    int    N = 1;               /* Number of first oder differential eqns */
-    int    kmax = 100;          /* maximum number of iterations  */
+    int    N = 1;
     double eps = 1.0e-4;        /* precision */
     double h1 = .001;           /* first guess at integrator size */
     double hmin = 0.0;          /* minimum value of the integrator step */
@@ -1992,13 +1992,13 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     double unsat, drain_layer, liquid, new_water_frac, change;
 
     /* required by odeint */
-    int kmax, kount;
+    int    kmax, kount;
     float *xp, **yp, *ystart, dxsav;
 
     ystart = vector(1,N);
     xp = vector(1, 200);
     yp = matrix(1,10,1,200);
-    kmax = 10000;
+    kmax = 100;          /* maximum number of iterations  */
     dxsav = (x2 - x1) / 20.0;
 
     /* unsaturated volume of layer below (m3 m-2) */
@@ -2019,8 +2019,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         /* there is liquid water */
         ystart[0] = s->water_frac[soil_layer];
 
-        ode_int(ystart, nvar, x1, x2, eps, h1, hmin, &nok, &nbad,
-                soil_water_store);
+        odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
+               soil_water_store, f->soil_conduct[0], unsat, drain_layer);
 
         new_water_frac = ystart[0];
 
@@ -2044,7 +2044,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
 
 void soil_water_store(float time_dummy, float y[], float dydt[],
-                      double soil_conductivity, double unsat) {
+                      double soil_conductivity, double unsat,
+                      double drain_layer) {
 
     /* determines gravitational water drainage */
     float drainage;
@@ -2052,7 +2053,7 @@ void soil_water_store(float time_dummy, float y[], float dydt[],
     drainage = soil_conductivity;
 
     /* gravitational drainage above field_capacity */
-    if (y[0] <= drainlayer) {
+    if (y[0] <= drain_layer) {
         drainage = 0.0;
     }
 
