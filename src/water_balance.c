@@ -1793,34 +1793,30 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     /* Figure out which layer water is extracted from */
     int    i;
     double est_evap[p->n_layers];
-    double total_est_evap, weighted_swp, uptake_check;
+    double total_est_evap;
 
     /* Estimate max transpiration from gradient-gravity / soil resistance. */
     total_est_evap = 0.0;
     for (i = 0; i < s->rooted_layers; i++) {
         est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
-        printf("%lf %lf %lf %lf\n", est_evap[i], f->swp[i], p->min_lwp, f->soilR[i]);
         total_est_evap += est_evap[i];
     }
-    printf("%d\n", s->rooted_layers);
-    exit(1);
+
     /* Water was evaporated from some layers..*/
     s->weighted_swp = 0.0;
-    uptake_check = 0.0;
     if (total_est_evap > 0.0) {
         for (i = 0; i < p->n_layers; i++) {
-            weighted_swp += f->swp[i] * est_evap[i];
+            s->weighted_swp += f->swp[i] * est_evap[i];
             /* fraction of water taken from layer */
             f->fraction_uptake[i] = est_evap[i] / total_est_evap;
-            uptake_check += f->fraction_uptake[i];
         }
         s->weighted_swp /= total_est_evap;
     } else {
         /* No water was evaporated */
         f->fraction_uptake[i] = 1.0 / (double)p->n_layers;
     }
-
-    if (uptake_check > 1 || uptake_check < 0) {
+    
+    if (f->fraction_uptake[0] > 1 || f->fraction_uptake[0] < 0) {
         fprintf(stderr, "Problem with the uptake fraction\n");
         exit(EXIT_FAILURE);
     }
