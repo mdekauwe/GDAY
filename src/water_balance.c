@@ -2020,7 +2020,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         ystart[0] = s->water_frac[soil_layer];
 
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
-               soil_water_store, f->soil_conduct[0], unsat, drain_layer);
+               f->soil_conduct[0], unsat, drain_layer, soil_water_store);
 
         new_water_frac = ystart[0];
 
