@@ -31,14 +31,15 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 						 void (*)(double, double [], double [], double, double,
  						          double, double, double))) {
 
-	int nstp,i;
-	int    kmax, kount=0, max_iter=2;
-	double xsav,x,hnext,hdid,h;
+	int     nstp, i;
+	int     kmax, kount;
+	double  xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
 	double *xp, **yp, dxsav;
 
-
+	/* initialising this within the func, which means this isn't generic */
     kmax = 100;
+
     xp = dvector(1, kmax);
     yp = dmatrix(1,nvar,1,kmax);
     dxsav = (x2 - x1) / 20.0;
