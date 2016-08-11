@@ -1,31 +1,48 @@
 #include <math.h>
+#include "gday.h"
 #define NRANSI
 #include "nrutil.h"
 #define MAXSTP 10000
 #define TINY 1.0e-30
 
-extern int kmax,kount;
-extern float *xp,**yp,dxsav;
+#include "rkqs.h"
+/*extern int kmax,kount;
+extern double *xp,**yp,dxsav;*/
+
+int    kmax, kount=0, max_iter=2;
+double *xp, **yp, dxsav;
 
 
-void odeint(float *ystart, int nvar, float x1, float x2, float eps, float h1,
-	        float hmin, int *nok, int *nbad,
+void odeint(double ystart[], int nvar, double x1, double x2, double eps,
+			double h1, double hmin, int *nok, int *nbad,
 			double aa, double bb, double cc,
-			void (*derivs)(float, float *, float *, double, double, double),
-			void (*rkqs)(float [], float [], int, float *, float, float,
-						 float [], float *, float *, double, double, double,
-						 void (*)(float, float *, float *,
-							 	  double, double, double))) {
-	int nstp,i;
-	float xsav,x,hnext,hdid,h;
-	float *yscal,*y,*dydx;
+	        void (*derivs)(double, double [], double [], double, double,
+						   double),
+	        void (*rkqs)(double [], double [], int, double *, double, double,
+						 double [], double *, double *, double, double, double,
+						 void (*)(double, double [], double [], double, double,
+ 						          double))) {
 
-	yscal=vector(1,nvar);
-	y=vector(1,nvar);
-	dydx=vector(1,nvar);
+	int nstp,i;
+	double xsav,x,hnext,hdid,h;
+	double *yscal,*y,*dydx;
+
+
+    kmax = 100;
+    max_iter = 2;
+    xp = dvector(1, kmax);
+    yp = dmatrix(1,nvar,1,kmax);
+    dxsav = (x2 - x1) / 20.0;
+
+
+	yscal=dvector(1,nvar);
+	y=dvector(1,nvar);
+	dydx=dvector(1,nvar);
 	x=x1;
 	h=SIGN(h1,x2-x1);
 	*nok = (*nbad) = kount = 0;
+
+
 	for (i=1;i<=nvar;i++) y[i]=ystart[i];
 	if (kmax > 0) xsav=x-dxsav*2.0;
 	for (nstp=1;nstp<=MAXSTP;nstp++) {
@@ -37,18 +54,47 @@ void odeint(float *ystart, int nvar, float x1, float x2, float eps, float h1,
 			for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
 			xsav=x;
 		}
+
 		if ((x+h-x2)*(x+h-x1) > 0.0) h=x2-x;
+		printf("GOT HERE \n");
+		printf("y %lf\n", y[1]);
+		printf("dydx %lf\n", dydx[1]);
+		printf("nvar %d\n", nvar);
+		printf("x %lf\n", x);
+		printf("h %lf\n", h);
+		printf("eps %lf\n", eps);
+		printf("yscal %lf\n", yscal[1]);
+		printf("hdid %lf\n", hdid);
+		printf("hnext %lf\n", hnext);
+		printf("aa %lf\n", aa);
+		printf("bb %lf\n", bb);
+		printf("cc %lf\n", cc);
+
+
+		/*
+		int nstp,i;
+		double xsav,x,hnext,hdid,h;
+		double *yscal,*y,*dydx;
+
+		int    kmax, kount, max_iter;
+	    double *xp, **yp, dxsav;
+		*/
+
 		(*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext, aa, bb, cc, derivs);
+		printf("GOT HERE 2\n");
 		if (hdid == h) ++(*nok); else ++(*nbad);
 		if ((x-x2)*(x2-x1) >= 0.0) {
+
 			for (i=1;i<=nvar;i++) ystart[i]=y[i];
+
 			if (kmax) {
 				xp[++kount]=x;
 				for (i=1;i<=nvar;i++) yp[i][kount]=y[i];
 			}
-			free_vector(dydx,1,nvar);
-			free_vector(y,1,nvar);
-			free_vector(yscal,1,nvar);
+
+			free_dvector(dydx,1,nvar);
+			free_dvector(y,1,nvar);
+			free_dvector(yscal,1,nvar);
 			return;
 		}
 		if (fabs(hnext) <= hmin) nrerror("Step size too small in odeint");

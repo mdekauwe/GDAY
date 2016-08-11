@@ -4,9 +4,10 @@
 #include "gday.h"
 
 
-void (*rkck)(float [], float [], int, float, float, float [], float [],
+
+void (*rkck)(double [], double [], int, double, double, double [], double [],
              double, double, double,
-	          void (*)(float, float *, float *, double, double, double));
+	          void (*)(double, double [], double [], double, double, double));
 
 
 #endif /* RKCK_H */

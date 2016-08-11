@@ -1,5 +1,6 @@
 /* fifth-order Runge-Kutta stepping routine */
 #include <math.h>
+#include "gday.h"
 #define NRANSI
 #include "nrutil.h"
 #define SAFETY 0.9
@@ -7,19 +8,26 @@
 #define PSHRNK -0.25
 #define ERRCON 1.89e-4
 
-void rkqs(float y[], float dydx[], int n, float *x, float htry, float eps,
-	      float yscal[], float *hdid, float *hnext,
-		  double aa, double bb, double cc,
-	      void (*derivs)(float, float *, float *, double, double, double))
-{
-	void rkck(float y[], float dydx[], int n, float x, float h,
-		      float yout[], float yerr[], double aa, double bb, double cc,
-		      void (*derivs)(float, float *, float *, double, double, double));
-	int i;
-	float errmax,h,xnew,*yerr,*ytemp;
 
-	yerr=vector(1,n);
-	ytemp=vector(1,n);
+void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
+	      double yscal[], double *hdid, double *hnext,
+		  double aa, double bb, double cc,
+	      void (*derivs)(double, double [], double [], double, double, double))
+
+
+{
+	printf("GOT HERE2\n");
+	void rkck(double y[], double dydx[], int n, double x, double h,
+              double yout[], double yerr[], double aa, double bb, double cc,
+			  void (*derivs)(double, double [], double [],
+				  			 double, double, double));
+
+	int i;
+	double errmax,h,xnew,*yerr,*ytemp;
+
+	yerr=dvector(1,n);
+	ytemp=dvector(1,n);
+
 	h=htry;
 	for (;;) {
 		rkck(y,dydx,n,*x,h,ytemp,yerr, aa, bb, cc, derivs);
@@ -40,8 +48,8 @@ void rkqs(float y[], float dydx[], int n, float *x, float htry, float eps,
 			break;
 		}
 	}
-	free_vector(ytemp,1,n);
-	free_vector(yerr,1,n);
+	free_dvector(ytemp,1,n);
+	free_dvector(yerr,1,n);
 }
 #undef SAFETY
 #undef PGROW

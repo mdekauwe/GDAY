@@ -4,9 +4,9 @@
 #include "gday.h"
 
 
-void (*rkqs)(float [], float [], int, float *, float, float,
-             float [], float *, float *, double, double, double,
-             void (*)(float, float *, float *,
+void (*rkqs)(double [], double [], int, double *, double, double,
+             double *, double *, double *, double, double, double,
+             void (*)(double, double [], double [],
                       double, double, double));
 
 

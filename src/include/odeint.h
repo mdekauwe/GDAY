@@ -4,12 +4,18 @@
 #include "gday.h"
 
 
-void odeint(float *, int, float, float, float, float, float, int *, int *,
-            double, double, double,
-        	void (*derivs)(float, float *, float *, double, double, double),
-        	void (*rkqs)(float [], float [], int, float *, float, float,
-                         float [], float *, float *, double, double, double,
-                         void (*)(float, float *, float *,
-                                  double, double, double)));
+void odeint(double [], int, double, double, double, double, double, int *,
+            int *, double, double, double,
+	        void (*derivs)(double, double [], double [], double, double,
+						   double),
+	        void (*rkqs)(double [], double [], int, double *, double, double,
+						 double [], double *, double *, double, double, double,
+						 void (*)(double, double [], double [], double, double,
+ 						          double)));
+
+
+
+/*double zbrent(double (*func) (double, double, double, double, double, double),
+              double, double, double, double, double, double, double, double);*/
 
 #endif /* ODEINT_H */

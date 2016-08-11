@@ -352,6 +352,7 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
         f->water_loss[i] += (transpiration * MM_TO_M) * f->fraction_uptake[i];
     }
 
+
     /*
     ** determines water movement between soil layers to due drainage
     ** down the profile
@@ -359,7 +360,8 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     for (i = 0; i < p->n_layers; i++) {
         calc_soil_balance(f, p, s, i);
     }
-
+    printf("HERE\n");
+    exit(1);
     /*
     ** how much surface water infiltrantes the first soil layer in the current
     ** step. Water which does not infiltrate in a single step is considered
@@ -1862,8 +1864,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     netc = (soil_evap * MM_TO_M) / airspace + \
            (surface_watermm * MM_TO_M) / airspace;
 
-    printf("%lf %lf %lf\n", ar1, netc, soil_evap);
-    exit(1);
+
     /* wetting */
     if (netc > 0.0) {
         /*
@@ -1994,16 +1995,16 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     double unsat, drain_layer, liquid, new_water_frac, change;
 
     /* required by odeint */
-    int    kmax, kount;
-    float *xp, **yp, *ystart, dxsav;
+    /*int    kmax, kount;
+    float *xp, **yp, *ystart, dxsav;*/
 
-    kmax = 100;
-    max_iter = 2;
-    ystart = vector(1,N);
-    xp = vector(1, kmax);
+    double *ystart;
+    /*kmax = 100;
+    max_iter = 2;*/
+    ystart = dvector(1,N);
+    /*xp = vector(1, kmax);
     yp = matrix(1,max_iter,1,kmax);
-
-    dxsav = (x2 - x1) / 20.0;
+    dxsav = (x2 - x1) / 20.0;*/
 
 
 
@@ -2020,17 +2021,25 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     ** initial conditions; i.e. is there liquid water and more
     ** water than layer can hold
     */
+    liquid = 0.449518025;
+    s->water_frac[soil_layer] = 0.449518025;
+    drain_layer = 0.444792867;
+    unsat = 0.120190002;
+    f->soil_conduct[0] = 0.2;
+
     if ( (liquid > 0.0) && (s->water_frac[soil_layer] > drain_layer) ) {
 
         /* there is liquid water */
-        ystart[0] = s->water_frac[soil_layer];
+
+        /* ystart is a vector 1..N, so need to index from 1 not 0 */
+        ystart[1] = s->water_frac[soil_layer];
 
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
                f->soil_conduct[0], unsat, drain_layer, soil_water_store,
                rkqs);
-
-        new_water_frac = ystart[0];
-
+        /* ystart is a vector 1..N, so need to index from 1 not 0 */
+        new_water_frac = ystart[1];
+        printf("%lf\n", new_water_frac);
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
                     s->thickness[soil_layer];
@@ -2044,18 +2053,18 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         fprintf(stderr, "waterloss probem in soil_balance\n");
         exit(EXIT_FAILURE);
     }
-    free_vector(ystart, 1, N);
+    free_dvector(ystart, 1, N);
 
     return;
 }
 
 
-void soil_water_store(float time_dummy, float *y, float *dydt,
+void soil_water_store(double time_dummy, double y[], double dydt[],
                       double soil_conductivity, double unsat,
                       double drain_layer) {
 
     /* determines gravitational water drainage */
-    float drainage;
+    double drainage;
 
     drainage = soil_conductivity;
 
