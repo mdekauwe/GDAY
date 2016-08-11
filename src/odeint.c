@@ -20,8 +20,11 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
  						          double))) {
 
 	int nstp,i;
+	int    kmax, kount=0, max_iter=2;
 	double xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
+	double *xp, **yp, dxsav;
+
 
 
     kmax = 100;
