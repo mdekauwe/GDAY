@@ -9,10 +9,6 @@
 /*extern int kmax,kount;
 extern double *xp,**yp,dxsav;*/
 
-int    kmax, kount=0, max_iter=2;
-double *xp, **yp, dxsav;
-
-
 void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 			double h1, double hmin, int *nok, int *nbad,
 			double aa, double bb, double cc,
@@ -71,14 +67,14 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 		printf("cc %lf\n", cc);
 
 
-		/*
+
 		int nstp,i;
 		double xsav,x,hnext,hdid,h;
 		double *yscal,*y,*dydx;
 
 		int    kmax, kount, max_iter;
 	    double *xp, **yp, dxsav;
-		*/
+
 
 		(*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext, aa, bb, cc, derivs);
 		printf("GOT HERE 2\n");
