@@ -134,6 +134,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         calc_soil_root_resistance(f, p, s);
         calc_water_uptake_per_layer(f, p, s);
 
+
         /* calculate potential canopy evap rate, this may be reduced later
            depending on canopy water storage */
         canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
@@ -141,6 +142,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         /* mol m-2 s-1 to mm d-1 */
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         canopy_evap *= conv;
+
+        /* We could now replace this interception bit with the Rutter scheme? */
         calc_interception(c, m, p, f, s, &throughfall, &interception,
                           &canopy_evap);
 
@@ -209,7 +212,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                      f->water_gain[i] + \
                                      f->ppt_gain[i] - \
                                      f->water_loss[i]);
-                                     
+
             /* Determine new total water content of layer (m or tonnes.m-2) */
             s->water_frac[i] = water_content / s->thickness[i];
 
