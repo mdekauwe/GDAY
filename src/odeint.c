@@ -27,12 +27,12 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	double xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
 	double *xp, **yp, dxsav;
-	
 
 
 
-    kmax = 200;
-    max_iter = 2;
+
+    kmax = 100;
+    /*max_iter = 2;*/
     xp = dvector(1, kmax);
     yp = dmatrix(1,nvar,1,kmax);
     dxsav = (x2 - x1) / 20.0;

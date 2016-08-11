@@ -1988,7 +1988,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
     int    N = 1, max_iter;
-    double eps = 1.0e-4;        /* precision */
+    double eps = 1.0e-3;        /* precision */
     double h1 = .001;           /* first guess at integrator size */
     double hmin = 0.0;          /* minimum value of the integrator step */
     double x1 = 1.0;             /* initial time */
@@ -2095,7 +2095,9 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     double drainage;
 
     drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
-    printf("** %lf %lf %lf %lf\n", y[index], cond1, cond2, cond3);
+    /* Convert units, soil conductivity is in m s-1 */
+    drainage *= SEC_2_HLFHR;
+
     /* gravitational drainage above field_capacity */
     if (y[index] <= drain_layer) {
         drainage = 0.0;
@@ -2105,8 +2107,8 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     if (drainage > unsat) {
         drainage = unsat;
     }
-    /* waterloss from this layer */
 
+    /* waterloss from this layer */
     dydt[index] = -drainage;
 
     return;
