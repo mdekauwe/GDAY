@@ -1997,19 +1997,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     double soilpor = p->porosity[soil_layer];
     double unsat, drain_layer, liquid, new_water_frac, change;
 
-    /* required by odeint */
-    /*int    kmax, kount;
-    float *xp, **yp, *ystart, dxsav;*/
-
     double *ystart;
-    /*kmax = 100;
-    max_iter = 2;*/
     ystart = dvector(1,N);
-    /*xp = vector(1, kmax);
-    yp = matrix(1,max_iter,1,kmax);
-    dxsav = (x2 - x1) / 20.0;*/
-
-
 
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
@@ -2024,17 +2013,6 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     ** initial conditions; i.e. is there liquid water and more
     ** water than layer can hold
     */
-    liquid = 0.449518025;
-    s->water_frac[soil_layer] = 0.449518025;
-    drain_layer = 0.444792867;
-    unsat = 0.120190002;
-    p->cond1[soil_layer] = 2.77799995E-06;
-    p->cond2[soil_layer] = 11.2568998;
-    p->cond3[soil_layer] = -6.26606846;
-
-
-
-
     if ( (liquid > 0.0) && (s->water_frac[soil_layer] > drain_layer) ) {
 
         /* there is liquid water */
@@ -2042,26 +2020,11 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         ystart[1] = s->water_frac[soil_layer];
 
-        printf("%.10lf\n", liquid);
-        printf("%.10lf\n", s->water_frac[soil_layer]);
-        printf("%.10lf\n", drain_layer);
-        printf("%.10lf\n", p->cond1[soil_layer]);
-        printf("%.10lf\n", p->cond2[soil_layer]);
-        printf("%.10lf\n", p->cond3[soil_layer]);
-        printf("%d\n", soil_layer);
-
-
-        printf("START\n");
-        printf("%lf\n", ystart[1]);
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
                unsat, drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
                p->cond3[soil_layer], soil_water_store, rkqs);
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         new_water_frac = ystart[1];
-
-        printf("FINISHED\n");
-        printf("%lf\n", ystart[1]);
-        exit(1);
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
