@@ -27,7 +27,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	double xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
 	double *xp, **yp, dxsav;
-	nvar = 2;
+	
 
 
 
@@ -64,6 +64,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	*/
 
 	for (i=1;i<=nvar;i++) y[i]=ystart[i];
+
 	if (kmax > 0) xsav=x-dxsav*2.0;
 	for (nstp=1;nstp<=MAXSTP;nstp++) {
 		(*derivs)(x,y,dydx, aa, bb, cc, dd, ee);

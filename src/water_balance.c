@@ -2095,7 +2095,7 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     double drainage;
 
     drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
-
+    printf("** %lf %lf %lf %lf\n", y[index], cond1, cond2, cond3);
     /* gravitational drainage above field_capacity */
     if (y[index] <= drain_layer) {
         drainage = 0.0;
@@ -2106,6 +2106,7 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
         drainage = unsat;
     }
     /* waterloss from this layer */
+
     dydt[index] = -drainage;
 
     return;

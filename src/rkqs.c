@@ -25,7 +25,7 @@ void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 
 	int i;
 	double errmax,h,xnew,*yerr,*ytemp;
-	n = 2;
+	
 	yerr=dvector(1,n);
 	ytemp=dvector(1,n);
 
