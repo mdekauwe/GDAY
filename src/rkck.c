@@ -19,7 +19,8 @@ void rkck(double y[], double dydx[], int n, double x, double h, double yout[],
 	double dc1=c1-2825.0/27648.0,dc3=c3-18575.0/48384.0,
 		dc4=c4-13525.0/55296.0,dc6=c6-0.25;
 	double *ak2,*ak3,*ak4,*ak5,*ak6,*ytemp;
-
+	n = 2;
+	
 	ak2=dvector(1,n);
 	ak3=dvector(1,n);
 	ak4=dvector(1,n);

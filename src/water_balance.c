@@ -2041,6 +2041,16 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         ystart[1] = s->water_frac[soil_layer];
+
+        printf("%.10lf\n", liquid);
+        printf("%.10lf\n", s->water_frac[soil_layer]);
+        printf("%.10lf\n", drain_layer);
+        printf("%.10lf\n", p->cond1[soil_layer]);
+        printf("%.10lf\n", p->cond2[soil_layer]);
+        printf("%.10lf\n", p->cond3[soil_layer]);
+        printf("%d\n", soil_layer);
+
+
         printf("START\n");
         printf("%lf\n", ystart[1]);
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
@@ -2076,13 +2086,18 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
                       double unsat, double drain_layer, double cond1,
                       double cond2, double cond3) {
 
+    /*
+    ** numerical lib vectors are index 1..n, so we need to index the return
+    ** from the odeint func with 1, not 0
+    */
+    int index = 1;
     /* determines gravitational water drainage */
     double drainage;
 
-    drainage = calc_soil_conductivity(y[1], cond1, cond2, cond3);
+    drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
 
     /* gravitational drainage above field_capacity */
-    if (y[0] <= drain_layer) {
+    if (y[index] <= drain_layer) {
         drainage = 0.0;
     }
 
@@ -2091,7 +2106,7 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
         drainage = unsat;
     }
     /* waterloss from this layer */
-    dydt[0] = -drainage;
+    dydt[index] = -drainage;
 
     return;
 }

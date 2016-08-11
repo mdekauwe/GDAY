@@ -27,11 +27,11 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	double xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
 	double *xp, **yp, dxsav;
+	nvar = 2;
 
 
 
-
-    kmax = 100;
+    kmax = 200;
     max_iter = 2;
     xp = dvector(1, kmax);
     yp = dmatrix(1,nvar,1,kmax);
@@ -45,7 +45,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	h=SIGN(h1,x2-x1);
 	*nok = (*nbad) = kount = 0;
 
-
+	/*
 	printf("GOT HERE \n");
 	printf("y %lf\n", y[1]);
 	printf("dydx %lf\n", dydx[1]);
@@ -61,7 +61,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	printf("cc %lf\n", cc);
 	printf("dd %lf\n", dd);
 	printf("ee %lf\n", ee);
-
+	*/
 
 	for (i=1;i<=nvar;i++) y[i]=ystart[i];
 	if (kmax > 0) xsav=x-dxsav*2.0;
