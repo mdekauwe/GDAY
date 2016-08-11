@@ -111,12 +111,14 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
     double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
     double gs_pm, LE_am, LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am;
     double gpp_am, gpp_pm, omega_pm, throughfall, canopy_evap;
-    double water_content;
+    double water_content, surface_water;
 
-    /* assume that water infiltrates within a timestep */
-    double surface_watermm = 0.0;
+
 
     if (c->water_balance == HYDRAULICS) {
+
+        /* assume that water infiltrates within a timestep */
+        surface_water = 0.0;
 
         /*
         ** The loop needs to be outside the func as we need to be able to
@@ -150,8 +152,11 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
 
+        /* update surface water puddle */
+        surface_water += throughfall;
+
         /* determine water loss in upper layers due to evaporation */
-        calc_wetting_layers(f, p, s, soil_evap, surface_watermm);
+        calc_wetting_layers(f, p, s, soil_evap, surface_water);
 
         /*  From which layer is evap water withdrawn? */
         if (s->dry_thick < s->thickness[0]) {
@@ -169,12 +174,12 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         /* Determing water loss from each layer due to transpiration */
         for (i = 0; i < s->rooted_layers; i++) {
-            f->water_loss[i] += (transpiration * MM_TO_M) * f->fraction_uptake[i];
+            f->water_loss[i] += (transpiration * MM_TO_M) * \
+                                    f->fraction_uptake[i];
         }
 
-
         /*
-        ** determines water movement between soil layers to due drainage
+        ** determines water movement between soil layers due drainage
         ** down the profile
         */
         for (i = 0; i < p->n_layers; i++) {
@@ -184,11 +189,11 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         exit(1);
 
         /*
-        ** how much surface water infiltrantes the first soil layer in the current
-        ** step. Water which does not infiltrate in a single step is considered
-        ** runoff
+        ** how much surface water infiltrantes the first soil layer in the
+        ** current time step? Water which does not infiltrate in a single step
+        ** is considered runoff
         */
-        runoff = calc_infiltration(f, p, s, surface_watermm);
+        runoff = calc_infiltration(f, p, s, surface_water);
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
 
@@ -201,9 +206,10 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             ** max condition to ensure
             */
             water_content = MAX(0.0, water_content + \
-                                    f->water_gain[i] + \
-                                    f->ppt_gain[i] - \
-                                    f->water_loss[i]);
+                                     f->water_gain[i] + \
+                                     f->ppt_gain[i] - \
+                                     f->water_loss[i]);
+                                     
             /* Determine new total water content of layer (m or tonnes.m-2) */
             s->water_frac[i] = water_content / s->thickness[i];
 
@@ -576,7 +582,7 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
 }
 
 void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
-                         double surface_watermm) {
+                         double surface_water) {
     /*
         surface wetting and drying determines thickness of dry layer
         and thus soil evaporation
@@ -605,7 +611,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
 
     /* Calulate the net change in wetting in the top zone */
     netc = (soil_evap * MM_TO_M) / airspace + \
-           (surface_watermm * MM_TO_M) / airspace;
+           (surface_water * MM_TO_M) / airspace;
 
 
     /* wetting */
@@ -681,15 +687,15 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
 }
 
 double calc_infiltration(fluxes *f, params *p, state *s,
-                         double surface_watermm) {
+                         double surface_water) {
     /*
-        Takes surface_watermm and distrubutes it among top layers. Assumes
+        Takes surface_water and distrubutes it among top layers. Assumes
         total infilatration in timestep.
     */
     int    i;
     double add, wdiff, runoff;
 
-    add = surface_watermm * MM_TO_M;
+    add = surface_water * MM_TO_M;
 
     for (i = 0; i < p->n_layers; i++) {
         f->ppt_gain[i] = 0.0;
