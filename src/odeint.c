@@ -27,6 +27,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 
 
 
+
     kmax = 100;
     max_iter = 2;
     xp = dvector(1, kmax);
@@ -70,16 +71,10 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 		printf("cc %lf\n", cc);
 
 
-
-		int nstp,i;
-		double xsav,x,hnext,hdid,h;
-		double *yscal,*y,*dydx;
-
-		int    kmax, kount, max_iter;
-	    double *xp, **yp, dxsav;
-
-
 		(*rkqs)(y,dydx,nvar,&x,h,eps,yscal,&hdid,&hnext, aa, bb, cc, derivs);
+
+
+
 		printf("GOT HERE 2\n");
 		if (hdid == h) ++(*nok); else ++(*nbad);
 		if ((x-x2)*(x2-x1) >= 0.0) {
