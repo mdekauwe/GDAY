@@ -58,14 +58,15 @@ double  canopy_boundary_layer_conduct(params *, double, double, double, double);
 /* hydraulics stuff */
 void    calc_saxton_stuff(params *, double *);
 double  saxton_field_capacity(double, double, double, double, double, double);
-void    calc_soil_conductivity(fluxes *, params *, state *);
+double calc_soil_conductivity(double, double, double, double);
 void    calc_soil_water_potential(fluxes *, params *, state *);
 void    calc_soil_root_resistance(fluxes *, params *, state *);
 void    calc_water_uptake_per_layer(fluxes *, params *, state *);
 void    calc_wetting_layers(fluxes *, params *, state *, double, double);
 double  calc_infiltration(fluxes *, params *, state *, double);
 void    calc_soil_balance(fluxes *, params *, state *, int );
-void    soil_water_store(double, double [], double [], double, double, double);
+void    soil_water_store(double, double [], double [], double, double, double,
+                         double, double);
 
 
 

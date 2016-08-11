@@ -4,10 +4,11 @@
 #include "gday.h"
 
 
-void (*rkqs)(double [], double [], int, double *, double, double,
-             double *, double *, double *, double, double, double,
+void rkqs(double [], double [], int, double *, double, double,
+             double *, double *, double *, double, double, double, double,
+             double,
              void (*)(double, double [], double [],
-                      double, double, double));
+                      double, double, double, double, double));
 
 
 

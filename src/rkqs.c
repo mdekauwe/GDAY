@@ -11,16 +11,17 @@
 
 void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 	      double yscal[], double *hdid, double *hnext,
-		  double aa, double bb, double cc,
-	      void (*derivs)(double, double [], double [], double, double, double))
+		  double aa, double bb, double cc, double dd, double ee,
+	      void (*derivs)(double, double [], double [], double, double, double,
+		  				 double, double))
 
 
 {
-	printf("GOT HERE2\n");
 	void rkck(double y[], double dydx[], int n, double x, double h,
               double yout[], double yerr[], double aa, double bb, double cc,
+			  double dd, double ee,
 			  void (*derivs)(double, double [], double [],
-				  			 double, double, double));
+				  			 double, double, double, double, double));
 
 	int i;
 	double errmax,h,xnew,*yerr,*ytemp;
@@ -30,7 +31,7 @@ void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 
 	h=htry;
 	for (;;) {
-		rkck(y,dydx,n,*x,h,ytemp,yerr, aa, bb, cc, derivs);
+		rkck(y,dydx,n,*x,h,ytemp,yerr, aa, bb, cc, dd, ee, derivs);
 		errmax=0.0;
 		for (i=1;i<=n;i++) errmax=FMAX(errmax,fabs(yerr[i]/yscal[i]));
 		errmax /= eps;

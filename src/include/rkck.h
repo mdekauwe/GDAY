@@ -5,9 +5,10 @@
 
 
 
-void (*rkck)(double [], double [], int, double, double, double [], double [],
-             double, double, double,
-	          void (*)(double, double [], double [], double, double, double));
+void rkck(double [], double [], int, double, double, double [], double [],
+          double, double, double, double, double,
+	      void (*)(double, double [], double [], double, double, double,
+                   double, double));
 
 
 #endif /* RKCK_H */

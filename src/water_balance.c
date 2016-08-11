@@ -307,7 +307,15 @@ void calculate_water_balance_hydraulics(control *c, fluxes *f, met *m,
     /* assume that water infiltrates within a timestep */
     double surface_watermm = 0.0;
 
-    calc_soil_conductivity(f, p, s);
+    /*
+    ** The loop needs to be outside the func as we need to be able to call
+    ** this in this fashion when we integrate soil water below
+    */
+    for (i = 0; i < p->n_layers; i++) {
+        f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
+                                                    p->cond1[i], p->cond2[i],
+                                                    p->cond3[i]);
+    }
     calc_soil_water_potential(f, p, s);
     calc_soil_root_resistance(f, p, s);
     calc_water_uptake_per_layer(f, p, s);
@@ -1717,23 +1725,18 @@ double saxton_field_capacity(double xval, double potA, double potB,
     return (MPa_2_kPa * swp + air_entry_swp);
 }
 
-void calc_soil_conductivity(fluxes *f, params *p, state *s) {
+double calc_soil_conductivity(double water_frac, double cond1, double cond2,
+                              double cond3) {
     /* Soil conductivity (m s-1 ) per layer */
-    int    i;
-    double arg1, arg2;
+    double scond;
 
-    for (i = 0; i < p->n_layers; i++) {
-
-        /* Avoid floating-underflow error */
-        if (s->water_frac[i] < 0.05) {
-            f->soil_conduct[i] = 1E-30;
-        } else {
-            arg1 = p->cond1[i];
-            arg2 = exp(p->cond2[i] + p->cond3[i] / s->water_frac[i]);
-            f->soil_conduct[i] = arg1 * arg2;
-        }
+    /* Avoid floating-underflow error */
+    if (water_frac < 0.05) {
+        scond = 1E-30;
+    } else {
+        scond = cond1 * exp(cond2 + cond3 / water_frac);
     }
-    return;
+    return (scond);
 }
 
 void calc_soil_water_potential(fluxes *f, params *p, state *s) {
@@ -2025,7 +2028,12 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     s->water_frac[soil_layer] = 0.449518025;
     drain_layer = 0.444792867;
     unsat = 0.120190002;
-    f->soil_conduct[0] = 0.2;
+    p->cond1[soil_layer] = 2.77799995E-06;
+    p->cond2[soil_layer] = 11.2568998;
+    p->cond3[soil_layer] = -6.26606846;
+
+
+
 
     if ( (liquid > 0.0) && (s->water_frac[soil_layer] > drain_layer) ) {
 
@@ -2033,13 +2041,18 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         ystart[1] = s->water_frac[soil_layer];
-
+        printf("START\n");
+        printf("%lf\n", ystart[1]);
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
-               f->soil_conduct[0], unsat, drain_layer, soil_water_store,
-               rkqs);
+               unsat, drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
+               p->cond3[soil_layer], soil_water_store, rkqs);
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         new_water_frac = ystart[1];
-        printf("%lf\n", new_water_frac);
+
+        printf("FINISHED\n");
+        printf("%lf\n", ystart[1]);
+        exit(1);
+
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
                     s->thickness[soil_layer];
@@ -2060,13 +2073,13 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
 
 void soil_water_store(double time_dummy, double y[], double dydt[],
-                      double soil_conductivity, double unsat,
-                      double drain_layer) {
+                      double unsat, double drain_layer, double cond1,
+                      double cond2, double cond3) {
 
     /* determines gravitational water drainage */
     double drainage;
 
-    drainage = soil_conductivity;
+    drainage = calc_soil_conductivity(y[1], cond1, cond2, cond3);
 
     /* gravitational drainage above field_capacity */
     if (y[0] <= drain_layer) {
