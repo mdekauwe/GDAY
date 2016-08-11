@@ -120,8 +120,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
         scale_leaf_to_canopy(cw);
         sum_hourly_carbon_fluxes(cw, f, p);
-        calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
-                                cw->omega_canopy, cw->rnet_canopy);
+        calculate_water_balance_sub_daily(c, f, m, p, s, dummy,
+                                          cw->trans_canopy, cw->omega_canopy,
+                                          cw->rnet_canopy);
 
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);

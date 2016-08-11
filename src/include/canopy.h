@@ -5,11 +5,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-
 #include "gday.h"
 #include "structures.h"
 #include "constants.h"
 #include "water_balance.h"
+#include "water_balance_sub_daily.h"
 #include "utilities.h"
 #include "radiation.h"
 #include "photosynthesis.h"

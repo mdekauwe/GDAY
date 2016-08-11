@@ -5,15 +5,13 @@
 #include "constants.h"
 #include "utilities.h"
 
+void    initialise_soils_day(control *, fluxes *, params *, state *);
+void    calculate_water_balance(control *, fluxes *, met *, params *,
+                                state *, int, double, double, double);
 void    update_water_storage(control *, fluxes *, params *, state *, double,
                              double, double, double *, double *, double *,
                              double *);
 double  calc_canopy_evaporation(met *, params *, state *, double);
-void    calculate_water_balance(control *, fluxes *, met *, params *,
-                              state *, int, double, double, double);
-void    calculate_water_balance_hydraulics(control *, fluxes *, met *,
-                                           params *, state *, int, double,
-                                           double, double);
 void    zero_water_day_fluxes(fluxes *);
 void    update_water_storage_recalwb(control *, fluxes *, params *, state *,
                                      met *);
@@ -38,7 +36,7 @@ double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_sat_vapour_pressure_curve(double);
 void    _calc_soil_water_potential(control *, params *, state *);
 double  calc_sw_modifier(double, double, double);
-void    initialise_soils(control *, fluxes *, params *, state *);
+
 double *get_soil_fracs(char *);
 double  calc_beta(double, double, double, double, double);
 void    get_soil_params(char *, double *, double *);
@@ -55,18 +53,6 @@ double  calc_bdn_layer_free_conduct(double, double, double, double);
 
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
 
-/* hydraulics stuff */
-void    calc_saxton_stuff(params *, double *);
-double  saxton_field_capacity(double, double, double, double, double, double);
-double calc_soil_conductivity(double, double, double, double);
-void    calc_soil_water_potential(fluxes *, params *, state *);
-void    calc_soil_root_resistance(fluxes *, params *, state *);
-void    calc_water_uptake_per_layer(fluxes *, params *, state *);
-void    calc_wetting_layers(fluxes *, params *, state *, double, double);
-double  calc_infiltration(fluxes *, params *, state *, double);
-void    calc_soil_balance(fluxes *, params *, state *, int );
-void    soil_water_store(double, double [], double [], double, double, double,
-                         double, double);
 
 
 
