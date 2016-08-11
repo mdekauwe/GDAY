@@ -6,6 +6,15 @@
 #define TINY 1.0e-30
 
 #include "rkqs.h"
+
+/*
+I'm declaring these within the function...so this means we can't interface
+with the results globally as numerical recipes intended. That was probably
+a horrible idea anyway. We should pass them via the odeint func if we want
+them. Frankly I can't be arsed passing N more vars, so we're not going to do
+that
+*/
+
 /*extern int kmax,kount;
 extern double *xp,**yp,dxsav;*/
 
@@ -29,15 +38,10 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	double *xp, **yp, dxsav;
 
 
-
-
     kmax = 100;
-    /*max_iter = 2;*/
     xp = dvector(1, kmax);
     yp = dmatrix(1,nvar,1,kmax);
     dxsav = (x2 - x1) / 20.0;
-
-
 	yscal=dvector(1,nvar);
 	y=dvector(1,nvar);
 	dydx=dvector(1,nvar);
@@ -45,26 +49,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	h=SIGN(h1,x2-x1);
 	*nok = (*nbad) = kount = 0;
 
-	/*
-	printf("GOT HERE \n");
-	printf("y %lf\n", y[1]);
-	printf("dydx %lf\n", dydx[1]);
-	printf("nvar %d\n", nvar);
-	printf("x %lf\n", x);
-	printf("h %lf\n", h);
-	printf("eps %lf\n", eps);
-	printf("yscal %lf\n", yscal[1]);
-	printf("hdid %lf\n", hdid);
-	printf("hnext %lf\n", hnext);
-	printf("aa %lf\n", aa);
-	printf("bb %lf\n", bb);
-	printf("cc %lf\n", cc);
-	printf("dd %lf\n", dd);
-	printf("ee %lf\n", ee);
-	*/
-
 	for (i=1;i<=nvar;i++) y[i]=ystart[i];
-
 	if (kmax > 0) xsav=x-dxsav*2.0;
 	for (nstp=1;nstp<=MAXSTP;nstp++) {
 		(*derivs)(x,y,dydx, aa, bb, cc, dd, ee);

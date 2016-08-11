@@ -2095,6 +2095,7 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     double drainage;
 
     drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
+
     /* Convert units, soil conductivity is in m s-1 */
     drainage *= SEC_2_HLFHR;
 
