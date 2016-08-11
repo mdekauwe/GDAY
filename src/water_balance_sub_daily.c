@@ -155,6 +155,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
 
+        et = transpiration + soil_evap + canopy_evap;
+
         /* update surface water puddle */
         surface_water += throughfall;
 
@@ -188,8 +190,6 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         for (i = 0; i < p->n_layers; i++) {
             calc_soil_balance(f, p, s, i);
         }
-        printf("HERE\n");
-        exit(1);
 
         /*
         ** how much surface water infiltrantes the first soil layer in the
@@ -200,12 +200,14 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
 
+        /* Update the soil water storage */
         for (i = 0; i < p->n_layers; i++) {
-            /* water content of layer (m or tonnes.m-2) */
+
+            /* water content of soil layer (m) */
             water_content = s->water_frac[i] * s->thickness[i];
 
             /*
-            ** Net change in water content (m or tonnes.m-2);
+            ** Net change in water content (m);
             ** max condition to ensure
             */
             water_content = MAX(0.0, water_content + \
@@ -213,13 +215,13 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                      f->ppt_gain[i] - \
                                      f->water_loss[i]);
 
-            /* Determine new total water content of layer (m or tonnes.m-2) */
+            /* Determine new total water content of layer (m) */
             s->water_frac[i] = water_content / s->thickness[i];
 
         }
         exit(1);
 
-        et = transpiration + soil_evap + canopy_evap;
+
     } else {
 
         /* Simple soil water bucket appoximation */
