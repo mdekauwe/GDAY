@@ -1,4 +1,20 @@
-/* The Cash-Karp Runge-Kutta Step */
+/* ============================================================================
+* The Cash-Karp Runge-Kutta Step
+*
+* - From numerical recipies in C, see Press et al. 1992.
+*
+* NOTES:
+* See comment in odeint.c
+*
+*
+* AUTHOR:
+*   Martin De Kauwe
+*
+* DATE:
+*   11.08.2016
+*
+* =========================================================================== */
+
 #define NRANSI
 #include "nrutil.h"
 
@@ -19,7 +35,7 @@ void rkck(double y[], double dydx[], int n, double x, double h, double yout[],
 	double dc1=c1-2825.0/27648.0,dc3=c3-18575.0/48384.0,
 		dc4=c4-13525.0/55296.0,dc6=c6-0.25;
 	double *ak2,*ak3,*ak4,*ak5,*ak6,*ytemp;
-	
+
 
 	ak2=dvector(1,n);
 	ak3=dvector(1,n);

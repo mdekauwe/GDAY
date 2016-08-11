@@ -1,3 +1,20 @@
+/* ============================================================================
+* Fifth-order Runge-Kutta stepping routine
+*
+* - From numerical recipies in C, see Press et al. 1992.
+*
+* NOTES:
+* See comment in odeint.c
+*
+*
+* AUTHOR:
+*   Martin De Kauwe
+*
+* DATE:
+*   11.08.2016
+*
+* =========================================================================== */
+
 /* fifth-order Runge-Kutta stepping routine */
 #include <math.h>
 #include "gday.h"
@@ -25,7 +42,7 @@ void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 
 	int i;
 	double errmax,h,xnew,*yerr,*ytemp;
-	
+
 	yerr=dvector(1,n);
 	ytemp=dvector(1,n);
 

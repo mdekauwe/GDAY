@@ -1,3 +1,25 @@
+/* ============================================================================
+* Function for numerically solving Ordinary Differential Equations
+*
+* - From numerical recipies in C, see Press et al. 1992.
+*
+* NOTES:
+* This is quite a tricky setup. You have to pass the function to the odeint
+* function which then passes it down two more levels to the rkqs and rkck funcs.
+* To pass any parameters these have to be wrapped up and passed, adjusting all
+* the expected parameter lists in the *derivs and *rkqs funcs. Note the order
+* is obviously very important
+*
+*
+* AUTHOR:
+*   Martin De Kauwe
+*
+* DATE:
+*   11.08.2016
+*
+* =========================================================================== */
+
+
 #include <math.h>
 #include "gday.h"
 #define NRANSI
