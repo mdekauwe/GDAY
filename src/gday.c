@@ -152,7 +152,6 @@ int main(int argc, char **argv)
             free(s->water_frac);
             free(s->wetting_bot);
             free(s->wetting_top);
-            free(s->wetting_top);
             free(s->thickness);
             free(s->root_mass);
             free(s->root_length);

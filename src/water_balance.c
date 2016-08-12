@@ -1182,6 +1182,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
     */
 
     double moisture_ratio_topsoil, moisture_ratio_root;
+    double b, sf, psi_f;
     /*double psi_swp_topsoil;*/
 
     if (c->sw_stress_model == 0) {
@@ -1211,8 +1212,18 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
             Assuming that overnight 􏰀pre-dawn leaf water potential =
             pre-dawn soil water potential.
         */
-        fprintf(stderr, "Zhou model not implemented\n");
-        exit(EXIT_FAILURE);
+        //fprintf(stderr, "Zhou model not implemented\n");
+        //exit(EXIT_FAILURE);
+
+        // Hardwiring this for testing. Values taken from Table, 1 in
+        // De Kauwe et al. 2015, Biogeosciences
+        b = 0.82;
+        sf = 1.9;
+        psi_f = -1.85;
+
+        s->wtfac_topsoil = exp(b * s->saved_swp);
+        s->wtfac_root = exp(b * s->saved_swp);
+
         /*
         s->wtfac_topsoil = exp(p->g1_b * s->psi_s_topsoil);
         s->wtfac_root = exp(p->g1_b * s->psi_s_root);

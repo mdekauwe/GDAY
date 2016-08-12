@@ -219,9 +219,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             s->water_frac[i] = water_content / s->thickness[i];
 
         }
-        exit(1);
-
-
+        
     } else {
 
         /* Simple soil water bucket appoximation */

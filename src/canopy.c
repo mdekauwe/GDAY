@@ -113,7 +113,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              * the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
              */
             if (hod == 10) {
-                _calc_soil_water_potential(c, p, s);
+                s->saved_swp = s->weighted_swp;
+                /*_calc_soil_water_potential(c, p, s);*/
                 /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
             }
 

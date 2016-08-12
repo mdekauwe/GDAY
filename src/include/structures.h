@@ -155,7 +155,7 @@ typedef struct {
     double weighted_swp;
     double dry_thick;   /* Thickness of dry soil layer above water table (m)*/
     int    rooted_layers;
-
+    double saved_swp;
 
 } state;
 

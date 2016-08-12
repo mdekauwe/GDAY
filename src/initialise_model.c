@@ -490,6 +490,7 @@ void initialise_state(state *s) {
     s->initial_water = 0.0;
     s->dry_thick = 0.1;
     s->rooted_layers = 0;
+    s->saved_swp = 0.0;
 
     return;
 }
