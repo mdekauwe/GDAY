@@ -415,6 +415,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              * calculation for grasses
              */
             if (c->grazing == 2 && p->disturbance_doy == doy+1) {
+                printf("WHY HERE\n");
                 sma(SMA_FREE, hw);
                 hw = sma(SMA_NEW, p->growing_seas_len).handle;
             }

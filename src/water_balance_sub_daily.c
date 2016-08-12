@@ -749,7 +749,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
 
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
-    int    N = 1, max_iter;
+    int    i, N = 1, max_iter;
     double eps = 1.0e-3;        /* precision */
     double h1 = .001;           /* first guess at integrator size */
     double hmin = 0.0;          /* minimum value of the integrator step */
@@ -759,8 +759,11 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     double soilpor = p->porosity[soil_layer];
     double unsat, drain_layer, liquid, new_water_frac, change;
 
-    double *ystart;
+    double *ystart = NULL;
     ystart = dvector(1,N);
+    for (i = 1; i <= N; i++) {
+        ystart[i] = 0.0;
+    }
 
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
