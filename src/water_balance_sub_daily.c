@@ -500,10 +500,10 @@ double calc_soil_conductivity(double water_frac, double cond1, double cond2,
 }
 
 void calc_soil_water_potential(fluxes *f, params *p, state *s) {
-    /*
-        Calculate the SWP (MPa) without updating the water fraction in each
-        layer
-    */
+    //
+    // Calculate the SWP (MPa) without updating the water fraction in each
+    // layer
+    //
     int    i;
     double arg1, arg2;
 
@@ -515,6 +515,7 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
             f->swp[i] = -9999.0;
         }
     }
+
     return;
 
 }
@@ -560,8 +561,9 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
 
 void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
-
-    /* Figure out which layer water is extracted from */
+    //
+    // Figure out which layer water is extracted from
+    //
     int    i;
     double est_evap[p->n_layers];
     double total_est_evap;
@@ -573,12 +575,11 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
         total_est_evap += est_evap[i];
     }
 
-    /* Water was evaporated from some layers..*/
     s->weighted_swp = 0.0;
     if (total_est_evap > 0.0) {
+        /* fraction of water taken from layer */
         for (i = 0; i < p->n_layers; i++) {
             s->weighted_swp += f->swp[i] * est_evap[i];
-            /* fraction of water taken from layer */
             f->fraction_uptake[i] = est_evap[i] / total_est_evap;
         }
         s->weighted_swp /= total_est_evap;
@@ -591,6 +592,7 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
         fprintf(stderr, "Problem with the uptake fraction\n");
         exit(EXIT_FAILURE);
     }
+    //printf("%.10lf\n", s->weighted_swp);
 
     return;
 }
