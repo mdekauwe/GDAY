@@ -18,6 +18,7 @@
 #define WATT_HR_TO_MJ 0.0036
 #define MJ_TO_WATT_HR 1.0 / 0.0036
 #define MM_TO_M  0.001
+#define M_TO_MM  1000.0
 #define GRAMS_C_TO_MOL_C 1.0 / 12.0
 #define UMOL_TO_MOL 1E-6
 #define MOL_TO_UMOL 1E6

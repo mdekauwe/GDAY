@@ -111,7 +111,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
     double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
     double gs_pm, LE_am, LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am;
     double gpp_am, gpp_pm, omega_pm, throughfall, canopy_evap;
-    double water_content, surface_water;
+    double water_content, surface_water, root_zone_total;
 
 
 
@@ -201,6 +201,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         calc_soil_root_resistance(f, p, s);
 
         /* Update the soil water storage */
+        root_zone_total = 0.0;
         for (i = 0; i < p->n_layers; i++) {
 
             /* water content of soil layer (m) */
@@ -218,8 +219,16 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             /* Determine new total water content of layer (m) */
             s->water_frac[i] = water_content / s->thickness[i];
 
+            // update old GDAY effective two-layer buckets
+            // - this is just for outputting, these aren't used.
+            if (i == 0) {
+                s->pawater_topsoil = water_content * M_TO_MM;
+            }
+            root_zone_total += water_content * M_TO_MM;
+
         }
-        
+        s->pawater_root = root_zone_total;
+
     } else {
 
         /* Simple soil water bucket appoximation */
@@ -255,6 +264,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             throughfall, canopy_evap, runoff, omega_leaf);
+
+
 }
 
 

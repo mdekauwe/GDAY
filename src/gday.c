@@ -126,7 +126,6 @@ int main(int argc, char **argv)
 
     free(cw);
     free(c);
-    free(f);
     free(ma->year);
     free(ma->tair);
     free(ma->rain);
@@ -139,6 +138,7 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
+
         /* Clean up hydraulics */
         if (c->water_balance == HYDRAULICS) {
             free(f->soil_conduct);
@@ -183,6 +183,7 @@ int main(int argc, char **argv)
     free(m);
     free(p);
     free(s);
+    free(f);
 
 
 
