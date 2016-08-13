@@ -53,13 +53,14 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
                          void (*)(double, double [], double [], double, double,
                                   double, double, double))) {
 
-    int     nstp, i;
+
 	int     kmax, kount;
+	int     nstp, i;
 	double  xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
 	double *xp, **yp, dxsav;
 
-	/* initialising this within the func, which means this isn't generic */
+	/* initialising this within the func, which means this isn't generic*/
     kmax = 100;
 
 	xp = dvector(1, kmax);
