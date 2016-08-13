@@ -60,8 +60,8 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	double *yscal,*y,*dydx;
 	double *xp, **yp, dxsav;
 
-    /* initialising this within the func, which means this isn't generic*/
-    kmax = 100;
+	/* initialising this within the func, which means this isn't generic*/
+	kmax = 100;
 
 	xp = dvector(1, kmax);
 	yp = dmatrix(1,nvar,1,kmax);
