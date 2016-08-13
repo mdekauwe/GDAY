@@ -53,7 +53,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
                          void (*)(double, double [], double [], double, double,
                                   double, double, double))) {
 
-	int     nstp, i;
+    int     nstp, i;
 	int     kmax, kount;
 	double  xsav,x,hnext,hdid,h;
 	double *yscal,*y,*dydx;
@@ -62,9 +62,9 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	/* initialising this within the func, which means this isn't generic */
     kmax = 100;
 
-    xp = dvector(1, kmax);
-    yp = dmatrix(1,nvar,1,kmax);
-    dxsav = (x2 - x1) / 20.0;
+	xp = dvector(1, kmax);
+	yp = dmatrix(1,nvar,1,kmax);
+	dxsav = (x2 - x1) / 20.0;
 	yscal=dvector(1,nvar);
 	y=dvector(1,nvar);
 	dydx=dvector(1,nvar);
