@@ -43,15 +43,15 @@ extern double *xp,**yp,dxsav;*/
 
 
 void odeint(double ystart[], int nvar, double x1, double x2, double eps,
-			double h1, double hmin, int *nok, int *nbad,
-			double aa, double bb, double cc, double dd, double ee,
-			void (*derivs)(double, double [], double [], double, double,
-						   double, double, double),
+            double h1, double hmin, int *nok, int *nbad,
+            double aa, double bb, double cc, double dd, double ee,
+            void (*derivs)(double, double [], double [], double, double,
+                           double, double, double),
             void (*rkqs)(double [], double [], int, double *, double, double,
-				         double [], double *, double *, double, double, double,
-						 double, double,
-						 void (*)(double, double [], double [], double, double,
-							      double, double, double))) {
+                         double [], double *, double *, double, double, double,
+                         double, double,
+                         void (*)(double, double [], double [], double, double,
+                                  double, double, double))) {
 
 	int     nstp, i;
 	int     kmax, kount;
