@@ -448,7 +448,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     * Murty, D and McMurtrie, R. E. (2000) Ecological Modelling, 134,
       185-205, specifically page 196.
     */
-    double tol = 5E-03;
+    double tol = 5E-03, npp_tol = 0.001, stop_critria = 0.0;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     int i, cntrl_flag;
@@ -491,8 +491,46 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
         }
     } else if (c->spinup_method == SAS) {
-        fprintf(stderr, "Not implemented yet\n");
-        exit(EXIT_FAILURE);
+        /*
+        ** Semi-analytical solution (SAS) to accelerate model spin-up of
+        ** carbon–nitrogen pools, following Xia et al. (2013) GMD.
+        */
+
+        /*
+        ** First we need to run a cycle of 50 years to get inital estimates
+        ** of transfer coefficients and pool sizes
+        */
+        run_sim(cw, c, f, ma, m, p, s);
+
+        while (TRUE) {
+            /* Calculate future state predictions given mean transfer coeffs */
+
+            /* Mean NPP over last cycle, i.e. 50 years */
+            NPP0 = fs->npp / fs->nday;
+
+            /* Estimated future state & NPP given mean coefficients */
+            NPP_est = ;
+            wood_est = ;
+
+
+            wood = s->stem + s->branch + s->croot;
+
+            /* based on previous cycle */
+            stop_critria = s->plantc * 0.01;
+
+            if (fabs(NPP_est - NPP0) < tol &&\
+                ( fabs((s->shoot - shoot0) / s->shoot) + \
+                  fabs(( wood - wood0) / wood) + \
+                  fabs((s->root - root) / s->root) ) < stop_critria ) {
+                break;
+            } else {
+                run_sim(cw, c, f, ma, m, p, s);
+
+                /* Have we reached a steady state? */
+                fprintf(stderr,
+                  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+            }
+        }
     } else {
         fprintf(stderr, "Unknown spinup option\n");
         exit(EXIT_FAILURE);
