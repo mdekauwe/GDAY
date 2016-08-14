@@ -63,6 +63,20 @@
 #define BRUTE 0
 #define SAS 1
 
+/* Spinup array index */
+#define AF 0
+#define AR 0
+#define ACR 0
+#define AB 0
+#define AW 0
+
+#define LF 0
+#define LR 0
+#define LCR 0
+#define LB 0
+#define LW 0
+
+
 #include "structures.h"
 #include "initialise_model.h"
 #include "simple_moving_average.h"
@@ -80,8 +94,8 @@
 void   clparser(int, char **, control *);
 void   usage(char **);
 
-void   run_sim(canopy_wk *, control *, fluxes *, met_arrays *, met *,
-               params *p, state *);
+void   run_sim(canopy_wk *, control *, fast_spinup *fs, fluxes *,
+               met_arrays *, met *, params *p, state *);
 void   spin_up_pools(canopy_wk *, control *, fast_spinup *, fluxes *,
                      met_arrays *, met *, params *p, state *);
 void   correct_rate_constants(params *, int output);

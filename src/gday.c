@@ -112,7 +112,7 @@ int main(int argc, char **argv)
     if (c->spin_up) {
         spin_up_pools(cw, c, fs, f, ma, m, p, s);
     } else {
-        run_sim(cw, c, f, ma, m, p, s);
+        run_sim(cw, c, fs, f, ma, m, p, s);
     }
 
     /* clean up */
@@ -164,8 +164,8 @@ int main(int argc, char **argv)
 
 
 
-void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-             params *p, state *s){
+void run_sim(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
+             met_arrays *ma, met *m, params *p, state *s){
 
     int    nyr, doy, window_size, i, dummy = 0;
     int    fire_found = FALSE;;
@@ -194,7 +194,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             float_eq(s->avg_alroot, 0.0) &&
             float_eq(s->avg_alcroot, 0.0)) {
             nitfac = 0.0;
-            calc_carbon_allocation_fracs(c, f, p, s, nitfac);
+            calc_carbon_allocation_fracs(c, fs, f, p, s, nitfac);
         } else {
             f->alleaf = s->avg_alleaf;
             f->alstem = s->avg_alstem;
@@ -323,7 +323,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
             }
-            calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
+            calculate_litterfall(c, fs, f, p, s, doy, &fdecay, &rdecay);
 
             if (c->disturbance && p->disturbance_doy == doy+1) {
                 /* Fire Disturbance? */
@@ -352,7 +352,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* Hurricane? */
                 hurricane(f, p, s);
             }
-            calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
+            calc_day_growth(cw, c, fs, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
@@ -453,10 +453,10 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double tol = 5E-03, stop_critria = 0.0;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
-    double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_as, mu_lf, mu_lr, mu_lcr;
-    double mu_lb, mu_ls, shootX, rootX, crootX, branchX, stemX, woodX;
+    double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
+    double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
 
-    int i, cntrl_flag;
+    int i, cntrl_flag, n_pools;
 
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
@@ -470,7 +470,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         c->disturbance = FALSE;
         /*  200 years (50 yrs x 4 cycles) */
         for (i = 0; i < 4; i++) {
-            run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+            run_sim(cw, c, fs, f, ma, m, p, s); /* run GDAY */
         }
         c->disturbance = cntrl_flag;
     }
@@ -488,7 +488,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
                 /* 1000 years (50 yrs x 20 cycles) */
                 for (i = 0; i < 20; i++) {
-                    run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+                    run_sim(cw, c, fs, f, ma, m, p, s); /* run GDAY */
                 }
 
                 /* Have we reached a steady state? */
@@ -510,44 +510,44 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         /* Zero everything */
         fs->ndays = 0;
         fs->npp_ss = 0.0;
-        fs->af = 0.0;
-        fs->ar = 0.0;
-        fs->acr = 0.0;
-        fs->ab = 0.0;
-        fs->as = 0.0;
-        s->lf = 0.0;
-        fs->lr = 0.0;
-        fs->lcr = 0.0;
-        fs->lb = 0.0;
-        fs->ls = 0.0;
 
-        run_sim(cw, c, f, ma, m, p, s);
+        n_pools = 5;
+        for (i = 0; i < n_pools; i++) {
+            fs->alloc[i] = 0.0;
+            fs->loss[i] = 0.0;
+        }
+
+
+        run_sim(cw, c, fs, f, ma, m, p, s);
 
         while (TRUE) {
 
             NPP = fs->npp_ss / fs->ndays;
 
-            mu_af = fs->af / fs->ndays;
-            mu_lf = fs->lf / fs->ndays;
-            shootX = (NPP * mu_af) - (c->shoot * mu_lf);
+            mu_af = fs->alloc[AF] / fs->ndays;
+            mu_lf = fs->loss[AF] / fs->ndays;
+            shootX = (NPP * mu_af) - (s->shoot * mu_lf);
 
-            mu_ar = fs->ar / fs->ndays;
-            mu_lr = fs->lr / fs->ndays;
-            rootX = (NPP * mu_ar) - (c->root * mu_lr);
+            mu_ar = fs->alloc[AR] / fs->ndays;
+            mu_lr = fs->loss[AR] / fs->ndays;
+            rootX = (NPP * mu_ar) - (s->root * mu_lr);
 
-            mu_acr = fs->acr / fs->ndays;
-            mu_lcr = fs->lcr / fs->ndays;
-            crootX = (NPP * mu_acr) - (c->croot * mu_lcr);
+            mu_acr = fs->alloc[ACR] / fs->ndays;
+            mu_lcr = fs->loss[ACR] / fs->ndays;
+            crootX = (NPP * mu_acr) - (s->croot * mu_lcr);
 
-            mu_ab = fs->ab / fs->ndays;
-            mu_lb = fs->lb / fs->ndays;
-            branchX = (NPP * mu_ab) - (c->branch * mu_lb);
+            mu_ab = fs->alloc[AB] / fs->ndays;
+            mu_lb = fs->loss[AB] / fs->ndays;
+            branchX = (NPP * mu_ab) - (s->branch * mu_lb);
 
-            mu_as = fs->as / fs->ndays;
-            mu_ls = fs->ls / fs->ndays;
-            stemX = (NPP * mu_as) - (c->branch * mu_ls);
+            mu_aw = fs->alloc[AW] / fs->ndays;
+            mu_lw = fs->loss[AW] / fs->ndays;
+            stemX = (NPP * mu_aw) - (s->stem * mu_lw);
 
+            wood = s->branch + s->stem + s->croot;
             woodX = branchX + stemX + crootX;
+
+
 
             /* based on previous cycle */
             stop_critria = s->plantc * 0.01;
@@ -559,7 +559,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 break;
             } else {
 
-                run_sim(cw, c, f, ma, m, p, s);
+                run_sim(cw, c, fs, f, ma, m, p, s);
 
                 /* Have we reached a steady state? */
                 fprintf(stderr,
@@ -571,11 +571,11 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         exit(EXIT_FAILURE);
 
         /* Now analytically solve all the carbon pools */
-        c->shoot = shootX;
-        c->root = rootX;
-        c->croot = crootX;
-        c->branch = branchX;
-        c->stem = stemX;
+        s->shoot = shootX;
+        s->root = rootX;
+        s->croot = crootX;
+        s->branch = branchX;
+        s->stem = stemX;
 
 
     } else {
