@@ -51,8 +51,13 @@ typedef struct {
     int   num_hlf_hrs;
     long  hour_idx;
     long  day_idx;
+    int   spinup_method;
 
 } control;
+
+typedef struct {
+
+} fast_spinup;
 
 
 typedef struct {

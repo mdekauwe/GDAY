@@ -59,6 +59,9 @@
 #define SAND 1
 #define CLAY 2
 
+/* Spinup method */
+#define BRUTE 0
+#define SAS 1
 
 #include "structures.h"
 #include "initialise_model.h"
@@ -79,8 +82,8 @@ void   usage(char **);
 
 void   run_sim(canopy_wk *, control *, fluxes *, met_arrays *, met *,
                params *p, state *);
-void   spin_up_pools(canopy_wk *, control *, fluxes *, met_arrays *, met *,
-                     params *p, state *);
+void   spin_up_pools(canopy_wk *, control *, fast_spinup *, fluxes *,
+                     met_arrays *, met *, params *p, state *);
 void   correct_rate_constants(params *, int output);
 void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   zero_stuff(control *, state *);

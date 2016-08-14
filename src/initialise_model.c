@@ -51,6 +51,9 @@ void initialise_control(control *c) {
 
     c->sub_daily = FALSE;           /* Run at daily or 30 minute timestep */
     c->num_hlf_hrs = 48;
+
+    c->spinup_method = BRUTE;
+
     return;
 }
 

@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     met *m;
     params *p;
     state *s;
+    fast_spinup *fs;
 
     cw = (canopy_wk *)malloc(sizeof(canopy_wk));
     if (cw == NULL) {
@@ -77,6 +78,12 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
+    fs = (fast_spinup *)malloc(sizeof(fast_spinup));
+    if (cw == NULL) {
+        fprintf(stderr, "fast spinup structure: Not allocated enough memory!\n");
+    	exit(EXIT_FAILURE);
+    }
+
     initialise_control(c);
     initialise_params(p);
     initialise_fluxes(f);
@@ -103,11 +110,11 @@ int main(int argc, char **argv)
     }
 
     if (c->spin_up) {
-        spin_up_pools(cw, c, f, ma, m, p, s);
+        spin_up_pools(cw, c, fs, f, ma, m, p, s);
     } else {
         run_sim(cw, c, f, ma, m, p, s);
     }
-    
+
     /* clean up */
     fclose(c->ofp);
     if (c->print_options == SUBDAILY ) {
@@ -427,8 +434,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
 }
 
-void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-                   params *p, state *s){
+void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
+                   met_arrays *ma, met *m, params *p, state *s){
     /* Spin up model plant & soil pools to equilibrium.
 
     - Examine sequences of 50 years and check if C pools are changing
@@ -463,24 +470,35 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     fprintf(stderr, "Spinning up the model...\n");
-    while (TRUE) {
-        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
-            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
-            break;
-        } else {
-            prev_plantc = s->plantc;
-            prev_soilc = s->soilc;
 
-            /* 1000 years (50 yrs x 20 cycles) */
-            for (i = 0; i < 20; i++) {
-                run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+    if (c->spinup_method == BRUTE) {
+        while (TRUE) {
+            if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
+                fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+                break;
+            } else {
+                prev_plantc = s->plantc;
+                prev_soilc = s->soilc;
+
+                /* 1000 years (50 yrs x 20 cycles) */
+                for (i = 0; i < 20; i++) {
+                    run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+                }
+
+                /* Have we reached a steady state? */
+                fprintf(stderr,
+                  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
-
-            /* Have we reached a steady state? */
-            fprintf(stderr,
-              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
+    } else if (c->spinup_method == SAS) {
+        fprintf(stderr, "Not implemented yet\n");
+        exit(EXIT_FAILURE);
+    } else {
+        fprintf(stderr, "Unknown spinup option\n");
+        exit(EXIT_FAILURE);
     }
+
+
     write_final_state(c, p, s);
 
     return;
