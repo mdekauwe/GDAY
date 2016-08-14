@@ -552,6 +552,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             /* based on previous cycle */
             stop_critria = s->plantc * 0.01;
 
+            /* add passive pool */
             if ( (fabs((s->shoot - shootX) / s->shoot) + \
                   fabs(( wood - woodX) / wood) + \
                   fabs((s->root - rootX) / s->root)) < stop_critria ) {
