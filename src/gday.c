@@ -455,7 +455,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double prev_soilc = 99999.9;
     double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_as, mu_lf, mu_lr, mu_lcr;
     double mu_lb, mu_ls, shootX, rootX, crootX, branchX, stemX, woodX;
-    
+
     int i, cntrl_flag;
 
     /* check for convergences in units of kg/m2 */
@@ -509,7 +509,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
         /* Zero everything */
         fs->ndays = 0;
-        fs->npp = 0.0;
+        fs->npp_ss = 0.0;
         fs->af = 0.0;
         fs->ar = 0.0;
         fs->acr = 0.0;
@@ -524,9 +524,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         run_sim(cw, c, f, ma, m, p, s);
 
         while (TRUE) {
-            /* Calculate future state predictions given mean transfer coeffs */
 
-            NPP = fs->npp / fs->ndays;
+            NPP = fs->npp_ss / fs->ndays;
 
             mu_af = fs->af / fs->ndays;
             mu_lf = fs->lf / fs->ndays;
@@ -558,7 +557,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                   fabs((s->root - rootX) / s->root)) < stop_critria ) {
                 break;
             } else {
-                NPP_prev = NPP;
 
                 run_sim(cw, c, f, ma, m, p, s);
 
