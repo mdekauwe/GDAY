@@ -401,6 +401,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 else
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
+
+
             c->day_idx++;
             /* ======================= **
             **   E N D   O F   D A Y   **
@@ -448,7 +450,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     * Murty, D and McMurtrie, R. E. (2000) Ecological Modelling, 134,
       185-205, specifically page 196.
     */
-    double tol = 5E-03, npp_tol = 0.001, stop_critria = 0.0;
+    double tol = 5E-03, stop_critria = 0.0;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     int i, cntrl_flag;
@@ -500,30 +502,54 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         ** First we need to run a cycle of 50 years to get inital estimates
         ** of transfer coefficients and pool sizes
         */
+
+        /* Effectively forces at least 2 spins */
+        NPP_prev = 99999.9;
+        fs->ndays = 0;
+
         run_sim(cw, c, f, ma, m, p, s);
 
         while (TRUE) {
             /* Calculate future state predictions given mean transfer coeffs */
 
-            /* Mean NPP over last cycle, i.e. 50 years */
-            NPP0 = fs->npp / fs->nday;
+            NPP = fs->npp / fs->ndays;
 
-            /* Estimated future state & NPP given mean coefficients */
-            NPP_est = ;
-            wood_est = ;
+            fs->af /= fs->ndays;
+            fs->lf /= fs->ndays;
+            shootX = (NPP * fs->af) - (c->shoot * fs->lf);
 
+            fs->ar /= fs->ndays;
+            fs->lr /= fs->ndays;
+            rootX = (NPP * fs->ar) - (c->root * fs->lr);
 
-            wood = s->stem + s->branch + s->croot;
+            fs->acr /= fs->ndays;
+            fs->lcr /= fs->ndays;
+            crootX = (NPP * fs->acr) - (c->croot * fs->lcr);
+
+            fs->ab /= fs->ndays;
+            fs->lb /= fs->ndays;
+            branchX = (NPP * fs->ab) - (c->branch * fs->lb);
+
+            fs->as /= fs->ndays;
+            fs->ls /= fs->ndays;
+            stemX = (NPP * fs->as) - (c->branch * fs->ls);
+
+            wood = branchX + stemX + crootX;
 
             /* based on previous cycle */
             stop_critria = s->plantc * 0.01;
 
-            if (fabs(NPP_est - NPP0) < tol &&\
-                ( fabs((s->shoot - shoot0) / s->shoot) + \
-                  fabs(( wood - wood0) / wood) + \
-                  fabs((s->root - root) / s->root) ) < stop_critria ) {
+            if (
+                ( fabs((s->shoot - shootX) / s->shoot) + \
+                  fabs(( wood - woodX) / wood) + \
+                  fabs((s->root - rootX) / s->root) ) < stop_critria ) {
+
+                fprintf(stderr, "Spun-up - you need to add CN stuff!\n");
+                exit(EXIT_FAILURE);
                 break;
             } else {
+                NPP_prev = NPP;
+
                 run_sim(cw, c, f, ma, m, p, s);
 
                 /* Have we reached a steady state? */
