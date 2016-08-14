@@ -453,7 +453,11 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double tol = 5E-03, stop_critria = 0.0;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
+    double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_as, mu_lf, mu_lr, mu_lcr;
+    double mu_lb, mu_ls, shootX, rootX, crootX, branchX, stemX, woodX;
+    
     int i, cntrl_flag;
+
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
 
@@ -503,9 +507,19 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         ** of transfer coefficients and pool sizes
         */
 
-        /* Effectively forces at least 2 spins */
-        NPP_prev = 99999.9;
+        /* Zero everything */
         fs->ndays = 0;
+        fs->npp = 0.0;
+        fs->af = 0.0;
+        fs->ar = 0.0;
+        fs->acr = 0.0;
+        fs->ab = 0.0;
+        fs->as = 0.0;
+        s->lf = 0.0;
+        fs->lr = 0.0;
+        fs->lcr = 0.0;
+        fs->lb = 0.0;
+        fs->ls = 0.0;
 
         run_sim(cw, c, f, ma, m, p, s);
 
@@ -514,38 +528,34 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             NPP = fs->npp / fs->ndays;
 
-            fs->af /= fs->ndays;
-            fs->lf /= fs->ndays;
-            shootX = (NPP * fs->af) - (c->shoot * fs->lf);
+            mu_af = fs->af / fs->ndays;
+            mu_lf = fs->lf / fs->ndays;
+            shootX = (NPP * mu_af) - (c->shoot * mu_lf);
 
-            fs->ar /= fs->ndays;
-            fs->lr /= fs->ndays;
-            rootX = (NPP * fs->ar) - (c->root * fs->lr);
+            mu_ar = fs->ar / fs->ndays;
+            mu_lr = fs->lr / fs->ndays;
+            rootX = (NPP * mu_ar) - (c->root * mu_lr);
 
-            fs->acr /= fs->ndays;
-            fs->lcr /= fs->ndays;
-            crootX = (NPP * fs->acr) - (c->croot * fs->lcr);
+            mu_acr = fs->acr / fs->ndays;
+            mu_lcr = fs->lcr / fs->ndays;
+            crootX = (NPP * mu_acr) - (c->croot * mu_lcr);
 
-            fs->ab /= fs->ndays;
-            fs->lb /= fs->ndays;
-            branchX = (NPP * fs->ab) - (c->branch * fs->lb);
+            mu_ab = fs->ab / fs->ndays;
+            mu_lb = fs->lb / fs->ndays;
+            branchX = (NPP * mu_ab) - (c->branch * mu_lb);
 
-            fs->as /= fs->ndays;
-            fs->ls /= fs->ndays;
-            stemX = (NPP * fs->as) - (c->branch * fs->ls);
+            mu_as = fs->as / fs->ndays;
+            mu_ls = fs->ls / fs->ndays;
+            stemX = (NPP * mu_as) - (c->branch * mu_ls);
 
-            wood = branchX + stemX + crootX;
+            woodX = branchX + stemX + crootX;
 
             /* based on previous cycle */
             stop_critria = s->plantc * 0.01;
 
-            if (
-                ( fabs((s->shoot - shootX) / s->shoot) + \
+            if ( (fabs((s->shoot - shootX) / s->shoot) + \
                   fabs(( wood - woodX) / wood) + \
-                  fabs((s->root - rootX) / s->root) ) < stop_critria ) {
-
-                fprintf(stderr, "Spun-up - you need to add CN stuff!\n");
-                exit(EXIT_FAILURE);
+                  fabs((s->root - rootX) / s->root)) < stop_critria ) {
                 break;
             } else {
                 NPP_prev = NPP;
@@ -557,6 +567,18 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                   "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
         }
+
+        fprintf(stderr, "Spun-up - you need to add CN stuff!\n");
+        exit(EXIT_FAILURE);
+
+        /* Now analytically solve all the carbon pools */
+        c->shoot = shootX;
+        c->root = rootX;
+        c->croot = crootX;
+        c->branch = branchX;
+        c->stem = stemX;
+
+
     } else {
         fprintf(stderr, "Unknown spinup option\n");
         exit(EXIT_FAILURE);
