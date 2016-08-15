@@ -6,15 +6,16 @@
 #include "constants.h"
 
 double calc_soil_temp_factor(double);
-void   calculate_csoil_flows(control *, fluxes *, params *, state *,
-                             double, int);
-void   calculate_decay_rates(fluxes *, params *, state *);
+void   calculate_csoil_flows(control *, fast_spinup *, fluxes *, params *,
+                             state *, double, int);
+void   calculate_decay_rates(control *, fast_spinup *, fluxes *, params *,
+                             state *);
 void   flux_from_grazers(control *c, fluxes *, params *);
 double calc_ligin_nratio_leaves(control *c, fluxes *f, params *);
 double calc_ligin_nratio_fine_roots(control *c, fluxes *f, params *);
 double ratio_of_litternc_to_live_rootnc(control *, fluxes *, params *);
 double metafract(double);
-void   partition_plant_litter(fluxes *, params *);
+void   partition_plant_litter(control *, fast_spinup *, fluxes *, params *);
 double ratio_of_litternc_to_live_leafnc(control *, fluxes *, params *);
 void   cfluxes_from_structural_pool(fluxes *, params *, state *);
 void   cfluxes_from_metabolic_pool(fluxes *f, params *, state *);

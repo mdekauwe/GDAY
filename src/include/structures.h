@@ -58,8 +58,9 @@ typedef struct {
 typedef struct {
     double ndays;
     double npp_ss;
-    double alloc[5];
+    double alloc[7];
     double loss[5];
+    double dr[7];
 } fast_spinup;
 
 

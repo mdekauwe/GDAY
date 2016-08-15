@@ -19,8 +19,8 @@
 * =========================================================================== */
 #include "soils.h"
 
-void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
-                           double tsoil, int doy) {
+void calculate_csoil_flows(control *c, fast_spinup *fs, fluxes *f, params *p,
+                           state *s, double tsoil, int doy) {
     double lnleaf, lnroot;
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
@@ -35,7 +35,7 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     f->tfac_soil_decomp = calc_soil_temp_factor(tsoil);
 
     /* calculate model decay rates */
-    calculate_decay_rates(f, p, s);
+    calculate_decay_rates(c, fs, f, p, s);
 
     /*
      * plant litter inputs to the metabolic and structural pools determined
@@ -48,7 +48,7 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
 
     /* input from faeces */
     flux_from_grazers(c, f, p);
-    partition_plant_litter(f, p);
+    partition_plant_litter(c, fs, f, p);
     cfluxes_from_structural_pool(f, p, s);
     cfluxes_from_metabolic_pool(f, p, s);
     cfluxes_from_active_pool(f, p, s, frac_microb_resp);
@@ -128,7 +128,8 @@ void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
 }
 
 
-void calculate_decay_rates(fluxes *f, params *p, state *s) {
+void calculate_decay_rates(control *c, fast_spinup *fs, fluxes *f, params *p,
+                           state *s) {
     /* Model decay rates - decomposition rates have a strong temperature
     and moisture dependency. Note same temperature is assumed for all 3
     SOM pools, found by Knorr et al (2005) to be untrue. N mineralisation
@@ -173,6 +174,16 @@ void calculate_decay_rates(fluxes *f, params *p, state *s) {
 
     /* decay rate of passive pool */
     p->decayrate[6] = p->kdec7 * adfac;
+
+    if (c->spinup_method == SAS) {
+        fs->dr[0] += p->decayrate[0];
+        fs->dr[1] += p->decayrate[1];
+        fs->dr[2] += p->decayrate[2];
+        fs->dr[3] += p->decayrate[3];
+        fs->dr[4] += p->decayrate[4];
+        fs->dr[5] += p->decayrate[5];
+        fs->dr[6] += p->decayrate[6];
+    }
 
     return;
 }
@@ -334,7 +345,7 @@ double metafract(double lig2n) {
 }
 
 
-void partition_plant_litter(fluxes *f, params *p) {
+void partition_plant_litter(control *c, fast_spinup *fs, fluxes *f, params *p) {
     /* Partition litter from the plant (surface) and roots into metabolic
     and structural pools  */
 
@@ -361,6 +372,11 @@ void partition_plant_litter(fluxes *f, params *p) {
 
     /* ...to the metabolic pool */
     f->soil_metab_litter = f->deadroots * p->fmroot;
+
+    if (c->spinup_method == SAS) {
+        fs->alloc[S1] += p->fmleaf;
+        fs->alloc[S2] += p->fmroot;
+    }
 
     return;
 }

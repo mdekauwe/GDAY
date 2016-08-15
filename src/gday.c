@@ -356,7 +356,7 @@ void run_sim(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                             doy, fdecay, rdecay);
 
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
-            calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
+            calculate_csoil_flows(c, fs, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
 
             /* update stress SMA */
@@ -402,6 +402,9 @@ void run_sim(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
 
+            if (c->spinup_method == SAS) {
+                fs->npp_ss = f->npp;
+            }
 
             c->day_idx++;
             /* ======================= **
@@ -455,6 +458,22 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double prev_soilc = 99999.9;
     double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
     double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
+    double mu_ass1, mu_ass2, mu_ass3, leaf_material, wood_material, mu_as1;
+    double surf_struct_litter, structout_surf, structout_soil;
+    double surf_struct_to_slow, surf_struct_to_active;
+    double soil_struct_to_slow, soil_struct_litter;
+    double soil_metab_litter, metabsurfX, metabsoilX;
+    double structsurfX, structsoilX, surf_metab_to_active, soil_metab_to_active;
+    double co2_to_air0, co2_to_air1, co2_to_air2, co2_to_air3, co2_to_air4;
+    double co2_to_air5, co2_to_air6;
+    double activesoilX, slowsoilX, passivesoilX, passive_to_active;
+    double c_into_active, slow_to_active, slow_to_passive, slowout;
+    double activeout, frac_microb_resp, c_into_passive;
+    double active_to_slow, active_to_passive, c_into_slow, fmleaf, fmroot;
+    double leafgrowth, rootgrowth, crootgrowth, branchgrowth, stemgrowth;
+    double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
+    double decayrate0, decayrate1, decayrate2, decayrate3, decayrate4;
+    double decayrate5, decayrate6, surf_metab_litter, soil_struct_to_active;
 
     int i, cntrl_flag, n_pools;
 
@@ -511,10 +530,16 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         fs->ndays = 0;
         fs->npp_ss = 0.0;
 
-        n_pools = 5;
-        for (i = 0; i < n_pools; i++) {
+        for (i = 0; i < 5; i++) {
             fs->alloc[i] = 0.0;
             fs->loss[i] = 0.0;
+        }
+
+        fs->alloc[S1] = 0.0;
+        fs->alloc[S2] = 0.0;
+
+        for (i = 0; i <= 6; i++) {
+            fs->dr[i] = 0.0;
         }
 
 
@@ -526,28 +551,110 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             mu_af = fs->alloc[AF] / fs->ndays;
             mu_lf = fs->loss[AF] / fs->ndays;
-            shootX = (NPP * mu_af) - (s->shoot * mu_lf);
+            leafgrowth = (NPP * mu_af);
+            deadleaves = (s->shoot * mu_lf);
+            shootX = leafgrowth - deadleaves;
 
             mu_ar = fs->alloc[AR] / fs->ndays;
             mu_lr = fs->loss[AR] / fs->ndays;
-            rootX = (NPP * mu_ar) - (s->root * mu_lr);
+            rootgrowth = (NPP * mu_ar);
+            deadroots = (s->root * mu_lr);
+            rootX = rootgrowth - deadroots;
 
             mu_acr = fs->alloc[ACR] / fs->ndays;
             mu_lcr = fs->loss[ACR] / fs->ndays;
-            crootX = (NPP * mu_acr) - (s->croot * mu_lcr);
+            crootgrowth = (NPP * mu_acr);
+            deadcroots = (s->croot * mu_lcr);
+            crootX = crootgrowth - deadcroots;
 
             mu_ab = fs->alloc[AB] / fs->ndays;
             mu_lb = fs->loss[AB] / fs->ndays;
-            branchX = (NPP * mu_ab) - (s->branch * mu_lb);
+            branchgrowth = (NPP * mu_ab);
+            deadbranches = (s->branch * mu_lb);
+            branchX = branchgrowth - deadbranches;
 
             mu_aw = fs->alloc[AW] / fs->ndays;
             mu_lw = fs->loss[AW] / fs->ndays;
-            stemX = (NPP * mu_aw) - (s->stem * mu_lw);
+            stemgrowth = (NPP * mu_aw);
+            deadstems = (s->stem * mu_lw);
+            stemX = stemgrowth - deadstems;
 
             wood = s->branch + s->stem + s->croot;
             woodX = branchX + stemX + crootX;
 
+            decayrate0 = fs->dr[0] / fs->ndays;
+            decayrate1 = fs->dr[1] / fs->ndays;
+            decayrate2 = fs->dr[2] / fs->ndays;
+            decayrate3 = fs->dr[3] / fs->ndays;
+            decayrate4 = fs->dr[4] / fs->ndays;
+            decayrate5 = fs->dr[5] / fs->ndays;
+            decayrate6 = fs->dr[5] / fs->ndays;
 
+            fmleaf = fs->alloc[S1] / fs->ndays;
+            fmroot = fs->alloc[S2] / fs->ndays;
+
+            leaf_material = deadleaves * (1.0 - fmleaf);
+            wood_material = deadbranches + deadstems;
+
+            /* I've ignored faeces but we should add it for completness */
+            surf_struct_litter = leaf_material + wood_material;
+            surf_metab_litter = leaf_material * mu_as1;
+            structout_surf = s->structsurf * decayrate0;
+            structout_soil = s->structsoil * decayrate2;
+            surf_struct_to_slow = structout_surf * p->ligshoot * 0.7;
+            surf_struct_to_active = structout_surf * (1.0 - p->ligshoot) * 0.55;
+            soil_struct_to_slow = structout_soil * p->ligroot * 0.7;
+            soil_struct_to_active = structout_soil * (1.0 - p->ligroot) * 0.45;
+            soil_struct_litter = deadroots * (1.0 - fmroot) + deadcroots;
+            soil_metab_litter = deadroots * fmroot;
+            surf_metab_to_active = s->metabsurf * decayrate1 * 0.45;
+            soil_metab_to_active = s->metabsoil * decayrate3 * 0.45;
+            slowout = s->slowsoil * decayrate5;
+            slow_to_active = slowout * 0.42;
+            slow_to_passive = slowout * 0.03;
+            passive_to_active = s->passivesoil * decayrate6 * 0.45;
+            activeout = s->activesoil * decayrate4;
+            frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+            c_into_active = surf_struct_to_active + soil_struct_to_active + \
+                            surf_metab_to_active + soil_metab_to_active + \
+                            slow_to_active + passive_to_active;
+            active_to_slow = activeout * (1.0 - frac_microb_resp - 0.004);
+            active_to_passive = activeout * 0.004;
+            c_into_slow = surf_struct_to_slow + soil_struct_to_slow + \
+                          active_to_slow;
+            c_into_passive = active_to_passive + slow_to_passive;
+
+            co2_to_air0 = (structout_surf * \
+                          (p->ligshoot * 0.3 + (1.0 - p->ligshoot) * 0.45));
+            co2_to_air1 = (structout_soil * \
+                          (p->ligroot * 0.3 + (1.0 - p->ligroot) * 0.55));
+            co2_to_air2 = s->metabsurf * decayrate1 * 0.55;
+            co2_to_air3 = s->metabsoil * decayrate3 * 0.55;
+            co2_to_air4 = activeout * frac_microb_resp;
+            co2_to_air5 = slowout * 0.55;
+            co2_to_air6 = s->passivesoil * decayrate6 * 0.55;
+
+            structsurfX = (surf_struct_litter - \
+                          (surf_struct_to_slow + surf_struct_to_active +
+                           co2_to_air0));
+
+            structsoilX = (soil_struct_litter - \
+                          (soil_struct_to_slow + soil_struct_to_active +
+                           co2_to_air1));
+
+            metabsurfX = (surf_metab_litter - \
+                          (surf_metab_to_active + co2_to_air2));
+
+            metabsoilX = (soil_metab_litter - \
+                          (soil_metab_to_active + co2_to_air3));
+
+            activesoilX = c_into_active - \
+                          (active_to_slow + active_to_passive + co2_to_air4);
+
+            slowsoilX = c_into_slow - \
+                        (slow_to_active + slow_to_passive + co2_to_air5);
+
+            passivesoilX = c_into_passive - (passive_to_active + co2_to_air6);
 
             /* based on previous cycle */
             stop_critria = s->plantc * 0.01;
@@ -576,6 +683,18 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         s->croot = crootX;
         s->branch = branchX;
         s->stem = stemX;
+
+        s->metabsoil = metabsoilX;
+        s->metabsurf = metabsurfX;
+
+        s->structsoil = structsoilX;
+        s->structsurf = structsurfX;
+
+        s->activesoil = activesoilX;
+        s->slowsoil = slowsoilX;
+        s->passivesoil = passivesoilX;
+
+
 
 
     } else {

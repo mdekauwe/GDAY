@@ -65,10 +65,13 @@
 
 /* Spinup array index */
 #define AF 0
-#define AR 0
-#define ACR 0
-#define AB 0
-#define AW 0
+#define AR 1
+#define ACR 2
+#define AB 3
+#define AW 4
+#define S1 5
+#define S2 6
+
 
 #define LF 0
 #define LR 0
