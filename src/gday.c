@@ -742,6 +742,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                   (fabs((prev_passivec - new_passive) / prev_passivec) < 0.01) ) {
                 break;
             */
+
+            /* Stop if the passive pool changed by less than 1%? */
             if (fabs((prev_passivec - new_passive) / prev_passivec) < 0.001) {
                 break;
 
@@ -750,6 +752,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 prev_shoot = s->shoot;
                 prev_wood = s->branch + s->stem + s->croot;
                 prev_root = s->root;
+
                 /* Zero everything */
                 fs->ndays = 0;
                 fs->npp_ss = 0.0;
