@@ -483,10 +483,13 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     * Murty, D and McMurtrie, R. E. (2000) Ecological Modelling, 134,
       185-205, specifically page 196.
     */
-    double tol = 5E-03, stop_critria = 0.0;
+    double tol = 5E-03;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     double prev_passivec = 99999.9;
+    double prev_shoot  = 99999.9;
+    double prev_wood = 99999.9;
+    double prev_root = 99999.9;
     double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
     double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
     double mu_ass1, mu_ass2, mu_ass3, leaf_material, wood_material, mu_as1;
@@ -654,6 +657,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             woodX = branchX + stemX + crootX;
 
+
             deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
             sapwoodX += stemgrowth - deadsapwood;
 
@@ -727,14 +731,25 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             passivesoilX = c_into_passive - (passive_to_active + co2_to_air6);
             new_passive = s->passivesoil + passivesoilX;
 
+            /*
+            double new_shoot = s->shoot + shootX;
+            double new_wood = s->branch + s->stem + s->croot + woodX;
+            double new_root = s->root + rootX;
 
-            if (fabs((prev_passivec - new_passive) / prev_passivec) < 0.01) {
+            if ( (fabs((new_shoot - prev_shoot) / new_shoot) + \
+                  fabs((new_wood - prev_wood) / new_wood) + \
+                  fabs((new_root - prev_root) / new_root)) < 0.01 &&
+                  (fabs((prev_passivec - new_passive) / prev_passivec) < 0.01) ) {
+                break;
+            */
+            if (fabs((prev_passivec - new_passive) / prev_passivec) < 0.001) {
                 break;
 
             } else {
                 prev_passivec = s->passivesoil;
-                prev_plantc = s->plantc;
-                prev_soilc = s->soilc;
+                prev_shoot = s->shoot;
+                prev_wood = s->branch + s->stem + s->croot;
+                prev_root = s->root;
                 /* Zero everything */
                 fs->ndays = 0;
                 fs->npp_ss = 0.0;
