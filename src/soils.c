@@ -356,7 +356,7 @@ void partition_plant_litter(control *c, fast_spinup *fs, fluxes *f, params *p) {
 
     /* ...to the structural pool*/
     leaf_material = f->deadleaves * (1.0 - p->fmleaf);
-    wood_material = f->deadbranch + f->deadstems;
+    wood_material = f->deadbranch + f->deadstems + f->deadsapwood;
     faeces_material = f->faecesc * (1.0 - p->fmfaeces);
     f->surf_struct_litter = leaf_material + wood_material + faeces_material;
 
@@ -863,6 +863,7 @@ void nfluxes_from_structural_pools(fluxes *f, params *p, state *s) {
 void nfluxes_from_metabolic_pool(fluxes *f, params *p, state *s) {
 
     /* N flux surface metabolic pool -> active pool */
+    //printf("WHAT: %lf %lf %lf\n", s->metabsurfn * p->decayrate[1], s->metabsurfn , p->decayrate[1]);
     f->n_surf_metab_to_active = s->metabsurfn * p->decayrate[1];
 
     /* N flux soil metabolic pool  -> active pool */
@@ -925,6 +926,13 @@ void calculate_n_mineralisation(fluxes *f) {
     value : float
         Gross N mineralisation
     */
+
+    /*printf("** %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", f->n_surf_struct_to_slow, f->n_surf_struct_to_active,\
+                     f->n_soil_struct_to_slow, f->n_soil_struct_to_active,\
+                     f->n_surf_metab_to_active, f->n_soil_metab_to_active +
+                     f->n_active_to_slow, f->n_active_to_passive,\
+                     f->n_slow_to_active, f->n_slow_to_passive,\
+                     f->n_passive_to_active);*/
     f->ngross =  (f->n_surf_struct_to_slow + f->n_surf_struct_to_active +
                   f->n_soil_struct_to_slow + f->n_soil_struct_to_active +
                   f->n_surf_metab_to_active + f->n_soil_metab_to_active +

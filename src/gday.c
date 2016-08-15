@@ -410,8 +410,25 @@ void run_sim(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 fs->branch_nc += s->branchn / s->branch;
                 fs->croot_nc += s->crootn / s->croot;
                 fs->stem_nc += s->stemn / s->stem;
-                fs->metablsoil_nc += s->metabsoiln / s->metabsoil;
-                fs->metabsurf_nc += s->metabsurfn / s->metabsurf;
+                fs->stemnmob_ratio += s->stemn / s->stemnimm;
+                if (s->stemnmob > 0.0) {
+                    fs->stemnimm_ratio += s->stemn / s->stemnmob;
+                } else {
+                    fs->stemnimm_ratio = 0.0;
+                }
+
+                if (s->metabsoil > 0.0) {
+                    fs->metablsoil_nc += s->metabsoiln / s->metabsoil;
+                } else {
+                    fs->metablsoil_nc += 0.0;
+                }
+
+                if (s->metabsurf > 0.0) {
+                    fs->metabsurf_nc += s->metabsurfn / s->metabsurf;
+                } else {
+                    fs->metabsurf_nc += 0.0;
+                }
+
                 fs->structsoil_nc += s->structsoiln / s->structsoil;
                 fs->structsurf_nc += s->structsurfn / s->structsurf;
                 fs->activesoil_nc += s->activesoiln / s->activesoil;
@@ -488,7 +505,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
     double mu_decayrate0, mu_decayrate1, mu_decayrate2, mu_decayrate3, mu_decayrate4;
     double mu_decayrate5, mu_decayrate6, surf_metab_litter, soil_struct_to_active;
-    double total_days;
+    double total_days, deadsapwood, sapwoodX, new_passive;
 
     int i, cntrl_flag, n_pools;
 
@@ -530,7 +547,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                   "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
         }
-        
+
     } else if (c->spinup_method == SAS) {
         /*
         ** Semi-analytical solution (SAS) to accelerate model spin-up of
@@ -563,6 +580,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         crootX = 0.0;
         branchX = 0.0;
         stemX = 0.0;
+        sapwoodX = 0.0;
         structsurfX = 0.0;
         structsoilX = 0.0;
         metabsurfX = 0.0;
@@ -576,6 +594,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         fs->branch_nc = 0.0;
         fs->croot_nc = 0.0;
         fs->stem_nc = 0.0;
+        fs->stemnmob_ratio = 0.0;
+        fs->stemnimm_ratio = 0.0;
         fs->metablsoil_nc = 0.0;
         fs->metabsurf_nc = 0.0;
         fs->structsoil_nc = 0.0;
@@ -634,8 +654,11 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             woodX = branchX + stemX + crootX;
 
+            deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
+            sapwoodX += stemgrowth - deadsapwood;
+
             leaf_material = deadleaves * (1.0 - mu_fmleaf);
-            wood_material = deadbranches + deadstems;
+            wood_material = deadbranches + deadstems + deadsapwood;
 
             surf_metab_litter = deadleaves * mu_fmleaf;
             surf_metab_to_active = s->metabsurf * mu_decayrate1 * 0.45;
@@ -702,21 +725,16 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                          (slow_to_active + slow_to_passive + co2_to_air5);
 
             passivesoilX = c_into_passive - (passive_to_active + co2_to_air6);
-            double new_passive = s->passivesoil + passivesoilX;
+            new_passive = s->passivesoil + passivesoilX;
 
-            /*if ( (fabs((s->shoot - shootX) / s->shoot) + \
-                  fabs(( wood - woodX) / wood) + \
-                  fabs((s->root - rootX) / s->root)) < stop_critria ) {
-                break;*/
-            /*printf("%lf %lf %lf\n", fabs((prev_passivec - new_passive) / prev_passivec), prev_passivec, new_passive);*/
+
             if (fabs((prev_passivec - new_passive) / prev_passivec) < 0.01) {
                 break;
 
-            /*if (fabs((prev_passivec*conv) - (s->passivesoil *conv)) < tol) {
-                break;*/
             } else {
                 prev_passivec = s->passivesoil;
-
+                prev_plantc = s->plantc;
+                prev_soilc = s->soilc;
                 /* Zero everything */
                 fs->ndays = 0;
                 fs->npp_ss = 0.0;
@@ -738,6 +756,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 fs->branch_nc = 0.0;
                 fs->croot_nc = 0.0;
                 fs->stem_nc = 0.0;
+                fs->stemnmob_ratio = 0.0;
+                fs->stemnimm_ratio = 0.0;
                 fs->metablsoil_nc = 0.0;
                 fs->metabsurf_nc = 0.0;
                 fs->structsoil_nc = 0.0;
@@ -751,6 +771,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 s->croot += crootX;
                 s->branch += branchX;
                 s->stem += stemX;
+                s->sapwood += sapwoodX;
 
                 s->metabsoil += metabsoilX;
                 s->metabsurf += metabsurfX;
@@ -775,6 +796,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         s->croot += crootX;
         s->branch += branchX;
         s->stem += stemX;
+        s->sapwood += sapwoodX;
         s->metabsoil += metabsoilX;
         s->metabsurf += metabsurfX;
         s->structsoil += structsoilX;
@@ -783,16 +805,16 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         s->slowsoil += slowsoilX;
         s->passivesoil += passivesoilX;
 
-        printf("%lf %lf %lf \n", s->shoot, fs->shoot_nc, total_days);
-
-
         fs->shoot_nc /= total_days;
         fs->root_nc /= total_days;
         fs->branch_nc /= total_days;
         fs->croot_nc /= total_days;
         fs->stem_nc /= total_days;
+        fs->stemnmob_ratio /= total_days;
+        fs->stemnimm_ratio /= total_days;
         fs->metablsoil_nc /= total_days;
         fs->metabsurf_nc /= total_days;
+
         fs->structsoil_nc /= total_days;
         fs->structsurf_nc /= total_days;
         fs->activesoil_nc /= total_days;
@@ -801,9 +823,15 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
         s->shootn = s->shoot * fs->shoot_nc;
         s->rootn = s->root * fs->root_nc;
-        s->crootn = s->croot * fs->croot_nc;
+        if (s->croot > 0.0) {
+            s->crootn = s->croot * fs->croot_nc;
+        } else {
+            s->crootn = 0.0;
+        }
         s->branchn = s->branch * fs->branch_nc;
         s->stemn = s->stem * fs->stem_nc;
+        s->stemnmob = s->stemn * fs->stemnmob_ratio;
+        s->stemnimm = s->stemn * fs->stemnimm_ratio;
         s->metabsoiln = s->metabsoil * fs->metablsoil_nc;
         s->metabsurfn = s->metabsurf * fs->metabsurf_nc;
         s->structsoiln = s->structsoil * fs->structsoil_nc;
@@ -811,6 +839,11 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         s->activesoiln = s->activesoil * fs->activesoil_nc;
         s->slowsoiln = s->slowsoil * fs->slowsoil_nc;
         s->passivesoiln = s->passivesoil * fs->passivesoil_nc;
+
+
+        /* run another sim just to be sure, probably don't need this */
+        run_sim(cw, c, fs, f, ma, m, p, s);
+
 
     } else {
         fprintf(stderr, "Unknown spinup option\n");

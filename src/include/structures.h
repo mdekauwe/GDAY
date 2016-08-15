@@ -66,6 +66,8 @@ typedef struct {
     double branch_nc;
     double croot_nc;
     double stem_nc;
+    double stemnmob_ratio;
+    double stemnimm_ratio;
     double metablsoil_nc;
     double metabsurf_nc;
     double structsoil_nc;
