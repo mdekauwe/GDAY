@@ -403,7 +403,8 @@ void run_sim(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
 
             if (c->spinup_method == SAS) {
-                fs->npp_ss = f->npp;
+                fs->npp_ss += f->npp;
+                fs->ndays ++;
             }
 
             c->day_idx++;
@@ -456,6 +457,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double tol = 5E-03, stop_critria = 0.0;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
+    double prev_passivec = 99999.9;
     double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
     double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
     double mu_ass1, mu_ass2, mu_ass3, leaf_material, wood_material, mu_as1;
@@ -542,45 +544,61 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             fs->dr[i] = 0.0;
         }
 
+        shootX = 0.0;
+        rootX = 0.0;
+        crootX = 0.0;
+        branchX = 0.0;
+        stemX = 0.0;
+        structsurfX = 0.0;
+        structsoilX = 0.0;
+        metabsurfX = 0.0;
+        metabsoilX = 0.0;
+        activesoilX = 0.0;
+        slowsoilX = 0.0;
+        passivesoilX = 0.0;
 
         run_sim(cw, c, fs, f, ma, m, p, s);
 
         while (TRUE) {
 
-            NPP = fs->npp_ss / fs->ndays;
+            NPP = fs->npp_ss / (double)fs->ndays;
 
-            mu_af = fs->alloc[AF] / fs->ndays;
-            mu_lf = fs->loss[AF] / fs->ndays;
+            mu_af = fs->alloc[AF] / (double)fs->ndays;
+            mu_lf = fs->loss[LF] / (double)fs->ndays;
             leafgrowth = (NPP * mu_af);
             deadleaves = (s->shoot * mu_lf);
-            shootX = leafgrowth - deadleaves;
+            shootX += leafgrowth - deadleaves;
+            printf("%lf\n", shootX);
+            printf("%lf\n", mu_lf*365.25);
+            exit(1);
 
-            mu_ar = fs->alloc[AR] / fs->ndays;
-            mu_lr = fs->loss[AR] / fs->ndays;
+
+            mu_ar = fs->alloc[AR] / (double)fs->ndays;
+            mu_lr = fs->loss[LR] / (double)fs->ndays;
             rootgrowth = (NPP * mu_ar);
             deadroots = (s->root * mu_lr);
-            rootX = rootgrowth - deadroots;
+            rootX += rootgrowth - deadroots;
 
-            mu_acr = fs->alloc[ACR] / fs->ndays;
-            mu_lcr = fs->loss[ACR] / fs->ndays;
+            mu_acr = fs->alloc[ACR] / (double)fs->ndays;
+            mu_lcr = fs->loss[LCR] / (double)fs->ndays;
             crootgrowth = (NPP * mu_acr);
             deadcroots = (s->croot * mu_lcr);
-            crootX = crootgrowth - deadcroots;
+            crootX += crootgrowth - deadcroots;
 
-            mu_ab = fs->alloc[AB] / fs->ndays;
-            mu_lb = fs->loss[AB] / fs->ndays;
+            mu_ab = fs->alloc[AB] / (double)fs->ndays;
+            mu_lb = fs->loss[LB] / (double)fs->ndays;
             branchgrowth = (NPP * mu_ab);
             deadbranches = (s->branch * mu_lb);
-            branchX = branchgrowth - deadbranches;
+            branchX += branchgrowth - deadbranches;
 
-            mu_aw = fs->alloc[AW] / fs->ndays;
-            mu_lw = fs->loss[AW] / fs->ndays;
+            mu_aw = fs->alloc[AW] / (double)fs->ndays;
+            mu_lw = fs->loss[LW] / (double)fs->ndays;
             stemgrowth = (NPP * mu_aw);
             deadstems = (s->stem * mu_lw);
-            stemX = stemgrowth - deadstems;
+            stemX += stemgrowth - deadstems;
 
             wood = s->branch + s->stem + s->croot;
-            woodX = branchX + stemX + crootX;
+            woodX += branchX + stemX + crootX;
 
             decayrate0 = fs->dr[0] / fs->ndays;
             decayrate1 = fs->dr[1] / fs->ndays;
@@ -634,37 +652,62 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             co2_to_air5 = slowout * 0.55;
             co2_to_air6 = s->passivesoil * decayrate6 * 0.55;
 
-            structsurfX = (surf_struct_litter - \
+            structsurfX += (surf_struct_litter - \
                           (surf_struct_to_slow + surf_struct_to_active +
                            co2_to_air0));
 
-            structsoilX = (soil_struct_litter - \
+            structsoilX += (soil_struct_litter - \
                           (soil_struct_to_slow + soil_struct_to_active +
                            co2_to_air1));
 
-            metabsurfX = (surf_metab_litter - \
+            metabsurfX += (surf_metab_litter - \
                           (surf_metab_to_active + co2_to_air2));
 
-            metabsoilX = (soil_metab_litter - \
+            metabsoilX += (soil_metab_litter - \
                           (soil_metab_to_active + co2_to_air3));
 
-            activesoilX = c_into_active - \
-                          (active_to_slow + active_to_passive + co2_to_air4);
+            activesoilX += c_into_active - \
+                           (active_to_slow + active_to_passive + co2_to_air4);
 
-            slowsoilX = c_into_slow - \
-                        (slow_to_active + slow_to_passive + co2_to_air5);
+            slowsoilX += c_into_slow - \
+                         (slow_to_active + slow_to_passive + co2_to_air5);
 
-            passivesoilX = c_into_passive - (passive_to_active + co2_to_air6);
+            passivesoilX += c_into_passive - (passive_to_active + co2_to_air6);
 
             /* based on previous cycle */
             stop_critria = s->plantc * 0.01;
 
-            /* add passive pool */
-            if ( (fabs((s->shoot - shootX) / s->shoot) + \
+
+
+            /*if ( (fabs((s->shoot - shootX) / s->shoot) + \
                   fabs(( wood - woodX) / wood) + \
                   fabs((s->root - rootX) / s->root)) < stop_critria ) {
+                break;*/
+            printf("%lf %lf %lf\n", fabs((prev_passivec - passivesoilX) / prev_passivec), prev_passivec, passivesoilX);
+            if (fabs((prev_passivec - passivesoilX) / prev_passivec) < 0.1) {
                 break;
+
+            /*if (fabs((prev_passivec*conv) - (s->passivesoil *conv)) < tol) {
+                break;*/
             } else {
+                prev_passivec = passivesoilX;
+
+                /* Zero everything */
+                fs->ndays = 0;
+                fs->npp_ss = 0.0;
+
+                for (i = 0; i < 5; i++) {
+                    fs->alloc[i] = 0.0;
+                    fs->loss[i] = 0.0;
+                }
+
+                fs->alloc[S1] = 0.0;
+                fs->alloc[S2] = 0.0;
+
+                for (i = 0; i <= 6; i++) {
+                    fs->dr[i] = 0.0;
+                }
+
 
                 run_sim(cw, c, fs, f, ma, m, p, s);
 

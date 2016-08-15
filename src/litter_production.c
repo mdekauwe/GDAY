@@ -48,6 +48,7 @@ void calculate_litterfall(control *c, fast_spinup *fs, fluxes *f, params *p,
             fs->loss[LF] += f->lrate;
         else
             fs->loss[LF] += *fdecay;
+            printf("* %lf %lf\n", *fdecay, *fdecay*365.25);
         fs->loss[LR] += *rdecay;
         fs->loss[LCR] += p->crdecay;
         fs->loss[LB] += p->bdecay;

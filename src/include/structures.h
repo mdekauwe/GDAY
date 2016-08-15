@@ -56,7 +56,7 @@ typedef struct {
 } control;
 
 typedef struct {
-    double ndays;
+    long   ndays;
     double npp_ss;
     double alloc[7];
     double loss[5];

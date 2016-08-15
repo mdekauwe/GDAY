@@ -74,10 +74,10 @@
 
 
 #define LF 0
-#define LR 0
-#define LCR 0
-#define LB 0
-#define LW 0
+#define LR 1
+#define LCR 2
+#define LB 3
+#define LW 4
 
 
 #include "structures.h"
