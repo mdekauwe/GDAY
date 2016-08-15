@@ -530,7 +530,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                   "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
         }
-
+        
     } else if (c->spinup_method == SAS) {
         /*
         ** Semi-analytical solution (SAS) to accelerate model spin-up of
@@ -783,6 +783,9 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         s->slowsoil += slowsoilX;
         s->passivesoil += passivesoilX;
 
+        printf("%lf %lf %lf \n", s->shoot, fs->shoot_nc, total_days);
+
+
         fs->shoot_nc /= total_days;
         fs->root_nc /= total_days;
         fs->branch_nc /= total_days;
@@ -796,18 +799,18 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         fs->slowsoil_nc /= total_days;
         fs->passivesoil_nc /= total_days;
 
-        s->shootn *= fs->shoot_nc;
-        s->rootn *= fs->root_nc;
-        s->crootn *= fs->croot_nc;
-        s->branchn *= fs->branch_nc;
-        s->stemn *= fs->stem_nc;
-        s->metabsoiln *= fs->metablsoil_nc;
-        s->metabsurfn *= fs->metabsurf_nc;
-        s->structsoiln *= fs->structsoil_nc;
-        s->structsurfn *= fs->structsurf_nc;
-        s->activesoiln *= fs->activesoil_nc;
-        s->slowsoiln *= fs->slowsoil_nc;
-        s->passivesoiln*= fs->passivesoil_nc;
+        s->shootn = s->shoot * fs->shoot_nc;
+        s->rootn = s->root * fs->root_nc;
+        s->crootn = s->croot * fs->croot_nc;
+        s->branchn = s->branch * fs->branch_nc;
+        s->stemn = s->stem * fs->stem_nc;
+        s->metabsoiln = s->metabsoil * fs->metablsoil_nc;
+        s->metabsurfn = s->metabsurf * fs->metabsurf_nc;
+        s->structsoiln = s->structsoil * fs->structsoil_nc;
+        s->structsurfn = s->structsurf * fs->structsurf_nc;
+        s->activesoiln = s->activesoil * fs->activesoil_nc;
+        s->slowsoiln = s->slowsoil * fs->slowsoil_nc;
+        s->passivesoiln = s->passivesoil * fs->passivesoil_nc;
 
     } else {
         fprintf(stderr, "Unknown spinup option\n");
