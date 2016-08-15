@@ -61,6 +61,18 @@ typedef struct {
     double alloc[7];
     double loss[5];
     double dr[7];
+    double shoot_nc;
+    double root_nc;
+    double branch_nc;
+    double croot_nc;
+    double stem_nc;
+    double metablsoil_nc;
+    double metabsurf_nc;
+    double structsoil_nc;
+    double structsurf_nc;
+    double activesoil_nc;
+    double slowsoil_nc;
+    double passivesoil_nc;
 } fast_spinup;
 
 
