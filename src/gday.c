@@ -483,13 +483,10 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     * Murty, D and McMurtrie, R. E. (2000) Ecological Modelling, 134,
       185-205, specifically page 196.
     */
-    double tol = 5E-03;
+    double tol = 5E-03, stop_critria = 0.0;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     double prev_passivec = 99999.9;
-    double prev_shoot  = 99999.9;
-    double prev_wood = 99999.9;
-    double prev_root = 99999.9;
     double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
     double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
     double mu_ass1, mu_ass2, mu_ass3, leaf_material, wood_material, mu_as1;
@@ -562,51 +559,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         ** of transfer coefficients and pool sizes
         */
 
-        /* Zero everything */
-        fs->ndays = 0;
-        fs->npp_ss = 0.0;
-
-        for (i = 0; i < 5; i++) {
-            fs->alloc[i] = 0.0;
-            fs->loss[i] = 0.0;
-        }
-
-        fs->alloc[S1] = 0.0;
-        fs->alloc[S2] = 0.0;
-
-        for (i = 0; i <= 6; i++) {
-            fs->dr[i] = 0.0;
-        }
-
-        shootX = 0.0;
-        rootX = 0.0;
-        crootX = 0.0;
-        branchX = 0.0;
-        stemX = 0.0;
-        sapwoodX = 0.0;
-        structsurfX = 0.0;
-        structsoilX = 0.0;
-        metabsurfX = 0.0;
-        metabsoilX = 0.0;
-        activesoilX = 0.0;
-        slowsoilX = 0.0;
-        passivesoilX = 0.0;
-
-        fs->shoot_nc = 0.0;
-        fs->root_nc = 0.0;
-        fs->branch_nc = 0.0;
-        fs->croot_nc = 0.0;
-        fs->stem_nc = 0.0;
-        fs->stemnmob_ratio = 0.0;
-        fs->stemnimm_ratio = 0.0;
-        fs->metablsoil_nc = 0.0;
-        fs->metabsurf_nc = 0.0;
-        fs->structsoil_nc = 0.0;
-        fs->structsurf_nc = 0.0;
-        fs->activesoil_nc = 0.0;
-        fs->slowsoil_nc = 0.0;
-        fs->passivesoil_nc = 0.0;
-
+        zero_fast_spinup_stuff(fs);
         run_sim(cw, c, fs, f, ma, m, p, s);
 
         while (TRUE) {
@@ -656,7 +609,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             stemX = stemgrowth - deadstems;
 
             woodX = branchX + stemX + crootX;
-
 
             deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
             sapwoodX += stemgrowth - deadsapwood;
@@ -731,84 +683,22 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             passivesoilX = c_into_passive - (passive_to_active + co2_to_air6);
             new_passive = s->passivesoil + passivesoilX;
 
-            /*
-            double new_shoot = s->shoot + shootX;
-            double new_wood = s->branch + s->stem + s->croot + woodX;
-            double new_root = s->root + rootX;
-
-            if ( (fabs((new_shoot - prev_shoot) / new_shoot) + \
-                  fabs((new_wood - prev_wood) / new_wood) + \
-                  fabs((new_root - prev_root) / new_root)) < 0.01 &&
-                  (fabs((prev_passivec - new_passive) / prev_passivec) < 0.01) ) {
-                break;
-            */
-
-            /* Stop if the passive pool changed by less than 1%? */
-            if (fabs((prev_passivec - new_passive) / prev_passivec) < 0.001) {
+            /* This fecks up if I make this 0.001, not sure why */
+            if (fabs((new_passive - prev_passivec) / new_passive) < 0.01) {
                 break;
 
             } else {
+                /* Run another spin cycle */
                 prev_passivec = s->passivesoil;
-                prev_shoot = s->shoot;
-                prev_wood = s->branch + s->stem + s->croot;
-                prev_root = s->root;
-
-                /* Zero everything */
-                fs->ndays = 0;
-                fs->npp_ss = 0.0;
-
-                for (i = 0; i < 5; i++) {
-                    fs->alloc[i] = 0.0;
-                    fs->loss[i] = 0.0;
-                }
-
-                fs->alloc[S1] = 0.0;
-                fs->alloc[S2] = 0.0;
-
-                for (i = 0; i <= 6; i++) {
-                    fs->dr[i] = 0.0;
-                }
-
-                fs->shoot_nc = 0.0;
-                fs->root_nc = 0.0;
-                fs->branch_nc = 0.0;
-                fs->croot_nc = 0.0;
-                fs->stem_nc = 0.0;
-                fs->stemnmob_ratio = 0.0;
-                fs->stemnimm_ratio = 0.0;
-                fs->metablsoil_nc = 0.0;
-                fs->metabsurf_nc = 0.0;
-                fs->structsoil_nc = 0.0;
-                fs->structsurf_nc = 0.0;
-                fs->activesoil_nc = 0.0;
-                fs->slowsoil_nc = 0.0;
-                fs->passivesoil_nc = 0.0;
-
-                s->shoot += shootX;
-                s->root += rootX;
-                s->croot += crootX;
-                s->branch += branchX;
-                s->stem += stemX;
-                s->sapwood += sapwoodX;
-
-                s->metabsoil += metabsoilX;
-                s->metabsurf += metabsurfX;
-
-                s->structsoil += structsoilX;
-                s->structsurf += structsurfX;
-
-                s->activesoil += activesoilX;
-                s->slowsoil += slowsoilX;
-                s->passivesoil += passivesoilX;
+                zero_fast_spinup_stuff(fs);
                 run_sim(cw, c, fs, f, ma, m, p, s);
 
-                /* Have we reached a steady state? */
                 fprintf(stderr,
                   "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
         }
 
-        /* Now analytically solve all the carbon pools */
+        /* Now solve all the carbon and nitrogen pools */
         s->shoot += shootX;
         s->root += rootX;
         s->croot += crootX;
@@ -858,6 +748,33 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         s->slowsoiln = s->slowsoil * fs->slowsoil_nc;
         s->passivesoiln = s->passivesoil * fs->passivesoil_nc;
 
+
+        printf("DONE: %lf\n", s->shoot);
+        printf("DONE: %lf\n", s->root);
+        printf("DONE: %lf\n", s->croot);
+        printf("DONE: %lf\n", s->branch);
+        printf("DONE: %lf\n", s->stem);
+        printf("DONE: %lf\n", s->activesoil);
+        printf("DONE: %lf\n", s->slowsoil);
+        printf("DONE: %lf\n\n", s->passivesoil);
+        printf("DONE: %lf\n", s->metabsoil);
+        printf("DONE: %lf\n", s->metabsurf);
+
+
+        printf("DONE: %lf\n", s->shootn);
+        printf("DONE: %lf\n", s->rootn);
+        printf("DONE: %lf\n", s->crootn);
+        printf("DONE: %lf\n", s->branchn);
+        printf("DONE: %lf\n", s->stemnmob);
+        printf("DONE: %lf\n", s->stemnimm);
+        printf("DONE: %lf\n", s->stemn);
+        printf("DONE: %lf\n", s->activesoiln);
+        printf("DONE: %lf\n", s->slowsoiln);
+        printf("DONE: %lf\n", s->passivesoiln);
+        printf("DONE: %lf\n", s->metabsoiln);
+        printf("DONE: %lf\n", s->metabsurfn);
+        printf("DONE: %lf\n", s->inorgn);
+        /*exit(1);*/
 
         /* run another sim just to be sure, probably don't need this */
         run_sim(cw, c, fs, f, ma, m, p, s);
@@ -920,7 +837,42 @@ void usage(char **argv) {
 
 
 
+void zero_fast_spinup_stuff(fast_spinup *fs) {
 
+    int i;
+
+    fs->ndays = 0;
+    fs->npp_ss = 0.0;
+
+    for (i = 0; i < 5; i++) {
+        fs->alloc[i] = 0.0;
+        fs->loss[i] = 0.0;
+    }
+
+    fs->alloc[S1] = 0.0;
+    fs->alloc[S2] = 0.0;
+
+    for (i = 0; i <= 6; i++) {
+        fs->dr[i] = 0.0;
+    }
+
+    fs->shoot_nc = 0.0;
+    fs->root_nc = 0.0;
+    fs->branch_nc = 0.0;
+    fs->croot_nc = 0.0;
+    fs->stem_nc = 0.0;
+    fs->stemnmob_ratio = 0.0;
+    fs->stemnimm_ratio = 0.0;
+    fs->metablsoil_nc = 0.0;
+    fs->metabsurf_nc = 0.0;
+    fs->structsoil_nc = 0.0;
+    fs->structsurf_nc = 0.0;
+    fs->activesoil_nc = 0.0;
+    fs->slowsoil_nc = 0.0;
+    fs->passivesoil_nc = 0.0;
+
+    return;
+}
 
 void correct_rate_constants(params *p, int output) {
     /* adjust rate constants for the number of days in years */

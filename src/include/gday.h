@@ -106,5 +106,7 @@ void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   zero_stuff(control *, state *);
 void   day_end_calculations(control *, params *, state *, int, int);
 void   unpack_met_data(control *, fluxes *f, met_arrays *, met *, int, double);
+void   zero_fast_spinup_stuff(fast_spinup *);
+
 
 #endif /* GDAY_H */
