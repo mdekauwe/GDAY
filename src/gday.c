@@ -659,6 +659,26 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             s->slowsoiln = s->slowsoiln / s->slowsoil * slowsoilX;
             s->passivesoiln = s->passivesoiln / s->passivesoil * passivesoilX;
 
+
+
+
+
+            s->shoot = shootX;
+            s->root = rootX;
+            s->croot = crootX;
+            s->branch = branchX;
+            s->stem = stemX;
+            s->sapwood = sapwoodX;
+            s->metabsoil = metabsoilX;
+            s->metabsurf = metabsurfX;
+            s->structsoil = structsoilX;
+            s->structsurf = structsurfX;
+            s->activesoil = activesoilX;
+            s->slowsoil = slowsoilX;
+            s->passivesoil = passivesoilX;
+
+
+
             printf("shoot: %.10lf\n", s->shoot);
             printf("root: %.10lf\n", s->root );
             printf("croot: %.10lf\n", s->croot);
@@ -684,26 +704,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             printf("passivesoilnc: %.10lf\n\n", s->passivesoiln / s->passivesoil);
 
             exit(1);
-
-
-
-
-            s->shoot = shootX;
-            s->root = rootX;
-            s->croot = crootX;
-            s->branch = branchX;
-            s->stem = stemX;
-            s->sapwood = sapwoodX;
-            s->metabsoil = metabsoilX;
-            s->metabsurf = metabsurfX;
-            s->structsoil = structsoilX;
-            s->structsurf = structsurfX;
-            s->activesoil = activesoilX;
-            s->slowsoil = slowsoilX;
-            s->passivesoil = passivesoilX;
-
-
-
+            
 
             /* This fecks up if I make this 0.001, not sure why */
             if (fabs((passivesoilX - prev_passivec) / passivesoilX) < 0.001) {
