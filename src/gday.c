@@ -579,12 +579,9 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         ** of transfer coefficients and pool sizes
         */
         zero_fast_spinup_stuff(fs);
-        /*run_sim(cw, c, fs, f, ma, m, p, s);
-        run_sim(cw, c, fs, f, ma, m, p, s);*/
+        run_sim(cw, c, fs, f, ma, m, p, s);
+        /*run_sim(cw, c, fs, f, ma, m, p, s);*/
 
-        for (i = 0; i < 20; i++) {
-            run_sim(cw, c, fs, f, ma, m, p, s); /* run GDAY */
-        }
 
         while (TRUE) {
 
@@ -657,13 +654,13 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             arg2 = slowsoilX * fs->coeffs[KD6] * slw_to_pass_coeff;
             passivesoilX = (arg1 + arg2) / fs->coeffs[KD7];
 
-            printf("%lf\n", s->shootn / s->shoot);
+            /*printf("%lf\n", s->shootn / s->shoot);*/
 
 
             double stemnmob_ratio, stemnimm_ratio;
             s->shootn = s->shootn / s->shoot * shootX;
-            printf("%lf\n", s->shootn / s->shoot);
-            exit(1);
+            /*printf("%lf\n", s->shootn / s->shoot);
+            exit(1);*/
             s->rootn = s->rootn / s->root * rootX;
             if (s->croot > 0.0) {
                 s->crootn = s->crootn / s->croot * crootX;
@@ -683,14 +680,41 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             s->stemnmob = s->stemn * stemnmob_ratio;
             s->stemnimm = s->stemn * stemnimm_ratio;
 
+            if (metabsoilX > 0.0) {
+                s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
+            } else {
+                s->metabsoiln = 0.0;
+            }
 
-            s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
-            s->metabsurfn = s->metabsurfn / s->metabsurf * metabsurfX;
+            if (metabsurfX > 0.0) {
+                s->metabsurfn = s->metabsurfn / s->metabsurf * metabsurfX;
+            } else {
+                s->metabsurfn = 0.0;
+            }
             s->structsoiln = s->structsoiln / s->structsoil * structsoilX;
             s->structsurfn = s->structsurfn / s->structsurf * structsurfX;
             s->activesoiln = s->activesoiln / s->activesoil * activesoilX;
             s->slowsoiln = s->slowsoiln / s->slowsoil * slowsoilX;
             s->passivesoiln = s->passivesoiln / s->passivesoil * passivesoilX;
+
+            /*
+            printf("shootnc: %lf\n", s->shootn / s->shoot);
+            printf("rootnc: %lf\n", s->rootn / s->root);
+            printf("crootnc: %lf\n", s->crootn / s->croot);
+            printf("branchnc: %lf\n", s->branchn / s->branch);
+            printf("stemnc: %lf\n", s->stemn / s->stem);
+            printf("stemnimmnc: %lf\n", s->stemnimm / s->stem);
+            printf("stemnmobnc: %lf\n", s->stemnmob / s->stem);
+            printf("metabsoilnc: %lf\n", s->metabsoiln / s->metabsoil);
+            printf("metabsurfnc: %lf\n", s->metabsurfn / s->metabsurf);
+            printf("activesoilnc: %lf\n", s->activesoiln / s->activesoil);
+            printf("slowsoilnc: %lf\n", s->slowsoiln / s->slowsoil);
+            printf("passivesoilnc: %lf\n\n", s->passivesoiln / s->passivesoil);
+
+            exit(1);
+            */
+
+
 
             s->shoot = shootX;
             s->root = rootX;
