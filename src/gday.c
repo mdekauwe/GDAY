@@ -557,13 +557,12 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         ** First we need to run a cycle of 50 years to get inital estimates
         ** of transfer coefficients and pool sizes
         */
-
         zero_fast_spinup_stuff(fs);
         run_sim(cw, c, fs, f, ma, m, p, s);
 
         while (TRUE) {
 
-            /* Calculte average alloc/loss rates */
+            /* Calculate average tranfer coefficients based on prev spin */
             total_days = (double)fs->ndays;
             for (i = 0; i < n_coefficients; i++) {
                 fs->coeffs[i] /= total_days;
@@ -676,8 +675,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 zero_fast_spinup_stuff(fs);
                 run_sim(cw, c, fs, f, ma, m, p, s);
 
-                fprintf(stderr,
-                  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+                fprintf(stderr, "Spinup: Plant C - %f, Soil C - %f\n", \
+                                s->plantc, s->soilc);
             }
         }
 
