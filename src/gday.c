@@ -551,7 +551,9 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         */
         zero_fast_spinup_stuff(fs);
         run_sim(cw, c, fs, f, ma, m, p, s);
-        /*run_sim(cw, c, fs, f, ma, m, p, s);*/
+        for (i = 0; i < 20; i++) {
+            run_sim(cw, c, fs, f, ma, m, p, s); /* run GDAY */
+        }
 
         while (TRUE) {
 
@@ -657,22 +659,32 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             s->slowsoiln = s->slowsoiln / s->slowsoil * slowsoilX;
             s->passivesoiln = s->passivesoiln / s->passivesoil * passivesoilX;
 
-            /*
-            printf("shootnc: %lf\n", s->shootn / s->shoot);
-            printf("rootnc: %lf\n", s->rootn / s->root);
-            printf("crootnc: %lf\n", s->crootn / s->croot);
-            printf("branchnc: %lf\n", s->branchn / s->branch);
-            printf("stemnc: %lf\n", s->stemn / s->stem);
-            printf("stemnimmnc: %lf\n", s->stemnimm / s->stem);
-            printf("stemnmobnc: %lf\n", s->stemnmob / s->stem);
-            printf("metabsoilnc: %lf\n", s->metabsoiln / s->metabsoil);
-            printf("metabsurfnc: %lf\n", s->metabsurfn / s->metabsurf);
-            printf("activesoilnc: %lf\n", s->activesoiln / s->activesoil);
-            printf("slowsoilnc: %lf\n", s->slowsoiln / s->slowsoil);
-            printf("passivesoilnc: %lf\n\n", s->passivesoiln / s->passivesoil);
+            printf("shoot: %.10lf\n", s->shoot);
+            printf("root: %.10lf\n", s->root );
+            printf("croot: %.10lf\n", s->croot);
+            printf("branch: %.10lf\n", s->branch);
+            printf("stem: %.10lf\n", s->stem);
+            printf("metabsoil: %.10lf\n", s->metabsoil);
+            printf("metabsurf: %.10lf\n", s->metabsurf);
+            printf("activesoil: %.10lf\n", s->activesoil);
+            printf("slowsoil: %.10lf\n", s->slowsoil);
+            printf("passivesoil: %.10lf\n\n", s->passivesoil);
+
+            printf("shootnc: %.10lf\n", s->shootn / s->shoot);
+            printf("rootnc: %.10lf\n", s->rootn / s->root);
+            printf("crootnc: %.10lf\n", s->crootn / s->croot);
+            printf("branchnc: %.10lf\n", s->branchn / s->branch);
+            printf("stemnc: %.10lf\n", s->stemn / s->stem);
+            printf("stemnimmnc: %.10lf\n", s->stemnimm / s->stem);
+            printf("stemnmobnc: %.10lf\n", s->stemnmob / s->stem);
+            printf("metabsoilnc: %.10lf\n", s->metabsoiln / s->metabsoil);
+            printf("metabsurfnc: %.10lf\n", s->metabsurfn / s->metabsurf);
+            printf("activesoilnc: %.10lf\n", s->activesoiln / s->activesoil);
+            printf("slowsoilnc: %.10lf\n", s->slowsoiln / s->slowsoil);
+            printf("passivesoilnc: %.10lf\n\n", s->passivesoiln / s->passivesoil);
 
             exit(1);
-            */
+
 
 
 
