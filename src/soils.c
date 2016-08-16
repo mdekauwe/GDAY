@@ -176,13 +176,13 @@ void calculate_decay_rates(control *c, fast_spinup *fs, fluxes *f, params *p,
     p->decayrate[6] = p->kdec7 * adfac;
 
     if (c->spinup_method == SAS) {
-        fs->dr[0] += p->decayrate[0];
-        fs->dr[1] += p->decayrate[1];
-        fs->dr[2] += p->decayrate[2];
-        fs->dr[3] += p->decayrate[3];
-        fs->dr[4] += p->decayrate[4];
-        fs->dr[5] += p->decayrate[5];
-        fs->dr[6] += p->decayrate[6];
+        fs->coeffs[KD1] += p->decayrate[0];
+        fs->coeffs[KD2] += p->decayrate[1];
+        fs->coeffs[KD3] += p->decayrate[2];
+        fs->coeffs[KD4] += p->decayrate[3];
+        fs->coeffs[KD5] += p->decayrate[4];
+        fs->coeffs[KD6] += p->decayrate[5];
+        fs->coeffs[KD7] += p->decayrate[6];
     }
 
     return;
@@ -374,8 +374,8 @@ void partition_plant_litter(control *c, fast_spinup *fs, fluxes *f, params *p) {
     f->soil_metab_litter = f->deadroots * p->fmroot;
 
     if (c->spinup_method == SAS) {
-        fs->alloc[S1] += p->fmleaf;
-        fs->alloc[S2] += p->fmroot;
+        fs->coeffs[S1] += p->fmleaf;
+        fs->coeffs[S2] += p->fmroot;
     }
 
     return;

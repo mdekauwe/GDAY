@@ -69,15 +69,21 @@
 #define ACR 2
 #define AB 3
 #define AW 4
-#define S1 5
-#define S2 6
+#define LF 5
+#define LR 6
+#define LCR 7
+#define LB 8
+#define LW 9
+#define S1 10
+#define S2 11
+#define KD1 12
+#define KD2 13
+#define KD3 14
+#define KD4 15
+#define KD5 16
+#define KD6 17
+#define KD7 18
 
-
-#define LF 0
-#define LR 1
-#define LCR 2
-#define LB 3
-#define LW 4
 
 
 #include "structures.h"

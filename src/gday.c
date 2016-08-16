@@ -503,11 +503,10 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double active_to_slow, active_to_passive, c_into_slow, mu_fmleaf, mu_fmroot;
     double leafgrowth, rootgrowth, crootgrowth, branchgrowth, stemgrowth;
     double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
-    double mu_decayrate0, mu_decayrate1, mu_decayrate2, mu_decayrate3, mu_decayrate4;
-    double mu_decayrate5, mu_decayrate6, surf_metab_litter, soil_struct_to_active;
+    double surf_metab_litter, soil_struct_to_active;
     double total_days, deadsapwood, sapwoodX, new_passive;
 
-    int i, cntrl_flag, n_pools;
+    int i, cntrl_flag, n_pools, n_coefficients = 19;
 
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
@@ -566,99 +565,83 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             /* Calculte average alloc/loss rates */
             total_days = (double)fs->ndays;
-            mu_af = fs->alloc[AF] / total_days;
-            mu_lf = fs->loss[LF] / total_days;
-            mu_ar = fs->alloc[AR] / total_days;
-            mu_lr = fs->loss[LR] / total_days;
-            mu_acr = fs->alloc[ACR] / total_days;
-            mu_lcr = fs->loss[LCR] / total_days;
-            mu_ab = fs->alloc[AB] / total_days;
-            mu_lb = fs->loss[LB] / total_days;
-            mu_aw = fs->alloc[AW] / total_days;
-            mu_lw = fs->loss[LW] / total_days;
-            mu_decayrate0 = fs->dr[0] / total_days;
-            mu_decayrate1 = fs->dr[1] / total_days;
-            mu_decayrate2 = fs->dr[2] / total_days;
-            mu_decayrate3 = fs->dr[3] / total_days;
-            mu_decayrate4 = fs->dr[4] / total_days;
-            mu_decayrate5 = fs->dr[5] / total_days;
-            mu_decayrate6 = fs->dr[5] / total_days;
-            mu_fmleaf = fs->alloc[S1] / total_days;
-            mu_fmroot = fs->alloc[S2] / total_days;
+            for (i = 0; i < n_coefficients; i++) {
+                fs->coeffs[i] /= total_days;
+            }
 
-            NPP = fs->npp_ss/ total_days;
+            NPP = fs->npp_ss / total_days;
 
-            leafgrowth = (NPP * mu_af);
-            deadleaves = (s->shoot * mu_lf);
+            leafgrowth = (NPP * fs->coeffs[AF]);
+            deadleaves = (s->shoot * fs->coeffs[LF]);
             shootX = leafgrowth - deadleaves;
 
-            rootgrowth = (NPP * mu_ar);
-            deadroots = (s->root * mu_lr);
+            rootgrowth = (NPP * fs->coeffs[AR]);
+            deadroots = (s->root * fs->coeffs[LR]);
             rootX = rootgrowth - deadroots;
 
-            crootgrowth = (NPP * mu_acr);
-            deadcroots = (s->croot * mu_lcr);
+            crootgrowth = (NPP * fs->coeffs[ACR]);
+            deadcroots = (s->croot * fs->coeffs[LCR]);
             crootX = crootgrowth - deadcroots;
 
-            branchgrowth = (NPP * mu_ab);
-            deadbranches = (s->branch * mu_lb);
+            branchgrowth = (NPP * fs->coeffs[AB]);
+            deadbranches = (s->branch * fs->coeffs[LB]);
             branchX = branchgrowth - deadbranches;
 
-            stemgrowth = (NPP * mu_aw);
-            deadstems = (s->stem * mu_lw);
+            stemgrowth = (NPP * fs->coeffs[AW]);
+            deadstems = (s->stem * fs->coeffs[LW]);
             stemX = stemgrowth - deadstems;
 
             woodX = branchX + stemX + crootX;
 
-            deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
+            deadsapwood = (fs->coeffs[LW] + p->sapturnover) * s->sapwood;
             sapwoodX += stemgrowth - deadsapwood;
 
-            leaf_material = deadleaves * (1.0 - mu_fmleaf);
+            leaf_material = deadleaves * (1.0 - fs->coeffs[S1]);
             wood_material = deadbranches + deadstems + deadsapwood;
 
-            surf_metab_litter = deadleaves * mu_fmleaf;
-            surf_metab_to_active = s->metabsurf * mu_decayrate1 * 0.45;
+            surf_metab_litter = deadleaves * fs->coeffs[S1];
+            surf_metab_to_active = s->metabsurf * fs->coeffs[KD2] * 0.45;
 
-            soil_metab_litter = deadroots * mu_fmroot;
-            soil_metab_to_active = s->metabsoil * mu_decayrate3 * 0.45;
+            soil_metab_litter = deadroots * fs->coeffs[S2];
+            soil_metab_to_active = s->metabsoil * fs->coeffs[KD4] * 0.45;
 
             surf_struct_litter = leaf_material + wood_material;
-            structout_surf = s->structsurf * mu_decayrate0;
+            structout_surf = s->structsurf * fs->coeffs[KD1];
             surf_struct_to_slow = structout_surf * p->ligshoot * 0.7;
             surf_struct_to_active = structout_surf * (1.0 - p->ligshoot) * 0.55;
 
-            structout_soil = s->structsoil * mu_decayrate2;
+            structout_soil = s->structsoil * fs->coeffs[KD3];
             soil_struct_to_slow = structout_soil * p->ligroot * 0.7;
             soil_struct_to_active = structout_soil * (1.0 - p->ligroot) * 0.45;
-            soil_struct_litter = deadroots * (1.0 - mu_fmroot) + deadcroots;
+            soil_struct_litter = deadroots * (1.0 - fs->coeffs[S2]) + deadcroots;
 
             frac_microb_resp = 0.85 - (0.68 * p->finesoil);
 
-            activeout = s->activesoil * mu_decayrate4;
+            activeout = s->activesoil * fs->coeffs[KD5];
             c_into_active = surf_struct_to_active + soil_struct_to_active + \
                             surf_metab_to_active + soil_metab_to_active + \
                             slow_to_active + passive_to_active;
             active_to_slow = activeout * (1.0 - frac_microb_resp - 0.004);
             active_to_passive = activeout * 0.004;
 
-            slowout = s->slowsoil * mu_decayrate5;
+            slowout = s->slowsoil * fs->coeffs[KD6];
             slow_to_active = slowout * 0.42;
             slow_to_passive = slowout * 0.03;
             c_into_slow = surf_struct_to_slow + soil_struct_to_slow + \
                           active_to_slow;
 
-            passive_to_active = s->passivesoil * mu_decayrate6 * 0.45;
+            passive_to_active = s->passivesoil * fs->coeffs[KD7] * 0.45;
             c_into_passive = active_to_passive + slow_to_passive;
 
             co2_to_air0 = (structout_surf * \
                           (p->ligshoot * 0.3 + (1.0 - p->ligshoot) * 0.45));
             co2_to_air1 = (structout_soil * \
                           (p->ligroot * 0.3 + (1.0 - p->ligroot) * 0.55));
-            co2_to_air2 = s->metabsurf * mu_decayrate1 * 0.55;
-            co2_to_air3 = s->metabsoil * mu_decayrate3 * 0.55;
+            co2_to_air2 = s->metabsurf * fs->coeffs[KD2] * 0.55;
+            co2_to_air3 = s->metabsoil * fs->coeffs[KD4] * 0.55;
             co2_to_air4 = activeout * frac_microb_resp;
             co2_to_air5 = slowout * 0.55;
-            co2_to_air6 = s->passivesoil * mu_decayrate6 * 0.55;
+            co2_to_air6 = s->passivesoil * fs->coeffs[KD7] * 0.55;
 
             structsurfX = (surf_struct_litter - \
                           (surf_struct_to_slow + surf_struct_to_active +
@@ -835,25 +818,15 @@ void usage(char **argv) {
     return;
 }
 
-
-
 void zero_fast_spinup_stuff(fast_spinup *fs) {
 
-    int i;
+    int i, n_coefficients = 19;
 
     fs->ndays = 0;
     fs->npp_ss = 0.0;
 
-    for (i = 0; i < 5; i++) {
-        fs->alloc[i] = 0.0;
-        fs->loss[i] = 0.0;
-    }
-
-    fs->alloc[S1] = 0.0;
-    fs->alloc[S2] = 0.0;
-
-    for (i = 0; i <= 6; i++) {
-        fs->dr[i] = 0.0;
+    for (i = 0; i < n_coefficients; i++) {
+        fs->coeffs[i] = 0.0;
     }
 
     fs->shoot_nc = 0.0;
