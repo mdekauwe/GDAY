@@ -593,7 +593,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             surf_metab_input = shootX * fs->coeffs[LF] * fs->coeffs[S1];
             surf_metab_litterX = surf_metab_input / fs->coeffs[KD3];
 
-
             soil_metab_input = rootX * fs->coeffs[LR] * fs->coeffs[S2];
             soil_metab_litterX = soil_metab_input / fs->coeffs[KD4];
 
@@ -629,8 +628,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             arg2 = slowsoilX * fs->coeffs[KD6] * slw_to_pass_coeff;
             passivesoilX = (arg1 + arg2) / fs->coeffs[KD7];
 
-            printf("** %.15f %.15f\n", s->metabsoiln , s->metabsoil);
             s->shootn = s->shootn / s->shoot * shootX;
+            //s->shootn = 0.03 * shootX;
 
             s->rootn = s->rootn / s->root * rootX;
             if (s->croot > 0.0) {
@@ -646,10 +645,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             s->stemn = s->stemn / s->stem * stemX;
 
             if (metabsoilX > 0.0) {
-                printf("HERE\n");
                 s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
             } else {
-                printf("NO HERE\n");
                 s->metabsoiln = 0.0;
             }
 
@@ -660,6 +657,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             } else {
                 s->metabsurfn = 0.0;
             }
+
             s->structsoiln = s->structsoiln / s->structsoil * structsoilX;
             s->structsurfn = s->structsurfn / s->structsurf * structsurfX;
             s->activesoiln = s->activesoiln / s->activesoil * activesoilX;
@@ -685,7 +683,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             s->passivesoil = passivesoilX;
 
 
-
+            /*
             printf("shoot: %.10lf\n", s->shoot);
             printf("root: %.10lf\n", s->root );
             printf("croot: %.10lf\n", s->croot);
@@ -709,8 +707,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             printf("activesoilnc: %.10lf\n", s->activesoiln / s->activesoil);
             printf("slowsoilnc: %.10lf\n", s->slowsoiln / s->slowsoil);
             printf("passivesoilnc: %.10lf\n\n", s->passivesoiln / s->passivesoil);
-
-            exit(1);
+            */
+            //exit(1);
 
 
             /* This fecks up if I make this 0.001, not sure why */
