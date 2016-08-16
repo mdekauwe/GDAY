@@ -569,24 +569,24 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             NPP = fs->npp_ss / total_days;
 
-            leafgrowth = (NPP * fs->coeffs[AF]);
-            deadleaves = (s->shoot * fs->coeffs[LF]);
+            leafgrowth = NPP * fs->coeffs[AF];
+            deadleaves = s->shoot * fs->coeffs[LF];
             shootX = leafgrowth - deadleaves;
 
-            rootgrowth = (NPP * fs->coeffs[AR]);
-            deadroots = (s->root * fs->coeffs[LR]);
+            rootgrowth = NPP * fs->coeffs[AR];
+            deadroots = s->root * fs->coeffs[LR];
             rootX = rootgrowth - deadroots;
 
-            crootgrowth = (NPP * fs->coeffs[ACR]);
-            deadcroots = (s->croot * fs->coeffs[LCR]);
+            crootgrowth = NPP * fs->coeffs[ACR];
+            deadcroots = s->croot * fs->coeffs[LCR];
             crootX = crootgrowth - deadcroots;
 
-            branchgrowth = (NPP * fs->coeffs[AB]);
-            deadbranches = (s->branch * fs->coeffs[LB]);
+            branchgrowth = NPP * fs->coeffs[AB];
+            deadbranches = s->branch * fs->coeffs[LB];
             branchX = branchgrowth - deadbranches;
 
-            stemgrowth = (NPP * fs->coeffs[AW]);
-            deadstems = (s->stem * fs->coeffs[LW]);
+            stemgrowth = NPP * fs->coeffs[AW];
+            deadstems = s->stem * fs->coeffs[LW];
             stemX = stemgrowth - deadstems;
 
             woodX = branchX + stemX + crootX;
