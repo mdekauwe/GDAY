@@ -654,10 +654,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             arg2 = slowsoilX * fs->coeffs[KD6] * slw_to_pass_coeff;
             passivesoilX = (arg1 + arg2) / fs->coeffs[KD7];
 
-            /*printf("%lf\n", s->shootn / s->shoot);*/
 
-
-            double stemnmob_ratio, stemnimm_ratio;
             s->shootn = s->shootn / s->shoot * shootX;
             /*printf("%lf\n", s->shootn / s->shoot);
             exit(1);*/
@@ -669,17 +666,10 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
             s->branchn = s->branchn / s->branch * branchX;
 
-
-            stemnmob_ratio = s->stemn / s->stemnimm;
-            if (s->stemnmob > 0.0) {
-                stemnimm_ratio = s->stemn / s->stemnmob;
-            } else {
-                stemnimm_ratio = 0.0;
-            }
+            s->stemnmob = stemX * (p->ncwnew - p->ncwimm);
+            s->stemnimm = stemX * 0.003;
             s->stemn = s->stemn / s->stem * stemX;
-            s->stemnmob = s->stemn * stemnmob_ratio;
-            s->stemnimm = s->stemn * stemnimm_ratio;
-
+            
             if (metabsoilX > 0.0) {
                 s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
             } else {
