@@ -458,30 +458,15 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     double prev_passivec = 99999.9;
-    double NPP, shootX, rootX, crootX, branchX, stemX, wood, woodX;
-    double leaf_material, wood_material;
-    double surf_struct_litter, structout_surf, structout_soil;
-    double surf_struct_to_slow, surf_struct_to_active;
-    double soil_struct_to_slow, soil_struct_litter;
-    double soil_metab_litter, metabsurfX, metabsoilX;
-    double structsurfX, structsoilX, surf_metab_to_active, soil_metab_to_active;
-    double co2_to_air0, co2_to_air1, co2_to_air2, co2_to_air3, co2_to_air4;
-    double co2_to_air5, co2_to_air6;
-    double activesoilX, slowsoilX, passivesoilX, passive_to_active;
-    double c_into_active, slow_to_active, slow_to_passive, slowout;
-    double activeout, frac_microb_resp, c_into_passive;
-    double active_to_slow, active_to_passive, c_into_slow;
-    double leafgrowth, rootgrowth, crootgrowth, branchgrowth, stemgrowth;
-    double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
-    double surf_metab_litter, soil_struct_to_active;
-    double total_days, deadsapwood, sapwoodX, new_passive;
-
-    double surf_struct_input, surf_struct_litterX, soil_struct_input;
-    double soil_struct_litterX, surf_metab_input, surf_metab_litterX;
-    double soil_metab_input, soil_metab_litterX, litter_to_active;
-    double litter_to_slow, act_to_slw_coeff, act_to_pass_coeff;
-    double slw_to_act_coeff, slw_to_pass_coeff, pass_to_act_coeff;
-    double arg1, arg2;
+    double shootX, rootX, crootX, branchX, stemX, wood, woodX;
+    double sapwoodX, surf_struct_litterX, surf_metab_litterX;
+    double metabsurfX, metabsoilX, structsurfX, structsoilX, passivesoilX;
+    double soil_struct_litterX, soil_metab_litterX, activesoilX, slowsoilX;
+    double slowout, activeout, frac_microb_resp, NPP, total_days;
+    double surf_struct_input, soil_struct_input, surf_metab_input;
+    double soil_metab_input, litter_to_active, litter_to_slow;
+    double act_to_slw_coeff, act_to_pass_coeff, slw_to_act_coeff;
+    double slw_to_pass_coeff, pass_to_act_coeff, arg1, arg2;
 
 
     int i, cntrl_flag, n_pools, n_coefficients = 20;
@@ -575,7 +560,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 crootX = 0.0;
             }
             rootX = NPP * fs->coeffs[AR] / fs->coeffs[LR];
-            
+
             surf_struct_input = shootX * fs->coeffs[LF] * \
                                 (1.0 - fs->coeffs[S1]) + \
                                 (branchX + stemX) * fs->coeffs[LW];
