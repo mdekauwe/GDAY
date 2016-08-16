@@ -405,35 +405,6 @@ void run_sim(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             if (c->spinup_method == SAS) {
                 fs->npp_ss += f->npp;
                 fs->ndays ++;
-                fs->shoot_nc += s->shootn / s->shoot;
-                fs->root_nc += s->rootn / s->root;
-                fs->branch_nc += s->branchn / s->branch;
-                fs->croot_nc += s->crootn / s->croot;
-                fs->stem_nc += s->stemn / s->stem;
-                fs->stemnmob_ratio += s->stemn / s->stemnimm;
-                if (s->stemnmob > 0.0) {
-                    fs->stemnimm_ratio += s->stemn / s->stemnmob;
-                } else {
-                    fs->stemnimm_ratio = 0.0;
-                }
-
-                if (s->metabsoil > 0.0) {
-                    fs->metablsoil_nc += s->metabsoiln / s->metabsoil;
-                } else {
-                    fs->metablsoil_nc += 0.0;
-                }
-
-                if (s->metabsurf > 0.0) {
-                    fs->metabsurf_nc += s->metabsurfn / s->metabsurf;
-                } else {
-                    fs->metabsurf_nc += 0.0;
-                }
-
-                fs->structsoil_nc += s->structsoiln / s->structsoil;
-                fs->structsurf_nc += s->structsurfn / s->structsurf;
-                fs->activesoil_nc += s->activesoiln / s->activesoil;
-                fs->slowsoil_nc += s->slowsoiln / s->slowsoil;
-                fs->passivesoil_nc += s->passivesoiln / s->passivesoil;
             }
 
             c->day_idx++;
@@ -581,7 +552,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         zero_fast_spinup_stuff(fs);
         run_sim(cw, c, fs, f, ma, m, p, s);
         /*run_sim(cw, c, fs, f, ma, m, p, s);*/
-        
+
         while (TRUE) {
 
             /* Calculate average tranfer coefficients based on prev spin */
@@ -837,21 +808,6 @@ void zero_fast_spinup_stuff(fast_spinup *fs) {
     for (i = 0; i < n_coefficients; i++) {
         fs->coeffs[i] = 0.0;
     }
-
-    fs->shoot_nc = 0.0;
-    fs->root_nc = 0.0;
-    fs->branch_nc = 0.0;
-    fs->croot_nc = 0.0;
-    fs->stem_nc = 0.0;
-    fs->stemnmob_ratio = 0.0;
-    fs->stemnimm_ratio = 0.0;
-    fs->metablsoil_nc = 0.0;
-    fs->metabsurf_nc = 0.0;
-    fs->structsoil_nc = 0.0;
-    fs->structsurf_nc = 0.0;
-    fs->activesoil_nc = 0.0;
-    fs->slowsoil_nc = 0.0;
-    fs->passivesoil_nc = 0.0;
 
     return;
 }

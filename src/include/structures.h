@@ -59,20 +59,6 @@ typedef struct {
     long   ndays;
     double npp_ss;
     double coeffs[20];
-    double shoot_nc;
-    double root_nc;
-    double branch_nc;
-    double croot_nc;
-    double stem_nc;
-    double stemnmob_ratio;
-    double stemnimm_ratio;
-    double metablsoil_nc;
-    double metabsurf_nc;
-    double structsoil_nc;
-    double structsurf_nc;
-    double activesoil_nc;
-    double slowsoil_nc;
-    double passivesoil_nc;
 } fast_spinup;
 
 
