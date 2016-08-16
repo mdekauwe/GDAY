@@ -574,12 +574,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             } else {
                 crootX = 0.0;
             }
-
             rootX = NPP * fs->coeffs[AR] / fs->coeffs[LR];
-            /* Sapwood is an implied part of stem */
-            woodX = branchX + stemX + crootX;
-
-
+            
             surf_struct_input = shootX * fs->coeffs[LF] * \
                                 (1.0 - fs->coeffs[S1]) + \
                                 (branchX + stemX) * fs->coeffs[LW];
