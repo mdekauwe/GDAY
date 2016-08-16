@@ -462,7 +462,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double sapwoodX, surf_struct_litterX, surf_metab_litterX;
     double metabsurfX, metabsoilX, structsurfX, structsoilX, passivesoilX;
     double soil_struct_litterX, soil_metab_litterX, activesoilX, slowsoilX;
-    double slowout, activeout, frac_microb_resp, NPP, total_days;
+    double slowout, activeout, frac_microb_resp, avg_NPP, total_days;
     double surf_struct_input, soil_struct_input, surf_metab_input;
     double soil_metab_input, litter_to_active, litter_to_slow;
     double act_to_slw_coeff, act_to_pass_coeff, slw_to_act_coeff;
@@ -473,6 +473,13 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
+
+    frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+    act_to_slw_coeff = (1.0 - frac_microb_resp - 0.004);
+    act_to_pass_coeff = 0.004;
+    slw_to_act_coeff = 0.42;
+    slw_to_pass_coeff = 0.03;
+    pass_to_act_coeff = 0.45;
 
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
@@ -510,6 +517,19 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
         }
 
+        printf("shootnc: %.10lf\n", s->shootn / s->shoot);
+        printf("rootnc: %.10lf\n", s->rootn / s->root);
+        printf("crootnc: %.10lf\n", s->crootn / s->croot);
+        printf("branchnc: %.10lf\n", s->branchn / s->branch);
+        printf("stemnc: %.10lf\n", s->stemn / s->stem);
+        printf("stemnimmnc: %.10lf\n", s->stemnimm / s->stem);
+        printf("stemnmobnc: %.10lf\n", s->stemnmob / s->stem);
+        printf("metabsoilnc: %.10lf\n", s->metabsoiln / s->metabsoil);
+        printf("metabsurfnc: %.10lf\n", s->metabsurfn / s->metabsurf);
+        printf("activesoilnc: %.10lf\n", s->activesoiln / s->activesoil);
+        printf("slowsoilnc: %.10lf\n", s->slowsoiln / s->slowsoil);
+        printf("passivesoilnc: %.10lf\n\n", s->passivesoiln / s->passivesoil);
+
         printf("DONE: %lf\n", s->shoot);
         printf("DONE: %lf\n", s->root);
         printf("DONE: %lf\n", s->croot);
@@ -520,6 +540,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         printf("DONE: %lf\n", s->activesoil);
         printf("DONE: %lf\n", s->slowsoil);
         printf("DONE: %lf\n\n", s->passivesoil);
+
 
 
         exit(1);
@@ -548,18 +569,17 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 fs->coeffs[i] /= total_days;
             }
 
-            NPP = fs->npp_ss / total_days;
-
-            shootX = NPP * fs->coeffs[AF] / fs->coeffs[LF];
-            branchX = NPP * fs->coeffs[AB] / fs->coeffs[LB];
-            stemX = NPP * fs->coeffs[AW] / fs->coeffs[LW];
-            sapwoodX = NPP * fs->coeffs[AW] / (fs->coeffs[LW]+fs->coeffs[LSW]);
+            avg_NPP = fs->npp_ss / total_days;
+            shootX = avg_NPP * fs->coeffs[AF] / fs->coeffs[LF];
+            branchX = avg_NPP * fs->coeffs[AB] / fs->coeffs[LB];
+            stemX = avg_NPP * fs->coeffs[AW] / fs->coeffs[LW];
+            sapwoodX = avg_NPP * fs->coeffs[AW] / (fs->coeffs[LW]+fs->coeffs[LSW]);
             if (fs->coeffs[LCR] > 0.0) {
-                crootX = NPP * fs->coeffs[ACR] / fs->coeffs[LCR];
+                crootX = avg_NPP * fs->coeffs[ACR] / fs->coeffs[LCR];
             } else {
                 crootX = 0.0;
             }
-            rootX = NPP * fs->coeffs[AR] / fs->coeffs[LR];
+            rootX = avg_NPP * fs->coeffs[AR] / fs->coeffs[LR];
 
             surf_struct_input = shootX * fs->coeffs[LF] * \
                                 (1.0 - fs->coeffs[S1]) + \
@@ -584,14 +604,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             litter_to_slow = surf_struct_input * p->ligshoot * 0.7 + \
                              soil_struct_input * p->ligroot * 0.7;
-
-            frac_microb_resp = 0.85 - (0.68 * p->finesoil);
-            act_to_slw_coeff = (1.0 - frac_microb_resp - 0.004);
-            act_to_pass_coeff = 0.004;
-            slw_to_act_coeff = 0.42;
-            slw_to_pass_coeff = 0.03;
-            pass_to_act_coeff = 0.45;
-
 
 
             arg1 = litter_to_active + litter_to_slow * \
@@ -691,6 +703,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             */
             //exit(1);
 
+            printf("passive: %lf %lf\n", passivesoilX, prev_passivec);
 
             /* This fecks up if I make this 0.001, not sure why */
             if (fabs((passivesoilX - prev_passivec) / passivesoilX) < 0.001) {
@@ -707,6 +720,18 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
         }
 
+        printf("shootnc: %.10lf\n", s->shootn / s->shoot);
+        printf("rootnc: %.10lf\n", s->rootn / s->root);
+        printf("crootnc: %.10lf\n", s->crootn / s->croot);
+        printf("branchnc: %.10lf\n", s->branchn / s->branch);
+        printf("stemnc: %.10lf\n", s->stemn / s->stem);
+        printf("stemnimmnc: %.10lf\n", s->stemnimm / s->stem);
+        printf("stemnmobnc: %.10lf\n", s->stemnmob / s->stem);
+        printf("metabsoilnc: %.10lf\n", s->metabsoiln / s->metabsoil);
+        printf("metabsurfnc: %.10lf\n", s->metabsurfn / s->metabsurf);
+        printf("activesoilnc: %.10lf\n", s->activesoiln / s->activesoil);
+        printf("slowsoilnc: %.10lf\n", s->slowsoiln / s->slowsoil);
+        printf("passivesoilnc: %.10lf\n\n", s->passivesoiln / s->passivesoil);
 
         printf("DONE: %lf\n", s->shoot);
         printf("DONE: %lf\n", s->root);
