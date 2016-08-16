@@ -58,7 +58,7 @@ typedef struct {
 typedef struct {
     long   ndays;
     double npp_ss;
-    double coeffs[19];
+    double coeffs[20];
     double shoot_nc;
     double root_nc;
     double branch_nc;

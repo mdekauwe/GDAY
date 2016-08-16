@@ -74,15 +74,16 @@
 #define LCR 7
 #define LB 8
 #define LW 9
-#define S1 10
-#define S2 11
-#define KD1 12
-#define KD2 13
-#define KD3 14
-#define KD4 15
-#define KD5 16
-#define KD6 17
-#define KD7 18
+#define LSW 10
+#define S1 11
+#define S2 12
+#define KD1 13
+#define KD2 14
+#define KD3 15
+#define KD4 16
+#define KD5 17
+#define KD6 18
+#define KD7 19
 
 
 

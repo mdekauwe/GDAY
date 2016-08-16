@@ -53,6 +53,7 @@ void calculate_litterfall(control *c, fast_spinup *fs, fluxes *f, params *p,
         fs->coeffs[LCR] += p->crdecay;
         fs->coeffs[LB] += p->bdecay;
         fs->coeffs[LW] += p->wdecay;
+        fs->coeffs[LSW] += p->wdecay;
     }
 
     /* N litter production */

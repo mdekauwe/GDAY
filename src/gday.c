@@ -505,7 +505,15 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double surf_metab_litter, soil_struct_to_active;
     double total_days, deadsapwood, sapwoodX, new_passive;
 
-    int i, cntrl_flag, n_pools, n_coefficients = 19;
+    double surf_struct_input, surf_struct_litterX, soil_struct_input;
+    double soil_struct_litterX, surf_metab_input, surf_metab_litterX;
+    double soil_metab_input, soil_metab_litterX, litter_to_active;
+    double litter_to_slow, act_to_slw_coeff, act_to_pass_coeff;
+    double slw_to_act_coeff, slw_to_pass_coeff, pass_to_act_coeff;
+    double arg1, arg2;
+
+
+    int i, cntrl_flag, n_pools, n_coefficients = 20;
 
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
@@ -546,6 +554,20 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
         }
 
+        printf("DONE: %lf\n", s->shoot);
+        printf("DONE: %lf\n", s->root);
+        printf("DONE: %lf\n", s->croot);
+        printf("DONE: %lf\n", s->branch);
+        printf("DONE: %lf\n", s->stem);
+        printf("DONE: %lf\n", s->metabsoil);
+        printf("DONE: %lf\n", s->metabsurf);
+        printf("DONE: %lf\n", s->activesoil);
+        printf("DONE: %lf\n", s->slowsoil);
+        printf("DONE: %lf\n\n", s->passivesoil);
+
+
+        exit(1);
+
     } else if (c->spinup_method == SAS) {
         /*
         ** Semi-analytical solution (SAS) to accelerate model spin-up of
@@ -557,7 +579,12 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         ** of transfer coefficients and pool sizes
         */
         zero_fast_spinup_stuff(fs);
-        run_sim(cw, c, fs, f, ma, m, p, s);
+        /*run_sim(cw, c, fs, f, ma, m, p, s);
+        run_sim(cw, c, fs, f, ma, m, p, s);*/
+
+        for (i = 0; i < 20; i++) {
+            run_sim(cw, c, fs, f, ma, m, p, s); /* run GDAY */
+        }
 
         while (TRUE) {
 
@@ -569,103 +596,121 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
             NPP = fs->npp_ss / total_days;
 
-            leafgrowth = NPP * fs->coeffs[AF];
-            deadleaves = s->shoot * fs->coeffs[LF];
-            shootX = leafgrowth - deadleaves;
+            shootX = NPP * fs->coeffs[AF] / fs->coeffs[LF];
+            branchX = NPP * fs->coeffs[AB] / fs->coeffs[LB];
+            stemX = NPP * fs->coeffs[AW] / fs->coeffs[LW];
+            sapwoodX = NPP * fs->coeffs[AW] / (fs->coeffs[LW]+fs->coeffs[LSW]);
+            if (fs->coeffs[LCR] > 0.0) {
+                crootX = NPP * fs->coeffs[ACR] / fs->coeffs[LCR];
+            } else {
+                crootX = 0.0;
+            }
 
-            rootgrowth = NPP * fs->coeffs[AR];
-            deadroots = s->root * fs->coeffs[LR];
-            rootX = rootgrowth - deadroots;
-
-            crootgrowth = NPP * fs->coeffs[ACR];
-            deadcroots = s->croot * fs->coeffs[LCR];
-            crootX = crootgrowth - deadcroots;
-
-            branchgrowth = NPP * fs->coeffs[AB];
-            deadbranches = s->branch * fs->coeffs[LB];
-            branchX = branchgrowth - deadbranches;
-
-            stemgrowth = NPP * fs->coeffs[AW];
-            deadstems = s->stem * fs->coeffs[LW];
-            stemX = stemgrowth - deadstems;
-
+            rootX = NPP * fs->coeffs[AR] / fs->coeffs[LR];
+            /* Sapwood is an implied part of stem */
             woodX = branchX + stemX + crootX;
 
-            deadsapwood = (fs->coeffs[LW] + p->sapturnover) * s->sapwood;
-            sapwoodX += stemgrowth - deadsapwood;
 
-            leaf_material = deadleaves * (1.0 - fs->coeffs[S1]);
-            wood_material = deadbranches + deadstems + deadsapwood;
+            surf_struct_input = shootX * fs->coeffs[LF] * fs->coeffs[S1] + \
+                                (branchX + stemX) * fs->coeffs[LW];
+            surf_struct_litterX = surf_struct_input / fs->coeffs[KD1];
 
-            surf_metab_litter = deadleaves * fs->coeffs[S1];
-            surf_metab_to_active = s->metabsurf * fs->coeffs[KD2] * 0.45;
+            soil_struct_input = rootX * fs->coeffs[LR] * fs->coeffs[S2] + \
+                                crootX * fs->coeffs[LW];
+            soil_struct_litterX = soil_struct_input / fs->coeffs[KD2];
 
-            soil_metab_litter = deadroots * fs->coeffs[S2];
-            soil_metab_to_active = s->metabsoil * fs->coeffs[KD4] * 0.45;
+            surf_metab_input = shootX * fs->coeffs[LF] * (1.0 - fs->coeffs[S1]);
+            surf_metab_litterX = surf_metab_input / fs->coeffs[KD3];
 
-            surf_struct_litter = leaf_material + wood_material;
-            structout_surf = s->structsurf * fs->coeffs[KD1];
-            surf_struct_to_slow = structout_surf * p->ligshoot * 0.7;
-            surf_struct_to_active = structout_surf * (1.0 - p->ligshoot) * 0.55;
+            soil_metab_input = rootX * fs->coeffs[LR] * (1.0 - fs->coeffs[S2]);
+            soil_metab_litterX = soil_metab_input / fs->coeffs[KD4];
 
-            structout_soil = s->structsoil * fs->coeffs[KD3];
-            soil_struct_to_slow = structout_soil * p->ligroot * 0.7;
-            soil_struct_to_active = structout_soil * (1.0 - p->ligroot) * 0.45;
-            soil_struct_litter = deadroots * (1.0 - fs->coeffs[S2]) + deadcroots;
+            litter_to_active = surf_struct_input * (1.0 - p->ligshoot) * 0.55 +\
+                               soil_struct_input * (1.0 - p->ligroot) * 0.45 +\
+                               surf_metab_input * 0.45 + \
+                               soil_metab_input * 0.45;
+
+            litter_to_slow = surf_struct_input * p->ligshoot * 0.7 + \
+                             soil_struct_input * p->ligroot * 0.7;
 
             frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+            act_to_slw_coeff = (1.0 - frac_microb_resp - 0.004);
+            act_to_pass_coeff = 0.004;
+            slw_to_act_coeff = 0.42;
+            slw_to_pass_coeff = 0.03;
+            pass_to_act_coeff = 0.45;
 
-            activeout = s->activesoil * fs->coeffs[KD5];
-            c_into_active = surf_struct_to_active + soil_struct_to_active + \
-                            surf_metab_to_active + soil_metab_to_active + \
-                            slow_to_active + passive_to_active;
-            active_to_slow = activeout * (1.0 - frac_microb_resp - 0.004);
-            active_to_passive = activeout * 0.004;
 
-            slowout = s->slowsoil * fs->coeffs[KD6];
-            slow_to_active = slowout * 0.42;
-            slow_to_passive = slowout * 0.03;
-            c_into_slow = surf_struct_to_slow + soil_struct_to_slow + \
-                          active_to_slow;
 
-            passive_to_active = s->passivesoil * fs->coeffs[KD7] * 0.45;
-            c_into_passive = active_to_passive + slow_to_passive;
+            arg1 = litter_to_active + litter_to_slow * \
+                   (slw_to_act_coeff + slw_to_pass_coeff * pass_to_act_coeff);
+            arg2 = (1.0 - act_to_slw_coeff * slw_to_act_coeff - \
+                    act_to_pass_coeff * pass_to_act_coeff - act_to_slw_coeff * \
+                    slw_to_pass_coeff * pass_to_act_coeff);
+            activesoilX = arg1 / arg2 /  fs->coeffs[KD5];
 
-            co2_to_air0 = (structout_surf * \
-                          (p->ligshoot * 0.3 + (1.0 - p->ligshoot) * 0.45));
-            co2_to_air1 = (structout_soil * \
-                          (p->ligroot * 0.3 + (1.0 - p->ligroot) * 0.55));
-            co2_to_air2 = s->metabsurf * fs->coeffs[KD2] * 0.55;
-            co2_to_air3 = s->metabsoil * fs->coeffs[KD4] * 0.55;
-            co2_to_air4 = activeout * frac_microb_resp;
-            co2_to_air5 = slowout * 0.55;
-            co2_to_air6 = s->passivesoil * fs->coeffs[KD7] * 0.55;
+            arg1 = litter_to_slow + \
+                   (activesoilX * fs->coeffs[KD5] * act_to_slw_coeff);
+            slowsoilX = arg1 / fs->coeffs[KD6];
 
-            structsurfX = (surf_struct_litter - \
-                          (surf_struct_to_slow + surf_struct_to_active +
-                           co2_to_air0));
+            arg1 = activesoilX * fs->coeffs[KD5] * act_to_pass_coeff;
+            arg2 = slowsoilX * fs->coeffs[KD6] * slw_to_pass_coeff;
+            passivesoilX = (arg1 + arg2) / fs->coeffs[KD7];
 
-            structsoilX = (soil_struct_litter - \
-                          (soil_struct_to_slow + soil_struct_to_active +
-                           co2_to_air1));
+            printf("%lf\n", s->shootn / s->shoot);
 
-            metabsurfX = (surf_metab_litter - \
-                          (surf_metab_to_active + co2_to_air2));
 
-            metabsoilX = (soil_metab_litter - \
-                          (soil_metab_to_active + co2_to_air3));
+            double stemnmob_ratio, stemnimm_ratio;
+            s->shootn = s->shootn / s->shoot * shootX;
+            printf("%lf\n", s->shootn / s->shoot);
+            exit(1);
+            s->rootn = s->rootn / s->root * rootX;
+            if (s->croot > 0.0) {
+                s->crootn = s->crootn / s->croot * crootX;
+            } else {
+                s->crootn = 0.0;
+            }
+            s->branchn = s->branchn / s->branch * branchX;
 
-            activesoilX = c_into_active - \
-                           (active_to_slow + active_to_passive + co2_to_air4);
 
-            slowsoilX = c_into_slow - \
-                         (slow_to_active + slow_to_passive + co2_to_air5);
+            stemnmob_ratio = s->stemn / s->stemnimm;
+            if (s->stemnmob > 0.0) {
+                stemnimm_ratio = s->stemn / s->stemnmob;
+            } else {
+                stemnimm_ratio = 0.0;
+            }
+            s->stemn = s->stemn / s->stem * stemX;
+            s->stemnmob = s->stemn * stemnmob_ratio;
+            s->stemnimm = s->stemn * stemnimm_ratio;
 
-            passivesoilX = c_into_passive - (passive_to_active + co2_to_air6);
-            new_passive = s->passivesoil + passivesoilX;
+
+            s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
+            s->metabsurfn = s->metabsurfn / s->metabsurf * metabsurfX;
+            s->structsoiln = s->structsoiln / s->structsoil * structsoilX;
+            s->structsurfn = s->structsurfn / s->structsurf * structsurfX;
+            s->activesoiln = s->activesoiln / s->activesoil * activesoilX;
+            s->slowsoiln = s->slowsoiln / s->slowsoil * slowsoilX;
+            s->passivesoiln = s->passivesoiln / s->passivesoil * passivesoilX;
+
+            s->shoot = shootX;
+            s->root = rootX;
+            s->croot = crootX;
+            s->branch = branchX;
+            s->stem = stemX;
+            s->sapwood = sapwoodX;
+            s->metabsoil = metabsoilX;
+            s->metabsurf = metabsurfX;
+            s->structsoil = structsoilX;
+            s->structsurf = structsurfX;
+            s->activesoil = activesoilX;
+            s->slowsoil = slowsoilX;
+            s->passivesoil = passivesoilX;
+
+
+
 
             /* This fecks up if I make this 0.001, not sure why */
-            if (fabs((new_passive - prev_passivec) / new_passive) < 0.01) {
+            if (fabs((passivesoilX - prev_passivec) / passivesoilX) < 0.001) {
                 break;
 
             } else {
@@ -679,67 +724,20 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
         }
 
-        /* Now solve all the carbon and nitrogen pools */
-        s->shoot += shootX;
-        s->root += rootX;
-        s->croot += crootX;
-        s->branch += branchX;
-        s->stem += stemX;
-        s->sapwood += sapwoodX;
-        s->metabsoil += metabsoilX;
-        s->metabsurf += metabsurfX;
-        s->structsoil += structsoilX;
-        s->structsurf += structsurfX;
-        s->activesoil += activesoilX;
-        s->slowsoil += slowsoilX;
-        s->passivesoil += passivesoilX;
-
-        fs->shoot_nc /= total_days;
-        fs->root_nc /= total_days;
-        fs->branch_nc /= total_days;
-        fs->croot_nc /= total_days;
-        fs->stem_nc /= total_days;
-        fs->stemnmob_ratio /= total_days;
-        fs->stemnimm_ratio /= total_days;
-        fs->metablsoil_nc /= total_days;
-        fs->metabsurf_nc /= total_days;
-
-        fs->structsoil_nc /= total_days;
-        fs->structsurf_nc /= total_days;
-        fs->activesoil_nc /= total_days;
-        fs->slowsoil_nc /= total_days;
-        fs->passivesoil_nc /= total_days;
-
-        s->shootn = s->shoot * fs->shoot_nc;
-        s->rootn = s->root * fs->root_nc;
-        if (s->croot > 0.0) {
-            s->crootn = s->croot * fs->croot_nc;
-        } else {
-            s->crootn = 0.0;
-        }
-        s->branchn = s->branch * fs->branch_nc;
-        s->stemn = s->stem * fs->stem_nc;
-        s->stemnmob = s->stemn * fs->stemnmob_ratio;
-        s->stemnimm = s->stemn * fs->stemnimm_ratio;
-        s->metabsoiln = s->metabsoil * fs->metablsoil_nc;
-        s->metabsurfn = s->metabsurf * fs->metabsurf_nc;
-        s->structsoiln = s->structsoil * fs->structsoil_nc;
-        s->structsurfn = s->structsurf * fs->structsurf_nc;
-        s->activesoiln = s->activesoil * fs->activesoil_nc;
-        s->slowsoiln = s->slowsoil * fs->slowsoil_nc;
-        s->passivesoiln = s->passivesoil * fs->passivesoil_nc;
-
 
         printf("DONE: %lf\n", s->shoot);
         printf("DONE: %lf\n", s->root);
         printf("DONE: %lf\n", s->croot);
         printf("DONE: %lf\n", s->branch);
         printf("DONE: %lf\n", s->stem);
+        printf("DONE: %lf\n", s->metabsoil);
+        printf("DONE: %lf\n", s->metabsurf);
         printf("DONE: %lf\n", s->activesoil);
         printf("DONE: %lf\n", s->slowsoil);
         printf("DONE: %lf\n\n", s->passivesoil);
-        printf("DONE: %lf\n", s->metabsoil);
-        printf("DONE: %lf\n", s->metabsurf);
+
+
+        exit(1);
 
 
         printf("DONE: %lf\n", s->shootn);
@@ -818,7 +816,7 @@ void usage(char **argv) {
 
 void zero_fast_spinup_stuff(fast_spinup *fs) {
 
-    int i, n_coefficients = 19;
+    int i, n_coefficients = 20;
 
     fs->ndays = 0;
     fs->npp_ss = 0.0;
