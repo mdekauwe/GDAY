@@ -581,8 +581,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         zero_fast_spinup_stuff(fs);
         run_sim(cw, c, fs, f, ma, m, p, s);
         /*run_sim(cw, c, fs, f, ma, m, p, s);*/
-
-
+        
         while (TRUE) {
 
             /* Calculate average tranfer coefficients based on prev spin */
@@ -656,8 +655,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
 
 
             s->shootn = s->shootn / s->shoot * shootX;
-            /*printf("%lf\n", s->shootn / s->shoot);
-            exit(1);*/
+
             s->rootn = s->rootn / s->root * rootX;
             if (s->croot > 0.0) {
                 s->crootn = s->crootn / s->croot * crootX;
@@ -665,6 +663,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
                 s->crootn = 0.0;
             }
             s->branchn = s->branchn / s->branch * branchX;
+
 
             s->stemnmob = 0.0;
             s->stemnimm = stemX * fs->coeffs[AW] * 0.003;
