@@ -551,9 +551,9 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
         */
         zero_fast_spinup_stuff(fs);
         run_sim(cw, c, fs, f, ma, m, p, s);
-        for (i = 0; i < 20; i++) {
-            run_sim(cw, c, fs, f, ma, m, p, s); /* run GDAY */
-        }
+        /*for (i = 0; i < 20; i++) {
+            run_sim(cw, c, fs, f, ma, m, p, s);
+        }*/
 
         while (TRUE) {
 
@@ -580,18 +580,21 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             woodX = branchX + stemX + crootX;
 
 
-            surf_struct_input = shootX * fs->coeffs[LF] * fs->coeffs[S1] + \
+            surf_struct_input = shootX * fs->coeffs[LF] * \
+                                (1.0 - fs->coeffs[S1]) + \
                                 (branchX + stemX) * fs->coeffs[LW];
             surf_struct_litterX = surf_struct_input / fs->coeffs[KD1];
 
-            soil_struct_input = rootX * fs->coeffs[LR] * fs->coeffs[S2] + \
+            soil_struct_input = rootX * fs->coeffs[LR] * \
+                                (1.0 - fs->coeffs[S2]) + \
                                 crootX * fs->coeffs[LW];
             soil_struct_litterX = soil_struct_input / fs->coeffs[KD2];
 
-            surf_metab_input = shootX * fs->coeffs[LF] * (1.0 - fs->coeffs[S1]);
+            surf_metab_input = shootX * fs->coeffs[LF] * fs->coeffs[S1];
             surf_metab_litterX = surf_metab_input / fs->coeffs[KD3];
 
-            soil_metab_input = rootX * fs->coeffs[LR] * (1.0 - fs->coeffs[S2]);
+
+            soil_metab_input = rootX * fs->coeffs[LR] * fs->coeffs[S2];
             soil_metab_litterX = soil_metab_input / fs->coeffs[KD4];
 
             litter_to_active = surf_struct_input * (1.0 - p->ligshoot) * 0.55 +\
@@ -626,7 +629,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             arg2 = slowsoilX * fs->coeffs[KD6] * slw_to_pass_coeff;
             passivesoilX = (arg1 + arg2) / fs->coeffs[KD7];
 
-
+            printf("** %.15f %.15f\n", s->metabsoiln , s->metabsoil);
             s->shootn = s->shootn / s->shoot * shootX;
 
             s->rootn = s->rootn / s->root * rootX;
@@ -643,10 +646,14 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             s->stemn = s->stemn / s->stem * stemX;
 
             if (metabsoilX > 0.0) {
+                printf("HERE\n");
                 s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
             } else {
+                printf("NO HERE\n");
                 s->metabsoiln = 0.0;
             }
+
+
 
             if (metabsurfX > 0.0) {
                 s->metabsurfn = s->metabsurfn / s->metabsurf * metabsurfX;
@@ -704,7 +711,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             printf("passivesoilnc: %.10lf\n\n", s->passivesoiln / s->passivesoil);
 
             exit(1);
-            
+
 
             /* This fecks up if I make this 0.001, not sure why */
             if (fabs((passivesoilX - prev_passivec) / passivesoilX) < 0.001) {
