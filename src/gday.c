@@ -666,10 +666,10 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
             }
             s->branchn = s->branchn / s->branch * branchX;
 
-            s->stemnmob = stemX * (p->ncwnew - p->ncwimm);
-            s->stemnimm = stemX * 0.003;
+            s->stemnmob = 0.0;
+            s->stemnimm = stemX * fs->coeffs[AW] * 0.003;
             s->stemn = s->stemn / s->stem * stemX;
-            
+
             if (metabsoilX > 0.0) {
                 s->metabsoiln = s->metabsoiln / s->metabsoil * metabsoilX;
             } else {
