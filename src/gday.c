@@ -487,9 +487,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     double prev_passivec = 99999.9;
-    double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
-    double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
-    double mu_ass1, mu_ass2, mu_ass3, leaf_material, wood_material, mu_as1;
+    double NPP, shootX, rootX, crootX, branchX, stemX, wood, woodX;
+    double leaf_material, wood_material;
     double surf_struct_litter, structout_surf, structout_soil;
     double surf_struct_to_slow, surf_struct_to_active;
     double soil_struct_to_slow, soil_struct_litter;
@@ -500,7 +499,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fast_spinup *fs, fluxes *f,
     double activesoilX, slowsoilX, passivesoilX, passive_to_active;
     double c_into_active, slow_to_active, slow_to_passive, slowout;
     double activeout, frac_microb_resp, c_into_passive;
-    double active_to_slow, active_to_passive, c_into_slow, mu_fmleaf, mu_fmroot;
+    double active_to_slow, active_to_passive, c_into_slow;
     double leafgrowth, rootgrowth, crootgrowth, branchgrowth, stemgrowth;
     double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
     double surf_metab_litter, soil_struct_to_active;
