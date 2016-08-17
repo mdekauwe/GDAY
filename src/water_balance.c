@@ -132,6 +132,11 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* reduce trans frac extracted from the topsoil if the layer is dry */
     trans_frac = p->fractup_soil * s->wtfac_topsoil;
+
+    /*
+    ** This is used to account for transpiration losses from the top layer.
+    ** In reality the water is extracted from the rootzone, see below
+    */
     transpiration_topsoil = trans_frac * *transpiration;
 
     /* Top soil layer */
@@ -153,33 +158,25 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
-    delta_topsoil = MAX(0.0, s->pawater_topsoil + topsoil_loss - previous);
-
-    /* Account for water lost from the topsoil from throughfall to rootzone */
-    throughfall -= delta_topsoil;
-    throughfall = MAX(0.0, throughfall);
-
-    /* Account for transpiration already extracted from the topsoil */
-    transpiration_root = *transpiration - transpiration_topsoil;
 
     /* Root zone */
     previous = s->pawater_root;
-    s->pawater_root += throughfall - transpiration_root;
+    s->pawater_root += throughfall - *transpiration - *soil_evap;
 
     /* calculate runoff and remove any excess from rootzone */
     if (s->pawater_root > p->wcapac_root) {
         *runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= *runoff;
+        s->pawater_root = p->wcapac_root;
     } else if (s->pawater_root < 0.0) {
         s->pawater_root = 0.0;
-        transpiration_root = previous;
+        /* account for effective water which would have been lose to soil evap*/
+        *transpiration = previous - *soil_evap;
         *runoff = 0.0;
     } else {
+        /* we are able to meet all water needs */
         *runoff = 0.0;
     }
 
-    /* Update transpiration & et accounting for the actual available water */
-    *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
     s->delta_sw_store = s->pawater_root - previous;
 
