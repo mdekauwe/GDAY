@@ -208,7 +208,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     /* Update transpiration & et accounting for the actual available water */
     *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
-    
+
     s->delta_sw_store = s->pawater_root - previous;
 
     /* calculated at the end of the day for sub_daily */
@@ -242,53 +242,87 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
     outflow : float
         outflow [mm d-1]
     */
-    double transpiration_topsil, transpiration_root, previous, delta_topsoil;
+    double transpiration_topsoil, transpiration_root, previous,
+           delta_topsoil, topsoil_loss;
 
-    /* reduce transpiration from the top soil if it is dry */
-    transpiration_topsil = p->fractup_soil * s->wtfac_topsoil * f->transpiration;
+    /* This is used to account for transpiration losses from the top layer. */
+    transpiration_topsoil = (s->wtfac_topsoil * p->fractup_soil * \
+                             f->transpiration);
 
-    /* Total soil layer */
+    /* Top soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += f->throughfall - transpiration_topsil - f->soil_evap;
+    topsoil_loss = transpiration_topsoil + f->soil_evap;
+    s->pawater_topsoil += f->throughfall - topsoil_loss;
 
+    /* We have attempted to evap more water than we have */
     if (s->pawater_topsoil < 0.0) {
+
+        /* make the layer completely dry */
         s->pawater_topsoil = 0.0;
 
-        /* use any available water to meet soil evap demands first */
-        if (f->soil_evap > previous) {
-            f->soil_evap = previous;
-            transpiration_topsil = 0.0;
+        /*
+        ** if there was any water in the layer before we over-evaporated
+        ** then use this to do some of the evaporation required
+        */
+        if (isgreater(previous, 0.0)) {
+            f->soil_evap = previous / 2.0;
+            transpiration_topsoil = previous / 2.0;
+            /**soil_evap = previous;
+            transpiration_topsoil = previous - *soil_evap;*/
         } else {
-            f->soil_evap = previous;
-            transpiration_topsil = previous - f->soil_evap;
+            f->soil_evap = 0.0;
+            transpiration_topsoil = 0.0;
         }
+
+    /*
+    ** We have more water than the layer can hold, so set the layer to the
+    ** maximum
+    */
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
 
-    delta_topsoil = MAX(0.0, previous - s->pawater_topsoil);
+    /*
+    ** Root zone
+    ** - this is the layer we are actually taking all the water out of.
+    **   it really encompasses the topsoil so as well, so we need to have
+    **   the soil evpaoration here as well, although we aren't adjusting
+    **   that if water isn't available as we've already calculated that
+    **   above based on the top soil layer. Ditto the transpiration taken
+    **   from the top soil layer.
+    */
 
-
-    /* Total root zone */
     previous = s->pawater_root;
-    transpiration_root = f->transpiration - transpiration_topsil;
-    s->pawater_root += (f->throughfall - delta_topsoil) - transpiration_root;
+    transpiration_root = f->transpiration - transpiration_topsoil;
+    s->pawater_root += f->throughfall - transpiration_root - f->soil_evap;
 
-    /* calculate runoff and remove any excess from rootzone */
-    if (s->pawater_root > p->wcapac_root) {
+    /* Default is we have no runoff */
+    f->runoff = 0.0;
+
+    /* We attempted to extract more water than the rootzone holds */
+    if (s->pawater_root < 0.0) {
+
+        /* make the layer completely dry */
+        s->pawater_root = 0.0;
+
+        /*
+        ** if there was any water in the layer before we over-evaporated
+        ** then use this to do some of the evaporation required
+        */
+        if (isgreater(previous, 0.0)) {
+            transpiration_root = previous;
+        } else {
+            transpiration_root = 0.0;
+        }
+
+    /* We have more water than the rootzone can hold -> runoff */
+    } else if (s->pawater_root > p->wcapac_root) {
         f->runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= f->runoff;
-    } else {
-        f->runoff = 0.0;
+        s->pawater_root = p->wcapac_root;
     }
 
-    if (s->pawater_root < 0.0) {
-        s->pawater_root = 0.0;
-        transpiration_root = previous;
-    } else if (s->pawater_root > p->wcapac_root)
-        s->pawater_root = p->wcapac_root;
-
-    f->transpiration = transpiration_topsil + transpiration_root;
+    /* Update transpiration & et accounting for the actual available water */
+    f->transpiration = transpiration_topsoil + transpiration_root;
     f->et = f->transpiration + f->soil_evap + f->canopy_evap;
 
     s->delta_sw_store = s->pawater_root - previous;
