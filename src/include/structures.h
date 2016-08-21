@@ -335,8 +335,8 @@ typedef struct {
     double pmin;                            /* (bewdy) minimum leaf p for +ve p/s (g/m2) */
     double pmin0;                           /* mineral P pool corresponding to Actpc0,etc (g/m2) */
     double pmincrit;                        /* Critical mineral P pool at max soil P:C (g/m2)  */
-    double ptheta_root;                     /* Fitted parameter based on Landsberg and Waring */
-    double ptheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
+    double ptheta_root;                     /* Inferred based on ntheta */
+    double ptheta_topsoil;                  /* Inferred based on ntheta */
     double puptakez;                        /* constant P uptake per year (1/yr) */
     double oi;                              /* intercellular concentration of O2 [umol mol-1] */
     double passivesoilnz;

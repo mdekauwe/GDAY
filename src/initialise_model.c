@@ -116,7 +116,7 @@ void initialise_params(params *p) {
     p->edj = 200000.0;
     p->faecescn = 25.0;
     p->faecesn = 0.0;
-    p->faecescp = 2500.0;
+    p->faecescp = 300.0;
     p->faecesp = 0.0;
     p->fdecay = 0.59988;
     p->fdecaydry = 0.59988;
@@ -169,7 +169,7 @@ void initialise_params(params *p) {
     p->ligfaeces = 0.25;
     p->ligroot = 0.22;
     p->ligshoot = 0.24;
-    p->liteffnc = 0.0;
+    p->liteffnc = 0.0;     /* Check back point, see if P is needed? */
     p->max_intercep_lai = 3.0;
     p->measurement_temp = 25.0;
     p->ncbnew = 0.003;
@@ -230,7 +230,7 @@ void initialise_params(params *p) {
     p->p_sorb_frac = 0.0;
     p->psecmnp = 0.0022;
     p->prescribed_leaf_NC = 0.03;
-    p->prescribed_leaf_PC = 0.00249;  /*Crous et al. 2015 Figure 3, Plant Soil. Feels CP ratio is not big enough, may need to check with other literature values */
+    p->prescribed_leaf_PC = 0.00249;  /*Crous et al. 2015 Figure 3, Plant Soil */
     p->previous_ncd = 35.0;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
@@ -541,7 +541,7 @@ void initialise_state(state *s) {
     s->inorgn = 0.0274523714275;
     s->inorgp = 0.0274523714275;
     s->inorgminp = 0.0274523714275;
-    s->inorglabp = 0.0;
+    s->inorglabp = 0.0274523714275;
     s->inorgsorbp = 0.0;
     s->inorgssorbp = 0.015;             /* CENTURY value, unit converted from 15 g P m-2 to t/ha */
     s->inorgoccp = 0.0;
@@ -553,7 +553,7 @@ void initialise_state(state *s) {
     s->metabsurfn = 0.0013452990398;
     s->metabsurfp = 0.0002924563;       /* based on metabolic pool C/P ratio of 115 from Parton et al., 1989, Ecology of arable land. */
     s->nstore = 0.01;
-    s->pstore = 0.01;
+    s->pstore = 0.00018;
     s->passivesoil = 59.5304597863;
     s->passivesoiln = 8.0134056319;
     s->passivesoilp = 0.541186;         /* based on passive SOM pool C/P ratio of 110 from Parton et al., 1989, Ecology of arable land. */
