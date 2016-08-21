@@ -61,6 +61,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->par);
             calculate_top_of_canopy_leafn(cw, p, s);
+            calculate_top_of_canopy_leafp(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p);
 
             /* sunlit / shaded loop */
@@ -228,8 +229,6 @@ void zero_carbon_day_fluxes(fluxes *f) {
 }
 
 
-
-
 void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
 
     /*
@@ -256,6 +255,31 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
     }
 
     return;
+}
+
+void calculate_top_of_canopy_leafp(canopy_wk *cw, params *p, state *s) {
+  
+  /*
+   Calculate the P at the top of the canopy (g P m-2), P0, based on
+   calculate_top_of_canopy_leafn relationship;
+   
+   */
+  double Ptot;
+  
+  /* leaf mass per area (g C m-2 leaf) */
+  double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
+  
+  if (s->lai > 0.0) {
+    /* the total amount of nitrogen in the canopy */
+    Ptot = s->shootpc * LMA * s->lai;
+    
+    /* top of canopy leaf N (gN m-2) */
+    cw->P0 = Ptot * p->kn / (1.0 - exp(-p->kn * s->lai));
+  } else {
+    cw->P0 = 0.0;
+  }
+  
+  return;
 }
 
 void zero_hourly_fluxes(canopy_wk *cw) {

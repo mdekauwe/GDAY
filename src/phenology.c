@@ -478,6 +478,13 @@ void calculate_growing_season_fluxes(fluxes *f, state *s, int len_groloss) {
     f->wnimrate = 2.0 * s->n_to_alloc_stemimm / denominator;
     f->wnmobrate = 2.0 * s->n_to_alloc_stemmob / denominator;
     f->cnrate = 2.0 * s->n_to_alloc_croot / denominator;
+    
+    /* P allocation rates across growing season */
+    f->lprate = 2.0 * s->p_to_alloc_shoot / denominator;
+    f->bprate = 2.0 * s->p_to_alloc_branch / denominator;
+    f->wpimrate = 2.0 * s->p_to_alloc_stemimm / denominator;
+    f->wpmobrate = 2.0 * s->p_to_alloc_stemmob / denominator;
+    f->cprate = 2.0 * s->p_to_alloc_croot / denominator;
 
     return;
 }

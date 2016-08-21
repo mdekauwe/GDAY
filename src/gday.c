@@ -164,7 +164,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
 
-    double fdecay, rdecay, current_limitation, nitfac, year;
+    double fdecay, rdecay, current_limitation, npitfac, year;
     int   *disturbance_yrs = NULL;
 
     /*
@@ -186,8 +186,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             float_eq(s->avg_alleaf, 0.0) &&
             float_eq(s->avg_alroot, 0.0) &&
             float_eq(s->avg_alcroot, 0.0)) {
-            nitfac = 0.0;
-            calc_carbon_allocation_fracs(c, f, p, s, nitfac);
+            npitfac = 0.0;
+            calc_carbon_allocation_fracs(c, f, p, s, npitfac);
         } else {
             f->alleaf = s->avg_alleaf;
             f->alstem = s->avg_alstem;
@@ -195,7 +195,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             f->alroot = s->avg_alroot;
             f->alcroot = s->avg_alcroot;
         }
-        allocate_stored_c_and_n(f, p, s);
+        allocate_stored_cnp(f, p, s);
     }
 
     /* Setup output file */
@@ -351,6 +351,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
+            calculate_psoil_flows(c, f, p, s, doy);
+            
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
@@ -382,6 +384,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* Turn off all N calculations */
             if (c->ncycle == FALSE)
                 reset_all_n_pools_and_fluxes(f, s);
+           
+            /* Turn off all P calculations */
+            if (c->pcycle == FALSE)
+                reset_all_p_pools_and_fluxes(f, s);
 
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
@@ -403,7 +409,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
-            allocate_stored_c_and_n(f, p, s);
+            allocate_stored_cnp(f, p, s);
         }
     }
 
@@ -539,7 +545,9 @@ void correct_rate_constants(params *p, int output) {
 
     if (output) {
         p->rateuptake *= NDAYS_IN_YR;
+        p->prateuptake *= NDAYS_IN_YR;
         p->rateloss *= NDAYS_IN_YR;
+        p->prateloss *= NDAYS_IN_YR;
         p->retransmob *= NDAYS_IN_YR;
         p->fdecay *= NDAYS_IN_YR;
         p->fdecaydry *= NDAYS_IN_YR;
@@ -557,10 +565,14 @@ void correct_rate_constants(params *p, int output) {
         p->kdec6 *= NDAYS_IN_YR;
         p->kdec7 *= NDAYS_IN_YR;
         p->nuptakez *= NDAYS_IN_YR;
+        p->puptakez *= NDAYS_IN_YR;
         p->nmax *= NDAYS_IN_YR;
+        p->pmax *= NDAYS_IN_YR;
     } else {
         p->rateuptake /= NDAYS_IN_YR;
+        p->prateuptake /= NDAYS_IN_YR;
         p->rateloss /= NDAYS_IN_YR;
+        p->prateloss /= NDAYS_IN_YR;
         p->retransmob /= NDAYS_IN_YR;
         p->fdecay /= NDAYS_IN_YR;
         p->fdecaydry /= NDAYS_IN_YR;
@@ -578,7 +590,9 @@ void correct_rate_constants(params *p, int output) {
         p->kdec6 /= NDAYS_IN_YR;
         p->kdec7 /= NDAYS_IN_YR;
         p->nuptakez /= NDAYS_IN_YR;
+        p->puptakez /= NDAYS_IN_YR;
         p->nmax /= NDAYS_IN_YR;
+        p->pmax /= NDAYS_IN_YR;
     }
 
     return;
@@ -657,13 +671,101 @@ void reset_all_n_pools_and_fluxes(fluxes *f, state *s) {
     return;
 }
 
+void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
+  /*
+  If the P-Cycle is turned off the way I am implementing this is to
+  do all the calculations and then reset everything at the end. This is
+  a waste of resources but saves on multiple IF statements.
+  */
+  
+  /*
+  ** State
+  */
+  s->shootp = 0.0;
+  s->rootp = 0.0;
+  s->crootp = 0.0;
+  s->branchp = 0.0;
+  s->stempimm = 0.0;
+  s->stempmob = 0.0;
+  s->structsurfp = 0.0;
+  s->metabsurfp = 0.0;
+  s->structsoilp = 0.0;
+  s->metabsoilp = 0.0;
+  s->activesoilp = 0.0;
+  s->slowsoilp = 0.0;
+  s->passivesoilp = 0.0;
+  s->inorgp = 0.0;
+  s->inorgminp = 0.0;
+  s->inorglabp = 0.0;
+  s->inorgsorbp = 0.0;
+  s->inorgssorbp = 0.0;
+  s->inorgoccp = 0.0;
+  s->inorgparp = 0.0;
+  s->stemp = 0.0;
+  s->stempimm = 0.0;
+  s->stempmob = 0.0;
+  s->pstore = 0.0;
+  
+  /*
+  ** Fluxes
+  */
+  f->puptake = 0.0;
+  f->ploss = 0.0;
+  f->ppassive = 0.0;
+  f->pgross = 0.0;
+  f->pimmob = 0.0;
+  f->plittrelease = 0.0;
+  f->pmineralisation = 0.0;
+  f->ppleaf = 0.0;
+  f->pproot = 0.0;
+  f->ppcroot = 0.0;
+  f->ppbranch = 0.0;
+  f->ppstemimm = 0.0;
+  f->ppstemmob = 0.0;
+  f->deadleafp = 0.0;
+  f->deadrootp = 0.0;
+  f->deadcrootp = 0.0;
+  f->deadbranchp = 0.0;
+  f->deadstemp = 0.0;
+  f->peaten = 0.0;
+  f->purine = 0.0;
+  f->leafretransp = 0.0;
+  f->p_surf_struct_litter = 0.0;
+  f->p_surf_metab_litter = 0.0;
+  f->p_soil_struct_litter = 0.0;
+  f->p_soil_metab_litter = 0.0;
+  f->p_surf_struct_to_slow = 0.0;
+  f->p_soil_struct_to_slow = 0.0;
+  f->p_surf_struct_to_active = 0.0;
+  f->p_soil_struct_to_active = 0.0;
+  f->p_surf_metab_to_active = 0.0;
+  f->p_surf_metab_to_active = 0.0;
+  f->p_active_to_slow = 0.0;
+  f->p_active_to_passive = 0.0;
+  f->p_slow_to_active = 0.0;
+  f->p_slow_to_passive = 0.0;
+  f->p_passive_to_active = 0.0;
+  f->p_lab_influx = 0.0;
+  f->p_sorb_influx = 0.0;
+  f->p_sorb_to_ssorb = 0.0;
+  f->p_ssorb_to_sorb = 0.0;
+  f->p_ssorb_to_occ = 0.0;
+  f->pparentflux = 0.0;
+  
+  
+  return;
+}
+
 void zero_stuff(control *c, state *s) {
     s->shoot = 0.0;
     s->shootn = 0.0;
+    s->shootp = 0.0;
     s->shootnc = 0.0;
+    s->shootpc = 0.0;
     s->lai = 0.0;
     s->cstore = 0.0;
     s->nstore = 0.0;
+    s->pstore = 0.0;
     s->anpp = 0.0;
 
     if (c->deciduous_model) {
@@ -689,20 +791,29 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
         logical defining whether it is the first day of the simulation
     */
 
-    /* update N:C of plant pool */
-    if (float_eq(s->shoot, 0.0))
+    /* update N:C and P:C of plant pool */
+    if (float_eq(s->shoot, 0.0)) {
         s->shootnc = 0.0;
-    else
+        s->shootpc = 0.0;
+    } else {
         s->shootnc = s->shootn / s->shoot;
+        s->shootpc = s->shootp / s->shoot;
+    }
 
     /* Explicitly set the shoot N:C */
     if (c->ncycle == FALSE)
         s->shootnc = p->prescribed_leaf_NC;
+    
+    if (c->pcycle == FALSE)
+        s->shootpc = p->prescribed_leaf_PC;
 
-    if (float_eq(s->root, 0.0))
+    if (float_eq(s->root, 0.0)) {
         s->rootnc = 0.0;
-    else
+        s->rootpc = 0.0;
+    } else {
         s->rootnc = MAX(0.0, s->rootn / s->root);
+        s->rootpc = MAX(0.0, s->rootp / s->root);
+    }
 
     /* total plant, soil & litter nitrogen */
     s->soiln = s->inorgn + s->activesoiln + s->slowsoiln + s->passivesoiln;
@@ -711,6 +822,15 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     s->littern = s->litternag + s->litternbg;
     s->plantn = s->shootn + s->rootn + s->crootn + s->branchn + s->stemn;
     s->totaln = s->plantn + s->littern + s->soiln;
+    
+    /* total plant, soil & litter phosphorus */
+    s->inorgp = s->inorglabp + s->inorgsorbp + s->inorgssorbp + s->inorgoccp + s->inorgparp;
+    s->soilp = s->inorgp + s->activesoilp + s->slowsoilp + s->passivesoilp;
+    s->litterpag = s->structsurfp + s->metabsurfp;
+    s->litterpbg = s->structsoilp + s->metabsoilp;
+    s->litterp = s->litterpag + s->litterpbg;
+    s->plantp = s->shootp + s->rootp + s->crootp + s->branchp + s->stemp;
+    s->totalp = s->plantp + s->litterp + s->soilp;
 
     /* total plant, soil, litter and system carbon */
     s->soilc = s->activesoil + s->slowsoil + s->passivesoil;
@@ -724,6 +844,7 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     if (c->passiveconst) {
         s->passivesoil = p->passivesoilz;
         s->passivesoiln = p->passivesoilnz;
+        s->passivesoilp = p->passivesoilpz;
     }
 
     if (init == FALSE)

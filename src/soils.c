@@ -1,7 +1,8 @@
 /* ============================================================================
-* Soil C and N flows into 4 litter pools (structural and metabolic, both
-* above and belowground) and 3 SOM pools (Active, slow and passive). In
-* essence the CENTURY model.
+* Soil C, N and P flows into 4 litter pools (structural and metabolic, both
+* above and belowground) and 3 SOM pools (Active, slow and passive). Soil P 
+* flows into 5 inorganic pools (parent, lab, sorb, ssorb, and occluded).
+* In essence the CENTURY model.
 *
 * Active pool -> soil microbes & microbial products, turnover time of mths-yrs.
 * Slow pool -> resistant plant material, turnover time of 20-50 yrs.
@@ -14,7 +15,7 @@
 *   Martin De Kauwe
 *
 * DATE:
-*   22.02.2015
+*   14.08.2016
 *
 * =========================================================================== */
 #include "soils.h"
@@ -92,8 +93,10 @@ void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
     (delta_Cact). The remaining fraction of REXC is respired as CO2.
     */
     double active_CN, rex_NC, C_to_active_pool;
+    double active_CP, rex_PC;
 
     active_CN = s->activesoil / s->activesoiln;
+    active_CP = s->activesoil / s->activesoilp;
 
     if (p->root_exu_CUE < -0.5) {
         /*
@@ -104,10 +107,12 @@ void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
 
         if (float_eq(f->root_exc, 0.0)) {
             rex_NC = 0.0;
+            rex_PC = 0.0;
         } else {
             rex_NC = f->root_exn / f->root_exc;
+            rex_PC = f->root_exp / f->root_exc;
         }
-        f->rexc_cue = MAX(0.3, MIN(0.6, rex_NC * active_CN));
+        f->rexc_cue = MAX(0.3, MIN(0.6, MIN(rex_NC * active_CN, rex_PC * active_CP)));
     } else {
         f->rexc_cue = p->root_exu_CUE;
     }
@@ -502,7 +507,7 @@ void calculate_cpools(fluxes *f, state *s) {
     s->metabsoil += (f->soil_metab_litter -
                      (f->soil_metab_to_active + f->co2_to_air[3]));
 
-    /* store the C SOM fluxes for Nitrogen calculations */
+    /* store the C SOM fluxes for Nitrogen/Phosphorus calculations */
     f->c_into_active = (f->surf_struct_to_active + f->soil_struct_to_active +
                         f->surf_metab_to_active + f->soil_metab_to_active +
                         f->slow_to_active + f->passive_to_active);
@@ -574,7 +579,7 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     double nsurf, nsoil, active_nc_slope, slow_nc_slope, passive_nc_slope;
 
     grazer_inputs(c, f, p);
-    inputs_from_plant_litter(f, p, &nsurf, &nsoil);
+    n_inputs_from_plant_litter(f, p, &nsurf, &nsoil);
     partition_plant_litter_n(c, f, p, nsurf, nsoil);
 
     /* SOM nitrogen effluxes.  These are assumed to have the source n:c
@@ -737,7 +742,7 @@ void grazer_inputs(control *c, fluxes *f, params *p) {
     return;
 }
 
-void inputs_from_plant_litter(fluxes *f, params *p, double *nsurf,
+void n_inputs_from_plant_litter(fluxes *f, params *p, double *nsurf,
                               double *nsoil) {
     /* inputs from plant litter.
 
@@ -1217,3 +1222,768 @@ void precision_control_soil_n(fluxes *f, state *s) {
 
     return;
 }
+
+
+void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
+                           int doy) {
+  
+  /* need to store grazing flag. Allows us to switch on the annual
+  grazing event, but turn it off for every other day of the year.  */
+  int cntrl_grazing = c->grazing;
+  if (c->grazing == 2 && p->disturbance_doy == doy+1) {
+    c->grazing = TRUE;
+  }
+  
+  /* Fraction of C lost due to microbial respiration */
+  double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+  double psurf, psoil, active_pc_slope, slow_pc_slope, passive_pc_slope;
+  
+  grazer_inputs_p(c, f, p);
+  p_inputs_from_plant_litter(f, p, &psurf, &psoil);
+  partition_plant_litter_p(c, f, p, psurf, psoil);
+  
+  /* SOM phosphorus effluxes.  These are assumed to have the source p:c
+  ratio prior to the increase of P:C due to co2 evolution. */
+  pfluxes_from_structural_pools(f, p, s);
+  pfluxes_from_metabolic_pool(f, p, s);
+  pfluxes_from_active_pool(f, p, s, frac_microb_resp);
+  pfluxes_from_slow_pool(f, p, s);
+  pfluxes_from_passive_pool(f, p, s);
+
+  /* calculate P parent influxe to mineral P */
+  calculate_p_parent_influx(f, p, s);
+  
+  /* gross P mineralisation */
+  calculate_p_mineralisation(f);
+  
+  /* calculate P lab and sorb fluxes from gross P flux */
+  calculate_p_min_partition(f, p);
+  
+  
+  /* calculate P immobilisation */
+  calculate_p_immobilisation(f, p, s, &(f->pimmob), &active_pc_slope,
+                             &slow_pc_slope, &passive_pc_slope);
+  
+  /* calculate P net mineralisation */
+  calc_p_net_mineralisation(f);
+  
+  /* SIM phosphorus effluxes check back see if 1 and 2 needed */
+  calculate_p_ssorb_to_sorb(s, f, p, c);
+  
+  if (c->exudation && c->alloc_model != GRASSES) {
+    calc_root_exudation_uptake_of_P(f, s);
+  }
+  
+  if (c->adjust_rtslow) {
+    adjust_residence_time_of_slow_pool(f, p);
+  } else {
+    /* Need to correct units of rate constant */
+    f->rtslow = 1.0 / (p->kdec6 * NDAYS_IN_YR);
+  }
+  
+  /* Update model soil P pools */
+  calculate_ppools(c, f, p, s, active_pc_slope, slow_pc_slope,
+                   passive_pc_slope);
+  
+  
+  
+  /* switch off grazing if this was just activated as an annual event */
+  c->grazing = cntrl_grazing;
+  
+  
+  
+  return;
+}
+
+void calc_root_exudation_uptake_of_P(fluxes *f, state *s) {
+  /* When P mineralisation is large enough to allow a small amount of P
+  immobilisation, the amount of P which enters the active pool is
+  calculated according to REXC divided by the CP of the active pool. When
+  exudation enters the active pool, the CP ratio of the exudates drops
+  from REXC/REXP to the CP of the active pool. Which is consistent with
+  the CENTURY framework, where C flows between pools lead to either
+  mineralisation (P gain) or immobilisation (P loss) due to differences
+  in the CP ratio of the outgoing and incoming pools.
+  
+  The amount of P added to the active pool is independent of the CUE of
+  the microbial pool in response to root exudation (REXCUE).
+  */
+  double P_available, active_PC, delta_Pact, P_miss, P_to_active_pool;
+  
+  P_available = s->inorglabp -f->ploss - f->puptake;
+  
+  active_PC = s->activesoilp / s->activesoil;
+  delta_Pact = f->root_exc * f->rexc_cue * active_PC;
+  
+  /*
+  ** Demand for P from exudation to meet the C:P ratio of the active pool,
+  ** given the amount of P you add.
+  */
+  P_miss = delta_Pact - f->root_exp;
+  
+  if (P_miss <= 0.0) {
+    /*
+    ** Root exudation includes more P than is needed by the microbes, the
+    ** excess is mineralised
+    */
+    f->pmineralisation -= P_miss;
+    P_to_active_pool = f->root_exp + P_miss;
+  } else {
+    /*
+    ** Not enough P in the soil to meet demand, so we are providing all
+    ** the P we have, which means that the C:P ratio of the active pool
+    ** changes.
+    */
+    if (P_miss > P_available) {
+      P_to_active_pool = f->root_exp + P_available;
+      f->pmineralisation -= P_available;
+    } else {
+      /*
+      ** Enough P to meet demand, so takes P from the mineralisation
+      ** and the active pool maintains the same C:P ratio.
+      */
+      P_to_active_pool = f->root_exp + P_miss;
+      f->pmineralisation -= P_miss;
+    }
+  }
+  
+  /* update active pool */
+  s->activesoilp += P_to_active_pool;
+  
+  return;
+}
+
+void grazer_inputs_p(control *c, fluxes *f, params *p) {
+  /* Grazer inputs from faeces and urine, flux detd by faeces c:p */
+  double arg;
+  
+  if (c->grazing)
+    p->faecesp = f->faecesc / p->faecescp;
+  else
+    p->faecesp = 0.0;
+  
+  /* make sure faecesp <= total p input to soil from grazing */
+  arg = f->peaten * p->fractosoilp;
+  if (p->faecesp > arg)
+    p->faecesp = f->peaten * p->fractosoilp;
+  
+  /* urine=total-faeces */
+  if (c->grazing)
+    f->purine = f->peaten * p->fractosoilp - p->faecesp;
+  else
+    f->purine = 0.0;
+  
+  if (f->purine < 0.0)
+    f->purine = 0.0;
+  
+  return;
+}
+
+void p_inputs_from_plant_litter(fluxes *f, params *p, double *psurf,
+                              double *psoil) {
+  /* inputs from plant litter.
+  
+  surface and soil pools are independent. Structural input flux p:c can
+  be either constant or a fixed fraction of metabolic input flux.
+  
+  Returns:
+  --------
+  psurf : float
+  P input from surface pool
+  psoil : float
+  P input from soil pool
+  */
+  
+  /* surface and soil inputs (faeces p goes to abovgrd litter pools) */
+  *psurf = f->deadleafp + f->deadbranchp + f->deadstemp + p->faecesp;
+  *psoil = f->deadrootp + f->deadcrootp;
+  
+  return;
+}
+
+void partition_plant_litter_p(control *c, fluxes *f, params *p, double psurf,
+                              double psoil) {
+  /* Partition litter P from the plant (surface) and roots into metabolic
+  and structural pools
+  
+  Parameters:
+  -----------
+  psurf : float
+  P input from surface pool
+  psoil : float
+  P input from soil pool
+  */
+  
+  double c_surf_struct_litter, c_soil_struct_litter;
+  
+  /* constant structural input p:c as per century */
+  if (c->strpfloat) {
+    
+    /* structural input p:c is a fraction of metabolic */
+    c_surf_struct_litter = (f->surf_struct_litter * p->structratp +
+    f->surf_metab_litter);
+    
+    if (float_eq(c_surf_struct_litter, 0.0))
+      f->p_surf_struct_litter = 0.0;
+    else
+      f->p_surf_struct_litter = (psurf * f->surf_struct_litter *
+        p->structratp / c_surf_struct_litter);
+    
+      c_soil_struct_litter = (f->soil_struct_litter * p->structratp +
+        f->soil_metab_litter);
+    
+    if (float_eq(c_soil_struct_litter, 0.0))
+      f->p_soil_struct_litter = 0.0;
+    else
+      f->p_soil_struct_litter = (psurf * f->soil_struct_litter *
+        p->structratp / c_soil_struct_litter);
+  } else {
+    
+    /* p flux -> surface structural pool */
+    f->p_surf_struct_litter = f->surf_struct_litter / p->structcp;
+    
+    /* p flux -> soil structural pool */
+    f->p_soil_struct_litter = f->soil_struct_litter / p->structcp;
+    
+    /* if not enough P for structural, all available P goes to structural */
+    if (f->p_surf_struct_litter > psurf)
+      f->p_surf_struct_litter = psurf;
+    if (f->p_soil_struct_litter > psoil)
+      f->p_soil_struct_litter = psoil;
+  }
+  
+  /* remaining P goes to metabolic pools */
+  f->p_surf_metab_litter = psurf - f->p_surf_struct_litter;
+  f->p_soil_metab_litter = psoil - f->p_soil_struct_litter;
+  
+  return;
+}
+
+void pfluxes_from_structural_pools(fluxes *f, params *p, state *s) {
+  /* from structural pool */
+  double sigwt;
+  double structout_surf = s->structsurfp * p->decayrate[0];
+  double structout_soil = s->structsoilp * p->decayrate[2];
+  
+  sigwt = structout_surf / (p->ligshoot * 0.7 + (1.0 - p->ligshoot) * 0.55);
+  
+  /* P flux from surface structural pool -> slow pool */
+  f->p_surf_struct_to_slow = sigwt * p->ligshoot * 0.7;
+  
+  /* P flux surface structural pool -> active pool */
+  f->p_surf_struct_to_active = sigwt * (1.0 - p->ligshoot) * 0.55;
+  
+  sigwt = structout_soil / (p->ligroot * 0.7 + (1. - p->ligroot) * 0.45);
+  
+  
+  /* P flux from soil structural pool -> slow pool */
+  f->p_soil_struct_to_slow = sigwt * p->ligroot * 0.7;
+  
+  /* N flux from soil structural pool -> active pool */
+  f->p_soil_struct_to_active = sigwt * (1.0 - p->ligroot) * 0.45;
+  
+  return;
+}
+
+void pfluxes_from_metabolic_pool(fluxes *f, params *p, state *s) {
+  
+  /* P flux surface metabolic pool -> active pool */
+  f->p_surf_metab_to_active = s->metabsurfp * p->decayrate[1];
+  
+  /* P flux soil metabolic pool  -> active pool */
+  f->p_soil_metab_to_active = s->metabsoilp * p->decayrate[3];
+  
+  return;
+}
+
+
+void pfluxes_from_active_pool(fluxes *f, params *p, state *s,
+                              double frac_microb_resp) {
+  
+  double activeout, sigwt;
+  /* P fluxes from active pool */
+  activeout = s->activesoilp * p->decayrate[4];
+  sigwt = activeout / (1.0 - frac_microb_resp);
+  
+  /* P flux active pool -> slow pool */
+  f->p_active_to_slow = sigwt * (1.0 - frac_microb_resp - 0.004);
+  
+  /* P flux active pool -> passive pool */
+  f->p_active_to_passive = sigwt * 0.004;
+  
+  return;
+}
+
+void pfluxes_from_slow_pool(fluxes *f, params *p, state *s) {
+  /* P fluxes from slow pools */
+  
+  double slowout = s->slowsoilp * p->decayrate[5];
+  double sigwt = slowout / 0.45;
+  
+  /* P flux slow pool -> active pool */
+  f->p_slow_to_active = sigwt * 0.42;
+  
+  /* slow pool -> passive pool */
+  f->p_slow_to_passive = sigwt * 0.03;
+  
+  return;
+}
+
+void pfluxes_from_passive_pool(fluxes *f, params *p, state *s) {
+  /* P fluxes from passive pool */
+  
+  /* P flux passive pool -> active pool */
+  f->p_passive_to_active = s->passivesoilp * p->decayrate[6];
+  
+  return;
+}
+
+void calculate_p_parent_influx(fluxes *f, params *p, state *s) {
+  /* Calculate weathering of parent P materials, i.e. 
+     the fluxes enterring into mineral P pool;
+    
+     Parameters:
+     xloc
+     yloc
+     stepsize
+     slope
+     textur
+     
+     Return:
+   pparentflux: float
+   influx of parent P (current unit: g P m-2 yr-1)
+   
+   */
+  double xloc, yloc, stepsize, slope, texture;
+
+  xloc = 0.7;
+  yloc = 0.0001;
+  stepsize = 0.00016;
+  slope = 2;
+  texture = 1.0 - p->sand_frac;
+  
+  /* calculate P flux from parent materials and convert units */
+  f->pparentflux = ((s->inorgparp * G_AS_TONNES / M2_AS_HA) * 
+    (yloc + (stepsize / M_PI) * atan(M_PI * slope * (texture - xloc)))) * 
+    M2_AS_HA / G_AS_TONNES;
+  
+  return;
+  
+}
+
+void calculate_p_mineralisation(fluxes *f) {
+  /* P gross mineralisation rate is given by the excess of P outflows
+  over inflows. P mineralisation is the process by which organic
+  P is converted to plant available inorganic P, i.e. the microbial conversion of organic P 
+  to H2PO4- or HPO42- forms of plant available P known as orthophosphates.
+  
+  Returns:
+  --------
+  value : float
+  Gross P mineralisation
+  Unit: t/ha/d
+  */
+  f->pgross =  (f->p_surf_struct_to_slow + f->p_surf_struct_to_active +
+    f->p_soil_struct_to_slow + f->p_soil_struct_to_active +
+    f->p_surf_metab_to_active + f->p_soil_metab_to_active +
+    f->p_active_to_slow + f->p_active_to_passive +
+    f->p_slow_to_active + f->p_slow_to_passive +
+    f->p_passive_to_active);
+  return;
+}
+
+void calculate_p_min_partition(fluxes *f, params *p) {
+  /* Calculate the proportion of lab P and sorb P influxes from pgross,
+   assumed that pgross = pmin pool, 
+   based on CENTURY fsfunc function (Metherell et al. 1993)
+   
+  Returns:
+  --------
+  value : float
+  p_lab_influx
+  p_sorb_influx
+   
+  */
+  double const_b, const_c;
+  double total_influx;
+  double lab_influx, sorb_influx;
+
+  total_influx = (f->pparentflux + f->pgross + f->purine) * G_AS_TONNES / M2_AS_HA;
+  
+  const_c = p->sorpmx * (2 - p->sorpaf) / 2;
+  const_b = p->sorpmx - total_influx + const_c;
+  
+  /* Calculate influx for labile P pool from all influx pools */
+  lab_influx = (-const_b + sqrt(const_b*const_b + 4 * const_c * total_influx))/2;
+  
+  /*Calculate influx for sorb P pool from gross min */
+  p->p_lab_frac = lab_influx/total_influx;
+  p->p_sorb_frac = 1 - p->p_lab_frac;
+  sorb_influx = p->p_sorb_frac * total_influx;
+  
+  f->p_lab_influx = lab_influx * M2_AS_HA / G_AS_TONNES;  
+  f->p_sorb_influx = sorb_influx * M2_AS_HA / G_AS_TONNES;
+
+  return;
+
+}
+
+void calculate_p_immobilisation(fluxes *f, params *p, state *s, double *pimmob,
+                                double *active_pc_slope, double *slow_pc_slope,
+                                double *passive_pc_slope) {
+  /* P immobilised in new soil organic matter, the reverse of
+  mineralisation. Micro-organisms in the soil compete with plants for P.
+  Immobilisation occurs when plant available P forms are consumed by microbes, turning 
+  the P into organic P forms that are not available to plants. 
+  
+  When C:P ratio is high the microorganisms need more P from
+  the soil to decompose the carbon in organic materials. This P will be
+  immobilised until these microorganisms die and the P is
+  released.
+  
+  General equation for new soil P:C ratio vs Pmin, expressed as linear
+  equation passing through point Pmin0, actpcmin (etc). Values can be
+  Pmin0=0, Actpc0=Actpcmin
+  
+  if Pmin < Pmincrit:
+  New soil P:C = soil P:C (when Pmin=0) + slope * Pmin
+  
+  if Pmin > Pmincrit
+  New soil P:C = max soil P:C
+  
+  NB P:C ratio of new passive SOM can change even if assume Passiveconst
+  
+  Returns:
+  --------
+  pimob : float
+  P immobilsed
+  */
+  double pmin, arg1, arg2, arg3, numer1, numer2, denom;
+  
+  /* P:C new SOM - active, slow and passive */
+  *active_pc_slope = calculate_pc_slope(p, p->actpcmax, p->actpcmin);
+  *slow_pc_slope = calculate_pc_slope(p, p->slowpcmax, p->slowpcmin);
+  *passive_pc_slope = calculate_pc_slope(p, p->passpcmax, p->passpcmin);
+  
+  /* convert units */
+  pmin = p->pmin0 / M2_AS_HA * G_AS_TONNES;
+  
+  arg1 = (p->passpcmin - *passive_pc_slope * pmin) * f->c_into_passive;
+  arg2 = (p->slowpcmin - *slow_pc_slope * pmin) * f->c_into_slow;
+  arg3 = f->c_into_active * (p->actpcmin - *active_pc_slope * pmin);
+  numer1 = arg1 + arg2 + arg3;
+  
+  arg1 = f->c_into_passive * p->passpcmax;
+  arg2 = f->c_into_slow * p->slowpcmax;
+  arg3 = f->c_into_active * p->actpcmax;
+  numer2 = arg1 + arg2 + arg3;
+  
+  arg1 = f->c_into_passive * *passive_pc_slope;
+  arg2 = f->c_into_slow * *slow_pc_slope;
+  arg3 = f->c_into_active * *active_pc_slope;
+  denom = arg1 + arg2 + arg3;
+  
+  /* evaluate P immobilisation in new SOM */
+  *pimmob = numer1 + denom * s->inorgminp;
+  if (*pimmob > numer2)
+    *pimmob = numer2;
+  
+  return;
+}
+
+void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
+  /*calculate P transfer from strongly sorbed P pool to
+   sorbed P pool; 
+   
+   Parameters
+   ----------
+   
+   phtextint: float   
+   intercept for the texture equation of strongly sorbed P depends upon
+   pH input;
+   
+   phtextslope: float  
+   slope value used in determining effect of sand content on ssorb P flow 
+   to mineral P;
+   
+   psecmn: float
+   controls the flow from secondary to mineral P;
+   
+   Returns:
+   ----------
+   p_ssorb_to_sorb: float
+   flux rate of p strongly sorbed pool to p sorbed pool;
+   
+   */
+  
+  double phtextint, phtextslope;
+  double dely, delx, xslope, yint;
+  int cntrl_text_p = c->text_effect_p;
+  
+  if (cntrl_text_p == 1) {
+    dely = p->phtextmax - p->phmax;
+    delx = p->phtextmin - p->phmin;
+    xslope = dely/delx;
+    yint = p->phtextmin - xslope*p->phmin;
+    
+    if (p->soilph < p->phmin) {
+      phtextint = p->phtextmin;
+    } else if (p->soilph > p->phmax) {
+      phtextint = p->phtextmax;
+    } else {
+      phtextint = xslope * p->soilph + yint;
+    }
+    
+    f->p_ssorb_to_sorb = 12.0 * (phtextint + phtextslope * p->sand_frac) * 
+      (s->inorgssorbp / M2_AS_HA * G_AS_TONNES); //annual sum?
+    
+  } else {
+    f->p_ssorb_to_sorb = p->psecmnp * M2_AS_HA / G_AS_TONNES;
+  }
+  
+  return;
+}
+
+void calc_p_net_mineralisation(fluxes *f) {
+  /* P Net mineralisation from microbial activity */
+  f->pmineralisation = f->p_lab_influx + f->p_sorb_influx - 
+  f->pimmob + f->plittrelease - f->p_sorb_to_ssorb + f->p_ssorb_to_sorb;
+  
+  return;
+}
+
+double calculate_pc_slope(params *p, double pcmax, double pcmin) {
+  /* Returns P:C ratio of the mineral pool slope
+  Need to check back for good relationships; Currently using olde NC relationship
+  based on Parton et al., 1993
+  
+  Parameters
+  ----------
+  pcmax : float
+  SOM pools maximum P:C
+  pcmin: float
+  SOM pools minimum P:C
+  
+  Returns:
+  --------
+  value : float
+  SOM pool P:C ratio
+  */
+  double arg1, arg2, conv;
+  
+  arg1 = pcmax - pcmin;
+  arg2 = p->pmincrit - p->pmin0;
+  conv = M2_AS_HA / G_AS_TONNES;
+  
+  return (arg1 / arg2 * conv);
+}
+
+void calculate_ppools(control *c, fluxes *f, params *p, state *s,
+                      double active_pc_slope, double slow_pc_slope,
+                      double passive_pc_slope) {
+  /*
+  Update P pools in the soil
+  
+  Parameters
+  ----------
+  active_pc_slope : float
+  active PC slope
+  slow_pc_slope: float
+  slow PC slope
+  passive_pc_slope : float
+  passive PC slope
+  
+  */
+  
+  double p_into_active, p_out_of_active, p_into_slow, p_out_of_slow,
+  p_into_passive, p_out_of_passive, arg, active_pc, fixp, slow_pc,
+  pass_pc;
+  
+  /*
+  net P release implied by separation of litter into structural
+  & metabolic. The following pools only fix or release P at their
+  limiting p:c values.
+  */
+  
+  /* P released or fixed from the P inorganic labile pool is incremented with
+  each call to pc_limit and stored in f->plittrelease */
+  f->plittrelease = 0.0;
+  
+  s->structsurfp += (f->p_surf_struct_litter -
+    (f->p_surf_struct_to_slow +
+    f->p_surf_struct_to_active));
+  
+  s->structsoilp += (f->p_soil_struct_litter -
+    (f->p_soil_struct_to_slow + f->p_soil_struct_to_active));
+  
+  if (c->strpfloat == FALSE) {
+    s->structsurfp += pc_limit(f, s->structsurf, s->structsurfp,
+                               1.0/p->structcp, 1.0/p->structcp);
+    s->structsoilp += pc_limit(f, s->structsoil, s->structsoilp,
+                               1.0/p->structcp, 1.0/p->structcp);
+  }
+  
+  s->metabsurfp += f->p_surf_metab_litter - f->p_surf_metab_to_active;
+  s->metabsurfp += pc_limit(f, s->metabsurf, s->metabsurfp,
+                            1.0/150.0, 1.0/80.0);                                  /* pcmin & pcmax from Parton 1989 fig 2 */
+  s->metabsoilp += (f->p_soil_metab_litter - f->p_soil_metab_to_active);
+  s->metabsoilp += pc_limit(f, s->metabsoil, s->metabsoilp, 
+                            1.0/150.0, 1.0/80.0);                                  /* pcmin & pcmax from Parton 1989 fig 2 */
+  
+  /* When nothing is being added to the metabolic pools, there is the
+  potential scenario with the way the model works for tiny bits to be
+  removed with each timestep. Effectively with time this value which is
+  zero can end up becoming zero but to a silly decimal place */
+  precision_control_soil_p(f, s);
+  
+  /* Update SOM pools */
+  p_into_active = (f->p_surf_struct_to_active + f->p_soil_struct_to_active +
+  f->p_surf_metab_to_active + f->p_soil_metab_to_active +
+  f->p_slow_to_active + f->p_passive_to_active);
+  
+  p_out_of_active = f->p_active_to_slow + f->p_active_to_passive;
+  
+  p_into_slow = (f->p_surf_struct_to_slow + f->p_soil_struct_to_slow +
+    f->p_active_to_slow);
+  
+  p_out_of_slow = f->p_slow_to_active + f->p_slow_to_passive;
+  p_into_passive = f->p_active_to_passive + f->p_slow_to_passive;
+  p_out_of_passive = f->p_passive_to_active;
+  
+  /* P:C of the SOM pools increases linearly btw prescribed min and max
+  values as the Pconc of the soil increases. */
+  arg = s->inorgminp - p->pmin0 / M2_AS_HA * G_AS_TONNES;
+  
+  /* active */
+  active_pc = p->actpcmin + active_pc_slope * arg;
+  if (active_pc > p->actpcmax)
+    active_pc = p->actpcmax;
+  
+  /* release P to Inorganic labile pool or fix P from the Inorganic pool in order
+  to normalise the P:C ratio of a net flux */
+  fixp = pc_flux(f->c_into_active, p_into_active, active_pc);
+  s->activesoilp += p_into_active + fixp - p_out_of_active;
+  
+  /* slow */
+  slow_pc = p->slowpcmin + slow_pc_slope * arg;
+  if (slow_pc > p->slowpcmax)
+    slow_pc = p->slowpcmax;
+  
+  /* release P to Inorganic pool or fix P from the Inorganic pool in order
+  to normalise the P:C ratio of a net flux */
+  fixp = pc_flux(f->c_into_slow, p_into_slow, slow_pc);
+  s->slowsoilp += p_into_slow + fixp - p_out_of_slow;
+  
+  /* passive, update passive pool only if passiveconst=0 */
+  pass_pc = p->passpcmin + passive_pc_slope * arg;
+  if (pass_pc > p->passpcmax)
+    pass_pc = p->passpcmax;
+  
+  /* release P to Inorganic pool or fix P from the Inorganic pool in order
+  to normalise the P:C ratio of a net flux */
+  fixp = pc_flux(f->c_into_passive, p_into_passive, pass_pc);
+  s->passivesoilp += p_into_passive + fixp - p_out_of_passive;
+  
+  /* Daily increment of soil inorganic mineral P pool (lab + sorb), diff btw in and effluxes
+  (grazer urine P goes directly into inorganic pool)  */
+  s->inorgminp += f->pmineralisation - f->ploss - f->puptake;
+  
+  /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
+  s->inorgssorbp += f->p_sorb_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_sorb;
+  
+  /* Daily increment of soil inorganic occluded P pool */
+  s->inorgoccp += f->p_ssorb_to_occ;
+  
+  /* Daily increment of soil inorganic labile and sorbed P pool */  
+  s->inorglabp += s->inorgminp * p->p_lab_frac;
+  s->inorgssorbp += s->inorgminp * p->p_sorb_frac;
+  
+  return;
+}
+
+
+double pc_limit(fluxes *f, double cpool, double ppool, double pcmin,
+                double pcmax) {
+  /* Release P to 'Inorglabp' pool or fix P from 'Inorglabp', in order to keep
+  the  P:C ratio of a litter pool within the range 'pcmin' to 'pcmax'.
+  
+  Parameters:
+  -----------
+  cpool : float
+  various C pool (state)
+  ppool : float
+  various P pool (state)
+  pcmin : float
+  min P:C ratio
+  pcmax : float
+  max P:C ratio
+  
+  Returns:
+  --------
+  fix/rel : float
+  amount of P to be added/released from the inorganic pool
+  
+  */
+  double rel, fix;
+  double pmax = cpool * pcmax;
+  double pmin = cpool * pcmin;
+  
+  if (ppool > pmax) {
+    /* release */
+    rel = ppool - pmax;
+    f->plittrelease += rel;
+    return (-rel);
+  } else if (ppool < pmin) {
+    /* fix */
+    fix = pmin - ppool;
+    f->plittrelease -= fix;
+    return (fix);
+  } else {
+    return (0.0);
+  }
+}
+
+double pc_flux(double cflux, double pflux, double pc_ratio) {
+  /*
+  Release P to Inorganic pool or fix P from the Inorganic pool in order
+  to normalise the P:C ratio of a net flux
+  
+  Parameters:
+  -----------
+  cflux : float
+  C flux into SOM pool
+  pflux : float
+  P flux into SOM pool
+  pc_ratio : float
+  preferred P:C ratio
+  
+  Returns:
+  fix : float
+  Returns the amount of P required to be fixed
+  */
+  
+  return (cflux * pc_ratio) - pflux;
+}
+
+
+void precision_control_soil_p(fluxes *f, state *s) {
+  /* Detect very low values in state variables and force to zero to
+  avoid rounding and overflow errors */
+  
+  double tolerance = 1E-08, excess;
+  
+  if (s->metabsurfp < tolerance) {
+    excess = s->metabsurfp;
+    f->p_surf_metab_to_active = excess;
+    s->metabsurfp = 0.0;
+  }
+  
+  if (s->metabsoilp < tolerance) {
+    excess = s->metabsoilp;
+    f->p_soil_metab_to_active = excess;
+    s->metabsoilp = 0.0;
+  }
+  
+  return;
+}
+

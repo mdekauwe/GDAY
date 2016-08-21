@@ -232,6 +232,19 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown fixed_stem_nc option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "fixed_stem_pc")) {
+      if (strcmp(temp, "False") == 0 ||
+          strcmp(temp, "FALSE") == 0 ||
+          strcmp(temp, "false") == 0)
+        c->fixed_stem_pc = FALSE;
+      else if (strcmp(temp, "True") == 0 ||
+               strcmp(temp, "TRUE") == 0 ||
+               strcmp(temp, "true") == 0)
+        c->fixed_stem_pc = TRUE;
+      else {
+        fprintf(stderr, "Unknown fixed_stem_pc option: %s\n", temp);
+        exit(EXIT_FAILURE);
+      }
     } else if (MATCH("control", "fixed_lai")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -258,6 +271,19 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown fixleafnc option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "fixleafpc")) {
+      if (strcmp(temp, "False") == 0 ||
+          strcmp(temp, "FALSE") == 0 ||
+          strcmp(temp, "false") == 0)
+        c->fixleafpc = FALSE;
+      else if (strcmp(temp, "True") == 0 ||
+               strcmp(temp, "TRUE") == 0 ||
+               strcmp(temp, "true") == 0)
+        c->fixleafpc = TRUE;
+      else {
+        fprintf(stderr, "Unknown fixleafpc option: %s\n", temp);
+        exit(EXIT_FAILURE);
+      }
     } else if (MATCH("control", "grazing")) {
         c->grazing = atoi(value);
     } else if (MATCH("control", "gs_model")) {
@@ -309,8 +335,23 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown ncycle option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "pcycle")) {
+      if (strcmp(temp, "False") == 0 ||
+          strcmp(temp, "FALSE") == 0 ||
+          strcmp(temp, "false") == 0)
+        c->ncycle = FALSE;
+      else if (strcmp(temp, "True") == 0 ||
+               strcmp(temp, "TRUE") == 0 ||
+               strcmp(temp, "true") == 0)
+        c->pcycle = TRUE;
+      else {
+        fprintf(stderr, "Unknown pcycle option: %s\n", temp);
+        exit(EXIT_FAILURE);
+      }
     } else if (MATCH("control", "nuptake_model")) {
         c->nuptake_model = atoi(value);
+    } else if (MATCH("control", "puptake_model")) {
+      c->puptake_model = atoi(value);
     } else if (MATCH("control", "output_ascii")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -407,6 +448,8 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown strfloat option: %s\n", temp);
             exit(EXIT_FAILURE);
         }*/
+    } else if (MATCH("control", "strpfloat")) {
+      c->strpfloat = atoi(value);
     } else if (MATCH("control", "sw_stress_model")) {
         c->sw_stress_model = atoi(value);
     } else if (MATCH("control", "use_eff_nc")) {
@@ -436,6 +479,8 @@ int handler(char *section, char *name, char *value, control *c,
         s->activesoil = atof(value);
     } else if (MATCH("state", "activesoiln")) {
         s->activesoiln = atof(value);
+    } else if (MATCH("state", "activesoilp")) {
+      s->activesoilp = atof(value);
     } else if (MATCH("state", "age")) {
         s->age = atof(value);
     } else if (MATCH("state", "avg_albranch")) {
@@ -452,32 +497,58 @@ int handler(char *section, char *name, char *value, control *c,
         s->branch = atof(value);
     } else if (MATCH("state", "branchn")) {
         s->branchn = atof(value);
+    } else if (MATCH("state", "branchp")) {
+      s->branchp = atof(value);
     } else if (MATCH("state", "canht")) {
         s->canht = atof(value);
     } else if (MATCH("state", "croot")) {
         s->croot = atof(value);
     } else if (MATCH("state", "crootn")) {
         s->crootn = atof(value);
+    } else if (MATCH("state", "crootp")) {
+      s->crootp = atof(value);
     } else if (MATCH("state", "cstore")) {
         s->cstore = atof(value);
     } else if (MATCH("state", "inorgn")) {
         s->inorgn = atof(value);
+    } else if (MATCH("state", "inorgp")) {
+      s->inorgp = atof(value);
+    } else if (MATCH("state", "inorgminp")) {
+      s->inorgminp = atof(value);
+    } else if (MATCH("state", "inorglabp")) {
+      s->inorglabp = atof(value);
+    } else if (MATCH("state", "inorgsorbp")) {
+      s->inorgsorbp = atof(value);
+    } else if (MATCH("state", "inorgssorbp")) {
+      s->inorgssorbp = atof(value);
+    } else if (MATCH("state", "inorgoccp")) {
+      s->inorgoccp = atof(value);
+    } else if (MATCH("state", "inorgparp")) {
+      s->inorgparp = atof(value);
     } else if (MATCH("state", "lai")) {
         s->lai = atof(value);
     } else if (MATCH("state", "metabsoil")) {
         s->metabsoil = atof(value);
     } else if (MATCH("state", "metabsoiln")) {
         s->metabsoiln = atof(value);
+    } else if (MATCH("state", "metabsoilp")) {
+      s->metabsoilp = atof(value);
     } else if (MATCH("state", "metabsurf")) {
         s->metabsurf = atof(value);
     } else if (MATCH("state", "metabsurfn")) {
         s->metabsurfn = atof(value);
+    } else if (MATCH("state", "metabsurfp")) {
+      s->metabsurfp = atof(value);
     } else if (MATCH("state", "nstore")) {
         s->nstore = atof(value);
+    } else if (MATCH("state", "pstore")) {
+      s->pstore = atof(value);
     } else if (MATCH("state", "passivesoil")) {
         s->passivesoil = atof(value);
     } else if (MATCH("state", "passivesoiln")) {
         s->passivesoiln = atof(value);
+    } else if (MATCH("state", "passivesoilp")) {
+      s->passivesoilp = atof(value);
     } else if (MATCH("state", "pawater_root")) {
         s->pawater_root = atof(value);
     } else if (MATCH("state", "pawater_topsoil")) {
@@ -490,18 +561,24 @@ int handler(char *section, char *name, char *value, control *c,
         s->root_depth = atof(value);
     } else if (MATCH("state", "rootn")) {
         s->rootn = atof(value);
+    } else if (MATCH("state", "rootp")) {
+      s->rootp = atof(value);
     } else if (MATCH("state", "sapwood")) {
         s->sapwood = atof(value);
     } else if (MATCH("state", "shoot")) {
         s->shoot = atof(value);
     } else if (MATCH("state", "shootn")) {
         s->shootn = atof(value);
+    } else if (MATCH("state", "shootp")) {
+      s->shootp = atof(value);
     } else if (MATCH("state", "sla")) {
         s->sla = atof(value);
     } else if (MATCH("state", "slowsoil")) {
         s->slowsoil = atof(value);
     } else if (MATCH("state", "slowsoiln")) {
         s->slowsoiln = atof(value);
+    } else if (MATCH("state", "slowsoilp")) {
+      s->slowsoilp = atof(value);
     } else if (MATCH("state", "stem")) {
         s->stem = atof(value);
     } else if (MATCH("state", "stemn")) {
@@ -510,14 +587,24 @@ int handler(char *section, char *name, char *value, control *c,
         s->stemnimm = atof(value);
     } else if (MATCH("state", "stemnmob")) {
         s->stemnmob = atof(value);
+    } else if (MATCH("state", "stemp")) {
+      s->stemp = atof(value);
+    } else if (MATCH("state", "stempimm")) {
+      s->stempimm = atof(value);
+    } else if (MATCH("state", "stempmob")) {
+      s->stempmob = atof(value);
     } else if (MATCH("state", "structsoil")) {
         s->structsoil = atof(value);
     } else if (MATCH("state", "structsoiln")) {
         s->structsoiln = atof(value);
+    } else if (MATCH("state", "structsoilp")) {
+      s->structsoilp = atof(value);
     } else if (MATCH("state", "structsurf")) {
         s->structsurf = atof(value);
     } else if (MATCH("state", "structsurfn")) {
         s->structsurfn = atof(value);
+    } else if (MATCH("state", "structsurfp")) {
+      s->structsurfp = atof(value);
     }
 
     /* Params */
@@ -525,6 +612,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->actncmax = atof(value);
     } else if (MATCH("params", "actncmin")) {
         p->actncmin = atof(value);
+    } else if (MATCH("params", "actpcmax")) {
+        p->actpcmax = atof(value);
+    } else if (MATCH("params", "actpcmin")) {
+        p->actpcmin = atof(value);
     } else if (MATCH("params", "a0rhizo")) {
         p->a0rhizo = atof(value);
     } else if (MATCH("params", "a1rhizo")) {
@@ -571,6 +662,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->crdecay = atof(value);
     } else if (MATCH("params", "cretrans")) {
         p->cretrans = atof(value);
+    //} else if (MATCH("params", "cretransp")) {
+    //  p->cretransp = atof(value);
     } else if (MATCH("params", "croot0")) {
         p->croot0 = atof(value);
     } else if (MATCH("params", "croot1")) {
@@ -615,12 +708,18 @@ int handler(char *section, char *name, char *value, control *c,
         p->faecescn = atof(value);
     } else if (MATCH("params", "faecesn")) {
         p->faecesn = atof(value);
+    } else if (MATCH("params", "faecescp")) {
+      p->faecescp = atof(value);
+    } else if (MATCH("params", "faecesp")) {
+      p->faecesp = atof(value);
     } else if (MATCH("params", "fdecay")) {
         p->fdecay = atof(value);
     } else if (MATCH("params", "fdecaydry")) {
         p->fdecaydry = atof(value);
     } else if (MATCH("params", "fhw")) {
         p->fhw = atof(value);
+    } else if (MATCH("params", "fhwp")) {
+      p->fhwp = atof(value);
     } else if (MATCH("params", "finesoil")) {
         p->finesoil = atof(value);
     } else if (MATCH("params", "fix_lai")) {
@@ -631,10 +730,14 @@ int handler(char *section, char *name, char *value, control *c,
         p->fracteaten = atof(value);
     } else if (MATCH("params", "fractosoil")) {
         p->fractosoil = atof(value);
+    } else if (MATCH("params", "fractosoilp")) {
+      p->fractosoilp = atof(value);
     } else if (MATCH("params", "fractup_soil")) {
         p->fractup_soil = atof(value);
     } else if (MATCH("params", "fretrans")) {
         p->fretrans = atof(value);
+    //} else if (MATCH("params", "fretransp")) {
+    //  p->fretransp = atof(value);
     } else if (MATCH("params", "g1")) {
         p->g1 = atof(value);
     } else if (MATCH("params", "gamstar25")) {
@@ -685,8 +788,12 @@ int handler(char *section, char *name, char *value, control *c,
         p->kq10 = atof(value);
     } else if (MATCH("params", "kr")) {
         p->kr = atof(value);
+    } else if (MATCH("params", "krp")) {
+      p->krp = atof(value);
     } else if (MATCH("params", "kn")) {
         p->kn = atof(value);
+    } else if (MATCH("params", "kp")) {
+        p->kp = atof(value);
     } else if (MATCH("params", "lad")) {
         p->lad = atof(value);
     } else if (MATCH("params", "lai_closed")) {
@@ -719,14 +826,30 @@ int handler(char *section, char *name, char *value, control *c,
         p->nccnew = atof(value);
     } else if (MATCH("params", "nccnewz")) {
         p->nccnewz = atof(value);
+    } else if (MATCH("params", "pcbnew")) {
+      p->pcbnew = atof(value);
+    } else if (MATCH("params", "pcbnewz")) {
+      p->pcbnewz = atof(value);
+    } else if (MATCH("params", "pccnew")) {
+      p->pccnew = atof(value);
+    } else if (MATCH("params", "pcnnewz")) {
+      p->pccnewz = atof(value);
     } else if (MATCH("params", "ncmaxfold")) {
         p->ncmaxfold = atof(value);
     } else if (MATCH("params", "ncmaxfyoung")) {
         p->ncmaxfyoung = atof(value);
     } else if (MATCH("params", "ncmaxr")) {
         p->ncmaxr = atof(value);
+    } else if (MATCH("params", "pcmaxfold")) {
+      p->pcmaxfold = atof(value);
+    } else if (MATCH("params", "pcmaxfyoung")) {
+      p->pcmaxfyoung = atof(value);
+    } else if (MATCH("params", "pcmaxr")) {
+      p->pcmaxr = atof(value);
     } else if (MATCH("params", "ncrfac")) {
         p->ncrfac = atof(value);
+    } else if (MATCH("params", "pcrfac")) {
+      p->pcrfac = atof(value);
     } else if (MATCH("params", "ncwimm")) {
         p->ncwimm = atof(value);
     } else if (MATCH("params", "ncwimmz")) {
@@ -735,10 +858,22 @@ int handler(char *section, char *name, char *value, control *c,
         p->ncwnew = atof(value);
     } else if (MATCH("params", "ncwnewz")) {
         p->ncwnewz = atof(value);
+    } else if (MATCH("params", "pcwimm")) {
+      p->pcwimm = atof(value);
+    } else if (MATCH("params", "pcwimmz")) {
+      p->pcwimmz = atof(value);
+    } else if (MATCH("params", "pcwnew")) {
+      p->pcwnew = atof(value);
+    } else if (MATCH("params", "pcwnewz")) {
+      p->pcwnewz = atof(value);
     } else if (MATCH("params", "nf_crit")) {
         p->nf_crit = atof(value);
     } else if (MATCH("params", "nf_min")) {
         p->nf_min = atof(value);
+    } else if (MATCH("params", "pf_crit")) {
+      p->pf_crit = atof(value);
+    } else if (MATCH("params", "pf_min")) {
+      p->pf_min = atof(value);
     } else if (MATCH("params", "nmax")) {
         p->nmax = atof(value);
     } else if (MATCH("params", "nmin")) {
@@ -753,6 +888,20 @@ int handler(char *section, char *name, char *value, control *c,
         p->ntheta_topsoil = atof(value);
     } else if (MATCH("params", "nuptakez")) {
         p->nuptakez = atof(value);
+    } else if (MATCH("params", "pmax")) {
+      p->pmax = atof(value);
+    } else if (MATCH("params", "pmin")) {
+      p->pmin = atof(value);
+    } else if (MATCH("params", "pmin0")) {
+      p->pmin0 = atof(value);
+    } else if (MATCH("params", "pmincrit")) {
+      p->pmincrit = atof(value);
+    } else if (MATCH("params", "ptheta_root")) {
+      p->ptheta_root = atof(value);
+    } else if (MATCH("params", "ptheta_topsoil")) {
+      p->ptheta_topsoil = atof(value);
+    } else if (MATCH("params", "puptakez")) {
+      p->puptakez = atof(value);
     } else if (MATCH("params", "oi")) {
         p->oi = atof(value);
     } else if (MATCH("params", "passivesoilnz")) {
@@ -763,8 +912,28 @@ int handler(char *section, char *name, char *value, control *c,
         p->passncmax = atof(value);
     } else if (MATCH("params", "passncmin")) {
         p->passncmin = atof(value);
+    } else if (MATCH("params", "passpcmax")) {
+      p->passpcmax = atof(value);
+    } else if (MATCH("params", "passpcmin")) {
+      p->passpcmin = atof(value);
+    } else if (MATCH("params", "phmax")) {
+      p->phmax = atof(value);
+    } else if (MATCH("params", "phmin")) {
+      p->phmin = atof(value);
+    } else if (MATCH("params", "phtextmax")) {
+      p->phtextmax = atof(value);
+    } else if (MATCH("params", "phtextmin")) {
+      p->phtextmin = atof(value);
+    } else if (MATCH("params", "p_lab_frac")) {
+      p->p_lab_frac = atof(value);
+    } else if (MATCH("params", "p_sorb_frac")) {
+      p->p_sorb_frac = atof(value);
+    } else if (MATCH("params", "psecmnp")) {
+      p->psecmnp = atof(value);
     } else if (MATCH("params", "prescribed_leaf_NC")) {
         p->prescribed_leaf_NC = atof(value);
+    } else if (MATCH("params", "prescribed_leaf_PC")) {
+      p->prescribed_leaf_PC = atof(value);
     } else if (MATCH("params", "previous_ncd")) {
         p->previous_ncd = atof(value);
     } else if (MATCH("params", "psi_sat_root")) {
@@ -781,14 +950,20 @@ int handler(char *section, char *name, char *value, control *c,
         p->r0 = atof(value);
     } else if (MATCH("params", "rateloss")) {
         p->rateloss = atof(value);
+    } else if (MATCH("params", "prateloss")) {
+        p->prateloss = atof(value);
     } else if (MATCH("params", "rateuptake")) {
         p->rateuptake = atof(value);
+    } else if (MATCH("params", "prateuptake")) {
+      p->prateuptake = atof(value);
     } else if (MATCH("params", "rdecay")) {
         p->rdecay = atof(value);
     } else if (MATCH("params", "rdecaydry")) {
         p->rdecaydry = atof(value);
     } else if (MATCH("params", "retransmob")) {
         p->retransmob = atof(value);
+    //} else if (MATCH("params", "retransmobp")) {
+    //  p->retransmobp = atof(value);
     } else if (MATCH("params", "rfmult")) {
         p->rfmult = atof(value);
     } else if (MATCH("params", "rooting_depth")) {
@@ -799,6 +974,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->root_exu_CUE = atof(value);
     } else if (MATCH("params", "rretrans")) {
         p->rretrans = atof(value);
+    //} else if (MATCH("params", "rretransp")) {
+    //    p->rretransp = atof(value);
+    } else if (MATCH("params", "sand_frac")) {
+      p->sand_frac = atof(value);
     } else if (MATCH("params", "sapturnover")) {
         p->sapturnover = atof(value);
     } else if (MATCH("params", "sla")) {
@@ -811,12 +990,26 @@ int handler(char *section, char *name, char *value, control *c,
         p->slowncmax = atof(value);
     } else if (MATCH("params", "slowncmin")) {
         p->slowncmin = atof(value);
+    } else if (MATCH("params", "slowpcmax")) {
+      p->slowpcmax = atof(value);
+    } else if (MATCH("params", "slowpcmin")) {
+      p->slowpcmin = atof(value);
     } else if (MATCH("params", "store_transfer_len")) {
         p->store_transfer_len = atof(value);
     } else if (MATCH("params", "structcn")) {
         p->structcn = atof(value);
     } else if (MATCH("params", "structrat")) {
         p->structrat = atof(value);
+    } else if (MATCH("params", "structcp")) {
+      p->structcp = atof(value);
+    } else if (MATCH("params", "structratp")) {
+      p->structratp = atof(value);
+    } else if (MATCH("params", "sorpmx")) {
+      p->sorpmx = atof(value);
+    } else if (MATCH("params", "sorpaf")) {
+      p->sorpaf = atof(value);
+    } else if (MATCH("params", "soilph")) {
+      p->soilph = atof(value);
     } else if (MATCH("params", "targ_sens")) {
         p->targ_sens = atof(value);
     } else if (MATCH("params", "theta")) {
@@ -857,6 +1050,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->wetloss = atof(value);
     } else if (MATCH("params", "wretrans")) {
         p->wretrans = atof(value);
+   // } else if (MATCH("params", "wretransp")) {
+   //   p->wretransp = atof(value);
     } else if (MATCH("params", "z0h_z0m")) {
         p->z0h_z0m = atof(value);
     }
