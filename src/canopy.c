@@ -261,7 +261,7 @@ void calculate_top_of_canopy_leafp(canopy_wk *cw, params *p, state *s) {
   
   /*
    Calculate the P at the top of the canopy (g P m-2), P0, based on
-   calculate_top_of_canopy_leafn relationship;
+   calculate_top_of_canopy_leafp relationship;
    
    */
   double Ptot;
@@ -270,11 +270,11 @@ void calculate_top_of_canopy_leafp(canopy_wk *cw, params *p, state *s) {
   double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
   
   if (s->lai > 0.0) {
-    /* the total amount of nitrogen in the canopy */
+    /* the total amount of phosphorus in the canopy */
     Ptot = s->shootpc * LMA * s->lai;
     
     /* top of canopy leaf N (gN m-2) */
-    cw->P0 = Ptot * p->kn / (1.0 - exp(-p->kn * s->lai));
+    cw->P0 = Ptot * p->kp / (1.0 - exp(-p->kp * s->lai));
   } else {
     cw->P0 = 0.0;
   }

@@ -82,7 +82,6 @@ void initialise_params(params *p) {
     p->branch0 = 5.61;
     p->branch1 = 0.346;
     p->bretrans = 0.0;
-    //p->bretransp = 0.0;
     p->c_alloc_bmax = 0.1;
     p->c_alloc_bmin = 0.1;
     p->c_alloc_cmax = 0.0;
@@ -93,7 +92,6 @@ void initialise_params(params *p) {
     p->cfracts = 0.5;
     p->crdecay = 0.0;
     p->cretrans = 0.0;
-    //p->cretransp = 0.0;
     p->croot0 = 0.34;
     p->croot1 = 0.84;
     p->ctheta_root = 0.4;
@@ -130,7 +128,6 @@ void initialise_params(params *p) {
     p->fractosoilp = 0.85;
     p->fractup_soil = 0.5;
     p->fretrans = 0.5;
-    //p->fretransp = 0.5;
     p->g1 = 2.74;
     p->gamstar25 = 42.75;
     p->growth_efficiency = 0.7;
@@ -146,7 +143,7 @@ void initialise_params(params *p) {
     p->jmaxpb = 19.846;
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
-    p->kc25 = 404.9;    /* MM coefft of Rubisco for CO2 (umol mol-1) */
+    p->kc25 = 404.9;      /* MM coefft of Rubisco for CO2 (umol mol-1) */
     p->kdec1 = 3.965571;
     p->kdec2 = 14.61;
     p->kdec3 = 4.904786;
@@ -230,11 +227,11 @@ void initialise_params(params *p) {
     p->p_sorb_frac = 0.0;
     p->psecmnp = 0.0022;
     p->prescribed_leaf_NC = 0.03;
-    p->prescribed_leaf_PC = 0.00249;  /*Crous et al. 2015 Figure 3, Plant Soil */
+    p->prescribed_leaf_PC = 0.00249;  /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */
     p->previous_ncd = 35.0;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
-    p->qs = 1.0; /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
+    p->qs = 1.0;                      /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
     p->rateloss = 0.5;    
     p->prateloss = 0.5;
@@ -243,13 +240,11 @@ void initialise_params(params *p) {
     p->rdecay = 0.33333;
     p->rdecaydry = 0.33333;
     p->retransmob = 0.0;
-    //p->retransmobp = 0.0;
     p->rfmult = 1.0;
     p->root_exu_CUE = -999.9;
     p->rooting_depth = 750.0;
     strcpy(p->rootsoil_type, "clay");
     p->rretrans = 0.0;
-    //p->rretransp = 0.0;
     p->sand_frac = 0.2;
     p->sapturnover = 0.1;
     p->sla = 4.4;
@@ -289,7 +284,6 @@ void initialise_params(params *p) {
     p->wdecay = 0.02;
     p->wetloss = 0.5;
     p->wretrans = 0.0;
-    //p->wretransp = 0.0;
     p->z0h_z0m = 1.0;
     p->fmleaf = 0.0;
     p->fmroot = 0.0;
@@ -483,7 +477,6 @@ void initialise_fluxes(fluxes *f) {
     f->p_ssorb_to_occ = 0.000006;
     f->pparentflux = 0.0;
     
-    
     /* CO2 flows to the air */
     /* C flows to the air */
     for (i = 0; i < 7; i++) {
@@ -532,7 +525,7 @@ void initialise_state(state *s) {
     s->avg_alstem = 0.0;
     s->branch = 14.5137000708;
     s->branchn = 0.0442890661217;
-    s->branchp = 0.0442890661217;
+    s->branchp = 0.00580548;
     s->canht = 23.0964973582;
     s->croot = 0.0;
     s->crootn = 0.0;
@@ -543,9 +536,9 @@ void initialise_state(state *s) {
     s->inorgminp = 0.0274523714275;
     s->inorglabp = 0.0274523714275;
     s->inorgsorbp = 0.0;
-    s->inorgssorbp = 0.015;             /* CENTURY value, unit converted from 15 g P m-2 to t/ha */
+    s->inorgssorbp = 0.15;             /* CENTURY value, unit converted from 15 g P m-2 to t/ha */
     s->inorgoccp = 0.0;
-    s->inorgparp = 0.5;                 /* CENTURY value, unit converted from 50 g P m-2 to t/ha */
+    s->inorgparp = 0.5;                /* CENTURY value, unit converted from 50 g P m-2 to t/ha */
     s->metabsoil = 0.135656771805;
     s->metabsoiln = 0.00542627087221;
     s->metabsoilp = 0.001179624;        /* based on metabolic pool C/P ratio of 115 from Parton et al., 1989, Ecology of arable land. */

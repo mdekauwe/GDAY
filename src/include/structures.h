@@ -204,7 +204,6 @@ typedef struct {
     double branch0;                         /* constant in branch-stem allometry (trees) */
     double branch1;                         /* exponent in branch-stem allometry */
     double bretrans;                        /* branch n retranslocation fraction */
-    //double bretransp;                       /* branch p retranslocation fraction */
     double c_alloc_bmax;                    /* allocation to branches at branch n_crit. If using allometric model this is the max alloc to branches */
     double c_alloc_bmin;                    /* allocation to branches at zero branch n/c. If using allometric model this is the min alloc to branches */
     double c_alloc_cmax;                    /* allocation to coarse roots at n_crit. If using allometric model this is the max alloc to coarse roots */
@@ -215,7 +214,6 @@ typedef struct {
     double cfracts;                         /* carbon fraction of dry biomass */
     double crdecay;                         /* coarse roots turnover rate (1/yr) */
     double cretrans;                        /* coarse root n retranslocation fraction */
-    //double cretransp;                       /* coarse root p retranslocation fraction */
     double croot0;                          /* constant in coarse_root-stem allometry (trees) */
     double croot1;                          /* exponent in coarse_root-stem allometry */
     double ctheta_root;                     /* Fitted parameter based on Landsberg and Waring */
@@ -243,7 +241,7 @@ typedef struct {
     double fdecay;                          /* foliage turnover rate (1/yr) */
     double fdecaydry;                       /* Foliage turnover rate - dry soil (1/yr) */
     double fhw;                             /* n:c ratio of stemwood - immobile pool and new ring */
-    double fhwp;                            /* p:n ratio of stemwood - immobile pool and new ring */
+    double fhwp;                            /* p:c ratio of stemwood - immobile pool and new ring */
     double finesoil;                        /* clay+silt fraction */
     double fix_lai;                         /* value to fix LAI to, control fixed_lai flag must be set */
     double fracfaeces;                      /* Fractn of grazd C that ends up in faeces (0..1) */
@@ -252,7 +250,6 @@ typedef struct {
     double fractosoilp;                     /* Fractn of grazed P recycled to soil:faeces+urine */
     double fractup_soil;                    /* fraction of uptake from top soil layer */
     double fretrans;                        /* foliage n retranslocation fraction - 46-57% in young E. globulus trees - see Corbeels et al 2005 ecological modelling 187, pg 463. Roughly 50% from review Aerts '96 */
-    //double fretransp;                       /* foliage P retranslocation fraction */
     double g1;                              /* stomatal conductance parameter: Slope of reln btw gs and assimilation (fitted by species/pft). */
     double gamstar25;                       /* Base rate of CO2 compensation point at 25 deg C [umol mol-1] */
     double growth_efficiency;               /* growth efficiency (yg) - used only in Bewdy */
@@ -363,18 +360,16 @@ typedef struct {
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */
-    double prateloss;                        /* Rate of P loss from mineral P pool (/yr) */
+    double prateloss;                       /* Rate of P loss from mineral P pool (/yr) */
     double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf */
-    double prateuptake;                      /* Rate of P uptake from mineral P pool (/yr) */
+    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr) */
     double rdecay;                          /* root turnover rate (1/yr) */
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
     double retransmob;                      /* Fraction stem mobile N retranscd (/yr) */
-    //double retransmobp;                      /* Fraction stem mobile P retranscd (/yr) */
     double rfmult;
     double rooting_depth;                   /* Rooting depth (mm) */
     char   rootsoil_type[STRING_LENGTH];
     double rretrans;                        /* root n retranslocation fraction */
-    //double rretransp;                       /* root p retranslocation fraction */
     double sand_frac;                       /* fraction of sand in soil (top + root averaged) */ 
     double sapturnover;                     /* Sapwood turnover rate: conversion of sapwood to heartwood (1/yr) */
     double sla;                             /* specific leaf area (m2 one-sided/kg DW) */
@@ -406,7 +401,7 @@ typedef struct {
     double vcmaxna;                         /* slope of the reln btween vcmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double vcmaxnb;                         /* intercept of vcmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double vcmaxpa;                         /* slope of the reln btween vcmax and leaf P content, units = (umol [gP]-1 s-1) # Warren 2011 Tree Physiology */
-    double vcmaxpb;                         /* intercept of vcmax vs n, units = (umol [gN]-1 s-1) # Warren 2011 Tree Physiology */
+    double vcmaxpb;                         /* intercept of vcmax vs p, units = (umol [gN]-1 s-1) # Warren 2011 Tree Physiology */
     double watdecaydry;                     /* water fractn for dry litterfall rates */
     double watdecaywet;                     /* water fractn for wet litterfall rates */
     double wcapac_root;                     /* Max plant avail soil water -root zone, i.e. total (mm) (smc_sat-smc_wilt) * root_depth (750mm) = [mm (water) / m (soil depth)] */
@@ -414,7 +409,6 @@ typedef struct {
     double wdecay;                          /* wood turnover rate (1/yr) */
     double wetloss;                         /* Daily rainfall lost per lai (mm/day) */
     double wretrans;                        /* mobile wood N retranslocation fraction */
-    //double wretransp;                        /* mobile wood P retranslocation fraction */
     double z0h_z0m;                         /* Assume z0m = z0h, probably a big assumption [as z0h often < z0m.], see comment in code!! But 0.1 might be a better assumption */
     double fmleaf;
     double fmroot;
@@ -762,7 +756,7 @@ typedef struct {
     double trans_canopy;    /* canopy transpiration (mm 30min-1) */
     double rnet_canopy;     /* canopy net radiation (W m-2) */
     double N0;              /* top of canopy nitrogen (g N m-2)) */
-    double P0;              /* top of canopy nitrogen (g N m-2)) */
+    double P0;              /* top of canopy phosphorus (g P m-2)) */
     double elevation;       /* sun elevation angle in degrees */
     double cos_zenith;      /* cos(zenith angle of sun) in radians */
     double diffuse_frac;    /* Fraction of incident rad which is diffuse (-) */
