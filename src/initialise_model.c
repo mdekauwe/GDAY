@@ -69,8 +69,8 @@ void initialise_params(params *p) {
     p->a1rhizo = 0.6;
     p->actncmax = 0.333333;
     p->actncmin = 0.066667;
-    p->actpcmax = 0.33333;
-    p->actpcmin = 0.066667;
+    p->actpcmax = 0.033333;
+    p->actpcmin = 0.0125;
     p->ageold = 10000.0;
     p->ageyoung = 0.0;
     p->albedo = 0.123;
@@ -196,7 +196,7 @@ void initialise_params(params *p) {
     p->nf_crit = 0.015;
     p->nf_min = 0.005;
     p->pf_crit = 0.015;
-    p->pf_min = 0.0004;     /* based on P:C ratio of 2500 */
+    p->pf_min = 0.0004;      /* based on P:C ratio of 2500 */
     p->nmax = 0.24;
     p->nmin = 0.95;
     p->nmin0 = 0.0;
@@ -207,18 +207,18 @@ void initialise_params(params *p) {
     p->pmax = 0.24;
     p->pmin = 0.95;
     p->pmin0 = 0.0;
-    p->pmincrit = 2.0;
+    p->pmincrit = 2.0;       /* Based on CENTURY VARAT1(2,3) = 2 value */
     p->ptheta_root = 3.0;
     p->ptheta_topsoil = 5.0;
     p->puptakez = 0.0;
-    p->oi = 210000.0;       /* oxygen partial pressure (umol mol-1) */
+    p->oi = 210000.0;        /* oxygen partial pressure (umol mol-1) */
     p->passivesoilnz = 1.0;
     p->passivesoilpz = 1.0;
     p->passivesoilz = 1.0;
     p->passncmax = 0.142857;
     p->passncmin = 0.1;
-    p->passpcmax = 0.142857;
-    p->passpcmin = 0.1;
+    p->passpcmax = 0.05;
+    p->passpcmin = 0.005;
     p->phmax = 7.6;
     p->phmin = 5;
     p->phtextmin = 0.0008;
@@ -252,8 +252,8 @@ void initialise_params(params *p) {
     p->slazero = 4.4;
     p->slowncmax = 0.066666;
     p->slowncmin = 0.025;
-    p->slowpcmax = 0.066666;
-    p->slowpcmin = 0.025;
+    p->slowpcmax = 0.011111;
+    p->slowpcmin = 0.005;
     p->soilph = 6.7;               /* pft-specific parameter, century value */
     p->sorpmx = 5;                 /* pft-specific parameter, check CENTURY for values */
     p->sorpaf = 1;
@@ -536,9 +536,9 @@ void initialise_state(state *s) {
     s->inorgminp = 0.0274523714275;
     s->inorglabp = 0.0274523714275;
     s->inorgsorbp = 0.0;
-    s->inorgssorbp = 0.15;             /* CENTURY value, unit converted from 15 g P m-2 to t/ha */
+    s->inorgssorbp = 0.15;              /* CENTURY value, unit converted from 15 g P m-2 to t/ha */
     s->inorgoccp = 0.0;
-    s->inorgparp = 0.5;                /* CENTURY value, unit converted from 50 g P m-2 to t/ha */
+    s->inorgparp = 0.5;                 /* CENTURY value, unit converted from 50 g P m-2 to t/ha */
     s->metabsoil = 0.135656771805;
     s->metabsoiln = 0.00542627087221;
     s->metabsoilp = 0.001179624;        /* based on metabolic pool C/P ratio of 115 from Parton et al., 1989, Ecology of arable land. */
@@ -556,7 +556,7 @@ void initialise_state(state *s) {
     s->root = 3.92887790342;
     s->root_depth = -9999.9;
     s->rootn = 0.076296932914;
-    s->rootp = 0.005457514;             /* Inferred from Century CERFOR(1,2,1) & CERFOR(1,2,2) ratio */
+    s->rootp = 0.00392888;              /* Yang et al. 2016, Biogeosciences, Table S1, fine root C:P = 1000 */
     s->sapwood = 51.2600270003;
     s->shoot = 4.37991243755;
     s->shootn = 0.0978837857406; 
@@ -569,9 +569,9 @@ void initialise_state(state *s) {
     s->stemn = 0.263722246902;
     s->stemnimm = 0.263336697464;
     s->stemnmob = 0.00038554943772;
-    s->stemp = 0.03851365;              /* Inferred from Century CERFOR(1,4,1) & CERFOR(1,4,2) ratio */
-    s->stempimm = 0.03845734;           /* Inferred from nitrogen ratio */
-    s->stempmob = 0.00005630696;        /* Inferred from nitrogen ratio */
+    s->stemp = 0.02921933               /* Yang et al. 2016, Biogeosciences, Table S1, wood C:P = 3000 */
+    s->stempimm = 0.02921933;           
+    s->stempmob = 0.0;        
     s->structsoil = 0.917128200367;
     s->structsoiln = 0.00611418800245;
     s->structsoilp = 0.001834256;       /* based on structural pool C/P ratio of 500 from Parton et al., 1989, Ecology of arable land. */

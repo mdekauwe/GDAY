@@ -190,8 +190,8 @@ typedef struct {
     double a1rhizo;                         /* slope of allocation to rhizodeposition [0.2-1] */
     double actncmax;                        /* Active pool (=1/3) N:C ratio of new SOM - maximum [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double actncmin;                        /* Active pool (=1/15) N:C of new SOM - when Nmin=Nmin0 [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
-    double actpcmax;                        /* Active pool (=1/3) P:C ratio of new SOM - maximum [units: gP/gC] */
-    double actpcmin;                        /* Active pool (=1/15) P:C of new SOM - when Pmin=Pmin0 [units: gP/gC] */
+    double actpcmax;                        /* Active pool (=1/30) P:C ratio of new SOM - maximum [units: gP/gC]. Based on forest version of CENTURY (Parton et al. 1993) */
+    double actpcmin;                        /* Active pool (=1/80) P:C of new SOM - when Pmin=Pmin0 [units: gP/gC]. Based on forest version of CENTURY (Parton et al. 1993) */
     double adapt;
     double ageold;                          /* Plant age when max leaf N C ratio is lowest */
     double ageyoung;                        /* Plant age when max leaf N C ratio is highest */
@@ -331,7 +331,7 @@ typedef struct {
     double pmax;
     double pmin;                            /* (bewdy) minimum leaf p for +ve p/s (g/m2) */
     double pmin0;                           /* mineral P pool corresponding to Actpc0,etc (g/m2) */
-    double pmincrit;                        /* Critical mineral P pool at max soil P:C (g/m2)  */
+    double pmincrit;                        /* Critical mineral P pool at max soil P:C (g/m2) */
     double ptheta_root;                     /* Inferred based on ntheta */
     double ptheta_topsoil;                  /* Inferred based on ntheta */
     double puptakez;                        /* constant P uptake per year (1/yr) */
@@ -341,8 +341,8 @@ typedef struct {
     double passivesoilz;
     double passncmax;                       /* Passive pool (=1/7) N:C ratio of new SOM - maximum [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double passncmin;                       /* Passive pool (=1/10) N:C of new SOM - when Nmin=Nmin0 [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
-    double passpcmax;                       /* Passive pool (=1/7) P:C ratio of new SOM - maximum [units: gP/gC] */
-    double passpcmin;                       /* Passive pool (=1/10) P:C of new SOM - when Pmin=Pmin0 [units: gP/gC] */
+    double passpcmax;                       /* Passive pool (=1/20) P:C ratio of new SOM - maximum [units: gP/gC] */
+    double passpcmin;                       /* Passive pool (=1/200) P:C of new SOM - when Pmin=Pmin0 [units: gP/gC] */
     double phmax;                           /* max pH for determining effect on solubility of secondary P */
     double phmin;                           /* min pH for determining effect on solubility of secondary P */
     double phtextmin;                       /* the solubility of secondary P corresponding to min pH (/yr) */
@@ -377,8 +377,8 @@ typedef struct {
     double slazero;                         /* (if equal slamax=no effect) specific leaf area new fol at zero leaf N/C (m2 one-sided/kg DW) */
     double slowncmax;                       /* Slow pool (=1/15) N:C ratio of new SOM - maximum [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double slowncmin;                       /* Slow pool (=1/40) N:C of new SOM - when Nmin=Nmin0" [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
-    double slowpcmax;                       /* Slow pool (=1/15) P:C ratio of new SOM - maximum [units: gP/gC]. */
-    double slowpcmin;                       /* Slow pool (=1/40) P:C of new SOM - when Pmin=Pmin0" [units: gP/gC]. */
+    double slowpcmax;                       /* Slow pool (=1/90) P:C ratio of new SOM - maximum [units: gP/gC]. */
+    double slowpcmin;                       /* Slow pool (=1/200) P:C of new SOM - when Pmin=Pmin0" [units: gP/gC]. */
     double store_transfer_len;
     double structcn;                        /* C:N ratio of structural bit of litter input */
     double structrat;                       /* structural input n:c as fraction of metab */
