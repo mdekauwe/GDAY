@@ -553,6 +553,8 @@ double calculate_top_of_canopy_n(params *p, state *s, double ncontent)  {
     /*
     Calculate the canopy N at the top of the canopy (g N m-2), N0.
     Assuming an exponentially decreasing N distribution within the canopy:
+    
+    Note: swapped kext with kn;
 
     Returns:
     -------
@@ -568,7 +570,7 @@ double calculate_top_of_canopy_n(params *p, state *s, double ncontent)  {
 
     if (s->lai > 0.0) {
         /* calculation for canopy N content at the top of the canopy */
-        N0 = ncontent * p->kext / (1.0 - exp(-p->kext * s->lai));
+        N0 = ncontent * p->kn / (1.0 - exp(-p->kn * s->lai));
     } else {
         N0 = 0.0;
     }
@@ -582,6 +584,8 @@ double calculate_top_of_canopy_p(params *p, state *s, double pcontent)  {
   Calculate the canopy P at the top of the canopy (g P m-2), P0.
   Assuming an exponentially decreasing P distribution within the canopy:
   
+  Note: swapped kext with kp;
+
   Returns:
   -------
   P0 : float (g P m-2)
@@ -592,7 +596,7 @@ double calculate_top_of_canopy_p(params *p, state *s, double pcontent)  {
   
   if (s->lai > 0.0) {
     /* calculation for canopy P content at the top of the canopy */
-    P0 = pcontent * p->kext / (1.0 - exp(-p->kext * s->lai));
+    P0 = pcontent * p->kp / (1.0 - exp(-p->kp * s->lai));
   } else {
     P0 = 0.0;
   }
