@@ -1284,8 +1284,6 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   calculate_ppools(c, f, p, s, active_pc_slope, slow_pc_slope,
                    passive_pc_slope);
   
-  
-  
   /* switch off grazing if this was just activated as an annual event */
   c->grazing = cntrl_grazing;
   

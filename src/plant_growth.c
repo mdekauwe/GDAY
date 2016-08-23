@@ -1594,15 +1594,15 @@ double calculate_puptake(control *c, params *p, state *s) {
     /* Constant P uptake */
     puptake = p->puptakez;
   } else if (c->puptake_model == 1) {
-    /* evaluate puptake : proportional to dynamic inorganic P pool */
-    puptake = p->prateuptake * s->inorglabp;
+    /* evaluate puptake : proportional to lab P pool that is available to plant uptake (a function of mineral N) */
+    puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
   } else if (c->puptake_model == 2) {
     /* P uptake is a saturating function on root biomass following
     Dewar and McMurtrie, 1996. */
     
     /* supply rate of available mineral P */
-    U0 = p->prateuptake * s->inorglabp;
-    Kr = p->kr;
+    U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    Kr = p->krp;
     puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
     
     /* Make minimum uptake rate supply rate for deciduous_model cases
