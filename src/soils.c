@@ -1257,8 +1257,7 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   calculate_p_mineralisation(f);
   
   /* calculate P lab and sorb fluxes from gross P flux */
-  calculate_p_min_partition(f, p);
-  
+  calculate_p_min_partition(f, p, s);
   
   /* calculate P immobilisation */
   calculate_p_immobilisation(f, p, s, &(f->pimmob), &active_pc_slope,
@@ -1592,7 +1591,7 @@ void calculate_p_mineralisation(fluxes *f) {
   return;
 }
 
-void calculate_p_min_partition(fluxes *f, params *p) {
+void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   /* Calculate the proportion of lab P and sorb P influxes from pgross,
    assumed that pgross = pmin pool, 
    based on CENTURY fsfunc function (Metherell et al. 1993)
@@ -1607,6 +1606,9 @@ void calculate_p_min_partition(fluxes *f, params *p) {
   double const_b, const_c;
   double total_influx;
   double lab_influx, sorb_influx;
+  double min_frac_p_available_to_plant = 0.4;
+  double max_frac_p_available_to_plant = 0.8;
+  double mineral_n_with_max_p = 2;              /* Unit [gN m-2] */
 
   total_influx = (f->pparentflux + f->pgross + f->purine) * G_AS_TONNES / M2_AS_HA;
   
@@ -1623,6 +1625,11 @@ void calculate_p_min_partition(fluxes *f, params *p) {
   
   f->p_lab_influx = lab_influx * M2_AS_HA / G_AS_TONNES;  
   f->p_sorb_influx = sorb_influx * M2_AS_HA / G_AS_TONNES;
+  
+  p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
+                       MIN(min_frac_p_available_to_plant + s->inorgn * 
+                         (max_frac_p_available_to_plant - min_frac_p_available_to_plant) / mineral_n_with_max_p,
+                         max_frac_p_available_to_plant));
 
   return;
 

@@ -888,6 +888,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->ntheta_topsoil = atof(value);
     } else if (MATCH("params", "nuptakez")) {
         p->nuptakez = atof(value);
+    } else if (MATCH("params", "p_lab_avail")) {
+      p->p_lab_avail = atof(value);
     } else if (MATCH("params", "pmax")) {
       p->pmax = atof(value);
     } else if (MATCH("params", "pmin")) {

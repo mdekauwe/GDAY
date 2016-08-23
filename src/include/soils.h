@@ -61,7 +61,7 @@ void   pfluxes_from_slow_pool(fluxes *, params *, state *s);
 void   pfluxes_from_passive_pool(fluxes *, params *, state *);
 void   calculate_p_parent_influx(fluxes *, params *, state *);
 void   calculate_p_mineralisation(fluxes *);
-void   calculate_p_min_partition(fluxes *, params *);
+void   calculate_p_min_partition(fluxes *, params *, state *);
 void   calculate_p_immobilisation(fluxes *, params *, state *, double *,
                                   double *, double *, double *);
 void   calculate_p_ssorb_to_sorb(state *, fluxes *, params *, control *);

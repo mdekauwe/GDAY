@@ -204,6 +204,7 @@ void initialise_params(params *p) {
     p->ntheta_root = 3.0;
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
+    p->p_lab_avail = 0.0;
     p->pmax = 0.24;
     p->pmin = 0.95;
     p->pmin0 = 0.0;
@@ -569,7 +570,7 @@ void initialise_state(state *s) {
     s->stemn = 0.263722246902;
     s->stemnimm = 0.263336697464;
     s->stemnmob = 0.00038554943772;
-    s->stemp = 0.02921933               /* Yang et al. 2016, Biogeosciences, Table S1, wood C:P = 3000 */
+    s->stemp = 0.02921933;             /* Yang et al. 2016, Biogeosciences, Table S1, wood C:P = 3000 */
     s->stempimm = 0.02921933;           
     s->stempmob = 0.0;        
     s->structsoil = 0.917128200367;

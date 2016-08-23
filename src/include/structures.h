@@ -328,6 +328,7 @@ typedef struct {
     double ntheta_root;                     /* Fitted parameter based on Landsberg and Waring */
     double ntheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double nuptakez;                        /* constant N uptake per year (1/yr) */
+    double p_lab_avail;                     /* Fraction of labile P available for plant uptake */
     double pmax;
     double pmin;                            /* (bewdy) minimum leaf p for +ve p/s (g/m2) */
     double pmin0;                           /* mineral P pool corresponding to Actpc0,etc (g/m2) */
