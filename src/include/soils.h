@@ -67,6 +67,7 @@ void   calculate_p_immobilisation(fluxes *, params *, state *, double *,
 void   calculate_p_ssorb_to_sorb(state *, fluxes *, params *, control *);
 void   calc_p_net_mineralisation(fluxes *);
 double calculate_pc_slope(params *, double, double);
+void   calculate_p_biochemical_mineralisation(fluxes *, params *,state *);
 void   calculate_ppools(control *c, fluxes *, params *, state *, double,
                         double, double);
 double pc_limit(fluxes *, double, double, double, double);

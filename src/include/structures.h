@@ -425,6 +425,9 @@ typedef struct {
     int    hurricane_yr;
     double root_exu_CUE;
     double leaf_width;
+    double crit_n_cost_of_p;                /* Critical value of N cost of root P uptake above which phosphatase production starts [g N (g P)-1]; Wang et al., 2007, GB1018*/
+    double max_p_biochemical;               /* max rate of biochemical P mineralisation [g P m-2 y-1]; Wang et al., 2007, GB1018*/
+    double biochemical_p_constant;          /* Michaelis-Menton constant for biochemical P mineralisation [g N (g P)-1]; Wang et al., 2007, GB1018*/
     double leaf_abs;
 } params;
 
@@ -653,19 +656,19 @@ typedef struct {
     double p_active_to_slow;
     double p_active_to_passive;
 
-    /* Fluxes from slow to active pool */
+    /* Fluxes from slow pool */
     double slow_to_active;
     double slow_to_passive;
     double n_slow_to_active;
     double n_slow_to_passive;
     double p_slow_to_active;
     double p_slow_to_passive;
+    double p_slow_biochemical;
 
-    /* fluxes from passive to active pool */
+    /* fluxes from passive pool */
     double passive_to_active;
     double n_passive_to_active;
     double p_passive_to_active;
-    
 
     /* C, N & P source fluxes from the active, slow and passive pools */
     double c_into_active;

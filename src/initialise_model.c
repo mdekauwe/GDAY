@@ -291,6 +291,9 @@ void initialise_params(params *p) {
     p->fmroot = 0.0;
     p->fmfaeces = 0.0;
     p->growing_seas_len = 0;
+    p->crit_n_cost_of_p = 15.0; 
+    p->max_p_biochemical = 0.1;
+    p->biochemical_p_constant = 150.0;
     p->lad = 0.0; /* spherical leaf angle distribution */
 
     for (i = 0; i < 7; i++) {
@@ -458,6 +461,7 @@ void initialise_fluxes(fluxes *f) {
     f->n_slow_to_passive = 0.0;
     f->p_slow_to_active = 0.0;
     f->p_slow_to_passive = 0.0;
+    f->p_slow_biochemical = 0.0;
 
     /* C N & P fluxes from passive to active pool */
     f->passive_to_active = 0.0;

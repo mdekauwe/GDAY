@@ -744,6 +744,7 @@ void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
   f->p_active_to_passive = 0.0;
   f->p_slow_to_active = 0.0;
   f->p_slow_to_passive = 0.0;
+  f->p_slow_biochemical = 0.0;
   f->p_passive_to_active = 0.0;
   f->p_lab_influx = 0.0;
   f->p_sorb_influx = 0.0;

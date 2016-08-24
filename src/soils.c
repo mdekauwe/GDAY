@@ -1783,6 +1783,56 @@ double calculate_pc_slope(params *p, double pcmax, double pcmin) {
   return (arg1 / arg2 * conv);
 }
 
+void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
+                                            state *s) {
+  /* 
+   Calculate biochemical P mineralisation rate for active,
+   slow, and passive SOM pool
+   
+   Ref: Yang et al., 2014, Biogeosciences, 11, 1667-1681.
+        Wang et al., 2007, GB1018.
+   
+   Parameters
+   ----------
+   n_cost_of_p: float
+   N cost of plant root P uptake [g N (g P)-1]
+   
+   crit_n_cost_of_p: float
+   The critical value of N cost of root P uptake above which
+   phosphatase production starts [g N (g P)-1]
+   
+   max_p_biochemical: float
+   Maximum rate of biochemical P mineralisation [g P m-2 y-1]
+   
+   biochemical_p_constant: float
+   Michaelis-Menten constant for biochemical P mineralisation [g N (g P)-1]
+   
+   
+   Return
+   ----------
+   p_slow_biochemical: float
+   biochemical P mineralisation rate in slow SOM pool;
+   
+  */
+  
+  double n_cost_of_p, root_cp_prod, root_cn_prod;
+  
+  root_cp_prod = (f->cproot + f->cpcroot)/(f->pproot + f->ppcroot);
+  root_cn_prod = (f->cproot + f->cpcroot)/(f->nproot + f->npcroot);
+  
+  n_cost_of_p = root_cp_prod / root_cn_prod;
+  
+  if(root_cp_prod > root_cn_prod && n_cost_of_p > p->crit_n_cost_of_p) {
+    f->p_slow_biochemical = p->max_p_biochemical * ((n_cost_of_p - 
+       p->crit_n_cost_of_p) / (n_cost_of_p - p->crit_n_cost_of_p + p->biochemical_p_constant));
+  } else {
+    f->p_slow_biochemical = 0.0;
+  }
+  
+  return;
+}
+
+
 void calculate_ppools(control *c, fluxes *f, params *p, state *s,
                       double active_pc_slope, double slow_pc_slope,
                       double passive_pc_slope) {
@@ -1851,7 +1901,7 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   p_into_slow = (f->p_surf_struct_to_slow + f->p_soil_struct_to_slow +
     f->p_active_to_slow);
   
-  p_out_of_slow = f->p_slow_to_active + f->p_slow_to_passive;
+  p_out_of_slow = f->p_slow_to_active + f->p_slow_to_passive + f->p_slow_biochemical;
   p_into_passive = f->p_active_to_passive + f->p_slow_to_passive;
   p_out_of_passive = f->p_passive_to_active;
   
@@ -1891,18 +1941,23 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   
   /* Daily increment of soil inorganic mineral P pool (lab + sorb), diff btw in and effluxes
   (grazer urine P goes directly into inorganic pool)  */
-  s->inorgminp += f->pmineralisation - f->ploss - f->puptake;
-  
+  s->inorgminp += f->pmineralisation - f->ploss - f->puptake +
+                  f->pparentflux + f->purine +  
+                  f->p_slow_biochemical;
+
+  /* Daily increment of soil inorganic labile and sorbed P pool */
+  s->inorglabp = s->inorgminp * p->p_lab_frac;
+  s->inorgsorbp = s->inorgminp * p->p_sorb_frac; 
+ 
   /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
   s->inorgssorbp += f->p_sorb_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_sorb;
   
   /* Daily increment of soil inorganic occluded P pool */
   s->inorgoccp += f->p_ssorb_to_occ;
-  
-  /* Daily increment of soil inorganic labile and sorbed P pool */  
-  s->inorglabp += s->inorgminp * p->p_lab_frac;
-  s->inorgssorbp += s->inorgminp * p->p_sorb_frac;
-  
+ 
+  /* Daily increment of soil inorganic parent P pool */
+  s->inorgparp -= f->pparentflux;
+ 
   return;
 }
 
