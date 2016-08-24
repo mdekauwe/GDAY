@@ -233,6 +233,8 @@ void initialise_params(params *p) {
     p->previous_ncd = 35.0;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
+    p->rate_ssorb_occ = 0.00001;      
+    p->rate_sorb_ssorb = 0.0001;
     p->qs = 1.0;                      /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
     p->rateloss = 0.5;                /* value = 0.05 in Wang et al., 2007 GB1018 */
@@ -474,13 +476,11 @@ void initialise_fluxes(fluxes *f) {
     f->c_into_passive = 0.0;
 
     /* inorganic P flux exchanges */
-    //f->p_lab_to_sorb = 0.0;
-    //f->p_sorb_to_lab = 0.0;
     f->p_lab_influx = 0.0;
     f->p_sorb_influx = 0.0;
-    f->p_sorb_to_ssorb = 2.0;
+    f->p_sorb_to_ssorb = 0.0;
     f->p_ssorb_to_sorb = 0.0;
-    f->p_ssorb_to_occ = 0.000006;
+    f->p_ssorb_to_occ = 0.0;
     f->pparentflux = 0.0;
     
     /* CO2 flows to the air */

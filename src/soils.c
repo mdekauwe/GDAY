@@ -1943,13 +1943,15 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   (grazer urine P goes directly into inorganic pool)  */
   s->inorgminp += f->pmineralisation - f->ploss - f->puptake +
                   f->pparentflux + f->purine +  
-                  f->p_slow_biochemical;
+                  f->p_slow_biochemical - f->p_sorb_to_ssorb +
+                  f->p_ssorb_to_sorb;
 
   /* Daily increment of soil inorganic labile and sorbed P pool */
   s->inorglabp = s->inorgminp * p->p_lab_frac;
   s->inorgsorbp = s->inorgminp * p->p_sorb_frac; 
  
   /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
+  f->p_ssorb_to_occ = p->rate_ssorb_occ * s->inorgssorbp;
   s->inorgssorbp += f->p_sorb_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_sorb;
   
   /* Daily increment of soil inorganic occluded P pool */

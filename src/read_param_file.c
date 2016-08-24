@@ -950,6 +950,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->qs = atof(value);
     } else if (MATCH("params", "r0")) {
         p->r0 = atof(value);
+    } else if (MATCH("params", "rate_ssorb_occ")) {
+      p->rate_ssorb_occ = atof(value);
+    } else if (MATCH("params", "rate_sorb_ssorb")) {
+      p->rate_sorb_ssorb = atof(value);
     } else if (MATCH("params", "rateloss")) {
         p->rateloss = atof(value);
     } else if (MATCH("params", "prateloss")) {

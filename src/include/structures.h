@@ -361,6 +361,8 @@ typedef struct {
     double psie_root;                       /* Soil water potential at saturation (m) */
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
+    double rate_ssorb_occ;                  /* Rate constant of the transfer of P from strongly sorbed pool to occluded pool, yr-1 Wang et al., 2007, GB1018 */
+    double rate_sorb_ssorb;                 /* Rate constant of the transfer of P from sorbed pool to strongly sorbed pool, yr-1 Wang et al., 2007, GB1018 */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */
     double prateloss;                       /* Rate of P loss from mineral P pool (/yr), Ref Wang et al., 2007, GB1018 */
     double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf Seems to correspond to very low NPP values */
@@ -676,10 +678,8 @@ typedef struct {
     double c_into_passive;
     
     /* inorganic P flux exchanges */
-    //double p_lab_to_sorb;
-    //double p_sorb_to_lab;
-    double p_lab_influx;     /*P influx from gross min to lab pool */
-    double p_sorb_influx;    /*P influx from gross min to sorb pool */
+    double p_lab_influx;        /*P influx from gross min to lab pool */
+    double p_sorb_influx;       /*P influx from gross min to sorb pool */
     double p_sorb_to_ssorb;
     double p_ssorb_to_sorb;
     double p_ssorb_to_occ;
