@@ -598,7 +598,7 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
                                &slow_nc_slope, &passive_nc_slope);
 
     /* calculate N net mineralisation */
-    calc_n_net_mineralisation(f);
+    calc_net_mineralisation(f);
 
     if (c->exudation && c->alloc_model != GRASSES) {
         calc_root_exudation_uptake_of_N(f, s);
@@ -615,8 +615,12 @@ void calculate_nsoil_flows(control *c, fluxes *f, params *p, state *s,
     calculate_npools(c, f, p, s, active_nc_slope, slow_nc_slope,
                      passive_nc_slope);
 
+
+
     /* switch off grazing if this was just activated as an annual event */
     c->grazing = cntrl_grazing;
+
+
 
     return;
 }
@@ -856,6 +860,7 @@ void nfluxes_from_metabolic_pool(fluxes *f, params *p, state *s) {
     return;
 }
 
+
 void nfluxes_from_active_pool(fluxes *f, params *p, state *s,
                               double frac_microb_resp) {
 
@@ -983,7 +988,7 @@ void calculate_n_immobilisation(fluxes *f, params *p, state *s, double *nimmob,
 }
 
 
-void calc_n_net_mineralisation(fluxes *f) {
+void calc_net_mineralisation(fluxes *f) {
     /* N Net mineralisation from microbial activity */
     f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;
 
@@ -1251,18 +1256,15 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   /* gross P mineralisation */
   calculate_p_mineralisation(f);
   
+  /* calculate P lab and sorb fluxes from gross P flux */
+  calculate_p_min_partition(f, p, s);
+  
   /* calculate P immobilisation */
   calculate_p_immobilisation(f, p, s, &(f->pimmob), &active_pc_slope,
                              &slow_pc_slope, &passive_pc_slope);
   
-  /* calculate P net mineralisation, excluding biochemical mineralisation */
+  /* calculate P net mineralisation */
   calc_p_net_mineralisation(f);
-
-  /* calculate P biochemical mineralisation */
-  calculate_p_biochemical_mineralisation(f, p, s); 
-  
-  /* calculate P lab and sorb fluxes from gross P flux */
-  calculate_p_min_partition(f, p, s);
   
   /* SIM phosphorus effluxes check back see if 1 and 2 needed */
   calculate_p_ssorb_to_sorb(s, f, p, c);
@@ -1559,9 +1561,8 @@ void calculate_p_parent_influx(fluxes *f, params *p, state *s) {
   
   /* calculate P flux from parent materials and convert units */
   f->pparentflux = ((s->inorgparp * G_AS_TONNES / M2_AS_HA) * 
-                   (yloc + (stepsize / M_PI) * 
-                   atan(M_PI * slope * (texture - xloc)))) * 
-                   M2_AS_HA / G_AS_TONNES;
+    (yloc + (stepsize / M_PI) * atan(M_PI * slope * (texture - xloc)))) * 
+    M2_AS_HA / G_AS_TONNES;
   
   return;
   
@@ -1569,10 +1570,9 @@ void calculate_p_parent_influx(fluxes *f, params *p, state *s) {
 
 void calculate_p_mineralisation(fluxes *f) {
   /* P gross mineralisation rate is given by the excess of P outflows
-  over inflows. P mineralisation is the process by which organic P is
-  converted to plant available inorganic P, i.e. the microbial conversion 
-  of organic P to H2PO4- or HPO42- forms of plant available P known as 
-  orthophosphates.
+  over inflows. P mineralisation is the process by which organic
+  P is converted to plant available inorganic P, i.e. the microbial conversion of organic P 
+  to H2PO4- or HPO42- forms of plant available P known as orthophosphates.
   
   Returns:
   --------
@@ -1587,6 +1587,50 @@ void calculate_p_mineralisation(fluxes *f) {
                 f->p_slow_to_active + f->p_slow_to_passive +
                 f->p_passive_to_active);
   return;
+}
+
+void calculate_p_min_partition(fluxes *f, params *p, state *s) {
+  /* Calculate the proportion of lab P and sorb P influxes from pgross,
+   assumed that pgross = pmin pool, 
+   based on CENTURY fsfunc function (Metherell et al. 1993)
+   
+  Returns:
+  --------
+  value : float
+  p_lab_influx
+  p_sorb_influx
+   
+  */
+  double const_b, const_c;
+  double total_influx;
+  double lab_influx, sorb_influx;
+  double min_frac_p_available_to_plant = 0.4;
+  double max_frac_p_available_to_plant = 0.8;
+  double mineral_n_with_max_p = 2;              /* Unit [gN m-2] */
+
+  total_influx = (f->pparentflux + f->pgross + f->purine) * G_AS_TONNES / M2_AS_HA;
+  
+  const_c = p->sorpmx * (2 - p->sorpaf) / 2;
+  const_b = p->sorpmx - total_influx + const_c;
+  
+  /* Calculate influx for labile P pool from all influx pools */
+  lab_influx = (-const_b + sqrt(const_b*const_b + 4 * const_c * total_influx))/2;
+  
+  /*Calculate influx for sorb P pool from gross min */
+  p->p_lab_frac = lab_influx/total_influx;
+  p->p_sorb_frac = 1 - p->p_lab_frac;
+  sorb_influx = p->p_sorb_frac * total_influx;
+  
+  f->p_lab_influx = lab_influx * M2_AS_HA / G_AS_TONNES;  
+  f->p_sorb_influx = sorb_influx * M2_AS_HA / G_AS_TONNES;
+  
+  p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
+                       MIN(min_frac_p_available_to_plant + s->inorgn * 
+                         (max_frac_p_available_to_plant - min_frac_p_available_to_plant) / mineral_n_with_max_p,
+                         max_frac_p_available_to_plant));
+
+  return;
+
 }
 
 void calculate_p_immobilisation(fluxes *f, params *p, state *s, double *pimmob,
@@ -1652,159 +1696,6 @@ void calculate_p_immobilisation(fluxes *f, params *p, state *s, double *pimmob,
   return;
 }
 
-
-void calc_p_net_mineralisation(fluxes *f) {
-  /* P Net mineralisation from microbial activity,
-  excluding the (- f->p_sorb_to_ssorb + f->p_ssorb_to_sorb activity) */
-  f->pmineralisation = f->pgross - f->pimmob + f->plittrelease;
-  
-  return;
-}
-
-double calculate_pc_slope(params *p, double pcmax, double pcmin) {
-  /* Returns P:C ratio of the mineral pool slope
-  Need to check back for good relationships; Currently using olde NC relationship
-  based on Parton et al., 1993
-  
-  Parameters
-  ----------
-  pcmax : float
-  SOM pools maximum P:C
-  pcmin: float
-  SOM pools minimum P:C
-  
-  Returns:
-  --------
-  value : float
-  SOM pool P:C ratio
-  */
-  double arg1, arg2, conv;
-  
-  arg1 = pcmax - pcmin;
-  arg2 = p->pmincrit - p->pmin0;
-  conv = M2_AS_HA / G_AS_TONNES;
-  
-  return (arg1 / arg2 * conv);
-}
-
-
-void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
-                                            state *s) {
-  /* 
-  Calculate biochemical P mineralisation rate for slow SOM pool only;
-  
-  Ref: Wang et al., 2007, GB1018.
-  
-  Parameters
-  ----------
-  n_cost_of_p: float
-  N cost of plant root P uptake [g N (g P)-1]
-  
-  crit_n_cost_of_p: float
-  The critical value of N cost of root P uptake above which
-  phosphatase production starts [g N (g P)-1]
-  
-  max_p_biochemical: float
-  Maximum rate of biochemical P mineralisation [g P m-2 y-1]
-  
-  biochemical_p_constant: float
-  Michaelis-Menten constant for biochemical P mineralisation [g N (g P)-1]
-  
-  c_gain_of_p: float
-  Carbon per unit of P uptake (NPP/Puptake) [g C (g P)-1]
-   
-  c_gain_of_n: float
-  Carbon per unit of N uptake (NPP/Nuptake) [g C (g N)-1]
-  
-  Return
-  ----------
-  p_slow_biochemical: float
-  biochemical P mineralisation rate in slow SOM pool;
-  
-  */
-  
-  double n_cost_of_p, c_gain_of_p, c_gain_of_n;
-  
-  /* Calculate C gain per unit P */
-  if (f->puptake > 0.0) {
-    c_gain_of_p = f->npp/f->puptake;
-  } else {
-    c_gain_of_p = 0.0;
-  }
-  
-  /* Calculate C gain per unit N */
-  if (f->nuptake > 0.0) {
-    c_gain_of_n = f->npp/f->nuptake;
-  } else {
-    c_gain_of_n = 0.0;
-  }
-  
-  /* Calculate n cost of p */
-  if(c_gain_of_n > 0.0) {
-    n_cost_of_p = c_gain_of_p / c_gain_of_n; 
-  } else {
-    n_cost_of_p = 0.0;
-  }
-  
-  /* Phosphatase production start when N cost of P is greater than critical
-  N cost of P value, and when carbon uptake is more strongly limited by the uptake 
-  of P than by the uptake of N */
-  if(c_gain_of_p > c_gain_of_n && n_cost_of_p > p->crit_n_cost_of_p) {
-    f->p_slow_biochemical = p->max_p_biochemical * 
-                            ((n_cost_of_p - p->crit_n_cost_of_p) / 
-                            (n_cost_of_p - p->crit_n_cost_of_p + p->biochemical_p_constant));
-  } else {
-    f->p_slow_biochemical = 0.0;
-  }
-  
-  return;
-}
-
-
-void calculate_p_min_partition(fluxes *f, params *p, state *s) {
-  /* Calculate the proportion of lab P and sorb P influxes from pgross,
-  assumed that pgross = pmin pool, 
-  based on CENTURY fsfunc function (Metherell et al. 1993)
-  
-  Returns:
-  --------
-  value : float
-  p_lab_influx
-  p_sorb_influx
-  
-  */
-  double const_b, const_c;
-  double total_influx;
-  double lab_influx, sorb_influx;
-  double min_frac_p_available_to_plant = 0.4;
-  double max_frac_p_available_to_plant = 0.8;
-  double mineral_n_with_max_p = 2;              /* Unit [gN m-2] */
-  
-  total_influx = (f->pparentflux + f->pgross + f->purine) * G_AS_TONNES / M2_AS_HA;
-  
-  const_c = p->sorpmx * (2 - p->sorpaf) / 2;
-  const_b = p->sorpmx - total_influx + const_c;
-  
-  /* Calculate influx for labile P pool from all influx pools */
-  lab_influx = (-const_b + sqrt(const_b*const_b + 4 * const_c * total_influx))/2;
-  
-  /*Calculate influx for sorb P pool from gross min */
-  p->p_lab_frac = lab_influx/total_influx;
-  p->p_sorb_frac = 1 - p->p_lab_frac;
-  sorb_influx = p->p_sorb_frac * total_influx;
-  
-  f->p_lab_influx = lab_influx * M2_AS_HA / G_AS_TONNES;  
-  f->p_sorb_influx = sorb_influx * M2_AS_HA / G_AS_TONNES;
-  
-  p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
-                       MIN(min_frac_p_available_to_plant + s->inorgn * 
-                         (max_frac_p_available_to_plant - min_frac_p_available_to_plant) / mineral_n_with_max_p,
-                         max_frac_p_available_to_plant));
-  
-  return;
-  
-}
-
 void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
   /*calculate P transfer from strongly sorbed P pool to
    sorbed P pool; 
@@ -1853,6 +1744,89 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
     
   } else {
     f->p_ssorb_to_sorb = p->psecmnp * M2_AS_HA / G_AS_TONNES;
+  }
+  
+  return;
+}
+
+void calc_p_net_mineralisation(fluxes *f) {
+  /* P Net mineralisation from microbial activity */
+  f->pmineralisation = f->p_lab_influx + f->p_sorb_influx - 
+  f->pimmob + f->plittrelease - f->p_sorb_to_ssorb + f->p_ssorb_to_sorb;
+  
+  return;
+}
+
+double calculate_pc_slope(params *p, double pcmax, double pcmin) {
+  /* Returns P:C ratio of the mineral pool slope
+  Need to check back for good relationships; Currently using olde NC relationship
+  based on Parton et al., 1993
+  
+  Parameters
+  ----------
+  pcmax : float
+  SOM pools maximum P:C
+  pcmin: float
+  SOM pools minimum P:C
+  
+  Returns:
+  --------
+  value : float
+  SOM pool P:C ratio
+  */
+  double arg1, arg2, conv;
+  
+  arg1 = pcmax - pcmin;
+  arg2 = p->pmincrit - p->pmin0;
+  conv = M2_AS_HA / G_AS_TONNES;
+  
+  return (arg1 / arg2 * conv);
+}
+
+void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
+                                            state *s) {
+  /* 
+   Calculate biochemical P mineralisation rate for active,
+   slow, and passive SOM pool
+   
+   Ref: Yang et al., 2014, Biogeosciences, 11, 1667-1681.
+        Wang et al., 2007, GB1018.
+   
+   Parameters
+   ----------
+   n_cost_of_p: float
+   N cost of plant root P uptake [g N (g P)-1]
+   
+   crit_n_cost_of_p: float
+   The critical value of N cost of root P uptake above which
+   phosphatase production starts [g N (g P)-1]
+   
+   max_p_biochemical: float
+   Maximum rate of biochemical P mineralisation [g P m-2 y-1]
+   
+   biochemical_p_constant: float
+   Michaelis-Menten constant for biochemical P mineralisation [g N (g P)-1]
+   
+   
+   Return
+   ----------
+   p_slow_biochemical: float
+   biochemical P mineralisation rate in slow SOM pool;
+   
+  */
+  
+  double n_cost_of_p, root_cp_prod, root_cn_prod;
+  
+  root_cp_prod = (f->cproot + f->cpcroot)/(f->pproot + f->ppcroot);
+  root_cn_prod = (f->cproot + f->cpcroot)/(f->nproot + f->npcroot);
+  
+  n_cost_of_p = root_cp_prod / root_cn_prod;
+  
+  if(root_cp_prod > root_cn_prod && n_cost_of_p > p->crit_n_cost_of_p) {
+    f->p_slow_biochemical = p->max_p_biochemical * ((n_cost_of_p - 
+       p->crit_n_cost_of_p) / (n_cost_of_p - p->crit_n_cost_of_p + p->biochemical_p_constant));
+  } else {
+    f->p_slow_biochemical = 0.0;
   }
   
   return;

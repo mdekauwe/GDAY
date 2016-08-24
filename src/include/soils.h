@@ -41,7 +41,7 @@ void   nfluxes_from_passive_pool(fluxes *, params *, state *);
 void   calculate_n_mineralisation(fluxes *);
 void   calculate_n_immobilisation(fluxes *, params *, state *, double *,
                                   double *, double *, double *);
-void   calc_net_mineralisation(fluxes *);
+void   calc_n_net_mineralisation(fluxes *);
 double calculate_nc_slope(params *, double, double);
 void   calculate_npools(control *c, fluxes *, params *, state *, double,
                         double, double);
