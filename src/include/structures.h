@@ -250,6 +250,7 @@ typedef struct {
     double fractosoilp;                     /* Fractn of grazed P recycled to soil:faeces+urine */
     double fractup_soil;                    /* fraction of uptake from top soil layer */
     double fretrans;                        /* foliage n retranslocation fraction - 46-57% in young E. globulus trees - see Corbeels et al 2005 ecological modelling 187, pg 463. Roughly 50% from review Aerts '96 */
+    double fretransp;                       /* foliage p retranslocation fraction - 39.5-69 in Southern US FACE site - Finzi et al. 2001 Ecology  */
     double g1;                              /* stomatal conductance parameter: Slope of reln btw gs and assimilation (fitted by species/pft). */
     double gamstar25;                       /* Base rate of CO2 compensation point at 25 deg C [umol mol-1] */
     double growth_efficiency;               /* growth efficiency (yg) - used only in Bewdy */
@@ -362,7 +363,7 @@ typedef struct {
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */
     double prateloss;                       /* Rate of P loss from mineral P pool (/yr) */
-    double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf */
+    double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf Seems to correspond to very low NPP values */
     double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr) */
     double rdecay;                          /* root turnover rate (1/yr) */
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
@@ -718,11 +719,11 @@ typedef struct {
     double cnrate;
 
     /* P allocation rates across growing season */
-    double lprate;
-    double bprate;
-    double wpimrate;
-    double wpmobrate;
-    double cprate;
+    double lprate;              /* leaf allocation rate across growing season */
+    double bprate;              /* branch */
+    double wpimrate;            /* immobilised */
+    double wpmobrate;           /* mobilised */
+    double cprate;              /* coarse root */
     
     /* priming/exudation */
     double root_exc;

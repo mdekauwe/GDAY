@@ -32,7 +32,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     ncrlit = s->rootnc * (1.0 - p->rretrans);
     
     /* litter P:C ratios, roots and shoot */
-    pcflit = s->shootpc * (1.0 - p->fretrans);
+    pcflit = s->shootpc * (1.0 - p->fretransp);
     pcrlit = s->rootpc * (1.0 - p->rretrans);
 
     /* C litter production */

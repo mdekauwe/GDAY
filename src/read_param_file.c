@@ -736,8 +736,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->fractup_soil = atof(value);
     } else if (MATCH("params", "fretrans")) {
         p->fretrans = atof(value);
-    //} else if (MATCH("params", "fretransp")) {
-    //  p->fretransp = atof(value);
+    } else if (MATCH("params", "fretransp")) {
+        p->fretransp = atof(value);
     } else if (MATCH("params", "g1")) {
         p->g1 = atof(value);
     } else if (MATCH("params", "gamstar25")) {

@@ -1512,9 +1512,9 @@ double phosphorus_retrans(control *c, fluxes *f, params *p, state *s,
   stemretransp;
   
   if (c->deciduous_model) {
-    leafretransp = p->fretrans * f->lprate * s->remaining_days[doy];
+    leafretransp = p->fretransp * f->lprate * s->remaining_days[doy];
   } else {
-    leafretransp = p->fretrans * fdecay * s->shootp;
+    leafretransp = p->fretransp * fdecay * s->shootp;
   }
   
   rootretransp = p->rretrans * rdecay * s->rootp;
