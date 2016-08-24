@@ -362,9 +362,9 @@ typedef struct {
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */
-    double prateloss;                       /* Rate of P loss from mineral P pool (/yr) */
+    double prateloss;                       /* Rate of P loss from mineral P pool (/yr), Ref Wang et al., 2007, GB1018 */
     double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf Seems to correspond to very low NPP values */
-    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr) */
+    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr), based on Wang et al. 2007 GB1018 Laupahoehoe site (intermediate age) */
     double rdecay;                          /* root turnover rate (1/yr) */
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
     double retransmob;                      /* Fraction stem mobile N retranscd (/yr) */
@@ -384,7 +384,7 @@ typedef struct {
     double store_transfer_len;
     double structcn;                        /* C:N ratio of structural bit of litter input */
     double structrat;                       /* structural input n:c as fraction of metab */
-    double structcp;                        /* C:P ratio of structural bit of litter input */
+    double structcp;                        /* C:P ratio of structural bit of litter input, Ref Finzi et al., 2001, Ecology, Table 4; */
     double structratp;                      /* structural input p:c as fraction of metab */
     double soilph;                          /* soil pH value */
     double sorpmx;                          /* maximum P sorption potential for a soil */

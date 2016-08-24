@@ -157,8 +157,8 @@ void initialise_params(params *p) {
     p->kp = 0.3;         
     p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;
-    p->kr = 0.5;
-    p->krp = 0.5;
+    p->kr = 0.5;         /* this value is 1.0 in Wang et al. 2007 Global Biogeochemical Cycles, Kn Michaelis-Menten constant for plant N uptake [g P m-2] */
+    p->krp = 0.1;        /* Wang et al. 2007 Global Biogeochemical Cycles, Kp Michaelis-Menten constant for plant P uptake [g P m-2] */
     p->lai_closed = 0.5;
     p->latitude = 35.9;
     p->leaf_width = 0.01;
@@ -235,10 +235,10 @@ void initialise_params(params *p) {
     p->psi_sat_topsoil = -999.9;
     p->qs = 1.0;                      /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
-    p->rateloss = 0.5;    
-    p->prateloss = 0.5;
+    p->rateloss = 0.5;                /* value = 0.05 in Wang et al., 2007 GB1018 */
+    p->prateloss = 0.005;             
     p->rateuptake = 2.7;
-    p->prateuptake = 2.7;
+    p->prateuptake = 0.5;
     p->rdecay = 0.33333;
     p->rdecaydry = 0.33333;
     p->retransmob = 0.0;
@@ -262,7 +262,7 @@ void initialise_params(params *p) {
     p->store_transfer_len = -999.9;
     p->structcn = 150.0;
     p->structrat = 0.0;
-    p->structcp = 150.0;
+    p->structcp = 2300.0;
     p->structratp = 0.0;
     p->targ_sens = 0.5;
     p->theta = 0.7;
