@@ -229,7 +229,7 @@ void initialise_params(params *p) {
     p->p_sorb_frac = 0.0;
     p->psecmnp = 0.0022;
     p->prescribed_leaf_NC = 0.03;
-    p->prescribed_leaf_PC = 0.00249;  /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */
+    p->prescribed_leaf_PC = 0.00249;   /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */
     p->previous_ncd = 35.0;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;

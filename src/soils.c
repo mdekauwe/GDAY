@@ -1264,9 +1264,12 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   /* calculate P lab and sorb fluxes from gross P flux */
   calculate_p_min_partition(f, p, s);
   
-  /* SIM phosphorus effluxes check back see if 1 and 2 needed */
+  /* SIM phosphorus dynamics */
   calculate_p_ssorb_to_sorb(s, f, p, c);
-  
+  calculate_p_ssorb_to_occ(s, f, p);
+  calculate_p_sorb_to_ssorb(s, f, p); 
+
+ 
   if (c->exudation && c->alloc_model != GRASSES) {
     calc_root_exudation_uptake_of_P(f, s);
   }
@@ -1760,7 +1763,75 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
   return;
 }
 
+void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
+  /*calculate P transfer from strongly sorbed P pool to
+   sorbed P pool; 
+   
+   Parameters
+   ----------
+   phtextint: float   
+   intercept for the texture equation of strongly sorbed P depends upon
+   pH input;
+   
+   phtextslope: float  
+   slope value used in determining effect of sand content on ssorb P flow 
+   to mineral P;
+   
+   psecmn: float
+   controls the flow from secondary to mineral P;
+   
+   Returns:
+   ----------
+   p_ssorb_to_sorb: float
+   flux rate of p strongly sorbed pool to p sorbed pool;
+   
+   */
+  
+  double phtextint, phtextslope;
+  double dely, delx, xslope, yint;
+  int cntrl_text_p = c->text_effect_p;
+  
+  if (cntrl_text_p == 1) {
+    dely = p->phtextmax - p->phmax;
+    delx = p->phtextmin - p->phmin;
+    xslope = dely/delx;
+    yint = p->phtextmin - xslope * p->phmin;
+    
+    if (p->soilph < p->phmin) {
+      phtextint = p->phtextmin;
+    } else if (p->soilph > p->phmax) {
+      phtextint = p->phtextmax;
+    } else {
+      phtextint = xslope * p->soilph + yint;
+    }
+    
+    f->p_ssorb_to_sorb = 12.0 * (phtextint + phtextslope * p->sand_frac) * 
+                         (s->inorgssorbp / M2_AS_HA * G_AS_TONNES); //annual sum?
+    
+  } else {
+    f->p_ssorb_to_sorb = p->psecmnp * M2_AS_HA / G_AS_TONNES;
+  }
+  
+  return;
+}
 
+void calculate_p_sorb_to_ssorb(state *s, fluxes *f, params *p) {
+  
+  /* P flux from sorbed pool to strongly sorbed P pool */
+  f->p_sorb_to_ssorb = p->rate_sorb_ssorb * s->inorgsorbp;
+  
+  return;
+}
+
+void calculate_p_ssorb_to_occ(state *s, fluxes *f, params *p) {
+  
+  /* P flux from strongly sorbed pool to occluded P pool */
+  f->p_ssorb_to_occ = p->rate_ssorb_occ * s->inorgssorbp;
+
+  return;
+}  
+  
+  
 void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   /* Calculate the proportion of lab P and sorb P influxes from pgross,
   assumed that pgross = pmin pool, 
@@ -1803,59 +1874,6 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   
   return;
   
-}
-
-void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
-  /*calculate P transfer from strongly sorbed P pool to
-   sorbed P pool; 
-   
-   Parameters
-   ----------
-   
-   phtextint: float   
-   intercept for the texture equation of strongly sorbed P depends upon
-   pH input;
-   
-   phtextslope: float  
-   slope value used in determining effect of sand content on ssorb P flow 
-   to mineral P;
-   
-   psecmn: float
-   controls the flow from secondary to mineral P;
-   
-   Returns:
-   ----------
-   p_ssorb_to_sorb: float
-   flux rate of p strongly sorbed pool to p sorbed pool;
-   
-   */
-  
-  double phtextint, phtextslope;
-  double dely, delx, xslope, yint;
-  int cntrl_text_p = c->text_effect_p;
-  
-  if (cntrl_text_p == 1) {
-    dely = p->phtextmax - p->phmax;
-    delx = p->phtextmin - p->phmin;
-    xslope = dely/delx;
-    yint = p->phtextmin - xslope*p->phmin;
-    
-    if (p->soilph < p->phmin) {
-      phtextint = p->phtextmin;
-    } else if (p->soilph > p->phmax) {
-      phtextint = p->phtextmax;
-    } else {
-      phtextint = xslope * p->soilph + yint;
-    }
-    
-    f->p_ssorb_to_sorb = 12.0 * (phtextint + phtextslope * p->sand_frac) * 
-      (s->inorgssorbp / M2_AS_HA * G_AS_TONNES); //annual sum?
-    
-  } else {
-    f->p_ssorb_to_sorb = p->psecmnp * M2_AS_HA / G_AS_TONNES;
-  }
-  
-  return;
 }
 
 

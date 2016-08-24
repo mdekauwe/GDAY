@@ -65,6 +65,8 @@ void   calculate_p_min_partition(fluxes *, params *, state *);
 void   calculate_p_immobilisation(fluxes *, params *, state *, double *,
                                   double *, double *, double *);
 void   calculate_p_ssorb_to_sorb(state *, fluxes *, params *, control *);
+void   calculate_p_sorb_to_ssorb(state *, fluxes *, params *);
+void   calculate_p_ssorb_to_occ(state *, fluxes *, params *); 
 void   calc_p_net_mineralisation(fluxes *);
 double calculate_pc_slope(params *, double, double);
 void   calculate_p_biochemical_mineralisation(fluxes *, params *,state *);
