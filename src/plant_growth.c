@@ -47,7 +47,12 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     */
     nitfac = MIN(1.0, s->shootnc / p->ncmaxfyoung);
     pitfac = MIN(1.0, s->shootpc / p->pcmaxfyoung);
-    npitfac = MIN(nitfac, pitfac);
+    
+    if(c->pcycle == TRUE) {
+       npitfac = MIN(nitfac, pitfac);
+    } else {
+       npitfac = nitfac;
+    }
 
     /* figure out the C allocation fractions */
     if (c->deciduous_model){
