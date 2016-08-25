@@ -339,7 +339,7 @@ int handler(char *section, char *name, char *value, control *c,
       if (strcmp(temp, "False") == 0 ||
           strcmp(temp, "FALSE") == 0 ||
           strcmp(temp, "false") == 0)
-        c->ncycle = FALSE;
+        c->pcycle = FALSE;
       else if (strcmp(temp, "True") == 0 ||
                strcmp(temp, "TRUE") == 0 ||
                strcmp(temp, "true") == 0)
