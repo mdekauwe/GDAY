@@ -225,8 +225,6 @@ void initialise_params(params *p) {
     p->phmin = 5;
     p->phtextmin = 0.0008;
     p->phtextmax = 0.015;
-    p->p_lab_frac = 1.0;
-    p->p_sorb_frac = 0.0;
     p->psecmnp = 0.0022;
     p->prescribed_leaf_NC = 0.03;
     p->prescribed_leaf_PC = 0.00249;   /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */

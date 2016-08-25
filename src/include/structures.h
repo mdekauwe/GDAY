@@ -349,8 +349,6 @@ typedef struct {
     double phmin;                           /* min pH for determining effect on solubility of secondary P */
     double phtextmin;                       /* the solubility of secondary P corresponding to min pH (/yr) */
     double phtextmax;                       /* the solubility of secondary P corresponding to mmax pH (/yr) */
-    double p_lab_frac;                      /* fraction of labile P in mineral P */
-    double p_sorb_frac;                     /* fraction of sorbed P in mineral P */
     double psecmnp;                         /* controls the flow from secondary to mineral P, used when text_effect_p set to 0 */
     double prescribed_leaf_NC;              /* If the N-Cycle is switched off this needs to be set, e.g. 0.03 */
     double prescribed_leaf_PC;              /* If the P-Cycle is switched off this needs to be set, e.g. 0.00249 */
@@ -678,8 +676,8 @@ typedef struct {
     double c_into_passive;
     
     /* inorganic P flux exchanges */
-    double p_lab_influx;        /*P influx from gross min to lab pool */
-    double p_sorb_influx;       /*P influx from gross min to sorb pool */
+    double p_lab_influx;        /*P influx to lab pool */
+    double p_sorb_influx;       /*P influx sorb pool, excluding from ssorb to sorb */
     double p_sorb_to_ssorb;
     double p_ssorb_to_sorb;
     double p_ssorb_to_occ;

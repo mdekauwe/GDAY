@@ -1763,6 +1763,52 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
   return;
 }
 
+void calculate_p_min_partition(fluxes *f, params *p, state *s) {
+  /* Calculate the proportion of lab P and sorb P influxes from pgross,
+  assumed that pgross = pmin pool, 
+  based on CENTURY fsfunc function (Metherell et al. 1993)
+   
+  Parameters:
+  --------
+  sorpmx: maximum P sorption potential for a soil
+  sorpaf: slope term which controls teh fraction of mineral P that is labile
+  
+  Returns:
+  --------
+  value : float
+  p_lab_influx: P influxes added into the labile pool;
+  p_sorb_influx: P influxes added into the sorbed pool (excluding from ssorb to sorb);
+  
+  */
+  double const_b, const_c;
+  double total_influx;
+  double lab_influx, sorb_influx;
+  double min_frac_p_available_to_plant = 0.4;
+  double max_frac_p_available_to_plant = 0.8;
+  double mineral_n_with_max_p = 2;              /* Unit [gN m-2] */
+  
+  total_influx = (f->pparentflux + f->pmineralisation + f->purine) 
+                 * G_AS_TONNES / M2_AS_HA;
+  
+  const_c = p->sorpmx * (2 - p->sorpaf) / 2;
+  const_b = p->sorpmx - total_influx + const_c;
+  
+  /* Calculate influx for labile P pool from all influx pools */
+  lab_influx = (-const_b + sqrt(const_b*const_b + 4 * const_c * total_influx))/2;
+  sorb_influx = total_influx - f->p_lab_influx;
+  
+  f->p_lab_influx = lab_influx * M2_AS_HA / G_AS_TONNES;  
+  f->p_sorb_influx = sorb_influx * M2_AS_HA / G_AS_TONNES;
+  
+  p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
+                       MIN(min_frac_p_available_to_plant + s->inorgn * 
+                       (max_frac_p_available_to_plant - min_frac_p_available_to_plant) /
+                       mineral_n_with_max_p, max_frac_p_available_to_plant));
+  
+  return;
+  
+}
+
 void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
   /*calculate P transfer from strongly sorbed P pool to
    sorbed P pool; 
@@ -1831,51 +1877,6 @@ void calculate_p_ssorb_to_occ(state *s, fluxes *f, params *p) {
   return;
 }  
   
-  
-void calculate_p_min_partition(fluxes *f, params *p, state *s) {
-  /* Calculate the proportion of lab P and sorb P influxes from pgross,
-  assumed that pgross = pmin pool, 
-  based on CENTURY fsfunc function (Metherell et al. 1993)
-  
-  Returns:
-  --------
-  value : float
-  p_lab_influx
-  p_sorb_influx
-  
-  */
-  double const_b, const_c;
-  double total_influx;
-  double lab_influx, sorb_influx;
-  double min_frac_p_available_to_plant = 0.4;
-  double max_frac_p_available_to_plant = 0.8;
-  double mineral_n_with_max_p = 2;              /* Unit [gN m-2] */
-  
-  total_influx = (f->pparentflux + f->pgross + f->purine) * G_AS_TONNES / M2_AS_HA;
-  
-  const_c = p->sorpmx * (2 - p->sorpaf) / 2;
-  const_b = p->sorpmx - total_influx + const_c;
-  
-  /* Calculate influx for labile P pool from all influx pools */
-  lab_influx = (-const_b + sqrt(const_b*const_b + 4 * const_c * total_influx))/2;
-  
-  /*Calculate influx for sorb P pool from gross min */
-  p->p_lab_frac = lab_influx/total_influx;
-  p->p_sorb_frac = 1 - p->p_lab_frac;
-  sorb_influx = p->p_sorb_frac * total_influx;
-  
-  f->p_lab_influx = lab_influx * M2_AS_HA / G_AS_TONNES;  
-  f->p_sorb_influx = sorb_influx * M2_AS_HA / G_AS_TONNES;
-  
-  p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
-                       MIN(min_frac_p_available_to_plant + s->inorgn * 
-                         (max_frac_p_available_to_plant - min_frac_p_available_to_plant) / mineral_n_with_max_p,
-                         max_frac_p_available_to_plant));
-  
-  return;
-  
-}
-
 
 void calculate_ppools(control *c, fluxes *f, params *p, state *s,
                       double active_pc_slope, double slow_pc_slope,
@@ -1982,17 +1983,15 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   to normalise the P:C ratio of a net flux */
   fixp = pc_flux(f->c_into_passive, p_into_passive, pass_pc);
   s->passivesoilp += p_into_passive + fixp - p_out_of_passive;
-  
-  /* Daily increment of soil inorganic mineral P pool (lab + sorb), diff btw in and effluxes
-  (grazer urine P goes directly into inorganic pool)  */
-  s->inorgminp += f->pmineralisation - f->ploss - f->puptake +
-                  f->pparentflux + f->purine +  
-                  f->p_slow_biochemical - f->p_sorb_to_ssorb +
-                  f->p_ssorb_to_sorb;
 
   /* Daily increment of soil inorganic labile and sorbed P pool */
-  s->inorglabp = s->inorgminp * p->p_lab_frac;
-  s->inorgsorbp = s->inorgminp * p->p_sorb_frac; 
+  s->inorglabp += f->p_lab_influx + f->p_slow_biochemical 
+                  - f->ploss - f->puptake;
+  s->inorgsorbp += f->p_sorb_influx + f->p_ssorb_to_sorb -
+                   f->p_sorb_to_ssorb;
+  
+  /* Daily increment of soil inorganic mineral P pool (lab + sorb) */
+  s->inorgminp = s->inorglabp + s->inorgsorbp;
  
   /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
   f->p_ssorb_to_occ = p->rate_ssorb_occ * s->inorgssorbp;
