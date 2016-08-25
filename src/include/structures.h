@@ -363,8 +363,6 @@ typedef struct {
     double psi_sat_topsoil;                 /* MPa */
     double psie_topsoil;                    /* Soil water potential at saturation (m) */
     double psie_root;                       /* Soil water potential at saturation (m) */
-    double ptheta_root;                     /* Inferred based on ntheta */
-    double ptheta_topsoil;                  /* Inferred based on ntheta */
     double puptakez;                        /* constant P uptake per year (1/yr) */
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */

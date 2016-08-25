@@ -900,18 +900,16 @@ int handler(char *section, char *name, char *value, control *c,
       p->pmin0 = atof(value);
     } else if (MATCH("params", "pmincrit")) {
       p->pmincrit = atof(value);
-    } else if (MATCH("params", "ptheta_root")) {
-      p->ptheta_root = atof(value);
-    } else if (MATCH("params", "ptheta_topsoil")) {
-      p->ptheta_topsoil = atof(value);
     } else if (MATCH("params", "puptakez")) {
       p->puptakez = atof(value);
     } else if (MATCH("params", "oi")) {
         p->oi = atof(value);
-    } else if (MATCH("params", "passivesoilnz")) {
-        p->passivesoilnz = atof(value);
     } else if (MATCH("params", "passivesoilz")) {
         p->passivesoilz = atof(value);
+    } else if (MATCH("params", "passivesoilnz")) {
+      p->passivesoilnz = atof(value);
+    } else if (MATCH("params", "passivesoilpz")) {
+      p->passivesoilpz = atof(value);
     } else if (MATCH("params", "passncmax")) {
         p->passncmax = atof(value);
     } else if (MATCH("params", "passncmin")) {

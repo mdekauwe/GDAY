@@ -210,8 +210,6 @@ void initialise_params(params *p) {
     p->pmin = 0.95;
     p->pmin0 = 0.0;
     p->pmincrit = 2.0;       /* Based on CENTURY VARAT1(2,3) = 2 value */
-    p->ptheta_root = 3.0;
-    p->ptheta_topsoil = 5.0;
     p->puptakez = 0.0;
     p->oi = 210000.0;        /* oxygen partial pressure (umol mol-1) */
     p->passivesoilnz = 1.0;
