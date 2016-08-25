@@ -406,7 +406,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ** ======================= */
         }
 
-        /* Allocate stored C&N for the following year */
+        /* Allocate stored C,N and P for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
             allocate_stored_cnp(f, p, s);

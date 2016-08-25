@@ -118,7 +118,7 @@ void initialise_params(params *p) {
     p->faecesp = 0.0;
     p->fdecay = 0.59988;
     p->fdecaydry = 0.59988;
-    p->fhw = 0.8;
+    p->fhw = 0.8;      /* seems to be too a high number for nc ratio, check back? */
     p->fhwp = 0.8;
     p->fix_lai = -999.9;
     p->finesoil = 0.51;
@@ -167,7 +167,7 @@ void initialise_params(params *p) {
     p->ligfaeces = 0.25;
     p->ligroot = 0.22;
     p->ligshoot = 0.24;
-    p->liteffnc = 0.0;     /* Check back point, see if P is needed? */
+    p->liteffnc = 0.0;     
     p->max_intercep_lai = 3.0;
     p->measurement_temp = 25.0;
     p->ncbnew = 0.003;

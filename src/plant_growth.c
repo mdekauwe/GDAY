@@ -336,8 +336,8 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
         /* New stem ring N:C at critical leaf N:C (mobile) */
         *ncwnew = p->ncwnew + pitfac * (p->ncwnew - p->ncwnewz);
         
-        /* vary stem N:C based on reln with foliage, see Jeffreys. Jeffreys 1999
-        showed that N:C ratio of new wood increases with foliar N:C ratio,
+        /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
+        Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
         modelled here based on evidence as a linear function. */
       } else {
         *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
@@ -391,7 +391,7 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
         showed that P:C ratio of new wood increases with foliar P:C ratio,
         modelled here based on evidence as a linear function. */
       } else {
-        *pcwimm = MAX(0.0, (0.0282 * s->shootpc + 0.000234) * p->fhw);
+        *pcwimm = MAX(0.0, (0.0282 * s->shootpc + 0.000234) * p->fhwp);
         
         /* New stem ring P:C at critical leaf P:C (mobile) */
         *pcwnew = MAX(0.0, 0.162 * s->shootpc - 0.00143);
@@ -415,7 +415,7 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
         showed that P:C ratio of new wood increases with foliar P:C ratio,
         modelled here based on evidence as a linear function. */
       } else {
-        *pcwimm = MAX(0.0, (0.0282 * s->shootpc + 0.000234) * p->fhw);
+        *pcwimm = MAX(0.0, (0.0282 * s->shootpc + 0.000234) * p->fhwp);
         
         /* New stem ring P:C at critical leaf P:C (mobile) */
         *pcwnew = MAX(0.0, 0.162 * s->shootpc - 0.00143);

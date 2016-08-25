@@ -201,6 +201,7 @@ typedef struct {
     double b_root;
     double b_topsoil;
     double bdecay;                          /* branch and large root turnover rate (1/yr) */
+    double biochemical_p_constant;          /* Michaelis-Menton constant for biochemical P mineralisation [g N (g P)-1]; Wang et al., 2007, GB1018*/
     double branch0;                         /* constant in branch-stem allometry (trees) */
     double branch1;                         /* exponent in branch-stem allometry */
     double bretrans;                        /* branch n retranslocation fraction */
@@ -216,11 +217,13 @@ typedef struct {
     double cretrans;                        /* coarse root n retranslocation fraction */
     double croot0;                          /* constant in coarse_root-stem allometry (trees) */
     double croot1;                          /* exponent in coarse_root-stem allometry */
+    double crit_n_cost_of_p;                /* Critical value of N cost of root P uptake above which phosphatase production starts [g N (g P)-1]; Wang et al., 2007, GB1018*/
     double ctheta_root;                     /* Fitted parameter based on Landsberg and Waring */
     double ctheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double cue;                             /* carbon use efficiency, or the ratio of NPP to GPP */
     double d0;
     double d0x;                             /* Length scale for exponential decline of Umax(z) */
+    double decayrate[7];
     double d1;
     double delsj;                           /* Deactivation energy for electron transport (J mol-1 k-1) */
     double density;                         /* sapwood density kg DM m-3 (trees) */
@@ -243,6 +246,9 @@ typedef struct {
     double fhw;                             /* n:c ratio of stemwood - immobile pool and new ring */
     double fhwp;                            /* p:c ratio of stemwood - immobile pool and new ring */
     double finesoil;                        /* clay+silt fraction */
+    double fmleaf;
+    double fmroot;
+    double fmfaeces;
     double fix_lai;                         /* value to fix LAI to, control fixed_lai flag must be set */
     double fracfaeces;                      /* Fractn of grazd C that ends up in faeces (0..1) */
     double fracteaten;                      /* Fractn of leaf production eaten by grazers */
@@ -293,35 +299,22 @@ typedef struct {
     double ligshoot;                        /* lignin-to-biomass ratio in leaf litter; Values from White et al. DBF = 0.18; ENF = 0.24l; GRASS = 0.09; Shrub = 0.15 - Value in smith et al. 2013 = 0.2, note subtly difference in eqn C9. */
     double liteffnc;
     double max_intercep_lai;                /* canopy LAI at which interception is maximised. */
+    double max_p_biochemical;               /* max rate of biochemical P mineralisation [g P m-2 y-1]; Wang et al., 2007, GB1018*/
     double measurement_temp;                /* temperature Vcmax/Jmax are measured at, typical 25.0 (celsius)  */
     double ncbnew;                          /* N alloc param: new branch N C at critical leaf N C */
     double ncbnewz;                         /* N alloc param: new branch N C at zero leaf N C */
     double nccnew;                          /* N alloc param: new coarse root N C at critical leaf N C */
     double nccnewz;                         /* N alloc param: new coarse root N C at zero leaf N C */
-    double pcbnew;                          /* P alloc param: new branch P C at critical leaf P C */
-    double pcbnewz;                         /* P alloc param: new branch P C at zero leaf P C */
-    double pccnew;                          /* P alloc param: new coarse root P C at critical leaf P C */
-    double pccnewz;                         /* P alloc param: new coarse root P C at zero leaf P C */
     double ncmaxfold;                       /* max N:C ratio of foliage in old stand, if the same as young=no effect */
     double ncmaxfyoung;                     /* max N:C ratio of foliage in young stand, if the same as old=no effect */
     double ncmaxr;                          /* max N:C ratio of roots */
-    double pcmaxfold;                       /* max P:C ratio of foliage in old stand, if the same as young=no effect */
-    double pcmaxfyoung;                     /* max P:C ratio of foliage in young stand, if the same as old=no effect */
-    double pcmaxr;                          /* max P:C ratio of roots */
     double ncrfac;                          /* N:C of fine root prodn / N:C c of leaf prodn */
-    double pcrfac;                          /* P:C of fine root prodp / P:C c of leaf prodp */
     double ncwimm;                          /* N alloc param: Immobile stem N C at critical leaf N C */
     double ncwimmz;                         /* N alloc param: Immobile stem N C at zero leaf N C */
     double ncwnew;                          /* N alloc param: New stem ring N:C at critical leaf N:C (mob) */
     double ncwnewz;                         /* N alloc param: New stem ring N:C at zero leaf N:C (mobile) */
-    double pcwimm;                          /* P alloc param: Immobile stem P C at critical leaf P C */
-    double pcwimmz;                         /* P alloc param: Immobile stem P C at zero leaf P C */
-    double pcwnew;                          /* P alloc param: New stem ring P:C at critical leaf P:C (mob) */
-    double pcwnewz;                         /* P alloc param: New stem ring P:C at zero leaf P:C (mobile) */
     double nf_crit;                         /* leaf N:C below which N availability limits productivity  */
     double nf_min;                          /* leaf N:C minimum N concentration which allows productivity */
-    double pf_crit;                         /* leaf P:C below which P availability limits productivity  */
-    double pf_min;                          /* leaf P:C minimum P concentration which allows productivity */
     double nmax;
     double nmin;                            /* (bewdy) minimum leaf n for +ve p/s (g/m2) */
     double nmin0;                           /* mineral N pool corresponding to Actnc0,etc (g/m2) */
@@ -329,14 +322,6 @@ typedef struct {
     double ntheta_root;                     /* Fitted parameter based on Landsberg and Waring */
     double ntheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double nuptakez;                        /* constant N uptake per year (1/yr) */
-    double p_lab_avail;                     /* Fraction of labile P available for plant uptake */
-    double pmax;
-    double pmin;                            /* (bewdy) minimum leaf p for +ve p/s (g/m2) */
-    double pmin0;                           /* mineral P pool corresponding to Actpc0,etc (g/m2) */
-    double pmincrit;                        /* Critical mineral P pool at max soil P:C (g/m2) */
-    double ptheta_root;                     /* Inferred based on ntheta */
-    double ptheta_topsoil;                  /* Inferred based on ntheta */
-    double puptakez;                        /* constant P uptake per year (1/yr) */
     double oi;                              /* intercellular concentration of O2 [umol mol-1] */
     double passivesoilnz;
     double passivesoilpz;
@@ -345,26 +330,48 @@ typedef struct {
     double passncmin;                       /* Passive pool (=1/10) N:C of new SOM - when Nmin=Nmin0 [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double passpcmax;                       /* Passive pool (=1/20) P:C ratio of new SOM - maximum [units: gP/gC] */
     double passpcmin;                       /* Passive pool (=1/200) P:C of new SOM - when Pmin=Pmin0 [units: gP/gC] */
+    double pcbnew;                          /* P alloc param: new branch P C at critical leaf P C */
+    double pcbnewz;                         /* P alloc param: new branch P C at zero leaf P C */
+    double pccnew;                          /* P alloc param: new coarse root P C at critical leaf P C */
+    double pccnewz;                         /* P alloc param: new coarse root P C at zero leaf P C */
+    double pcmaxfold;                       /* max P:C ratio of foliage in old stand, if the same as young=no effect */
+    double pcmaxfyoung;                     /* max P:C ratio of foliage in young stand, if the same as old=no effect */
+    double pcmaxr;                          /* max P:C ratio of roots */
+    double pcrfac;                          /* P:C of fine root prodp / P:C c of leaf prodp */
+    double pcwimm;                          /* P alloc param: Immobile stem P C at critical leaf P C */
+    double pcwimmz;                         /* P alloc param: Immobile stem P C at zero leaf P C */
+    double pcwnew;                          /* P alloc param: New stem ring P:C at critical leaf P:C (mob) */
+    double pcwnewz;                         /* P alloc param: New stem ring P:C at zero leaf P:C (mobile) */
+    double pf_crit;                         /* leaf P:C below which P availability limits productivity  */
+    double pf_min;                          /* leaf P:C minimum P concentration which allows productivity */
     double phmax;                           /* max pH for determining effect on solubility of secondary P */
     double phmin;                           /* min pH for determining effect on solubility of secondary P */
     double phtextmin;                       /* the solubility of secondary P corresponding to min pH (/yr) */
     double phtextmax;                       /* the solubility of secondary P corresponding to mmax pH (/yr) */
-    double psecmnp;                         /* controls the flow from secondary to mineral P, used when text_effect_p set to 0 */
+    double p_lab_avail;                     /* Fraction of labile P available for plant uptake */
+    double pmax;
+    double pmin;                            /* (bewdy) minimum leaf p for +ve p/s (g/m2) */
+    double pmin0;                           /* mineral P pool corresponding to Actpc0,etc (g/m2) */
+    double pmincrit;                        /* Critical mineral P pool at max soil P:C (g/m2) */
+    double prateloss;                       /* Rate of P loss from mineral P pool (/yr), Ref Wang et al., 2007, GB1018 */
+    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr), based on Wang et al. 2007 GB1018 Laupahoehoe site (intermediate age) */
     double prescribed_leaf_NC;              /* If the N-Cycle is switched off this needs to be set, e.g. 0.03 */
     double prescribed_leaf_PC;              /* If the P-Cycle is switched off this needs to be set, e.g. 0.00249 */
     double previous_ncd;                    /* In the first year we don't have last years data, so I have precalculated the average of all the november-jan chilling values  */
+    double psecmnp;                         /* controls the flow from secondary to mineral P, used when text_effect_p set to 0 */
     double psi_sat_root;                    /* MPa */
     double psi_sat_topsoil;                 /* MPa */
     double psie_topsoil;                    /* Soil water potential at saturation (m) */
     double psie_root;                       /* Soil water potential at saturation (m) */
+    double ptheta_root;                     /* Inferred based on ntheta */
+    double ptheta_topsoil;                  /* Inferred based on ntheta */
+    double puptakez;                        /* constant P uptake per year (1/yr) */
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
     double rate_ssorb_occ;                  /* Rate constant of the transfer of P from strongly sorbed pool to occluded pool, yr-1 Wang et al., 2007, GB1018 */
     double rate_sorb_ssorb;                 /* Rate constant of the transfer of P from sorbed pool to strongly sorbed pool, yr-1 Wang et al., 2007, GB1018 */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */
-    double prateloss;                       /* Rate of P loss from mineral P pool (/yr), Ref Wang et al., 2007, GB1018 */
     double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf Seems to correspond to very low NPP values */
-    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr), based on Wang et al. 2007 GB1018 Laupahoehoe site (intermediate age) */
     double rdecay;                          /* root turnover rate (1/yr) */
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
     double retransmob;                      /* Fraction stem mobile N retranscd (/yr) */
@@ -412,10 +419,6 @@ typedef struct {
     double wetloss;                         /* Daily rainfall lost per lai (mm/day) */
     double wretrans;                        /* mobile wood N retranslocation fraction */
     double z0h_z0m;                         /* Assume z0m = z0h, probably a big assumption [as z0h often < z0m.], see comment in code!! But 0.1 might be a better assumption */
-    double fmleaf;
-    double fmroot;
-    double decayrate[7];
-    double fmfaeces;
     int    growing_seas_len;
     double prime_y;
     double prime_z;
@@ -425,9 +428,6 @@ typedef struct {
     int    hurricane_yr;
     double root_exu_CUE;
     double leaf_width;
-    double crit_n_cost_of_p;                /* Critical value of N cost of root P uptake above which phosphatase production starts [g N (g P)-1]; Wang et al., 2007, GB1018*/
-    double max_p_biochemical;               /* max rate of biochemical P mineralisation [g P m-2 y-1]; Wang et al., 2007, GB1018*/
-    double biochemical_p_constant;          /* Michaelis-Menton constant for biochemical P mineralisation [g N (g P)-1]; Wang et al., 2007, GB1018*/
     double leaf_abs;
 } params;
 
