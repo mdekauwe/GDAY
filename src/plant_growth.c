@@ -47,7 +47,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     */
     nitfac = MIN(1.0, s->shootnc / p->ncmaxfyoung);
     pitfac = MIN(1.0, s->shootpc / p->pcmaxfyoung);
-    
+   
+    /* checking for pcycle control parameter */ 
     if(c->pcycle == TRUE) {
        npitfac = MIN(nitfac, pitfac);
     } else {
@@ -482,6 +483,9 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->nuptake = calculate_nuptake(c, p, s);
     f->puptake = calculate_puptake(c, p, s);
     
+    /* diagnosis */ 
+    
+    fprintf(stderr, "puptake = %f\n", f->puptake);
 
     /*  Ross's Root Model. */
     if (c->model_optroot) {
@@ -519,7 +523,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->nloss = p->rateloss * s->inorgn;
     
     /* Mineralised P lost from the system by leaching */
-    f->ploss = p->prateloss * s->inorgminp;
+    f->ploss = p->prateloss * s->inorglabp;
 
     /* total nitrogen/phosphorus to allocate */
     ntot = MAX(0.0, f->nuptake + f->retrans);
@@ -575,9 +579,15 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
          - cut back C prodn */
         arg2 = f->ppstemimm + f->ppstemmob + f->ppbranch + f->ppcroot;
         
+        /* diagnosis */ 
+        /*
+        fprintf(stderr, "arg1 = %f\n", arg1);
+        fprintf(stderr, "ntot = %f\n", ntot);
+        fprintf(stderr, "arg2 = %f\n", arg2);
+        fprintf(stderr, "ptot = %f\n", ptot);
+        */
 
         if (arg1 > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
-
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
@@ -622,7 +632,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
             f->gpp_am = f->gpp_gCm2 / 2.0;
             f->gpp_pm = f->gpp_gCm2 / 2.0;
 
-
             /* New respiration flux */
             f->auto_resp =  f->gpp - f->npp;
             recalc_wb = TRUE;
@@ -655,7 +664,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         }
         
         if (arg2 > ptot && c->fixleafpc == FALSE && c->fixed_lai && c->pcycle) {
-          
           
           /* Need to readjust the LAI for the reduced growth as this will
           have already been increased. First we need to figure out how

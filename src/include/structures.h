@@ -78,7 +78,7 @@ typedef struct {
     double croot;                       /* coarse root c (t/ha) */
     double crootn;                      /* coarse root n (t/ha) */
     double crootp;                      /* coarse root p (t/ha) */
-    double cstore;                      /* C store for deciduous model (t/ha) */
+    double cstore;                      /* C store for deciduous model (t/ha) annual ? */
     double inorgn;                      /* Inorganic soil N pool - dynamic (t/ha) */
     double inorgp;                      /* Inorganic soil P pool - dynamic (t/ha) */
     double inorgminp;                      /* Inorganic soil P pool - mineral P = lab + sorbed (t/ha) */
@@ -205,13 +205,13 @@ typedef struct {
     double branch0;                         /* constant in branch-stem allometry (trees) */
     double branch1;                         /* exponent in branch-stem allometry */
     double bretrans;                        /* branch n retranslocation fraction */
-    double c_alloc_bmax;                    /* allocation to branches at branch n_crit. If using allometric model this is the max alloc to branches */
-    double c_alloc_bmin;                    /* allocation to branches at zero branch n/c. If using allometric model this is the min alloc to branches */
-    double c_alloc_cmax;                    /* allocation to coarse roots at n_crit. If using allometric model this is the max alloc to coarse roots */
-    double c_alloc_fmax;                    /* allocation to leaves at leaf n_crit. If using allometric model this is the max alloc to leaves */
-    double c_alloc_fmin;                    /* allocation to leaves at zero leaf n/c. If using allometric model this is the min alloc to leaves */
-    double c_alloc_rmax;                    /* allocation to roots at root n_crit. If using allometric model this is the max alloc to fine roots */
-    double c_alloc_rmin;                    /* allocation to roots at zero root n/c. If using allometric model this is the min alloc to fine roots */
+    double c_alloc_bmax;                    /* allocation to branches at branch n_crit and p_crit. If using allometric model this is the max alloc to branches */
+    double c_alloc_bmin;                    /* allocation to branches at zero branch n/c and p/c. If using allometric model this is the min alloc to branches */
+    double c_alloc_cmax;                    /* allocation to coarse roots at n_crit and p_crit. If using allometric model this is the max alloc to coarse roots */
+    double c_alloc_fmax;                    /* allocation to leaves at leaf n_crit and p_crit. If using allometric model this is the max alloc to leaves */
+    double c_alloc_fmin;                    /* allocation to leaves at zero leaf n/c and p/c. If using allometric model this is the min alloc to leaves */
+    double c_alloc_rmax;                    /* allocation to roots at root n_crit and p_crit. If using allometric model this is the max alloc to fine roots */
+    double c_alloc_rmin;                    /* allocation to roots at zero root n/c and p/c. If using allometric model this is the min alloc to fine roots */
     double cfracts;                         /* carbon fraction of dry biomass */
     double crdecay;                         /* coarse roots turnover rate (1/yr) */
     double cretrans;                        /* coarse root n retranslocation fraction */
@@ -308,7 +308,7 @@ typedef struct {
     double ncmaxfold;                       /* max N:C ratio of foliage in old stand, if the same as young=no effect */
     double ncmaxfyoung;                     /* max N:C ratio of foliage in young stand, if the same as old=no effect */
     double ncmaxr;                          /* max N:C ratio of roots */
-    double ncrfac;                          /* N:C of fine root prodn / N:C c of leaf prodn */
+    double ncrfac;                          /* N:C of fine root prodn / N:C of leaf prodn */
     double ncwimm;                          /* N alloc param: Immobile stem N C at critical leaf N C */
     double ncwimmz;                         /* N alloc param: Immobile stem N C at zero leaf N C */
     double ncwnew;                          /* N alloc param: New stem ring N:C at critical leaf N:C (mob) */
