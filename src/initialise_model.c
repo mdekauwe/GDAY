@@ -539,12 +539,12 @@ void initialise_state(state *s) {
     s->cstore = 0.01;
     s->inorgn = 0.0274523714275;
     s->inorgp = 0.0274523714275;
-    s->inorgminp = 0.0274523714275;
-    s->inorglabp = 0.0274523714275;
-    s->inorgsorbp = 0.0;
-    s->inorgssorbp = 0.15;              /* CENTURY value, unit converted from 15 g P m-2 to t/ha */
-    s->inorgoccp = 0.0;
-    s->inorgparp = 0.5;                 /* CENTURY value, unit converted from 50 g P m-2 to t/ha */
+    s->inorgminp = 0.096;               /* lab p + sorb p */
+    s->inorglabp = 0.051;               /* Binkley et al 2000 Forest Ecology and Management, Table 1 */
+    s->inorgsorbp = 0.045;              /* Binkley et al 2000 Forest Ecology and Management, Table 1 */
+    s->inorgssorbp = 0.055;             /* Binkley et al 2000 Forest Ecology and Management, Table 1, unit converted from 55 ug P g dry soil to t/ha */
+    s->inorgoccp = 0.0;               
+    s->inorgparp = 0.054;               /* Binkley et al 2000 Forest Ecology and Management, Table 1 */
     s->metabsoil = 0.135656771805;
     s->metabsoiln = 0.00542627087221;
     s->metabsoilp = 0.001179624;        /* based on metabolic pool C/P ratio of 115 from Parton et al., 1989, Ecology of arable land. */
@@ -566,7 +566,7 @@ void initialise_state(state *s) {
     s->sapwood = 51.2600270003;
     s->shoot = 4.37991243755;
     s->shootn = 0.0978837857406; 
-    s->shootp = 0.01258281;             /* Inferred from Century CERFOR(1,3,1) & CERFOR(1,3,2) ratio */
+    s->shootp = 0.008759825;            /* Based on leaf C:P ratio of 500 from Crous et al., 2015, Plant Soil */
     s->sla = 4.4;
     s->slowsoil = 46.8769593608;
     s->slowsoiln = 2.90664959452;
@@ -575,7 +575,7 @@ void initialise_state(state *s) {
     s->stemn = 0.263722246902;
     s->stemnimm = 0.263336697464;
     s->stemnmob = 0.00038554943772;
-    s->stemp = 0.02921933;             /* Yang et al. 2016, Biogeosciences, Table S1, wood C:P = 3000 */
+    s->stemp = 0.02921933;              /* Yang et al. 2016, Biogeosciences, Table S1, wood C:P = 3000 */
     s->stempimm = 0.02921933;           
     s->stempmob = 0.0;        
     s->structsoil = 0.917128200367;

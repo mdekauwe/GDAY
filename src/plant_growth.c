@@ -486,7 +486,8 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     /* diagnosis */ 
     
     fprintf(stderr, "puptake = %f\n", f->puptake);
-
+    
+     
     /*  Ross's Root Model. */
     if (c->model_optroot) {
 
