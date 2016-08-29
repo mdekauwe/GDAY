@@ -432,8 +432,6 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
     return;
 }
 
-
-
 int np_allocation(control *c, fluxes *f, params *p, state *s,
                         double ncbnew, double nccnew, double ncwimm,
                         double ncwnew, 
@@ -484,9 +482,9 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->puptake = calculate_puptake(c, p, s);
     
     /* diagnosis */ 
-    
+    /*
     fprintf(stderr, "puptake = %f\n", f->puptake);
-    
+    */
      
     /*  Ross's Root Model. */
     if (c->model_optroot) {

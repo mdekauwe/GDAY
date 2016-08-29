@@ -294,7 +294,7 @@ typedef struct {
     double longitude;                       /* longitude (degrees, negative for west) */
     double leafsap0;                        /* leaf area  to sapwood cross sectional area ratio when Height = Height0 (mm^2/mm^2) */
     double leafsap1;                        /* leaf to sap area ratio when Height = Height1 (mm^2/mm^2) */
-    double ligfaeces;                       /* Faeces lignin as fractn of biomass */
+    double ligfaeces;                       /* Faeces lignin as fraction of biomass */
     double ligroot;                         /* lignin-to-biomass ratio in root litter; Values from White et al. = 0.22  - Value in Smith et al. 2013 = 0.16, note subtly difference in eqn C9. */
     double ligshoot;                        /* lignin-to-biomass ratio in leaf litter; Values from White et al. DBF = 0.18; ENF = 0.24l; GRASS = 0.09; Shrub = 0.15 - Value in smith et al. 2013 = 0.2, note subtly difference in eqn C9. */
     double liteffnc;
@@ -348,6 +348,7 @@ typedef struct {
     double phmin;                           /* min pH for determining effect on solubility of secondary P */
     double phtextmin;                       /* the solubility of secondary P corresponding to min pH (/yr) */
     double phtextmax;                       /* the solubility of secondary P corresponding to mmax pH (/yr) */
+    double phtextslope;                     /* slope controlling effect of sand on secondary P flow to mineral P */
     double p_lab_avail;                     /* Fraction of labile P available for plant uptake */
     double pmax;
     double pmin;                            /* (bewdy) minimum leaf p for +ve p/s (g/m2) */
@@ -500,8 +501,6 @@ typedef struct {
 
 
 
-
-
 typedef struct {
     double gpp_gCm2;
     double npp_gCm2;
@@ -594,8 +593,8 @@ typedef struct {
 
     /* grazing stuff */
     double ceaten;          /* C consumed by grazers (t C/ha/y) */
-    double neaten;          /* N consumed by grazers (t C/ha/y) */
-    double peaten;          /* P consumed by grazers (t C/ha/y) */
+    double neaten;          /* N consumed by grazers (t N/ha/y) */
+    double peaten;          /* P consumed by grazers (t P/ha/y) */
     
     double faecesc;         /* Flux determined by faeces C:N */
     double nurine;          /* Rate of N input to soil in urine (t/ha/y) */

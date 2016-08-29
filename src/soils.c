@@ -1735,6 +1735,13 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
     c_gain_of_p = 0.0;
   }
   
+  /* diagnosis */
+  /*
+  fprintf(stderr, "npp = %f\n", f->npp);
+  fprintf(stderr, "puptake = %f\n", f->puptake);
+  fprintf(stderr, "c_gain_of_p = %f\n", c_gain_of_p);
+  */
+  
   /* Calculate C gain per unit N */
   if (f->nuptake > 0.0) {
     c_gain_of_n = f->npp/f->nuptake;
@@ -1749,6 +1756,12 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
     n_cost_of_p = 0.0;
   }
   
+  /* diagnosis */
+  /*
+  fprintf(stderr, "nuptake = %f\n", f->nuptake);
+  fprintf(stderr, "n_cost_of_p = %f\n", n_cost_of_p);
+  */
+  
   /* Phosphatase production start when N cost of P is greater than critical
   N cost of P value, and when carbon uptake is more strongly limited by the uptake 
   of P than by the uptake of N */
@@ -1759,6 +1772,11 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
   } else {
     f->p_slow_biochemical = 0.0;
   }
+  
+  /* diagnosis */
+  /*
+  fprintf(stderr, "p_slow_biochemical = %f\n", f->p_slow_biochemical);
+  */
   
   return;
 }
@@ -1833,15 +1851,28 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
    
    */
   
-  double phtextint, phtextslope;
+  double phtextint;
   double dely, delx, xslope, yint;
   int cntrl_text_p = c->text_effect_p;
-  
+ 
+ 
+  /* diagnosis */
+  /*
+  fprintf(stderr, "text effect p %d\n", cntrl_text_p);
+  */
+ 
   if (cntrl_text_p == 1) {
-    dely = p->phtextmax - p->phmax;
-    delx = p->phtextmin - p->phmin;
+    
+    dely = p->phtextmax - p->phtextmin;
+    delx = p->phmax - p->phmin;
+    
     xslope = dely/delx;
     yint = p->phtextmin - xslope * p->phmin;
+    
+    /*diagnosis */
+    
+    fprintf(stderr, "yint %f\n", yint);
+    fprintf(stderr, "xslope %f\n", xslope);
     
     if (p->soilph < p->phmin) {
       phtextint = p->phtextmin;
@@ -1851,11 +1882,21 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
       phtextint = xslope * p->soilph + yint;
     }
     
-    f->p_ssorb_to_sorb = 12.0 * (phtextint + phtextslope * p->sand_frac) * 
-                         (s->inorgssorbp / M2_AS_HA * G_AS_TONNES); //annual sum?
+    /*
+    fprintf(stderr, "phtextint %f\n", phtextint);
+    */
+    
+    f->p_ssorb_to_sorb = MAX(0.0, 12.0 * (phtextint + p->phtextslope * p->sand_frac)); //* 
+                         //(s->inorgssorbp / M2_AS_HA * G_AS_TONNES)); 
+    
+    fprintf(stderr, "p_ssorb_to_sorb when p effect on %f\n", f->p_ssorb_to_sorb);
     
   } else {
     f->p_ssorb_to_sorb = p->psecmnp * M2_AS_HA / G_AS_TONNES;
+    
+    //fprintf(stderr, "psecmnp when p effect off %f\n", p->psecmnp);
+    //fprintf(stderr, "p_ssorb_to_sorb when p effect off %f\n", f->p_ssorb_to_sorb);
+    
   }
   
   return;

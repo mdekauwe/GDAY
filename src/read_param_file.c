@@ -926,6 +926,8 @@ int handler(char *section, char *name, char *value, control *c,
       p->phtextmax = atof(value);
     } else if (MATCH("params", "phtextmin")) {
       p->phtextmin = atof(value);
+    } else if (MATCH("params", "phtextslope")) {
+      p->phtextslope = atof(value);
     } else if (MATCH("params", "psecmnp")) {
       p->psecmnp = atof(value);
     } else if (MATCH("params", "prescribed_leaf_NC")) {
