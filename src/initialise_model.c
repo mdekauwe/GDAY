@@ -168,6 +168,7 @@ void initialise_params(params *p) {
     p->kq10 = 0.08;
     p->kr = 0.5;         /* this value is 1.0 in Wang et al. 2007 Global Biogeochemical Cycles, Kn Michaelis-Menten constant for plant N uptake [g P m-2] */
     p->krp = 0.1;        /* Wang et al. 2007 Global Biogeochemical Cycles, Kp Michaelis-Menten constant for plant P uptake [g P m-2] */
+    p->ks = 0.003;       /* used intermediately weatherred soil value of 0.3 [g P m-2] in Yang et al. 2016 */
     p->lai_closed = 0.5;
     p->latitude = 35.9;
     p->leaf_width = 0.01;
@@ -177,7 +178,7 @@ void initialise_params(params *p) {
     p->ligroot = 0.22;
     p->ligshoot = 0.24;
     p->liteffnc = 0.0;     
-    p->max_p_biochemical = 0.0002739;  /* converted from 0.1 g P m-2 yr-1 to g P m-2 d-1 */
+    p->max_p_biochemical = 0.001;  /* converted from 0.1 g P m-2 yr-1 to t/ha/yr */
     p->max_intercep_lai = 3.0;
     p->measurement_temp = 25.0;
     p->ncbnew = 0.003;
@@ -238,7 +239,7 @@ void initialise_params(params *p) {
     p->prescribed_leaf_NC = 0.03;
     p->prescribed_leaf_PC = 0.00249;   /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */
     p->previous_ncd = 35.0;
-    p->psecmnp = 0.0022;
+    p->psecmnp = 0.000022;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
     p->puptakez = 0.0255;             /* calculated based on prateuptake 0.5 and inorglabp 0.051 */
@@ -265,6 +266,7 @@ void initialise_params(params *p) {
     p->slowncmin = 0.025;
     p->slowpcmax = 0.011111;
     p->slowpcmin = 0.005;
+    p->smax = 7;                   /* used intermediately weather soils value of 700 [g P m-2] in Yang et al. 2016 */
     p->soilph = 6.7;               /* pft-specific parameter, century value */
     p->sorpmx = 5;                 /* pft-specific parameter, check CENTURY for values */
     p->sorpaf = 1;

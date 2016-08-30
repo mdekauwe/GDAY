@@ -796,6 +796,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->kn = atof(value);
     } else if (MATCH("params", "kp")) {
         p->kp = atof(value);
+    } else if (MATCH("params", "ks")) {
+      p->ks = atof(value);
     } else if (MATCH("params", "lad")) {
         p->lad = atof(value);
     } else if (MATCH("params", "lai_closed")) {
@@ -998,6 +1000,8 @@ int handler(char *section, char *name, char *value, control *c,
       p->slowpcmax = atof(value);
     } else if (MATCH("params", "slowpcmin")) {
       p->slowpcmin = atof(value);
+    } else if (MATCH("params", "smax")) {
+      p->smax = atof(value);
     } else if (MATCH("params", "store_transfer_len")) {
         p->store_transfer_len = atof(value);
     } else if (MATCH("params", "structcn")) {

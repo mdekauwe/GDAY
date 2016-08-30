@@ -288,6 +288,7 @@ typedef struct {
     double kq10;                            /* exponential coefficient for Rm vs T */
     double kr;                              /* N uptake coefficent (0.05 kg C m-2 to 0.5 tonnes/ha) see Silvia's PhD, Dewar and McM, 96. */
     double krp;                             /* P uptake coefficent */
+    double ks;                              /* an empirical constant [t P ha-1] - sorption capacity increased with the age of the substrate */
     double lad;                             /* Leaf angle distribution: 0 = spherical leaf angle distribution; 1 = horizontal leaves; -1 = vertical leaves */
     double lai_closed;                      /* LAI of closed canopy (max cover fraction is reached (m2 (leaf) m-2 (ground) ~ 2.5) */
     double latitude;                        /* latitude (degrees, negative for south) */
@@ -347,7 +348,7 @@ typedef struct {
     double phmax;                           /* max pH for determining effect on solubility of secondary P */
     double phmin;                           /* min pH for determining effect on solubility of secondary P */
     double phtextmin;                       /* the solubility of secondary P corresponding to min pH (/yr) */
-    double phtextmax;                       /* the solubility of secondary P corresponding to mmax pH (/yr) */
+    double phtextmax;                       /* the solubility of secondary P corresponding to max pH (/yr) */
     double phtextslope;                     /* slope controlling effect of sand on secondary P flow to mineral P */
     double p_lab_avail;                     /* Fraction of labile P available for plant uptake */
     double pmax;
@@ -387,6 +388,7 @@ typedef struct {
     double slowncmin;                       /* Slow pool (=1/40) N:C of new SOM - when Nmin=Nmin0" [units: gN/gC]. Based on forest version of CENTURY (Parton et al. 1993), see Appendix, McMurtrie 2001, Tree Physiology. */
     double slowpcmax;                       /* Slow pool (=1/90) P:C ratio of new SOM - maximum [units: gP/gC]. */
     double slowpcmin;                       /* Slow pool (=1/200) P:C of new SOM - when Pmin=Pmin0" [units: gP/gC]. */
+    double smax;                            /* Maximum amount of sorbed P in the soil [tt P ha-1] */
     double store_transfer_len;
     double structcn;                        /* C:N ratio of structural bit of litter input */
     double structrat;                       /* structural input n:c as fraction of metab */
