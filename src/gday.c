@@ -391,6 +391,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
+            
+            fprintf(stderr, "nyr = %d\n", nyr);
+            fprintf(stderr, "doy = %d\n", doy);
 
             if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
                 write_daily_outputs_ascii(c, f, s, year, doy+1);
@@ -850,14 +853,11 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     fprintf(stderr, "soilp %f\n", s->soilp);
     fprintf(stderr, "totalp %f\n", s->totalp);
     //fprintf(stderr, "inorgp %f\n", s->inorgp);
-    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-    //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-    //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
-    //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
+    fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+    fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+    fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
     //fprintf(stderr, "plantp %f\n", s->plantp);
-    //fprintf(stderr, "inorgparp %f\n", s->inorgparp);
-    //fprintf(stderr, "inorgparp %f\n", s->inorgparp);
-    //fprintf(stderr, "inorgparp %f\n", s->inorgparp);
 
     /* optional constant passive pool */
     if (c->passiveconst) {

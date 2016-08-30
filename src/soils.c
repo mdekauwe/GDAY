@@ -986,6 +986,8 @@ void calculate_n_immobilisation(fluxes *f, params *p, state *s, double *nimmob,
 void calc_n_net_mineralisation(fluxes *f) {
     /* N Net mineralisation from microbial activity */
     f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;
+  
+    //fprintf(stderr, "nmineralisation %f\n", f->nmineralisation);
 
     return;
 }
@@ -1520,6 +1522,8 @@ void pfluxes_from_slow_pool(fluxes *f, params *p, state *s) {
   double slowout = s->slowsoilp * p->decayrate[5];
   double sigwt = slowout / 0.45;
   
+  //fprintf(stderr, "slowsoilp %f\n", s->slowsoilp);
+  
   /* P flux slow pool -> active pool */
   f->p_slow_to_active = sigwt * 0.42;
   
@@ -1591,6 +1595,11 @@ void calculate_p_mineralisation(fluxes *f) {
                 f->p_active_to_slow + f->p_active_to_passive +
                 f->p_slow_to_active + f->p_slow_to_passive +
                 f->p_passive_to_active);
+  
+  //fprintf(stderr, "p_slow_to_active %f\n", f->p_slow_to_active);
+  //fprintf(stderr, "p_slow_to_passive %f\n", f->p_slow_to_passive);
+
+  
   return;
 }
 
@@ -1663,7 +1672,9 @@ void calc_p_net_mineralisation(fluxes *f) {
   excluding the (- f->p_sorb_to_ssorb + f->p_ssorb_to_sorb activity) */
   f->pmineralisation = f->pgross - f->pimmob + f->plittrelease;
   
-  fprintf(stderr, "pmineralisation %f\n", f->pmineralisation);
+  //fprintf(stderr, "pmineralisation %f\n", f->pmineralisation);
+  //fprintf(stderr, "pgross %f\n", f->pgross);
+  //fprintf(stderr, "plittrelease %f\n", f->plittrelease);
   
   return;
 }
@@ -1785,8 +1796,7 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
 }
 
 void calculate_p_min_partition(fluxes *f, params *p, state *s) {
-  /* Calculate the proportion of lab P and sorb P influxes from pgross,
-  assumed that pgross = pmin pool, 
+  /* Calculate the proportion of lab P and sorb P influxes from incoming fluxes,
   based on CENTURY fsfunc function (Metherell et al. 1993)
    
   Parameters:
@@ -1807,11 +1817,17 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   double min_frac_p_available_to_plant = 0.4;
   double max_frac_p_available_to_plant = 0.8;
   double mineral_n_with_max_p = 0.02;              /* Unit [t N ha-1] */
+  double frac_lab, frac_sorb;
   
   total_influx =  f->pparentflux + f->pmineralisation 
-                  + f->purine + f->p_slow_biochemical;
+                  + f->purine + f->p_slow_biochemical
+                  - f->puptake - f->ploss + f->p_ssorb_to_sorb 
+                  - f->p_sorb_to_ssorb;
   
   //fprintf(stderr, "total_influx %f\n", total_influx);
+  //fprintf(stderr, "pmin in total_influx %f\n", f->pmineralisation);
+  //fprintf(stderr, "p_biochemical in total_influx %f\n", f->p_slow_biochemical);
+  
   
   /* Calculate influx for labile P pool from all incoming fluxes */
   numer = p->smax * p->ks;
@@ -1822,6 +1838,9 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   denom2 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks) + numer;
   sorb_influx = total_influx * (numer / denom2);
   
+  frac_lab = lab_influx / total_influx;
+  frac_sorb = sorb_influx / total_influx;
+
   f->p_lab_influx = MAX(0.0, lab_influx);  
   f->p_sorb_influx = MAX(0.0, sorb_influx);
   
@@ -2006,6 +2025,10 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   fixp = pc_flux(f->c_into_slow, p_into_slow, slow_pc);
   s->slowsoilp += p_into_slow + fixp - p_out_of_slow;
   
+  //fprintf(stderr, "p_into_slow %f\n", p_into_slow);
+  //fprintf(stderr, "fixp %f\n", fixp);
+  //fprintf(stderr, "p_out_of_slow %f\n", p_out_of_slow);
+  
   /* passive, update passive pool only if passiveconst=0 */
   pass_pc = p->passpcmin + passive_pc_slope * arg;
   if (pass_pc > p->passpcmax)
@@ -2017,10 +2040,13 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->passivesoilp += p_into_passive + fixp - p_out_of_passive;
 
   /* Daily increment of soil inorganic labile and sorbed P pool */
-  s->inorglabp += f->p_lab_influx + f->p_slow_biochemical 
-                  - f->ploss - f->puptake;
-  s->inorgsorbp += f->p_sorb_influx + f->p_ssorb_to_sorb -
-                   f->p_sorb_to_ssorb;
+  //s->inorglabp += f->p_lab_influx - f->ploss - f->puptake;
+  s->inorglabp += f->p_lab_influx;
+  
+  //fprintf(stderr, "p biochemical after stock %f\n", f->p_slow_biochemical);
+  
+  //s->inorgsorbp += f->p_sorb_influx + f->p_ssorb_to_sorb - f->p_sorb_to_ssorb;
+  s->inorgsorbp += f->p_sorb_influx;
   
   /* Daily increment of soil inorganic mineral P pool (lab + sorb) */
   s->inorgminp = s->inorglabp + s->inorgsorbp;
@@ -2035,7 +2061,7 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorgparp -= f->pparentflux;
  
   //fprintf(stderr, "inorgminp %f\n", s->inorgminp);
-  fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+  //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
   //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
   //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
   //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
