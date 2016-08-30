@@ -1567,10 +1567,12 @@ void calculate_p_parent_influx(fluxes *f, params *p, state *s) {
   texture = 1.0 - p->sand_frac;
   
   /* calculate P flux from parent materials and convert units */
+  if (texture > xloc) {
   f->pparentflux = s->inorgparp  * (yloc + (stepsize / M_PI) * 
                    atan(M_PI * slope * (texture - xloc)));
-  
-  //fprintf(stderr, "pparentflux %f\n", f->pparentflux);
+  } else {
+    f->pparentflux = 0.0;
+  }
   
   return;
   
@@ -1823,11 +1825,9 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
                   + f->purine + f->p_slow_biochemical
                   - f->puptake - f->ploss + f->p_ssorb_to_sorb 
                   - f->p_sorb_to_ssorb;
-  
-  //fprintf(stderr, "total_influx %f\n", total_influx);
-  //fprintf(stderr, "pmin in total_influx %f\n", f->pmineralisation);
-  //fprintf(stderr, "p_biochemical in total_influx %f\n", f->p_slow_biochemical);
-  
+                  
+  fprintf(stderr, "total_influx %f\n", total_influx);
+
   
   /* Calculate influx for labile P pool from all incoming fluxes */
   numer = p->smax * p->ks;
@@ -1900,12 +1900,8 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
     f->p_ssorb_to_sorb = MAX(0.0, (phtextint + p->phtextslope * p->sand_frac) * 
                          s->inorgssorbp); 
     
-    //fprintf(stderr, "p_ssorb_to_sorb when p effect on %f\n", f->p_ssorb_to_sorb);
-    
   } else {
     f->p_ssorb_to_sorb = p->psecmnp * s->inorgssorbp;
-    
-    //fprintf(stderr, "p_ssorb_to_sorb when p effect off %f\n", f->p_ssorb_to_sorb);
     
   }
   
@@ -2025,10 +2021,6 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   fixp = pc_flux(f->c_into_slow, p_into_slow, slow_pc);
   s->slowsoilp += p_into_slow + fixp - p_out_of_slow;
   
-  //fprintf(stderr, "p_into_slow %f\n", p_into_slow);
-  //fprintf(stderr, "fixp %f\n", fixp);
-  //fprintf(stderr, "p_out_of_slow %f\n", p_out_of_slow);
-  
   /* passive, update passive pool only if passiveconst=0 */
   pass_pc = p->passpcmin + passive_pc_slope * arg;
   if (pass_pc > p->passpcmax)
@@ -2043,9 +2035,6 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   //s->inorglabp += f->p_lab_influx - f->ploss - f->puptake;
   s->inorglabp += f->p_lab_influx;
   
-  //fprintf(stderr, "p biochemical after stock %f\n", f->p_slow_biochemical);
-  
-  //s->inorgsorbp += f->p_sorb_influx + f->p_ssorb_to_sorb - f->p_sorb_to_ssorb;
   s->inorgsorbp += f->p_sorb_influx;
   
   /* Daily increment of soil inorganic mineral P pool (lab + sorb) */
@@ -2053,6 +2042,10 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
  
   /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
   s->inorgssorbp += f->p_sorb_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_sorb;
+  
+  //fprintf(stderr, "p_sorb_to_ssorb %f\n", f->p_sorb_to_ssorb);
+  //fprintf(stderr, "p_ssorb_to_sorb %f\n", f->p_ssorb_to_sorb);
+  //fprintf(stderr, "p_ssorb_to_occ %f\n", f->p_ssorb_to_occ);
   
   /* Daily increment of soil inorganic occluded P pool */
   s->inorgoccp += f->p_ssorb_to_occ;
