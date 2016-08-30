@@ -749,8 +749,8 @@ void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
   f->p_slow_to_passive = 0.0;
   f->p_slow_biochemical = 0.0;
   f->p_passive_to_active = 0.0;
-  f->p_lab_influx = 0.0;
-  f->p_sorb_influx = 0.0;
+  f->p_lab_net_flux = 0.0;
+  f->p_sorb_net_flux = 0.0;
   f->p_sorb_to_ssorb = 0.0;
   f->p_ssorb_to_sorb = 0.0;
   f->p_ssorb_to_occ = 0.0;
@@ -855,7 +855,7 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     //fprintf(stderr, "inorgp %f\n", s->inorgp);
     //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
     //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-    fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+    //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
     //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
     //fprintf(stderr, "plantp %f\n", s->plantp);
 

@@ -479,8 +479,8 @@ void initialise_fluxes(fluxes *f) {
     f->c_into_passive = 0.0;
 
     /* inorganic P flux exchanges */
-    f->p_lab_influx = 0.0;
-    f->p_sorb_influx = 0.0;
+    f->p_lab_net_flux = 0.0;
+    f->p_sorb_net_flux = 0.0;
     f->p_sorb_to_ssorb = 0.0;
     f->p_ssorb_to_sorb = 0.0;
     f->p_ssorb_to_occ = 0.0;
