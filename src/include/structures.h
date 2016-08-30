@@ -368,8 +368,8 @@ typedef struct {
     double puptakez;                        /* constant P uptake per year (1/yr) */
     double qs;                              /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion.  */
     double r0;                              /* root C at half-maximum N uptake (kg C/m3) */
-    double rate_ssorb_occ;                  /* Rate constant of the transfer of P from strongly sorbed pool to occluded pool, yr-1 Wang et al., 2007, GB1018 */
-    double rate_sorb_ssorb;                 /* Rate constant of the transfer of P from sorbed pool to strongly sorbed pool, yr-1 Wang et al., 2007, GB1018 */
+    double rate_ssorb_occ;                  /* Rate constant of the transfer of P from strongly sorbed pool to occluded pool, m-1 Yang et al. 2014, Biogeosciences */
+    double rate_sorb_ssorb;                 /* Rate constant of the transfer of P from sorbed pool to strongly sorbed pool, m-1 Yang et al. 2014, Biogeosciences */
     double rateloss;                        /* Rate of N loss from mineral N pool (/yr) */
     double rateuptake;                      /* Rate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf Seems to correspond to very low NPP values */
     double rdecay;                          /* root turnover rate (1/yr) */

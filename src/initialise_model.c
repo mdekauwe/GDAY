@@ -245,8 +245,8 @@ void initialise_params(params *p) {
     p->puptakez = 0.0255;             /* calculated based on prateuptake 0.5 and inorglabp 0.051 */
     p->qs = 1.0;                      /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
-    p->rate_ssorb_occ = 0.00001;      
-    p->rate_sorb_ssorb = 0.0001;
+    p->rate_ssorb_occ = 0.000001;      
+    p->rate_sorb_ssorb = 0.004;
     p->rateloss = 0.5;                /* value = 0.05 in Wang et al., 2007 GB1018 */
     p->rateuptake = 2.7;
     p->rdecay = 0.33333;

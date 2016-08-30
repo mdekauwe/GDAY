@@ -1128,7 +1128,7 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
     s->inorgn += (f->ninflow + f->nurine + f->nmineralisation -
                   f->nloss - f->nuptake);
     
-    fprintf(stderr, "inorgn = %f\n", s->inorgn);
+    //fprintf(stderr, "inorgn = %f\n", s->inorgn);
 
     /*f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;*/
     return;
@@ -1862,12 +1862,6 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
   double dely, delx, xslope, yint;
   int cntrl_text_p = c->text_effect_p;
  
- 
-  /* diagnosis */
-  /*
-  fprintf(stderr, "text effect p %d\n", cntrl_text_p);
-  */
- 
   if (cntrl_text_p == 1) {
     
     dely = p->phtextmax - p->phtextmin;
@@ -1875,11 +1869,6 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
     
     xslope = dely/delx;
     yint = p->phtextmin - xslope * p->phmin;
-    
-    /*diagnosis */
-    
-    //fprintf(stderr, "yint %f\n", yint);
-    //fprintf(stderr, "xslope %f\n", xslope);
     
     if (p->soilph < p->phmin) {
       phtextint = p->phtextmin;
@@ -1889,14 +1878,10 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
       phtextint = xslope * p->soilph + yint;
     }
     
-    /*
-    fprintf(stderr, "phtextint %f\n", phtextint);
-    */
-    
     f->p_ssorb_to_sorb = MAX(0.0, (phtextint + p->phtextslope * p->sand_frac) * 
                          s->inorgssorbp); 
     
-    fprintf(stderr, "p_ssorb_to_sorb when p effect on %f\n", f->p_ssorb_to_sorb);
+    //fprintf(stderr, "p_ssorb_to_sorb when p effect on %f\n", f->p_ssorb_to_sorb);
     
   } else {
     f->p_ssorb_to_sorb = p->psecmnp * s->inorgssorbp;
@@ -1912,8 +1897,6 @@ void calculate_p_sorb_to_ssorb(state *s, fluxes *f, params *p) {
   
   /* P flux from sorbed pool to strongly sorbed P pool */
   f->p_sorb_to_ssorb = p->rate_sorb_ssorb * s->inorgsorbp;
-  
-  //fprintf(stderr, "p_sorb_to_ssorb when p effect off %f\n", f->p_sorb_to_ssorb);
   
   return;
 }
@@ -2053,7 +2036,7 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
  
   //fprintf(stderr, "inorgminp %f\n", s->inorgminp);
   fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-  fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+  //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
   //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
   //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
   //fprintf(stderr, "inorgparp %f\n", s->inorgparp);
