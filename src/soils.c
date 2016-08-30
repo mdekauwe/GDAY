@@ -1822,8 +1822,8 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   denom2 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks) + numer;
   sorb_influx = total_influx * (numer / denom2);
   
-  f->p_lab_influx = lab_influx;  
-  f->p_sorb_influx = sorb_influx;
+  f->p_lab_influx = MAX(0.0, lab_influx);  
+  f->p_sorb_influx = MAX(0.0, sorb_influx);
   
   p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
                        MIN(min_frac_p_available_to_plant + s->inorgn * 
@@ -1901,7 +1901,7 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
   } else {
     f->p_ssorb_to_sorb = p->psecmnp * s->inorgssorbp;
     
-    fprintf(stderr, "p_ssorb_to_sorb when p effect off %f\n", f->p_ssorb_to_sorb);
+    //fprintf(stderr, "p_ssorb_to_sorb when p effect off %f\n", f->p_ssorb_to_sorb);
     
   }
   

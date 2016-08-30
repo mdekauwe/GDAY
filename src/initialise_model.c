@@ -226,9 +226,9 @@ void initialise_params(params *p) {
     p->pf_min = 0.0002;      /* based on P:C ratio of 5000, guess value */
     p->phmax = 7.6;
     p->phmin = 5;
-    p->phtextmin = 0.0008;
-    p->phtextmax = 0.015;
-    p->phtextslope = 0.004;  /* CENTURY */
+    p->phtextmin = 0.000008;
+    p->phtextmax = 0.00015;
+    p->phtextslope = 0.00004;/* CENTURY */
     p->p_lab_avail = 0.0;
     p->pmax = 0.002;         /* guess value */
     p->pmin = 0.01;          /* guess value */
