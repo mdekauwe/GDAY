@@ -220,16 +220,16 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         /* total phosphorus content of the canopy */
         pcontent = leafp * s->lai;
         
-        fprintf(stderr, "leafp %f\n", leafp);
-        fprintf(stderr, "shootpc %f\n", s->shootpc);
+        //fprintf(stderr, "leafp %f\n", leafp);
+        //fprintf(stderr, "shootpc %f\n", s->shootpc);
 
     } else {
         ncontent = 0.0;
         pcontent = 0.0;
     }
     
-    fprintf(stderr, "ncontent %f\n", ncontent);
-    fprintf(stderr, "pcontent %f\n", pcontent);
+    //fprintf(stderr, "ncontent %f\n", ncontent);
+    //fprintf(stderr, "pcontent %f\n", pcontent);
 
 
     /* When canopy is not closed, canopy light interception is reduced
@@ -1576,6 +1576,11 @@ double calculate_nuptake(control *c, params *p, state *s) {
     } else if (c->nuptake_model == 1) {
         /* evaluate nuptake : proportional to dynamic inorganic N pool */
         nuptake = p->rateuptake * s->inorgn;
+      
+      //fprintf(stderr, "nuptake %f\n", nuptake);
+      //fprintf(stderr, "rateuptake %f\n", p->rateuptake);
+      //fprintf(stderr, "inorgn %f\n", s->inorgn);
+      
     } else if (c->nuptake_model == 2) {
         /* N uptake is a saturating function on root biomass following
            Dewar and McMurtrie, 1996. */
@@ -1585,6 +1590,8 @@ double calculate_nuptake(control *c, params *p, state *s) {
         Kr = p->kr;
         nuptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
 
+        //fprintf(stderr, "nuptake %f\n", nuptake);
+        
         /* Make minimum uptake rate supply rate for deciduous_model cases
            otherwise it is possible when growing from scratch we don't have
            enough root mass to obtain N at the annual time step
@@ -1616,9 +1623,17 @@ double calculate_puptake(control *c, params *p, state *s) {
   if (c->puptake_model == 0) {
     /* Constant P uptake */
     puptake = p->puptakez;
+    //fprintf(stderr, "puptake %f\n", puptake);
+    
   } else if (c->puptake_model == 1) {
     /* evaluate puptake : proportional to lab P pool that is available to plant uptake (a function of mineral N) */
     puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    
+    //fprintf(stderr, "puptake %f\n", puptake);
+    //fprintf(stderr, "prateuptake %f\n", p->prateuptake);
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    //fprintf(stderr, "p_lab_avail %f\n", p->p_lab_avail);
+    
   } else if (c->puptake_model == 2) {
     /* P uptake is a saturating function on root biomass following
     Dewar and McMurtrie, 1996. */

@@ -803,8 +803,8 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     } else {
         s->shootnc = s->shootn / s->shoot;
         s->shootpc = s->shootp / s->shoot;
-        fprintf(stderr, "shootp %f\n", s->shootp);
-        fprintf(stderr, "shootc %f\n", s->shoot);
+        //fprintf(stderr, "shootp %f\n", s->shootp);
+        //fprintf(stderr, "shootc %f\n", s->shoot);
     }
 
     /* Explicitly set the shoot N:C */
@@ -851,16 +851,16 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     //fprintf(stderr, "totalc %f\n", s->totalc);
     
     //fprintf(stderr, "soiln %f\n", s->soiln);
-    fprintf(stderr, "inorgn %f\n", s->inorgn);
+    //fprintf(stderr, "inorgn %f\n", s->inorgn);
     //fprintf(stderr, "totaln %f\n", s->totaln);
     
     //fprintf(stderr, "soilp %f\n", s->soilp);
     //fprintf(stderr, "totalp %f\n", s->totalp);
     //fprintf(stderr, "inorgp %f\n", s->inorgp);
-    fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-    fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-    fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
-    fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+    //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+    //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
     //fprintf(stderr, "plantp %f\n", s->plantp);
 
     /* optional constant passive pool */

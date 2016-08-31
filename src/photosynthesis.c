@@ -491,6 +491,9 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);
     P0 = calculate_top_of_canopy_p(p, s, pcontent);
+    
+    fprintf(stderr, "N0 %f\n", N0);
+    fprintf(stderr, "P0 %f\n", P0);
 
     gamma_star_am = calculate_co2_compensation_point(p, m->Tk_am, mt);
     gamma_star_pm = calculate_co2_compensation_point(p, m->Tk_pm, mt);

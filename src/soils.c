@@ -1304,7 +1304,7 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   pfluxes_from_passive_pool(f, p, s);
 
   /* calculate P parent influxe to mineral P */
-  calculate_p_parent_fluxes(f, p, s);
+  //calculate_p_parent_fluxes(f, p, s);
 
   /* gross P mineralisation */
   calculate_p_mineralisation(f);
@@ -1599,7 +1599,7 @@ void pfluxes_from_passive_pool(fluxes *f, params *p, state *s) {
   return;
 }
 
-void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
+double calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
   /* Calculate weathering of parent P materials, i.e. 
      the fluxes enterring into mineral P pool;
     
@@ -1631,6 +1631,7 @@ void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
     f->pparentflux = 0.0;
   }
   */
+  double net_par;
   
   /* atmospheric P deposition rate */
   f->p_atm_dep = p->p_atm_deposition;
@@ -1638,8 +1639,9 @@ void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
   /* parent material weathering */
   f->p_par_to_min = p->p_rate_par_weather * s->inorgparp;
   
+  net_par = f->p_atm_dep - f->p_par_to_min;
   
-  return;
+  return (net_par);
   
 }
 
@@ -2043,6 +2045,8 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   p_into_passive, p_out_of_passive, arg, active_pc, fixp, slow_pc,
   pass_pc;
   
+  double net_parent;
+  
   /*
   net P release implied by separation of litter into structural
   & metabolic. The following pools only fix or release P at their
@@ -2146,11 +2150,13 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorgoccp += f->p_ssorb_to_occ;
  
   /* Daily increment of soil inorganic parent P pool */
+  net_parent = calculate_p_parent_fluxes(f, p, s);
+  
   if (s->inorgparp > 0.0) {
-    s->inorgparp -= f->p_par_to_min;
+    s->inorgparp += net_parent;
   } else {
     f->p_par_to_min = 0.0;
-    s->inorgparp -= f->p_par_to_min;
+    s->inorgparp += net_parent;
   }
  
   //fprintf(stderr, "inorgminp %f\n", s->inorgminp);
