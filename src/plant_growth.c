@@ -54,6 +54,10 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     } else {
        npitfac = nitfac;
     }
+    
+    fprintf(stderr, "nitfac %f\n", nitfac);
+    fprintf(stderr, "pitfac %f\n", pitfac);
+    fprintf(stderr, "npitfac %f\n", npitfac);
 
     /* figure out the C allocation fractions */
     if (c->deciduous_model){

@@ -1222,6 +1222,60 @@ void precision_control_soil_n(fluxes *f, state *s) {
     return;
 }
 
+void soil_soprtion_parameters(char *soil_order, params *p) {
+  /* 
+   * Parameterize Smax and Ks parameters based on soil order;
+   * Ref. Yang et al., 2016, GRL, Table S2
+   */
+  
+  if (strcmp(soil_order, "andisol") == 0) {
+    p->smax = 10;
+    p->ks = 0.006;
+  } else if (strcmp(soil_order, "gelisol") == 0) {
+    p->smax = 5;
+    p->ks = 0.006;
+  } else if (strcmp(soil_order, "histosol") == 0) {
+    p->smax = 5;
+    p->ks = 0.006;
+  } else if (strcmp(soil_order, "entisol") == 0) {
+    p->smax = 5;
+    p->ks = 0.006;
+  } else if (strcmp(soil_order, "inceptisol") == 0) {
+    p->smax = 5;
+    p->ks = 0.006;
+  } else if (strcmp(soil_order, "aridsol") == 0) {
+    p->smax = 7;
+    p->ks = 0.003;
+  } else if (strcmp(soil_order, "vertisol") == 0) {
+    p->smax = 7;
+    p->ks = 0.003;
+  } else if (strcmp(soil_order, "mollisol") == 0) {
+    p->smax = 7;
+    p->ks = 0.003;
+  } else if (strcmp(soil_order, "alfisol") == 0) {
+    p->smax = 7;
+    p->ks = 0.003;
+  } else if (strcmp(soil_order, "spodosol") == 0) {
+    p->smax = 9;
+    p->ks = 0.0012;
+  } else if (strcmp(soil_order, "ultisol") == 0) {
+    p->smax = 9;
+    p->ks = 0.0012;
+  } else if (strcmp(soil_order, "oxisol") == 0) {
+    p->smax = 9;
+    p->ks = 0.0012;
+  } else {
+    prog_error("Could not understand soil order", __LINE__);
+  }
+  
+  return;
+}
+  
+  
+
+
+
+
 
 void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
                            int doy) {
@@ -1847,7 +1901,11 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
   //fprintf(stderr, "sorb_to_ssorb %f\n", f->p_sorb_to_ssorb);
   
 
+  /* Use soil order to obtain smax and ks values */
+  soil_soprtion_parameters(p->soil_order, p);
+  
   /* Calculate influx for labile P pool from all incoming fluxes */
+  
   numer = p->smax * p->ks;
   denom1 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks);
   lab_net_flux = net_influx / (1 + numer/denom1);

@@ -976,6 +976,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->rooting_depth = atof(value);
     } else if (MATCH("params", "rootsoil_type")) {
         strcpy(p->rootsoil_type, value);
+    } else if (MATCH("params", "soil_order")) {
+       strcpy(p->soil_order, value);
     } else if (MATCH("params", "root_exu_CUE")) {
         p->root_exu_CUE = atof(value);
     } else if (MATCH("params", "rretrans")) {

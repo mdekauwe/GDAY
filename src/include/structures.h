@@ -378,6 +378,7 @@ typedef struct {
     double rfmult;
     double rooting_depth;                   /* Rooting depth (mm) */
     char   rootsoil_type[STRING_LENGTH];
+    char   soil_order[STRING_LENGTH];       /* soil order */
     double rretrans;                        /* root n retranslocation fraction */
     double sand_frac;                       /* fraction of sand in soil (top + root averaged) */ 
     double sapturnover;                     /* Sapwood turnover rate: conversion of sapwood to heartwood (1/yr) */

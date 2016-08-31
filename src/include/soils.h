@@ -75,6 +75,7 @@ void   calculate_ppools(control *c, fluxes *, params *, state *, double,
 double pc_limit(fluxes *, double, double, double, double);
 double pc_flux(double, double, double);
 void   precision_control_soil_p(fluxes *, state *);
+void   soil_soprtion_parameters(char *, params *);
 
 /* priming/exudation */
 void calc_root_exudation_uptake_of_C(fluxes *, params *, state *);
