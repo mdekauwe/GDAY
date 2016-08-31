@@ -324,6 +324,8 @@ typedef struct {
     double ntheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double nuptakez;                        /* constant N uptake per year (1/yr) */
     double oi;                              /* intercellular concentration of O2 [umol mol-1] */
+    double p_atm_deposition;                /* atmospheric P deposition rate [t/ha/yr] Newman 1995, Journal of Ecology Table 5 (Tennessee) */
+    double p_rate_par_weather;              /* parent P material weathering rate [yr-1] */
     double passivesoilnz;
     double passivesoilpz;
     double passivesoilz;
@@ -681,7 +683,8 @@ typedef struct {
     double p_sorb_to_ssorb;
     double p_ssorb_to_sorb;
     double p_ssorb_to_occ;
-    double pparentflux;
+    double p_par_to_min;
+    double p_atm_dep;
     
 
     /* CO2 flows to the air */

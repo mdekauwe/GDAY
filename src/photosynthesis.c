@@ -41,6 +41,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     Cs = cw->Cs;
     tleaf = cw->tleaf[idx];
     dleaf = cw->dleaf;
+    
+    fprintf(stderr, "flag in photo C3 \n");
 
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
@@ -205,6 +207,8 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
     double cscalar = cw->cscalar[cw->ileaf];
+    
+    fprintf(stderr, "flag in calc_jmax_vcmax \n");
 
     if (c->modeljm == 0) {
         if (cw->ileaf == SUNLIT) {
@@ -222,6 +226,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
           vcmax25n = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           vcmax25p = (p->vcmaxpa * cw->P0 + p->vcmaxpb) * cscalar;
           vcmax25 = MIN(vcmax25n, vcmax25p);
+          fprintf(stderr, "flag SUNLIT \n");
         } else {
           jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
           jmax25p = (p->jmaxpa * cw->P0 + p->jmaxpb) * cscalar;
@@ -229,6 +234,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
           vcmax25n = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           vcmax25p = (p->vcmaxpa * cw->P0 + p->vcmaxpb) * cscalar;
           vcmax25 = MIN(vcmax25n, vcmax25p);
+          fprintf(stderr, "flag else \n");
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);

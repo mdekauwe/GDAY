@@ -55,9 +55,9 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
        npitfac = nitfac;
     }
     
-    fprintf(stderr, "nitfac %f\n", nitfac);
-    fprintf(stderr, "pitfac %f\n", pitfac);
-    fprintf(stderr, "npitfac %f\n", npitfac);
+    //fprintf(stderr, "nitfac %f\n", nitfac);
+    //fprintf(stderr, "pitfac %f\n", pitfac);
+    //fprintf(stderr, "npitfac %f\n", npitfac);
 
     /* figure out the C allocation fractions */
     if (c->deciduous_model){
@@ -219,11 +219,18 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         ncontent = leafn * s->lai;
         /* total phosphorus content of the canopy */
         pcontent = leafp * s->lai;
+        
+        fprintf(stderr, "leafp %f\n", leafp);
+        fprintf(stderr, "shootpc %f\n", s->shootpc);
 
     } else {
         ncontent = 0.0;
         pcontent = 0.0;
     }
+    
+    fprintf(stderr, "ncontent %f\n", ncontent);
+    fprintf(stderr, "pcontent %f\n", pcontent);
+
 
     /* When canopy is not closed, canopy light interception is reduced
         - calculate the fractional ground cover */

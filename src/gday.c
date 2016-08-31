@@ -754,7 +754,8 @@ void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
   f->p_sorb_to_ssorb = 0.0;
   f->p_ssorb_to_sorb = 0.0;
   f->p_ssorb_to_occ = 0.0;
-  f->pparentflux = 0.0;
+  f->p_par_to_min = 0.0;
+  f->p_atm_dep = 0.0;
   
   
   return;
@@ -802,6 +803,8 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     } else {
         s->shootnc = s->shootn / s->shoot;
         s->shootpc = s->shootp / s->shoot;
+        fprintf(stderr, "shootp %f\n", s->shootp);
+        fprintf(stderr, "shootc %f\n", s->shoot);
     }
 
     /* Explicitly set the shoot N:C */
@@ -855,9 +858,9 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     //fprintf(stderr, "totalp %f\n", s->totalp);
     //fprintf(stderr, "inorgp %f\n", s->inorgp);
     fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-    //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-    //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
-    //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
+    fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+    fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+    fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
     //fprintf(stderr, "plantp %f\n", s->plantp);
 
     /* optional constant passive pool */
