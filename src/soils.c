@@ -1829,13 +1829,17 @@ void calculate_p_min_partition(fluxes *f, params *p, state *s) {
            f->purine + f->p_slow_biochemical +
            f->p_ssorb_to_sorb;
   
+  if (s->inorglabp > 0.0 && s->inorgsorbp > 0.0) {
   tot_out = f->puptake + f->ploss + f->p_sorb_to_ssorb;
+  } else {
+    tot_out = 0.0;
+  }
   
   net_influx =  tot_in - tot_out;
                   
-  fprintf(stderr, "net_influx %f\n", net_influx);
-  fprintf(stderr, "tot_in %f\n", tot_in);
-  fprintf(stderr, "tot_out %f\n", tot_out);
+  //fprintf(stderr, "net_influx %f\n", net_influx);
+  //fprintf(stderr, "tot_in %f\n", tot_in);
+  //fprintf(stderr, "tot_out %f\n", tot_out);
   //fprintf(stderr, "pparentflux %f\n", f->pparentflux);
   //fprintf(stderr, "pmineralisation %f\n", f->pmineralisation);
   //fprintf(stderr, "puptake %f\n", f->puptake);
@@ -2060,7 +2064,6 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
 
   /* Daily increment of soil inorganic labile and sorbed P pool */
   s->inorglabp += f->p_lab_net_flux;
-  
   s->inorgsorbp += f->p_sorb_net_flux;
   
   /* Daily increment of soil inorganic mineral P pool (lab + sorb) */
@@ -2077,14 +2080,19 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorgoccp += f->p_ssorb_to_occ;
  
   /* Daily increment of soil inorganic parent P pool */
-  s->inorgparp -= f->pparentflux;
+  if (s->inorgparp > 0.0) {
+    s->inorgparp -= f->pparentflux;
+  } else {
+    f->pparentflux = 0.0;
+    s->inorgparp -= f->pparentflux;
+  }
  
   //fprintf(stderr, "inorgminp %f\n", s->inorgminp);
-  fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-  fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-  fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
-  fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
-  fprintf(stderr, "inorgparp %f\n", s->inorgparp);
+  //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+  //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+  //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+  //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
+  //fprintf(stderr, "inorgparp %f\n", s->inorgparp);
  
   return;
 }
