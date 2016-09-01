@@ -1070,8 +1070,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->max_p_biochemical = atof(value);
     } else if (MATCH("params", "biochemical_p_constant")) {
         p->biochemical_p_constant = atof(value);
-   // } else if (MATCH("params", "wretransp")) {
-   //   p->wretransp = atof(value);
     } else if (MATCH("params", "z0h_z0m")) {
         p->z0h_z0m = atof(value);
     }

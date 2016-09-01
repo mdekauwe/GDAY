@@ -149,8 +149,6 @@ void initialise_params(params *p) {
     p->jmax = -999.9;
     p->jmaxna = 62.0;
     p->jmaxnb = 0.0;
-    p->jmaxpa = 1166.5;
-    p->jmaxpb = 19.846;
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
     p->kc25 = 404.9;      /* MM coefft of Rubisco for CO2 (umol mol-1) */
@@ -291,8 +289,6 @@ void initialise_params(params *p) {
     p->vcmax = -999.9;
     p->vcmaxna = 22.29;
     p->vcmaxnb = 8.45;
-    p->vcmaxpa = 570.91;
-    p->vcmaxpb = 18.68;
     p->watdecaydry = 0.0;
     p->watdecaywet = 0.1;
     p->wcapac_root = 96.75;

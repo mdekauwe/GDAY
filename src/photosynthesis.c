@@ -207,6 +207,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
     double cscalar = cw->cscalar[cw->ileaf];
+    double conv;
     
     fprintf(stderr, "flag in calc_jmax_vcmax \n");
 
@@ -221,19 +222,17 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     } else if (c->modeljm == 1) {
         if (cw->ileaf == SUNLIT) {
           jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
-          jmax25p = (p->jmaxpa * cw->P0 + p->jmaxpb) * cscalar;
+          conv = MMOL_TO_MOL * 31.0;
+          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;
           jmax25 = MIN(jmax25n, jmax25p);
-          vcmax25n = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-          vcmax25p = (p->vcmaxpa * cw->P0 + p->vcmaxpb) * cscalar;
-          vcmax25 = MIN(vcmax25n, vcmax25p);
+          vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           fprintf(stderr, "flag SUNLIT \n");
         } else {
           jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
-          jmax25p = (p->jmaxpa * cw->P0 + p->jmaxpb) * cscalar;
+          conv = MMOL_TO_MOL * 31.0;
+          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;
           jmax25 = MIN(jmax25n, jmax25p);
-          vcmax25n = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-          vcmax25p = (p->vcmaxpa * cw->P0 + p->vcmaxpb) * cscalar;
-          vcmax25 = MIN(vcmax25n, vcmax25p);
+          vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           fprintf(stderr, "flag else \n");
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
@@ -241,14 +240,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     } else if (c->modeljm == 2) {
         /* NB when using the fixed JV reln, we only apply scalar to Vcmax */
         if (cw->ileaf == SUNLIT) {
-          vcmax25n = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-          vcmax25p = (p->vcmaxpa * cw->P0 + p->vcmaxpb) * cscalar;
-          vcmax25 = MIN(vcmax25n, vcmax25p);
+          vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         } else {
-          vcmax25n = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-          vcmax25p = (p->vcmaxpa * cw->P0 + p->vcmaxpb) * cscalar;
-          vcmax25 = MIN(vcmax25n, vcmax25p);
+          vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
@@ -489,8 +484,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
     /* Calculate mate params & account for temperature dependencies */
-    N0 = calculate_top_of_canopy_n(p, s, ncontent);
-    P0 = calculate_top_of_canopy_p(p, s, pcontent);
+    N0 = calculate_top_of_canopy_n(p, s, ncontent);   //Unit: g N m-2;
+    P0 = calculate_top_of_canopy_p(p, s, pcontent);   //Unit: g P m-2
     
     fprintf(stderr, "N0 %f\n", N0);
     fprintf(stderr, "P0 %f\n", P0);
@@ -746,9 +741,9 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         Tk : float
             air temperature (Kelvin)
         N0 : float
-            leaf N
+            leaf N   (g N m-2)
         P0 : float
-            leaf P
+            leaf P   (g P m-2)
 
         Returns:
         --------
@@ -758,7 +753,8 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
             the maximum rate of electron transport at 25 degC
     */
     double jmax25, vcmax25;
-    double jmax25p, jmax25n, vcmax25p, vcmax25n;
+    double jmax25p, jmax25n;
+    double conv;
 
     *vcmax = 0.0;
     *jmax = 0.0;
@@ -769,7 +765,8 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     } else if (c->modeljm == 1) {
         /* the maximum rate of electron transport at 25 degC */
         jmax25n = p->jmaxna * N0 + p->jmaxnb;
-        jmax25p = p->jmaxpa * P0 + p->jmaxpb;
+        conv = MMOL_TO_MOL * 31.0;
+        jmax25p = 400.99 * (P0 * conv) + 88.56;
         jmax25 = MIN(jmax25n, jmax25p);
 
         /* this response is well-behaved for TLEAF < 0.0 */
@@ -777,17 +774,16 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
                             p->delsj, p->edj);
 
         /* the maximum rate of electron transport at 25 degC */
-        vcmax25n = p->vcmaxna * N0 + p->vcmaxnb;
-        vcmax25p = p->vcmaxpa * P0 + p->vcmaxpb;
-        vcmax25 = MIN(vcmax25n, vcmax25p);
-        
+        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+
         *vcmax = arrh(mt, vcmax25, p->eav, Tk);
         
-    } else if (c->modeljm == 2) {
-        vcmax25n = p->vcmaxna * N0 + p->vcmaxnb;
-        vcmax25p = p->vcmaxpa * P0 + p->vcmaxpb;
-        vcmax25 = MIN(vcmax25n, vcmax25p);
+        fprintf(stderr, "jmax25n %f\n", jmax25n);
+        fprintf(stderr, "jmax25p %f\n", jmax25p);
+        fprintf(stderr, "jmax25 %f\n", jmax25);
         
+    } else if (c->modeljm == 2) {
+        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
         *vcmax = arrh(mt, vcmax25, p->eav, Tk);
 
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
@@ -1080,8 +1076,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
 
     /* Temp dependancies from Massad et al. 2007 */
-    calculate_vcmax_parameter(p, s, m->Tk_am, N0, P0, &vcmax_am, &vcmax25_am, mt);
-    calculate_vcmax_parameter(p, s, m->Tk_pm, N0, P0, &vcmax_pm, &vcmax25_pm, mt);
+    calculate_vcmax_parameter(p, s, m->Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
+    calculate_vcmax_parameter(p, s, m->Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
 
     /* Covert solar irradiance to PAR (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
@@ -1141,7 +1137,6 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
 
 void calculate_vcmax_parameter(params *p, state *s, double Tk, double N0,
-                               double P0,
                                double *vcmax, double *vcmax25, double mt) {
     /* Calculate the maximum rate of rubisco-mediated carboxylation at the
     top of the canopy
@@ -1176,14 +1171,10 @@ void calculate_vcmax_parameter(params *p, state *s, double Tk, double N0,
     double Ea = 67294.0;
     double Hd = 144568.0;
     double delS = 472.0;
-    double *vcmax25n, *vcmax25p;
 
     /* the maximum rate of electron transport at 25 degC */
-    *vcmax25n = p->vcmaxna * N0 + p->vcmaxnb;
-    *vcmax25p = p->vcmaxpa * P0 + p->vcmaxpb;
-    
-    *vcmax25 = MIN(*vcmax25n, *vcmax25p);
-    
+    *vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+
     *vcmax = peaked_arrh(mt, *(vcmax25), Ea, Tk, delS, Hd);
 
     /* reduce photosynthetic capacity with moisture stress */
