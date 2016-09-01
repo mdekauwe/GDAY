@@ -202,7 +202,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
     double jmax25, vcmax25;
-    double jmax25p, jmax25n, vcmax25p, vcmax25n;
+    double jmax25p, jmax25n;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
@@ -223,14 +223,14 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         if (cw->ileaf == SUNLIT) {
           jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
           conv = MMOL_TO_MOL * 31.0;
-          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;
+          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;  /* Ellsworth et al. 2015 Plant, Cell and Environment */
           jmax25 = MIN(jmax25n, jmax25p);
           vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           fprintf(stderr, "flag SUNLIT \n");
         } else {
           jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
           conv = MMOL_TO_MOL * 31.0;
-          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;
+          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;  /* Ellsworth et al. 2015 Plant, Cell and Environment */
           jmax25 = MIN(jmax25n, jmax25p);
           vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
           fprintf(stderr, "flag else \n");
@@ -480,6 +480,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, P0, gamma_star_am,
            gamma_star_pm, Km_am, Km_pm, jmax_am, jmax_pm, vcmax_am, vcmax_pm,
            ci_am, ci_pm, alpha_am, alpha_pm, ac_am, ac_pm, aj_am, aj_pm,
+           ap_am, ap_pm, 
            asat_am, asat_pm, lue_am, lue_pm, lue_avg, conv;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
@@ -513,10 +514,18 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* Light-limited rate of photosynthesis allowed by RuBP regeneration */
     aj_am = assim(ci_am, gamma_star_am, jmax_am/4.0, 2.0*gamma_star_am);
     aj_pm = assim(ci_pm, gamma_star_pm, jmax_pm/4.0, 2.0*gamma_star_pm);
+    
+    /* Triose-phosphates limited rate of photosynthesis */
+    ap_am = assim_p(P0);
+    ap_pm = assim_p(P0);
+    
+    //fprintf(stderr, "ac_am %f\n", ac_am);
+    //fprintf(stderr, "aj_am %f\n", aj_am);
+    //fprintf(stderr, "ap_am %f\n", ap_am);
 
     /* light-saturated photosynthesis rate at the top of the canopy (gross) */
-    asat_am = MIN(aj_am, ac_am);
-    asat_pm = MIN(aj_pm, ac_pm);
+    asat_am = MIN(aj_am, MIN(ac_am, ap_am));
+    asat_pm = MIN(aj_pm, MIN(ac_pm, ap_pm));
 
     /* Covert PAR units (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
@@ -765,6 +774,8 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     } else if (c->modeljm == 1) {
         /* the maximum rate of electron transport at 25 degC */
         jmax25n = p->jmaxna * N0 + p->jmaxnb;
+      
+        /* P limitation on jmax, Ellsworth et al. 2015 Plant, Cell and Environment */
         conv = MMOL_TO_MOL * 31.0;
         jmax25p = 400.99 * (P0 * conv) + 88.56;
         jmax25 = MIN(jmax25n, jmax25p);
@@ -803,7 +814,6 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         *vcmax = arrh(mt, vcmax25, p->eav, Tk);
 
     }
-
 
     /* reduce photosynthetic capacity with moisture stress */
     *jmax *= s->wtfac_root;
@@ -933,6 +943,25 @@ double assim(double ci, double gamma_star, double a1, double a2) {
     else
         return (a1 * (ci - gamma_star) / (a2 + ci));
 
+}
+
+double assim_p(double P0) {
+  /* 
+   * Calculate photosynthesis assimilation rate based on P limitation 
+   * Ref: Ellsworth et al., 2015, Plant, Cell and Environment, able 2
+   * 
+   * Returns:
+   * -------
+   * ap: float
+   * assimilation rate assuming P limitation
+   */
+  double ap, conv, tp;
+  
+  conv = MMOL_TO_MOL * 31.0;
+  tp = 6.51 + 14.64 * (P0 * conv);
+  ap = 3.0 * tp;
+  
+  return(ap);
 }
 
 double epsilon(params *p, double asat, double par, double alpha,

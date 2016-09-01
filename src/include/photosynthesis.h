@@ -33,6 +33,7 @@ void    adj_for_low_temp(double *, double);
 double  calculate_ci(control *, params *, state *, double, double);
 double  calculate_quantum_efficiency(params *, double ci, double);
 double  assim(double, double, double, double);
+double  assim_p(double);
 double  epsilon(params *, double, double, double, double);
 
 
