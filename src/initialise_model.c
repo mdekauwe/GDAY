@@ -235,7 +235,7 @@ void initialise_params(params *p) {
     p->pmin0 = 0.0;
     p->pmincrit = 2.0;       /* Based on CENTURY VARAT1(2,3) = 2 value */
     p->prateloss = 0.005;    
-    p->prateuptake = 0.5;
+    p->prateuptake = 5;
     p->prescribed_leaf_NC = 0.03;
     p->prescribed_leaf_PC = 0.00249;   /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */
     p->previous_ncd = 35.0;
@@ -267,7 +267,7 @@ void initialise_params(params *p) {
     p->slowncmin = 0.025;
     p->slowpcmax = 0.011111;
     p->slowpcmin = 0.005;
-    p->smax = 700;                   /* used intermediately weather soils value of 700 [g P m-2] in Yang et al. 2016 */
+    p->smax = 700;                 /* used intermediately weather soils value of 700 [g P m-2] in Yang et al. 2016 */
     p->soilph = 6.7;               /* pft-specific parameter, century value */
     p->sorpmx = 5;                 /* pft-specific parameter, check CENTURY for values */
     p->sorpaf = 1;

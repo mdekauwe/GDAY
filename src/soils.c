@@ -1299,7 +1299,7 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   pfluxes_from_passive_pool(f, p, s);
 
   /* calculate P parent influxe to mineral P */
-  //calculate_p_parent_fluxes(f, p, s);
+  calculate_p_parent_fluxes(f, p, s);
 
   /* gross P mineralisation */
   calculate_p_mineralisation(f);
@@ -1594,53 +1594,25 @@ void pfluxes_from_passive_pool(fluxes *f, params *p, state *s) {
   return;
 }
 
-double calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
+void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
   /* Calculate weathering of parent P materials, i.e. 
      the fluxes enterring into mineral P pool;
     
      Parameters:
-     xloc
-     yloc
-     stepsize
-     slope
-     textur
      
      Return:
    pparentflux: float
    influx of parent P (current unit: g P m-2 /timestep)
    
    */
-  /*
-  double xloc, yloc, stepsize, slope, texture;
-
-  xloc = 0.7;
-  yloc = 0.0001;
-  stepsize = 0.00016;
-  slope = 2;
-  texture = 1.0 - p->sand_frac;
-  
-  if (texture > xloc) {
-  f->pparentflux = s->inorgparp  * (yloc + (stepsize / M_PI) * 
-                   atan(M_PI * slope * (texture - xloc)));
-  } else {
-    f->pparentflux = 0.0;
-  }
-  */
-  double net_par;
-  
   /* atmospheric P deposition rate */
   f->p_atm_dep = p->p_atm_deposition;
   
   /* parent material weathering */
   f->p_par_to_min = p->p_rate_par_weather * s->inorgparp;
   
-  net_par = f->p_atm_dep - f->p_par_to_min;
   
-  fprintf(stderr, "net_par %f\n", net_par);
-  fprintf(stderr, "p_rate_par_weather %f\n", p->p_rate_par_weather);
-  fprintf(stderr, "p_atm_dep %f\n", f->p_atm_dep);
-  
-  return (net_par);
+  return;
   
 }
 
@@ -2149,13 +2121,11 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorgoccp += f->p_ssorb_to_occ;
  
   /* Daily increment of soil inorganic parent P pool */
-  net_parent = calculate_p_parent_fluxes(f, p, s);
-  
   if (s->inorgparp > 0.0) {
-    s->inorgparp += net_parent;
+    s->inorgparp += f->p_atm_dep - f->p_par_to_min;
   } else {
     f->p_par_to_min = 0.0;
-    s->inorgparp += net_parent;
+    s->inorgparp += f->p_atm_dep - f->p_par_to_min;
   }
  
   //fprintf(stderr, "inorgminp %f\n", s->inorgminp);

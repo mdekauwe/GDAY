@@ -356,7 +356,7 @@ typedef struct {
     double pmin0;                           /* mineral P pool corresponding to Actpc0,etc (g/m2) */
     double pmincrit;                        /* Critical mineral P pool at max soil P:C (g/m2) */
     double prateloss;                       /* Rate of P loss from mineral P pool (/yr), Ref Wang et al., 2007, GB1018 */
-    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr), based on Wang et al. 2007 GB1018 Laupahoehoe site (intermediate age) */
+    double prateuptake;                     /* Rate of P uptake from mineral P pool (/yr), guess value */
     double prescribed_leaf_NC;              /* If the N-Cycle is switched off this needs to be set, e.g. 0.03 */
     double prescribed_leaf_PC;              /* If the P-Cycle is switched off this needs to be set, e.g. 0.00249 */
     double previous_ncd;                    /* In the first year we don't have last years data, so I have precalculated the average of all the november-jan chilling values  */
