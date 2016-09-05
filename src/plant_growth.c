@@ -54,10 +54,6 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     } else {
        npitfac = nitfac;
     }
-    
-    //fprintf(stderr, "nitfac %f\n", nitfac);
-    //fprintf(stderr, "pitfac %f\n", pitfac);
-    //fprintf(stderr, "npitfac %f\n", npitfac);
 
     /* figure out the C allocation fractions */
     if (c->deciduous_model){
@@ -771,7 +767,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
 }
 
 
-double calculate_growth_stress_limitation(params *p, state *s) {
+double calculate_growth_stress_limitation(params *p, state *s, control *c) {
     /* Calculate level of stress due to nitrogen, phosphorus or water availability */
     double nlim, plim, current_limitation;
     double nc_opt = 0.04;
@@ -786,14 +782,16 @@ double calculate_growth_stress_limitation(params *p, state *s) {
         nlim = 1.0;
     }
     
-    /* P limitation based on leaf PC ratio */
-    if (s->shootpc < p->pf_min) {
-      plim = 0.0;
-    } else if (s->shootpc < pc_opt && s->shootpc > p->pf_min) {
-      plim = 1.0 - ((pc_opt - s->shootpc) / (pc_opt - p->pf_min));
-    } else {
-      plim = 1.0;
-    }
+    if(c->pcycle == TRUE) {
+      /* P limitation based on leaf PC ratio */
+      if (s->shootpc < p->pf_min) {
+        plim = 0.0;
+      } else if (s->shootpc < pc_opt && s->shootpc > p->pf_min) {
+        plim = 1.0 - ((pc_opt - s->shootpc) / (pc_opt - p->pf_min));
+      } else {
+        plim = 1.0;
+      }
+    } 
 
     /*
      * Limitation by nitrogen, water and phosphorus. Water constraint is implicit,
@@ -807,7 +805,12 @@ double calculate_growth_stress_limitation(params *p, state *s) {
      * that have a flexible bucket depth. Minimum constraint is limited to
      * 0.1, following Zaehle et al. 2010 (supp), eqn 18.
      */
-    current_limitation = MAX(0.1, MIN(nlim, MIN(plim, s->wtfac_root)));
+    if (c->pcycle == TRUE) {
+      current_limitation = MAX(0.1, MIN(nlim, MIN(plim, s->wtfac_root)));
+    } else {
+      current_limitation = MAX(0.1, MIN(nlim,s->wtfac_root));
+    }
+    
     return (current_limitation);
 }
 

@@ -1272,11 +1272,6 @@ void soil_soprtion_parameters(char *soil_order, params *p) {
 }
   
   
-
-
-
-
-
 void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
                            int doy) {
   

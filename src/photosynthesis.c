@@ -42,12 +42,15 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     tleaf = cw->tleaf[idx];
     dleaf = cw->dleaf;
     
-    fprintf(stderr, "flag in photo C3 \n");
-
     /* Calculate photosynthetic parameters from leaf temperature. */
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
+    
+    if(c->pcycle == TRUE) {
+      calculate_jmaxt_vcmaxt_with_p(c, cw, p, s, tleaf, &jmax, &vcmax);
+    } else {
+      calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
+    }
 
     /* leaf respiration in the light, Collatz et al. 1991 */
     rd = 0.015 * vcmax;
@@ -202,15 +205,12 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
     double jmax25, vcmax25;
-    double jmax25p, jmax25n;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
     double cscalar = cw->cscalar[cw->ileaf];
     double conv;
     
-    fprintf(stderr, "flag in calc_jmax_vcmax \n");
-
     if (c->modeljm == 0) {
         if (cw->ileaf == SUNLIT) {
             *jmax = p->jmax * cscalar;
@@ -221,19 +221,11 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         }
     } else if (c->modeljm == 1) {
         if (cw->ileaf == SUNLIT) {
-          jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
-          conv = MMOL_TO_MOL * 31.0;
-          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;  /* Ellsworth et al. 2015 Plant, Cell and Environment */
-          jmax25 = MIN(jmax25n, jmax25p);
+          jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
           vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-          fprintf(stderr, "flag SUNLIT \n");
         } else {
-          jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
-          conv = MMOL_TO_MOL * 31.0;
-          jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;  /* Ellsworth et al. 2015 Plant, Cell and Environment */
-          jmax25 = MIN(jmax25n, jmax25p);
+          jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
           vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
-          fprintf(stderr, "flag else \n");
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
@@ -273,6 +265,95 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
 
     return;
 }
+
+
+void calculate_jmaxt_vcmaxt_with_p(control *c, canopy_wk *cw, params *p, state *s,
+                            double tleaf, double *jmax, double *vcmax) {
+  /*
+  Calculate the potential electron transport rate (Jmax) and the
+  maximum Rubisco activity (Vcmax) at the leaf temperature.
+  
+  For Jmax -> peaked arrhenius is well behaved for tleaf < 0.0
+  
+  Parameters:
+  ----------
+  tleaf : float
+  air temperature (deg C)
+  jmax : float
+  the potential electron transport rate at the leaf temperature
+  (umol m-2 s-1)
+  vcmax : float
+  the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
+  */
+  double jmax25, vcmax25;
+  double jmax25p, jmax25n;
+  double lower_bound = 0.0;
+  double upper_bound = 10.0;
+  double tref = p->measurement_temp;
+  double cscalar = cw->cscalar[cw->ileaf];
+  double conv;
+  
+  if (c->modeljm == 0) {
+    if (cw->ileaf == SUNLIT) {
+      *jmax = p->jmax * cscalar;
+      *vcmax = p->vcmax * cscalar;
+    } else {
+      *jmax = p->jmax * cscalar;
+      *vcmax = p->vcmax * cscalar;
+    }
+  } else if (c->modeljm == 1) {
+    if (cw->ileaf == SUNLIT) {
+      jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
+      conv = MMOL_TO_MOL * 31.0;
+      jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;  /* Ellsworth et al. 2015 Plant, Cell and Environment */
+  jmax25 = MIN(jmax25n, jmax25p);
+  vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+    } else {
+      jmax25n = (p->jmaxna * cw->N0 + p->jmaxnb) * cscalar;
+      conv = MMOL_TO_MOL * 31.0;
+      jmax25p = (400.99 * (cw->P0 * conv) + 88.56) * cscalar;  /* Ellsworth et al. 2015 Plant, Cell and Environment */
+  jmax25 = MIN(jmax25n, jmax25p);
+  vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+    }
+    *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+  } else if (c->modeljm == 2) {
+    /* NB when using the fixed JV reln, we only apply scalar to Vcmax */
+    if (cw->ileaf == SUNLIT) {
+      vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+      jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
+    } else {
+      vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
+      jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
+    }
+    *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+  } else if (c->modeljm == 3) {
+    jmax25 = p->jmax * cscalar;
+    vcmax25 = p->vcmax * cscalar;
+    *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+    *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
+  } else {
+    fprintf(stderr, "You haven't set Jmax/Vcmax model: modeljm \n");
+    exit(EXIT_FAILURE);
+  }
+  
+  /* reduce photosynthetic capacity with moisture stress */
+  *jmax *= s->wtfac_root;
+  *vcmax *= s->wtfac_root;
+  
+  /* Jmax/Vcmax forced linearly to zero at low T */
+  if (tleaf < lower_bound) {
+    *jmax = 0.0;
+    *vcmax = 0.0;
+  } else if (tleaf < upper_bound) {
+    *jmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
+    *vcmax *= (tleaf - lower_bound) / (upper_bound - lower_bound);
+  }
+  
+  return;
+}
+
 
 double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* Calculate leaf respiration in the light using a Q10 (exponential)
@@ -486,19 +567,26 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);   //Unit: g N m-2;
-    P0 = calculate_top_of_canopy_p(p, s, pcontent);   //Unit: g P m-2
     
-    fprintf(stderr, "N0 %f\n", N0);
-    fprintf(stderr, "P0 %f\n", P0);
+    if(c->pcycle == TRUE) {
+      P0 = calculate_top_of_canopy_p(p, s, pcontent);   //Unit: g P m-2
+    } else {
+      P0 = 0.0;
+    }
 
     gamma_star_am = calculate_co2_compensation_point(p, m->Tk_am, mt);
     gamma_star_pm = calculate_co2_compensation_point(p, m->Tk_pm, mt);
 
     Km_am = calculate_michaelis_menten_parameter(p, m->Tk_am, mt);
     Km_pm = calculate_michaelis_menten_parameter(p, m->Tk_pm, mt);
-
-    calculate_jmax_and_vcmax(c, p, s, m->Tk_am, N0, P0, &jmax_am, &vcmax_am, mt);
-    calculate_jmax_and_vcmax(c, p, s, m->Tk_pm, N0, P0, &jmax_pm, &vcmax_pm, mt);
+    
+    if(c->pcycle == TRUE) {
+      calculate_jmax_and_vcmax_with_p(c, p, s, m->Tk_am, N0, P0, &jmax_am, &vcmax_am, mt);
+      calculate_jmax_and_vcmax_with_p(c, p, s, m->Tk_pm, N0, P0, &jmax_pm, &vcmax_pm, mt);
+    } else {
+      calculate_jmax_and_vcmax(c, p, s, m->Tk_am, N0, &jmax_am, &vcmax_am, mt);
+      calculate_jmax_and_vcmax(c, p, s, m->Tk_pm, N0, &jmax_pm, &vcmax_pm, mt);
+    }
 
     ci_am = calculate_ci(c, p, s, m->vpd_am, m->Ca);
     ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
@@ -515,17 +603,18 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     aj_am = assim(ci_am, gamma_star_am, jmax_am/4.0, 2.0*gamma_star_am);
     aj_pm = assim(ci_pm, gamma_star_pm, jmax_pm/4.0, 2.0*gamma_star_pm);
     
-    /* Triose-phosphates limited rate of photosynthesis */
-    ap_am = assim_p(P0);
-    ap_pm = assim_p(P0);
-    
-    //fprintf(stderr, "ac_am %f\n", ac_am);
-    //fprintf(stderr, "aj_am %f\n", aj_am);
-    //fprintf(stderr, "ap_am %f\n", ap_am);
-
-    /* light-saturated photosynthesis rate at the top of the canopy (gross) */
-    asat_am = MIN(aj_am, MIN(ac_am, ap_am));
-    asat_pm = MIN(aj_pm, MIN(ac_pm, ap_pm));
+    if(c->pcycle == TRUE) {
+      /* Triose-phosphates limited rate of photosynthesis */
+      ap_am = assim_p(P0);
+      ap_pm = assim_p(P0);
+      
+      /* light-saturated photosynthesis rate at the top of the canopy (gross) */
+      asat_am = MIN(aj_am, MIN(ac_am, ap_am));
+      asat_pm = MIN(aj_pm, MIN(ac_pm, ap_pm));
+    } else {
+      asat_am = MIN(aj_am, ac_am);
+      asat_pm = MIN(aj_pm, ac_pm);
+    }
 
     /* Covert PAR units (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
@@ -738,7 +827,7 @@ double calculate_michaelis_menten_parameter(params *p, double Tk, double mt) {
 }
 
 void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
-                              double N0, double P0, double *jmax, double *vcmax,
+                              double N0, double *jmax, double *vcmax,
                               double mt) {
     /*
         Calculate the maximum RuBP regeneration rate for light-saturated
@@ -751,8 +840,7 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
             air temperature (Kelvin)
         N0 : float
             leaf N   (g N m-2)
-        P0 : float
-            leaf P   (g P m-2)
+
 
         Returns:
         --------
@@ -762,7 +850,6 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
             the maximum rate of electron transport at 25 degC
     */
     double jmax25, vcmax25;
-    double jmax25p, jmax25n;
     double conv;
 
     *vcmax = 0.0;
@@ -773,12 +860,7 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         *vcmax = p->vcmax;
     } else if (c->modeljm == 1) {
         /* the maximum rate of electron transport at 25 degC */
-        jmax25n = p->jmaxna * N0 + p->jmaxnb;
-      
-        /* P limitation on jmax, Ellsworth et al. 2015 Plant, Cell and Environment */
-        conv = MMOL_TO_MOL * 31.0;
-        jmax25p = 400.99 * (P0 * conv) + 88.56;
-        jmax25 = MIN(jmax25n, jmax25p);
+        jmax25 = p->jmaxna * N0 + p->jmaxnb;
 
         /* this response is well-behaved for TLEAF < 0.0 */
         *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk,
@@ -788,10 +870,6 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
 
         *vcmax = arrh(mt, vcmax25, p->eav, Tk);
-        
-        fprintf(stderr, "jmax25n %f\n", jmax25n);
-        fprintf(stderr, "jmax25p %f\n", jmax25p);
-        fprintf(stderr, "jmax25 %f\n", jmax25);
         
     } else if (c->modeljm == 2) {
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
@@ -825,6 +903,92 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     return;
 
 }
+
+void calculate_jmax_and_vcmax_with_p(control *c, params *p, state *s, double Tk,
+                              double N0, double P0, double *jmax, double *vcmax,
+                              double mt) {
+  /*
+  Calculate the maximum RuBP regeneration rate for light-saturated
+  leaves at the top of the canopy (Jmax) and the maximum rate of
+  rubisco-mediated carboxylation at the top of the canopy (Vcmax).
+  
+  Parameters:
+  ----------
+  Tk : float
+  air temperature (Kelvin)
+  N0 : float
+  leaf N   (g N m-2)
+  P0 : float
+  leaf P   (g P m-2)
+  
+  Returns:
+  --------
+  jmax : float (umol/m2/sec)
+  the maximum rate of electron transport at 25 degC
+  vcmax : float (umol/m2/sec)
+  the maximum rate of electron transport at 25 degC
+  */
+  double jmax25, vcmax25;
+  double jmax25p, jmax25n;
+  double conv;
+  
+  *vcmax = 0.0;
+  *jmax = 0.0;
+  
+  if (c->modeljm == 0) {
+    *jmax = p->jmax;
+    *vcmax = p->vcmax;
+  } else if (c->modeljm == 1) {
+    /* the maximum rate of electron transport at 25 degC */
+    jmax25n = p->jmaxna * N0 + p->jmaxnb;
+    
+    /* P limitation on jmax, Ellsworth et al. 2015 Plant, Cell and Environment */
+    conv = MMOL_TO_MOL * 31.0;
+    jmax25p = 400.99 * (P0 * conv) + 88.56;
+    jmax25 = MIN(jmax25n, jmax25p);
+    
+    /* this response is well-behaved for TLEAF < 0.0 */
+    *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk,
+                        p->delsj, p->edj);
+    
+    /* the maximum rate of electron transport at 25 degC */
+    vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+    
+    *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+    
+  } else if (c->modeljm == 2) {
+    vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+    *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+    
+    jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
+    *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk, p->delsj,
+                        p->edj);
+    
+  } else if (c->modeljm == 3) {
+    /* the maximum rate of electron transport at 25 degC */
+    jmax25 = p->jmax;
+    
+    /* this response is well-behaved for TLEAF < 0.0 */
+    *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk,
+                        p->delsj, p->edj);
+    
+    /* the maximum rate of electron transport at 25 degC */
+    vcmax25 = p->vcmax;
+    *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+    
+  }
+  
+  /* reduce photosynthetic capacity with moisture stress */
+  *jmax *= s->wtfac_root;
+  *vcmax *= s->wtfac_root;
+  /*  Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
+  adj_for_low_temp(*(&jmax), Tk);
+  adj_for_low_temp(*(&vcmax), Tk);
+  
+  return;
+  
+}
+
 
 void adj_for_low_temp(double *param, double Tk) {
     /*
@@ -1041,8 +1205,6 @@ double epsilon(params *p, double asat, double par, double alpha,
 
     return (lue);
 }
-
-
 
 
 void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,

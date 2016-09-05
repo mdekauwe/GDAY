@@ -11,6 +11,8 @@ double calc_co2_compensation_point(params *, double);
 double calculate_michaelis_menten(params *, double);
 void   calculate_jmaxt_vcmaxt(control *, canopy_wk *, params *, state *,
                               double, double *, double *);
+void   calculate_jmaxt_vcmaxt_with_p(control *, canopy_wk *, params *, state *,
+                              double, double *, double *);
 double arrhenius(double, double, double, double);
 double peaked_arrhenius(double, double, double, double, double, double);
 double calc_leaf_day_respiration(double, double);
@@ -27,8 +29,10 @@ double  calculate_co2_compensation_point(params *, double, double);
 double  arrh(double, double, double, double);
 double  peaked_arrh(double, double, double, double, double, double);
 double  calculate_michaelis_menten_parameter(params *, double, double);
-void    calculate_jmax_and_vcmax(control *, params *, state *, double, double,double,
-                                 double *, double *, double);
+void    calculate_jmax_and_vcmax(control *, params *, state *, double, double,
+                                        double *, double *, double);
+void    calculate_jmax_and_vcmax_with_p(control *, params *, state *, double, double,double,
+                                        double *, double *, double);
 void    adj_for_low_temp(double *, double);
 double  calculate_ci(control *, params *, state *, double, double);
 double  calculate_quantum_efficiency(params *, double ci, double);

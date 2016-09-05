@@ -64,8 +64,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calculate_top_of_canopy_leafp(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p);
             
-            fprintf(stderr, "flag before photo C3 \n");
-
             /* sunlit / shaded loop */
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
 
