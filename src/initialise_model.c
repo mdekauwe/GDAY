@@ -201,8 +201,8 @@ void initialise_params(params *p) {
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
     p->oi = 210000.0;                 /* oxygen partial pressure (umol mol-1) */
-    p->p_atm_deposition = 0.00055;    /* value according to Newman 1995 = 0.00055 */
-    p->p_rate_par_weather = 0.0001;
+    p->p_atm_deposition = 0.001;    /* value according to Newman 1995 = 0.00055 */
+    p->p_rate_par_weather = 0.001;
     p->passivesoilnz = 1.0;
     p->passivesoilpz = 1.0;
     p->passivesoilz = 1.0;
@@ -478,8 +478,10 @@ void initialise_fluxes(fluxes *f) {
     f->c_into_passive = 0.0;
 
     /* inorganic P flux exchanges */
-    f->p_lab_net_flux = 0.0;
-    f->p_sorb_net_flux = 0.0;
+    f->p_lab_in = 0.0;
+    f->p_lab_out = 0.0;
+    f->p_sorb_in = 0.0;
+    f->p_sorb_out = 0.0;
     f->p_sorb_to_ssorb = 0.0;
     f->p_ssorb_to_sorb = 0.0;
     f->p_ssorb_to_occ = 0.0;

@@ -1315,7 +1315,7 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   calculate_p_biochemical_mineralisation(f, p, s); 
   
   /* calculate P lab and sorb fluxes from gross P flux */
-  //calculate_p_min_partition(f, p, s);
+  //calculate_p_min_fluxes(f, p, s);
   
   /* SIM phosphorus dynamics */
   calculate_p_ssorb_to_sorb(s, f, p, c);
@@ -1323,8 +1323,7 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
   calculate_p_sorb_to_ssorb(s, f, p); 
 
   /* calculate P lab and sorb fluxes from gross P flux */
-  calculate_p_min_partition(f, p, s);
-  
+  calculate_p_min_fluxes(f, p, s);
   
   if (c->exudation && c->alloc_model != GRASSES) {
     calc_root_exudation_uptake_of_P(f, s);
@@ -1597,20 +1596,21 @@ void pfluxes_from_passive_pool(fluxes *f, params *p, state *s) {
 void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
   /* Calculate weathering of parent P materials, i.e. 
      the fluxes enterring into mineral P pool;
+   
+     Fluxes in = out so that parent P pool is a constant pool;
     
      Parameters:
      
      Return:
-   pparentflux: float
-   influx of parent P (current unit: g P m-2 /timestep)
-   
-   */
+   p_atm_dep: atmospheric P deposition
+   p_par_to_min: parent to mineral P pool
+  */
+  
   /* atmospheric P deposition rate */
-  f->p_atm_dep = p->p_atm_deposition;
+  f->p_atm_dep = s->inorgparp * p->p_atm_deposition;
   
   /* parent material weathering */
   f->p_par_to_min = p->p_rate_par_weather * s->inorgparp;
-  
   
   return;
   
@@ -1835,71 +1835,48 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
   return;
 }
 
-void calculate_p_min_partition(fluxes *f, params *p, state *s) {
-  /* Calculate the proportion of lab P and sorb P influxes from incoming fluxes,
-  based on CENTURY fsfunc function (Metherell et al. 1993)
+void calculate_p_min_fluxes(fluxes *f, params *p, state *s) {
+  /* Calculate the mineral P fluxes (in and out)
    
   Parameters:
   --------
-  sorpmx: maximum P sorption potential for a soil
-  sorpaf: slope term which controls teh fraction of mineral P that is labile
-  
+
   Returns:
   --------
   value : float
-  p_lab_influx: P influxes added into the labile pool;
-  p_sorb_influx: P influxes added into the sorbed pool (excluding from ssorb to sorb);
+  p_lab_in: P fluxes added into lab P;
+  p_lab_out: P fluxes out lab P;
+  p_sorb_in
+  p_sorb_out
   
   */
-  double net_influx;
-  double lab_net_flux, sorb_net_flux;
   double numer, denom1, denom2;
   double min_frac_p_available_to_plant = 0.4;
   double max_frac_p_available_to_plant = 0.8;
   double mineral_n_with_max_p = 0.02;              /* Unit [t N ha-1] */
-  double frac_lab, frac_sorb;
   double tot_in, tot_out;
   
   tot_in = f->p_par_to_min + f->pmineralisation +
            f->purine + f->p_slow_biochemical +
            f->p_ssorb_to_sorb;
   
-  if (s->inorglabp > 0.0 && s->inorgsorbp > 0.0) {
   tot_out = f->puptake + f->ploss + f->p_sorb_to_ssorb;
-  } else {
-    tot_out = 0.0;
-  }
   
-  net_influx =  tot_in - tot_out;
-                  
-  //fprintf(stderr, "net_influx %f\n", net_influx);
-  //fprintf(stderr, "tot_in %f\n", tot_in);
-  //fprintf(stderr, "tot_out %f\n", tot_out);
-  //fprintf(stderr, "pparentflux %f\n", f->pparentflux);
-  //fprintf(stderr, "pmineralisation %f\n", f->pmineralisation);
-  //fprintf(stderr, "puptake %f\n", f->puptake);
-  //fprintf(stderr, "ssorb_to_sorb %f\n", f->p_ssorb_to_sorb);
-  //fprintf(stderr, "sorb_to_ssorb %f\n", f->p_sorb_to_ssorb);
-  
-
   /* Use soil order to obtain smax and ks values */
   soil_soprtion_parameters(p->soil_order, p);
   
-  /* Calculate influx for labile P pool from all incoming fluxes */
-  
+  /* Calculate lab P dynamics */
   numer = p->smax * p->ks;
   denom1 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks);
-  lab_net_flux = net_influx / (1 + numer/denom1);
+  f->p_lab_in = tot_in / (1.0 + numer/denom1);
+  f->p_lab_out = tot_out / (1.0 + numer/denom1);
   
-  /* Calculate influx for sorbed P pool from all incoming fluxes */
+  /* calculate sorb P dynamics */
+  
   denom2 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks) + numer;
-  sorb_net_flux = net_influx * (numer / denom2);
-  
-  frac_lab = lab_net_flux / net_influx;
-  frac_sorb = sorb_net_flux / net_influx;
+  f->p_sorb_in = tot_in * (numer / denom2);
+  f->p_sorb_out = tot_out * (numer / denom2);
 
-  f->p_lab_net_flux = lab_net_flux;  
-  f->p_sorb_net_flux = sorb_net_flux;
   
   /* calculating fraction of labile P available for plant uptake */
   p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
@@ -2104,8 +2081,8 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->passivesoilp += p_into_passive + fixp - p_out_of_passive;
 
   /* Daily increment of soil inorganic labile and sorbed P pool */
-  s->inorglabp += f->p_lab_net_flux;
-  s->inorgsorbp += f->p_sorb_net_flux;
+  s->inorglabp += f->p_lab_in - f->p_lab_out;
+  s->inorgsorbp += f->p_sorb_in - f->p_sorb_out;
   
   /* Daily increment of soil inorganic mineral P pool (lab + sorb) */
   s->inorgminp = s->inorglabp + s->inorgsorbp;
@@ -2121,20 +2098,8 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorgoccp += f->p_ssorb_to_occ;
  
   /* Daily increment of soil inorganic parent P pool */
-  if (s->inorgparp > 0.0) {
-    s->inorgparp += f->p_atm_dep - f->p_par_to_min;
-  } else {
-    f->p_par_to_min = 0.0;
-    s->inorgparp += f->p_atm_dep - f->p_par_to_min;
-  }
- 
-  //fprintf(stderr, "inorgminp %f\n", s->inorgminp);
-  //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-  //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-  //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
-  //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
-  //fprintf(stderr, "inorgparp %f\n", s->inorgparp);
- 
+  s->inorgparp += f->p_atm_dep - f->p_par_to_min;
+
   return;
 }
 

@@ -674,8 +674,10 @@ typedef struct {
     double c_into_passive;
     
     /* inorganic P flux exchanges */
-    double p_lab_net_flux;        /*P influx to lab pool */
-    double p_sorb_net_flux;       /*P influx sorb pool, excluding from ssorb to sorb */
+    double p_lab_in;
+    double p_lab_out;
+    double p_sorb_in;
+    double p_sorb_out;
     double p_sorb_to_ssorb;
     double p_ssorb_to_sorb;
     double p_ssorb_to_occ;
