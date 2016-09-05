@@ -678,8 +678,8 @@ typedef struct {
     double p_lab_out;
     double p_sorb_in;
     double p_sorb_out;
-    double p_sorb_to_ssorb;
-    double p_ssorb_to_sorb;
+    double p_min_to_ssorb;
+    double p_ssorb_to_min;
     double p_ssorb_to_occ;
     double p_par_to_min;
     double p_atm_dep;

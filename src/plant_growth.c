@@ -219,17 +219,10 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         /* total phosphorus content of the canopy */
         pcontent = leafp * s->lai;
         
-        //fprintf(stderr, "leafp %f\n", leafp);
-        //fprintf(stderr, "shootpc %f\n", s->shootpc);
-
     } else {
         ncontent = 0.0;
         pcontent = 0.0;
     }
-    
-    //fprintf(stderr, "ncontent %f\n", ncontent);
-    //fprintf(stderr, "pcontent %f\n", pcontent);
-
 
     /* When canopy is not closed, canopy light interception is reduced
         - calculate the fractional ground cover */
@@ -490,11 +483,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->retransp = phosphorus_retrans(c, f, p, s, fdecay, rdecay, doy);
     f->nuptake = calculate_nuptake(c, p, s);
     f->puptake = calculate_puptake(c, p, s);
-    
-    /* diagnosis */ 
-    /*
-    fprintf(stderr, "puptake = %f\n", f->puptake);
-    */
      
     /*  Ross's Root Model. */
     if (c->model_optroot) {
@@ -534,8 +522,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     /* Mineralised P lost from the system by leaching */
     f->ploss = p->prateloss * s->inorglabp;
     
-    fprintf(stderr, "ploss %f\n", f->ploss);
-
     /* total nitrogen/phosphorus to allocate */
     ntot = MAX(0.0, f->nuptake + f->retrans);
     ptot = MAX(0.0, f->puptake + f->retransp);
@@ -589,14 +575,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         /* If we have allocated more P than we have available
          - cut back C prodn */
         arg2 = f->ppstemimm + f->ppstemmob + f->ppbranch + f->ppcroot;
-        
-        /* diagnosis */ 
-        /*
-        fprintf(stderr, "arg1 = %f\n", arg1);
-        fprintf(stderr, "ntot = %f\n", ntot);
-        fprintf(stderr, "arg2 = %f\n", arg2);
-        fprintf(stderr, "ptot = %f\n", ptot);
-        */
 
         if (arg1 > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
 
@@ -1625,15 +1603,10 @@ double calculate_puptake(control *c, params *p, state *s) {
   if (c->puptake_model == 0) {
     /* Constant P uptake */
     puptake = p->puptakez;
-    fprintf(stderr, "puptake %f\n", puptake);
-    //fprintf(stderr, "puptakez %f\n", p->puptakez);
     
   } else if (c->puptake_model == 1) {
     /* evaluate puptake : proportional to lab P pool that is available to plant uptake (a function of mineral N) */
     puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
-    
-    fprintf(stderr, "puptake %f\n", puptake*1000.0);
-    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
     
   } else if (c->puptake_model == 2) {
     /* P uptake is a saturating function on root biomass following
@@ -1643,8 +1616,6 @@ double calculate_puptake(control *c, params *p, state *s) {
     U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
     Kr = p->krp;
     puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
-    
-    //fprintf(stderr, "puptake %f\n", puptake);
     
     /* Make minimum uptake rate supply rate for deciduous_model cases
     otherwise it is possible when growing from scratch we don't have

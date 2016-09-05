@@ -394,8 +394,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
             
-            fprintf(stderr, "nyr = %d\n", nyr);
-            fprintf(stderr, "doy = %d\n", doy);
+            //fprintf(stderr, "nyr = %d\n", nyr);
+            //fprintf(stderr, "doy = %d\n", doy);
 
             if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
                 write_daily_outputs_ascii(c, f, s, year, doy+1);
@@ -765,8 +765,8 @@ void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
   f->p_lab_out = 0.0;
   f->p_sorb_in = 0.0;
   f->p_sorb_out = 0.0;
-  f->p_sorb_to_ssorb = 0.0;
-  f->p_ssorb_to_sorb = 0.0;
+  f->p_min_to_ssorb = 0.0;
+  f->p_ssorb_to_min = 0.0;
   f->p_ssorb_to_occ = 0.0;
   f->p_par_to_min = 0.0;
   f->p_atm_dep = 0.0;
@@ -861,11 +861,11 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     s->plantc = s->root + s->croot + s->shoot + s->stem + s->branch;
     s->totalc = s->soilc + s->litterc + s->plantc;
     
-    fprintf(stderr, "plantc %f\n", s->plantc);
-    fprintf(stderr, "plantn %f\n", s->plantn);
-    fprintf(stderr, "plantp %f\n", s->plantp);
-    fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-    fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+    //fprintf(stderr, "plantc %f\n", s->plantc);
+    //fprintf(stderr, "plantn %f\n", s->plantn);
+    //fprintf(stderr, "plantp %f\n", s->plantp);
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
     //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
     //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
 
@@ -875,7 +875,7 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
         s->passivesoiln = p->passivesoilnz;
         s->passivesoilp = p->passivesoilpz;
     }
-
+    
     if (init == FALSE)
         /* Required so max leaf & root N:C can depend on Age */
         s->age += 1.0 / days_in_year;

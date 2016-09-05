@@ -482,8 +482,8 @@ void initialise_fluxes(fluxes *f) {
     f->p_lab_out = 0.0;
     f->p_sorb_in = 0.0;
     f->p_sorb_out = 0.0;
-    f->p_sorb_to_ssorb = 0.0;
-    f->p_ssorb_to_sorb = 0.0;
+    f->p_min_to_ssorb = 0.0;
+    f->p_ssorb_to_min = 0.0;
     f->p_ssorb_to_occ = 0.0;
     f->p_par_to_min = 0.0;
     f->p_atm_dep = 0.0;
