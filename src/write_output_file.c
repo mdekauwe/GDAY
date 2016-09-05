@@ -69,11 +69,11 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "shoot,lai,branch,stem,root,croot,");
     fprintf(*fp, "shootn,branchn,stemn,rootn,crootn,");
     fprintf(*fp, "shootp,branchp,stemp,rootp,crootp,");
-    fprintf(*fp, "cstore,nstore, pstore");
+    fprintf(*fp, "cstore,nstore, pstore,");
 
     /* belowground */
     fprintf(*fp, "soilc,soiln,soilp,inorgn,");
-    fprintf(*fp, "inorgp,inorgminp,inorglabp,inorgsorbp,inorgssorbp,inorgoccp,inorgparp");
+    fprintf(*fp, "inorgp,inorgminp,inorglabp,inorgsorbp,inorgssorbp,inorgoccp,inorgparp,");
     fprintf(*fp, "litterc,littercag,littercbg,litternag,litternbg,");
     fprintf(*fp, "litterpag,litterpbg,");
     fprintf(*fp, "activesoil,slowsoil,passivesoil,");
