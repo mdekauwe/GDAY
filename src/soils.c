@@ -2021,21 +2021,32 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->structsoilp += (f->p_soil_struct_litter -
     (f->p_soil_struct_to_slow + f->p_soil_struct_to_active));
   
+  //fprintf(stderr, "structsurfp before pc_limit %f\n", s->structsurfp*100000);
+  //fprintf(stderr, "structsoilp before pc_limit %f\n", s->structsoilp*100000);
+  //fprintf(stderr, "structcp before pc_limit %f\n", p->structcp);
+  
   if (c->strpfloat == 0) {
     s->structsurfp += pc_limit(f, s->structsurf, s->structsurfp,
                                1.0/p->structcp, 1.0/p->structcp);
+    //fprintf(stderr, "plittrelease after structsurfp %f\n", f->plittrelease*100000);
+    //fprintf(stderr, "structsurfp after pc_limit %f\n", s->structsurfp*100000);
+    //fprintf(stderr, "structcp after 1 pc_limit %f\n", p->structcp);
     s->structsoilp += pc_limit(f, s->structsoil, s->structsoilp,
                                1.0/p->structcp, 1.0/p->structcp);
+    //fprintf(stderr, "plittrelease after structsoilp %f\n", f->plittrelease*100000);
+    //fprintf(stderr, "structsurfp after pc_limit %f\n", s->structsurfp*100000);
+    //fprintf(stderr, "structcp after 2 pc_limit %f\n", p->structcp);
   }
   
   s->metabsurfp += f->p_surf_metab_litter - f->p_surf_metab_to_active;
   s->metabsurfp += pc_limit(f, s->metabsurf, s->metabsurfp,
                             1.0/150.0, 1.0/80.0);                                  /* pcmin & pcmax from Parton 1989 fig 2 */
+  //fprintf(stderr, "plittrelease after metabsurfp %f\n", f->plittrelease*100000);
   s->metabsoilp += (f->p_soil_metab_litter - f->p_soil_metab_to_active);
   s->metabsoilp += pc_limit(f, s->metabsoil, s->metabsoilp, 
                             1.0/150.0, 1.0/80.0);                                  /* pcmin & pcmax from Parton 1989 fig 2 */
   
-  fprintf(stderr, "plittrelease after pc_limit %f\n", f->plittrelease);
+  //fprintf(stderr, "plittrelease after pc_limit %f\n", f->plittrelease*100000);
   
   /* When nothing is being added to the metabolic pools, there is the
   potential scenario with the way the model works for tiny bits to be
@@ -2140,6 +2151,10 @@ double pc_limit(fluxes *f, double cpool, double ppool, double pcmin,
   double rel, fix;
   double pmax = cpool * pcmax;
   double pmin = cpool * pcmin;
+  
+  //fprintf(stderr, "ppool %f\n", ppool*100000);
+  //fprintf(stderr, "pmax %f\n", pmax*100000);
+  //fprintf(stderr, "pmin %f\n", pmin*100000);
   
   if (ppool > pmax) {
     /* release */

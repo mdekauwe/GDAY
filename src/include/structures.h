@@ -393,7 +393,7 @@ typedef struct {
     double store_transfer_len;
     double structcn;                        /* C:N ratio of structural bit of litter input */
     double structrat;                       /* structural input n:c as fraction of metab */
-    double structcp;                        /* C:P ratio of structural bit of litter input, Ref Finzi et al., 2001, Ecology, Table 4; */
+    double structcp;                        /* C:P ratio of structural bit of litter input, Ref Attiwill 1980, Aus. J. Bot. 28, 199-222 Table 9 sum of branch, stem, sap and heartwood; */
     double structratp;                      /* structural input p:c as fraction of metab */
     double soilph;                          /* soil pH value */
     double sorpmx;                          /* maximum P sorption potential for a soil */

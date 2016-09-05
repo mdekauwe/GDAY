@@ -274,7 +274,7 @@ void initialise_params(params *p) {
     p->store_transfer_len = -999.9;
     p->structcn = 150.0;
     p->structrat = 0.0;
-    p->structcp = 2300.0;
+    p->structcp = 5500.0;
     p->structratp = 0.0;
     p->targ_sens = 0.5;
     p->theta = 0.7;
