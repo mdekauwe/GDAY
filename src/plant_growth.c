@@ -81,7 +81,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     }
 
     /* Distribute new C, N and P through the system */
-    carbon_allocation(c, f, p, s, npitfac, doy);
+    carbon_allocation(c, f, p, s, nitfac, doy);
 
     calculate_cnp_wood_ratios(c, p, s, npitfac, nitfac, pitfac, 
                               &ncbnew, &nccnew, &ncwimm,
@@ -1002,13 +1002,13 @@ double alloc_goal_seek(double simulated, double target, double alloc_max,
 }
 
 void carbon_allocation(control *c, fluxes *f, params *p, state *s,
-                       double npitfac, int doy) {
+                       double nitfac, int doy) {
     /* C distribution - allocate available C through system
 
     Parameters:
     -----------
-    npitfac : float
-        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) and leaf P:C as a fraction of "Mcmaxfyoung"
+    nitfac : float
+        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) 
     */
     double days_left;
     if (c->deciduous_model) {
@@ -1032,7 +1032,7 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
        via nitfac. Based on date from two E.globulus stands in SW Aus, see
        Corbeels et al (2005) Ecological Modelling, 187, 449-474.
        (m2 onesided/kg DW) */
-    p->sla = p->slazero + npitfac * (p->slamax - p->slazero);
+    p->sla = p->slazero + nitfac * (p->slamax - p->slazero);
 
     if (c->deciduous_model) {
         if (float_eq(s->shoot, 0.0)) {
