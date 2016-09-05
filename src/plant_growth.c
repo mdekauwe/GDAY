@@ -47,6 +47,9 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     */
     nitfac = MIN(1.0, s->shootnc / p->ncmaxfyoung);
     pitfac = MIN(1.0, s->shootpc / p->pcmaxfyoung);
+    
+    fprintf(stderr, "nitfac %f\n", nitfac);
+    fprintf(stderr, "pitfac %f\n", pitfac);
    
     /* checking for pcycle control parameter */ 
     if(c->pcycle == TRUE) {
@@ -81,7 +84,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     }
 
     /* Distribute new C, N and P through the system */
-    carbon_allocation(c, f, p, s, nitfac, doy);
+    carbon_allocation(c, f, p, s, npitfac, doy);   
 
     calculate_cnp_wood_ratios(c, p, s, npitfac, nitfac, pitfac, 
                               &ncbnew, &nccnew, &ncwimm,
@@ -341,6 +344,8 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
       /* n:c ratio of coarse root */
       *nccnew = p->nccnew + pitfac * (p->nccnew - p->nccnewz);
       
+      fprintf(stderr, "ncbnew in npitfac < nitfac %f\n", *ncbnew);
+      
       /* fixed N:C in the stemwood */
       if (c->fixed_stem_nc) {
         /* n:c ratio of stemwood - immobile pool and new ring */
@@ -365,6 +370,8 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
       /* n:c ratio of coarse root */
       *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
       
+      fprintf(stderr, "ncbnew in npitfac > nitfac %f\n", *ncbnew);
+      
       /* fixed N:C in the stemwood */
       if (c->fixed_stem_nc) {
         /* n:c ratio of stemwood - immobile pool and new ring */
@@ -383,6 +390,8 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
         *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
       }
     }
+    
+    //fprintf(stderr, "ncbnew %f\n", *ncbnew);
     
     /* calculate P:C ratios */
     if (npitfac < nitfac) {
@@ -850,7 +859,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     double min_stem_alloc = 0.01;
 
     if (c->alloc_model == FIXED){
-        f->alleaf = (p->c_alloc_fmax + npitfac *
+        f->alleaf = (p->c_alloc_fmax + npitfac *   //should c_alloc_fmax be c_alloc_fmin?
                      (p->c_alloc_fmax - p->c_alloc_fmin));
 
         f->alroot = (p->c_alloc_rmax + npitfac *
@@ -1002,13 +1011,13 @@ double alloc_goal_seek(double simulated, double target, double alloc_max,
 }
 
 void carbon_allocation(control *c, fluxes *f, params *p, state *s,
-                       double nitfac, int doy) {
+                       double npitfac, int doy) {
     /* C distribution - allocate available C through system
 
     Parameters:
     -----------
-    nitfac : float
-        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) 
+    npitfac : float
+        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) or leaf P:C as a fraction of "Pcmaxfyoung"
     */
     double days_left;
     if (c->deciduous_model) {
@@ -1031,8 +1040,10 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
        SLA of new foliage is linearly related to leaf N:C ratio
        via nitfac. Based on date from two E.globulus stands in SW Aus, see
        Corbeels et al (2005) Ecological Modelling, 187, 449-474.
-       (m2 onesided/kg DW) */
-    p->sla = p->slazero + nitfac * (p->slamax - p->slazero);
+       (m2 onesided/kg DW) 
+     This needs to be updated to consider P effect
+    */
+    p->sla = p->slazero + npitfac * (p->slamax - p->slazero);
 
     if (c->deciduous_model) {
         if (float_eq(s->shoot, 0.0)) {
@@ -1058,7 +1069,7 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
     if (c->fixed_lai) {
         s->lai = p->fix_lai;
     }
-
+    
     return;
 }
 
