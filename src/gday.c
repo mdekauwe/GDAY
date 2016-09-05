@@ -573,6 +573,11 @@ void correct_rate_constants(params *p, int output) {
         p->puptakez *= NDAYS_IN_YR;
         p->nmax *= NDAYS_IN_YR;
         p->pmax *= NDAYS_IN_YR;
+        p->p_atm_deposition *= NDAYS_IN_YR;
+        p->p_rate_par_weather *= NDAYS_IN_YR;
+        p->max_p_biochemical *= NDAYS_IN_YR;
+        p->rate_sorb_ssorb *= NDAYS_IN_YR;
+        p->rate_ssorb_occ *= NDAYS_IN_YR;
     } else {
         p->rateuptake /= NDAYS_IN_YR;
         p->prateuptake /= NDAYS_IN_YR;
@@ -598,6 +603,11 @@ void correct_rate_constants(params *p, int output) {
         p->puptakez /= NDAYS_IN_YR;
         p->nmax /= NDAYS_IN_YR;
         p->pmax /= NDAYS_IN_YR;
+        p->p_atm_deposition /= NDAYS_IN_YR;
+        p->p_rate_par_weather /= NDAYS_IN_YR;
+        p->max_p_biochemical /= NDAYS_IN_YR;
+        p->rate_sorb_ssorb /= NDAYS_IN_YR;
+        p->rate_ssorb_occ /= NDAYS_IN_YR;
     }
 
     return;
@@ -848,6 +858,15 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     s->litterc = s->littercag + s->littercbg;
     s->plantc = s->root + s->croot + s->shoot + s->stem + s->branch;
     s->totalc = s->soilc + s->litterc + s->plantc;
+    
+    fprintf(stderr, "plantc %f\n", s->plantc);
+    fprintf(stderr, "plantn %f\n", s->plantn);
+    fprintf(stderr, "plantp %f\n", s->plantp);
+    fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+    fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+    fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
+    fprintf(stderr, "inorgparp %f\n", s->inorgparp);
 
     /* optional constant passive pool */
     if (c->passiveconst) {

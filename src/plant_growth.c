@@ -1625,13 +1625,15 @@ double calculate_puptake(control *c, params *p, state *s) {
   if (c->puptake_model == 0) {
     /* Constant P uptake */
     puptake = p->puptakez;
-    fprintf(stderr, "puptake %f\n", puptake);
+    //fprintf(stderr, "puptake %f\n", puptake);
+    //fprintf(stderr, "puptakez %f\n", p->puptakez);
     
   } else if (c->puptake_model == 1) {
     /* evaluate puptake : proportional to lab P pool that is available to plant uptake (a function of mineral N) */
     puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
     
     //fprintf(stderr, "puptake %f\n", puptake);
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
     
   } else if (c->puptake_model == 2) {
     /* P uptake is a saturating function on root biomass following

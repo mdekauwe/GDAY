@@ -1636,6 +1636,10 @@ double calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
   
   net_par = f->p_atm_dep - f->p_par_to_min;
   
+  fprintf(stderr, "net_par %f\n", net_par);
+  fprintf(stderr, "p_rate_par_weather %f\n", p->p_rate_par_weather);
+  fprintf(stderr, "p_atm_dep %f\n", f->p_atm_dep);
+  
   return (net_par);
   
 }
