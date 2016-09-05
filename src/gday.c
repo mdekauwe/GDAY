@@ -866,8 +866,8 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     fprintf(stderr, "plantp %f\n", s->plantp);
     fprintf(stderr, "inorglabp %f\n", s->inorglabp);
     fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-    fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
-    fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
+    //fprintf(stderr, "inorgssorbp %f\n", s->inorgssorbp);
+    //fprintf(stderr, "inorgoccp %f\n", s->inorgoccp);
 
     /* optional constant passive pool */
     if (c->passiveconst) {

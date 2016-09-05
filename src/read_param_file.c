@@ -436,20 +436,8 @@ int handler(char *section, char *name, char *value, control *c,
         }
     } else if (MATCH("control", "strfloat")) {
         c->strfloat = atoi(value);
-        /*if (strcmp(temp, "False") == 0 ||
-            strcmp(temp, "FALSE") == 0 ||
-            strcmp(temp, "false") == 0)
-            c->strfloat = FALSE;
-        else if (strcmp(temp, "True") == 0 ||
-            strcmp(temp, "TRUE") == 0 ||
-            strcmp(temp, "true") == 0)
-            c->strfloat = TRUE;
-        else {
-            fprintf(stderr, "Unknown strfloat option: %s\n", temp);
-            exit(EXIT_FAILURE);
-        }*/
     } else if (MATCH("control", "strpfloat")) {
-      c->strpfloat = atoi(value);
+        c->strpfloat = atoi(value);
     } else if (MATCH("control", "sw_stress_model")) {
         c->sw_stress_model = atoi(value);
     } else if (MATCH("control", "use_eff_nc")) {
