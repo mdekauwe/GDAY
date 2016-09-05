@@ -48,8 +48,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     nitfac = MIN(1.0, s->shootnc / p->ncmaxfyoung);
     pitfac = MIN(1.0, s->shootpc / p->pcmaxfyoung);
     
-    fprintf(stderr, "nitfac %f\n", nitfac);
-    fprintf(stderr, "pitfac %f\n", pitfac);
+    //fprintf(stderr, "nitfac %f\n", nitfac);
+    //fprintf(stderr, "pitfac %f\n", pitfac);
    
     /* checking for pcycle control parameter */ 
     if(c->pcycle == TRUE) {
@@ -291,8 +291,8 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
     return;
 }
 
-void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac, 
-                             double nitfac, double pitfac, 
+void calculate_cnp_wood_ratios(control *c, params *p, state *s,
+                             double npitfac, double nitfac, double pitfac, 
                              double *ncbnew, double *nccnew, 
                              double *ncwimm, double *ncwnew,
                              double *pcbnew, double *pccnew,
@@ -303,8 +303,8 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
 
     Parameters:
     -----------
-    npitfac : float
-        min of nitfac and pitfac;
+    npitfac: float
+       min of nitfac and pitfac;
     nitfac: float
        leaf N:C as a fraction of Ncmaxyoung;
     pitfac : float
@@ -337,22 +337,20 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
     */
 
     /* calculate N:C ratios */
-    if (npitfac < nitfac) {
+    if (nitfac < npitfac) {
       /* n:c ratio of new branch wood*/
-      *ncbnew = p->ncbnew + pitfac * (p->ncbnew - p->ncbnewz);
-
-      /* n:c ratio of coarse root */
-      *nccnew = p->nccnew + pitfac * (p->nccnew - p->nccnewz);
+      *ncbnew = p->ncbnew + nitfac * (p->ncbnew - p->ncbnewz);
       
-      fprintf(stderr, "ncbnew in npitfac < nitfac %f\n", *ncbnew);
+      /* n:c ratio of coarse root */
+      *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
       
       /* fixed N:C in the stemwood */
       if (c->fixed_stem_nc) {
         /* n:c ratio of stemwood - immobile pool and new ring */
-        *ncwimm = p->ncwimm + pitfac * (p->ncwimm - p->ncwimmz);
+        *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
         
         /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = p->ncwnew + pitfac * (p->ncwnew - p->ncwnewz);
+        *ncwnew = p->ncwnew + nitfac * (p->ncwnew - p->ncwnewz);
         
         /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
         Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
@@ -365,23 +363,21 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
       }
     } else {
       /* n:c ratio of new branch wood*/
-      *ncbnew = p->ncbnew + nitfac * (p->ncbnew - p->ncbnewz);
+      *ncbnew = p->ncbnew + npitfac * (p->ncbnew - p->ncbnewz);
       
       /* n:c ratio of coarse root */
-      *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
-      
-      fprintf(stderr, "ncbnew in npitfac > nitfac %f\n", *ncbnew);
+      *nccnew = p->nccnew + npitfac * (p->nccnew - p->nccnewz);
       
       /* fixed N:C in the stemwood */
       if (c->fixed_stem_nc) {
         /* n:c ratio of stemwood - immobile pool and new ring */
-        *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
+        *ncwimm = p->ncwimm + npitfac * (p->ncwimm - p->ncwimmz);
         
         /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = p->ncwnew + nitfac * (p->ncwnew - p->ncwnewz);
+        *ncwnew = p->ncwnew + npitfac * (p->ncwnew - p->ncwnewz);
         
-        /* vary stem N:C based on reln with foliage, see Jeffreys. Jeffreys 1999
-        showed that N:C ratio of new wood increases with foliar N:C ratio,
+        /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
+        Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
         modelled here based on evidence as a linear function. */
       } else {
         *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
@@ -390,11 +386,10 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
         *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
       }
     }
-    
-    //fprintf(stderr, "ncbnew %f\n", *ncbnew);
-    
+
+      
     /* calculate P:C ratios */
-    if (npitfac < nitfac) {
+    if (pitfac < npitfac) {
       /* p:c ratio of new branch wood*/
       *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
       
@@ -420,18 +415,18 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
       }
     } else {
       /* p:c ratio of new branch wood*/
-      *pcbnew = p->pcbnew + nitfac * (p->pcbnew - p->pcbnewz);
+      *pcbnew = p->pcbnew + npitfac * (p->pcbnew - p->pcbnewz);
       
       /* p:c ratio of coarse root */
-      *pccnew = p->pccnew + nitfac * (p->pccnew - p->pccnewz);
+      *pccnew = p->pccnew + npitfac * (p->pccnew - p->pccnewz);
       
       /* fixed P:C in the stemwood */
       if (c->fixed_stem_pc) {
         /* p:c ratio of stemwood - immobile pool and new ring */
-        *pcwimm = p->pcwimm + nitfac * (p->pcwimm - p->pcwimmz);
+        *pcwimm = p->pcwimm + npitfac * (p->pcwimm - p->pcwimmz);
         
         /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = p->pcwnew + nitfac * (p->pcwnew - p->pcwnewz);
+        *pcwnew = p->pcwnew + npitfac * (p->pcwnew - p->pcwnewz);
         
         /* vary stem P:C based on reln with foliage, see Jeffreys. Jeffreys 1999
         showed that P:C ratio of new wood increases with foliar P:C ratio,
@@ -443,7 +438,6 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s, double npitfac,
         *pcwnew = MAX(0.0, 0.162 * s->shootpc - 0.00143);
       }
     }
-    
     
     return;
 }
@@ -539,6 +533,8 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     
     /* Mineralised P lost from the system by leaching */
     f->ploss = p->prateloss * s->inorglabp;
+    
+    fprintf(stderr, "ploss %f\n", f->ploss);
 
     /* total nitrogen/phosphorus to allocate */
     ntot = MAX(0.0, f->nuptake + f->retrans);
@@ -1017,7 +1013,7 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
     Parameters:
     -----------
     npitfac : float
-        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) or leaf P:C as a fraction of "Pcmaxfyoung"
+        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) 
     */
     double days_left;
     if (c->deciduous_model) {
@@ -1590,11 +1586,6 @@ double calculate_nuptake(control *c, params *p, state *s) {
     } else if (c->nuptake_model == 1) {
         /* evaluate nuptake : proportional to dynamic inorganic N pool */
         nuptake = p->rateuptake * s->inorgn;
-      
-      //fprintf(stderr, "nuptake %f\n", nuptake);
-      //fprintf(stderr, "rateuptake %f\n", p->rateuptake);
-      //fprintf(stderr, "inorgn %f\n", s->inorgn);
-      
     } else if (c->nuptake_model == 2) {
         /* N uptake is a saturating function on root biomass following
            Dewar and McMurtrie, 1996. */
@@ -1604,8 +1595,6 @@ double calculate_nuptake(control *c, params *p, state *s) {
         Kr = p->kr;
         nuptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
 
-        //fprintf(stderr, "nuptake %f\n", nuptake);
-        
         /* Make minimum uptake rate supply rate for deciduous_model cases
            otherwise it is possible when growing from scratch we don't have
            enough root mass to obtain N at the annual time step
@@ -1630,23 +1619,19 @@ double calculate_puptake(control *c, params *p, state *s) {
   puptake : float
   P uptake
 
-  
   */
   double puptake, U0, Kr;
   
   if (c->puptake_model == 0) {
     /* Constant P uptake */
     puptake = p->puptakez;
-    //fprintf(stderr, "puptake %f\n", puptake);
+    fprintf(stderr, "puptake %f\n", puptake);
     
   } else if (c->puptake_model == 1) {
     /* evaluate puptake : proportional to lab P pool that is available to plant uptake (a function of mineral N) */
     puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
     
     //fprintf(stderr, "puptake %f\n", puptake);
-    //fprintf(stderr, "prateuptake %f\n", p->prateuptake);
-    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-    //fprintf(stderr, "p_lab_avail %f\n", p->p_lab_avail);
     
   } else if (c->puptake_model == 2) {
     /* P uptake is a saturating function on root biomass following
@@ -1656,6 +1641,8 @@ double calculate_puptake(control *c, params *p, state *s) {
     U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
     Kr = p->krp;
     puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
+    
+    //fprintf(stderr, "puptake %f\n", puptake);
     
     /* Make minimum uptake rate supply rate for deciduous_model cases
     otherwise it is possible when growing from scratch we don't have
