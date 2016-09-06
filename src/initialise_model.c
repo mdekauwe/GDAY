@@ -544,7 +544,7 @@ void initialise_state(state *s) {
     s->cstore = 0.01;
     s->inorgn = 0.0274523714275;
     s->inorgp = 0.0205;
-    s->inorgminp = 0.096;               /* lab p + sorb p */
+    s->inorgavlp = 0.096;               /* lab p + sorb p */
     s->inorglabp = 0.051;               /* Binkley et al 2000 Forest Ecology and Management, Table 1 */
     s->inorgsorbp = 0.045;              /* Binkley et al 2000 Forest Ecology and Management, Table 1 */
     s->inorgssorbp = 0.055;             /* Binkley et al 2000 Forest Ecology and Management, Table 1, unit converted from 55 ug P g dry soil to t/ha */

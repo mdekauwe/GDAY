@@ -84,7 +84,7 @@ The git hash allows you to connect which version of the model code produced whic
 
 - The deciduous phenology scheme does not currently work with the two-leaf version of the model (can be fixed).
 
-- The current set-up of the model resulted in pmineralisation to be negative from time to time during the spin-up process, as plittreelase can be a negatvie value, and pmineralisation is the result of pgross - pimmob + plittrelease. This resulted in potentially negative total P input from organic to (lab+sorb) mineral P pool, and from time to time, influx into sorbed P pool can be negative. This only affect the spin-up process so leave as is for now.
+- The current set-up of the model resulted in pmineralisation to be negative from time to time during the spin-up process, as plittreelase can be a negatvie value, and pmineralisation is the result of pgross - pimmob + plittrelease. This resulted in potentially negative total P input from organic to (lab+sorb) mineral P pool, and from time to time, influx into sorbed P pool can be negative. This only affects the spin-up process and seems to not affect the equilibrated results so leave as is for now.
 
 
 ## Meteorological driving file

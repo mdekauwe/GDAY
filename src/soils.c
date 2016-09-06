@@ -2070,8 +2070,8 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorglabp += f->p_lab_in - f->p_lab_out;
   s->inorgsorbp += f->p_sorb_in - f->p_sorb_out;
   
-  /* Daily increment of soil inorganic mineral P pool (lab + sorb) */
-  s->inorgminp = s->inorglabp + s->inorgsorbp;
+  /* Daily increment of soil inorganic available P pool (lab + sorb) */
+  s->inorgavlp = s->inorglabp + s->inorgsorbp;
  
   /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
   s->inorgssorbp += f->p_min_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_min;

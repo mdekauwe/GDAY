@@ -710,7 +710,7 @@ void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
   s->slowsoilp = 0.0;
   s->passivesoilp = 0.0;
   s->inorgp = 0.0;
-  s->inorgminp = 0.0;
+  s->inorgavlp = 0.0;
   s->inorglabp = 0.0;
   s->inorgsorbp = 0.0;
   s->inorgssorbp = 0.0;

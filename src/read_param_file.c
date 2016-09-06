@@ -503,8 +503,8 @@ int handler(char *section, char *name, char *value, control *c,
         s->inorgn = atof(value);
     } else if (MATCH("state", "inorgp")) {
       s->inorgp = atof(value);
-    } else if (MATCH("state", "inorgminp")) {
-      s->inorgminp = atof(value);
+    } else if (MATCH("state", "inorgavlp")) {
+      s->inorgavlp = atof(value);
     } else if (MATCH("state", "inorglabp")) {
       s->inorglabp = atof(value);
     } else if (MATCH("state", "inorgsorbp")) {

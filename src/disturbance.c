@@ -102,7 +102,7 @@ void fire(control *c, fluxes *f, params *p, state *s) {
     s->inorgn += totaln / 2.0;
     
     totalp = s->branchp + s->shootp + s->stemp + s->structsurfp;
-    s->inorgminp += totalp / 2.0;
+    s->inorglabp += totalp / 2.0;
 
     /* re-establish everything with C/N ~ 25 and C/P ~ 2500 */
     if (c->alloc_model == GRASSES) {
