@@ -164,7 +164,15 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
         CP_leaf = 1.0 / s->shootpc;
         arg2 = MAX(0.0, (CP_leaf - CP_ref) / CP_ref);
         
-        frac_to_rexc = MIN(0.5, MIN(p->a0rhizo + p->a1rhizo * arg1, p->a0rhizo + p->a1rhizo * arg2));
+        //fprintf(stderr, "arg1 %f\n", arg1);
+        //fprintf(stderr, "arg2 %f\n", arg2);
+        
+        if(c->pcycle == TRUE) {
+          frac_to_rexc = MIN(0.5, MIN(p->a0rhizo + p->a1rhizo * arg1, p->a0rhizo + p->a1rhizo * arg2));
+        } else {
+          frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg1);
+        }
+
     }
 
     /* Rhizodeposition */

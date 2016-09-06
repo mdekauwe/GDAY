@@ -5,6 +5,7 @@
 
 void calc_opt_root_depth(double, double, double, double, double, double, double,
                          double *, double *, double *, double *);
+
 double estimate_max_root_depth(double, double, double, double);
 double rtot_wrapper(double, double, double, double);
 double rtot(double, double, double);

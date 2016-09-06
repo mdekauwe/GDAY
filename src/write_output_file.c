@@ -69,7 +69,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "shoot,lai,branch,stem,root,croot,");
     fprintf(*fp, "shootn,branchn,stemn,rootn,crootn,");
     fprintf(*fp, "shootp,branchp,stemp,rootp,crootp,");
-    fprintf(*fp, "cstore,nstore, pstore,");
+    fprintf(*fp, "cstore,nstore,pstore,");
 
     /* belowground */
     fprintf(*fp, "soilc,soiln,soilp,inorgn,");
@@ -77,7 +77,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "litterc,littercag,littercbg,litternag,litternbg,");
     fprintf(*fp, "litterpag,litterpbg,");
     fprintf(*fp, "activesoil,slowsoil,passivesoil,");
-    fprintf(*fp, "activesoiln,slowsoiln,passivesoiln,activesoilp, slowsoilp,passivesoilp,");
+    fprintf(*fp, "activesoiln,slowsoiln,passivesoiln,activesoilp,slowsoilp,passivesoilp,");
 
     /*
     ** FLUXES
