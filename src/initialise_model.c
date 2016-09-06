@@ -267,10 +267,10 @@ void initialise_params(params *p) {
     p->slowncmin = 0.025;
     p->slowpcmax = 0.011111;
     p->slowpcmin = 0.005;
-    p->smax = 700;                 /* used intermediately weather soils value of 700 [g P m-2] in Yang et al. 2016 */
+    p->smax = 700.0;                 /* used intermediately weather soils value of 700 [g P m-2] in Yang et al. 2016 */
     p->soilph = 6.7;               /* pft-specific parameter, century value */
-    p->sorpmx = 5;                 /* pft-specific parameter, check CENTURY for values */
-    p->sorpaf = 1;
+    p->sorpmx = 5.0;                 /* pft-specific parameter, check CENTURY for values */
+    p->sorpaf = 1.0;
     p->store_transfer_len = -999.9;
     p->structcn = 150.0;
     p->structrat = 0.0;
