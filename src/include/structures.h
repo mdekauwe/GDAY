@@ -380,7 +380,7 @@ typedef struct {
     char   rootsoil_type[STRING_LENGTH];
     char   soil_order[STRING_LENGTH];       /* soil order */
     double rretrans;                        /* root n retranslocation fraction */
-    double sand_frac;                       /* fraction of sand in soil (top + root averaged) */ 
+    //double sand_frac;                       /* fraction of sand in soil (top + root averaged) */ 
     double sapturnover;                     /* Sapwood turnover rate: conversion of sapwood to heartwood (1/yr) */
     double sla;                             /* specific leaf area (m2 one-sided/kg DW) */
     double slamax;                          /* (if equal slazero=no effect) specific leaf area new fol at max leaf N/C (m2 one-sided/kg DW) */

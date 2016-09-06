@@ -34,8 +34,8 @@ void initialise_control(control *c) {
     c->modeljm = 1;                 /* modeljm=0, Jmax and Vcmax parameters are read in, modeljm=1, parameters are calculated from leaf N & P content, modeljm=2, Vcmax is calculated from leaf N & P content but Jmax is related to Vcmax */
     c->ncycle = TRUE;               /* Nitrogen cycle on or off? */
     c->pcycle = TRUE;               /* Phosphorus cycle on or off? */
-    c->nuptake_model = 2;           /* 0=constant uptake, 1=func of N inorgn, 2=depends on rate of soil N availability */
-    c->puptake_model = 2;           /* 0=constant uptake, 1=func of P inorgp, 2=depends on rate of soil P availability */
+    c->nuptake_model = 1;           /* 0=constant uptake, 1=func of N inorgn, 2=depends on rate of soil N availability */
+    c->puptake_model = 1;           /* 0=constant uptake, 1=func of P inorgp, 2=depends on rate of soil P availability */
     c->output_ascii = TRUE;         /* If this is false you get a binary file as an output. */
     c->passiveconst = FALSE;        /* hold passive pool at passivesoil */
     c->print_options = DAILY;       /* DAILY=every timestep, END=end of run */
@@ -258,7 +258,7 @@ void initialise_params(params *p) {
     strcpy(p->rootsoil_type, "clay");
     strcpy(p->soil_order, "aridsol");
     p->rretrans = 0.0;
-    p->sand_frac = 0.2;
+    //p->sand_frac = 0.2;          /* commented out because finesoil is provided externally */
     p->sapturnover = 0.1;
     p->sla = 4.4;
     p->slamax = 4.4;

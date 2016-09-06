@@ -1916,7 +1916,7 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
       phtextint = xslope * p->soilph + yint;
     }
     
-    f->p_ssorb_to_min = MAX(0.0, (phtextint + p->phtextslope * p->sand_frac) * 
+    f->p_ssorb_to_min = MAX(0.0, (phtextint + p->phtextslope * (1.0 - p->finesoil)) * 
                          s->inorgssorbp); 
     
   } else {

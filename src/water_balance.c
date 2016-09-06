@@ -1017,13 +1017,7 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
         fsoil_root = get_soil_fracs(p->rootsoil_type);
         sand_root = fsoil_root[1];
         
-        p->sand_frac = (sand_top + sand_root ) / 2;
-        
-        //fprintf(stderr, "topsoil %s\n", p->topsoil_type);
-        //fprintf(stderr, "rootsoil %s\n", p->rootsoil_type);
-        
-        //fprintf(stderr, "sand_top %f\n", sand_top);
-        //fprintf(stderr, "sand_root %f\n", sand_root);
+        //p->sand_frac = (sand_top + sand_root ) / 2;
 
         /* top soil */
         calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,

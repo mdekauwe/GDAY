@@ -976,8 +976,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->rretrans = atof(value);
     //} else if (MATCH("params", "rretransp")) {
     //    p->rretransp = atof(value);
-    } else if (MATCH("params", "sand_frac")) {
-      p->sand_frac = atof(value);
+    //} else if (MATCH("params", "sand_frac")) {
+    //  p->sand_frac = atof(value);
     } else if (MATCH("params", "sapturnover")) {
         p->sapturnover = atof(value);
     } else if (MATCH("params", "sla")) {
