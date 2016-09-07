@@ -708,8 +708,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->fdecaydry = atof(value);
     } else if (MATCH("params", "fhw")) {
         p->fhw = atof(value);
-    } else if (MATCH("params", "fhwp")) {
-      p->fhwp = atof(value);
     } else if (MATCH("params", "finesoil")) {
         p->finesoil = atof(value);
     } else if (MATCH("params", "fix_lai")) {

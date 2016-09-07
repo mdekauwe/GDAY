@@ -391,6 +391,10 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
       
     /* calculate P:C ratios */
     if (pitfac < npitfac) {
+      
+      fprintf(stderr, "flag in pitfac < npitfac \n");
+      
+      
       /* p:c ratio of new branch wood*/
       *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
       
@@ -405,14 +409,14 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
         /* New stem ring P:C at critical leaf P:C (mobile) */
         *pcwnew = p->pcwnew + pitfac * (p->pcwnew - p->pcwnewz);
         
-        /* vary stem P:C based on reln with foliage, see Jeffreys. Jeffreys 1999
-        showed that P:C ratio of new wood increases with foliar P:C ratio,
-        modelled here based on evidence as a linear function. */
+        /* vary stem P:C based on reln with foliage, 
+         equation based on data from Attiwill 1978 - 1980 paper series. */
       } else {
-        *pcwimm = MAX(0.0, (0.0282 * s->shootpc + 0.000234) * p->fhwp);
+        *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
         
-        /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = MAX(0.0, 0.162 * s->shootpc - 0.00143);
+        /* New stem ring P:C at critical leaf P:C (mobile),
+        equation based on data from Attiwill 1978 - 1980 paper series */
+        *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);  
       }
     } else {
       /* p:c ratio of new branch wood*/
@@ -429,14 +433,14 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
         /* New stem ring P:C at critical leaf P:C (mobile) */
         *pcwnew = p->pcwnew + npitfac * (p->pcwnew - p->pcwnewz);
         
-        /* vary stem P:C based on reln with foliage, see Jeffreys. Jeffreys 1999
-        showed that P:C ratio of new wood increases with foliar P:C ratio,
-        modelled here based on evidence as a linear function. */
+        /* vary stem P:C based on reln with foliage, 
+        equation based on data from Attiwill 1978 - 1980 paper series. */
       } else {
-        *pcwimm = MAX(0.0, (0.0282 * s->shootpc + 0.000234) * p->fhwp);
+        *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
         
-        /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = MAX(0.0, 0.162 * s->shootpc - 0.00143);
+        /* New stem ring P:C at critical leaf P:C (mobile),
+        equation based on data from Attiwill 1978 - 1980 paper series */
+        *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);  
       }
     }
     
@@ -575,6 +579,8 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->ppbranch = f->npp * f->albranch * pcbnew;
         f->ppcroot = f->npp * f->alcroot * pccnew;
         
+        fprintf(stderr, "pcwnew %f\n", pcwnew);
+        fprintf(stderr, "pcwimm %f\n", pcwimm);
         
         /* If we have allocated more N than we have available
             - cut back C prodn */
@@ -1123,8 +1129,12 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     s->rootp += f->pproot - rdecay * s->rootp;
     s->crootp += f->ppcroot - p->crdecay * s->crootp;
     s->stempimm += f->ppstemimm - p->wdecay * s->stempimm;
+    
     s->stempmob += (f->ppstemmob - p->wdecay * s->stempmob - p->retransmob *
                     s->stempmob);
+    fprintf(stderr, "ppstemmob %f\n", f->ppstemmob*10000000000);
+
+    fprintf(stderr, "stempmob after deletion %f\n", s->stempmob*10000000000);
     s->stemp = s->stempimm + s->stempmob;
 
 
@@ -1286,7 +1296,7 @@ void precision_control(fluxes *f, state *s) {
         s->stempimm = 0.000003;
         s->stempmob = 0.0;
     }
-
+    
     /* need separate one as this will become very small if there is no
        mobile stem N/P */
     if (s->stemnmob < tolerance) {
@@ -1299,16 +1309,31 @@ void precision_control(fluxes *f, state *s) {
         s->stemnimm = 0.00004;
     }
     
+    fprintf(stderr, "stempmob before tolerance %f\n", s->stempmob*10000000000);
+
     if (s->stempmob < tolerance) {
       f->deadstemp += s->stempmob;
       s->stempmob = 0.0;
+      
+      fprintf(stderr, "deadstemp in stempmob %f\n", f->deadstemp*10000000000);
+      
     }
+    
+    //fprintf(stderr, "stempmob %f\n", s->stempmob*10000000000);
+    //fprintf(stderr, "tolerance %f\n", tolerance*10000000000);
     
     if (s->stempimm < tolerance) {
       f->deadstemp += s->stempimm;
       s->stempimm = 0.000003;
+      
     }
-
+    
+    //fprintf(stderr, "stempmob %f\n", s->stempmob*10000000000);
+    //fprintf(stderr, "tolerance %f\n", tolerance*10000000000);
+    
+    //fprintf(stderr, "deadbranchp in precision control %f\n", f->deadbranchp*100000);
+    //fprintf(stderr, "deadstemp in precision control %f\n", f->deadstemp*100000);
+    
     return;
 }
 

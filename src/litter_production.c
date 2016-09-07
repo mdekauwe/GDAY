@@ -63,11 +63,6 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     f->deadrootp = f->deadroots * pcrlit;
     f->deadcrootp = p->crdecay * s->crootp * (1.0 - p->cretrans);
     f->deadbranchp = p->bdecay * s->branchp * (1.0 - p->bretrans);
-    
-    //fprintf(stderr, "deadbranchp %f\n", f->deadbranchp);
-    //fprintf(stderr, "branchp %f\n", s->branchp);
-    //fprintf(stderr, "bdecay %f\n", p->bdecay);
-    //fprintf(stderr, "bretrans %f\n", p->bretrans);
 
     /* N in stemwood litter - only mobile n is retranslocated */
     f->deadstemn = p->wdecay * (s->stemnimm + s->stemnmob * \
@@ -77,11 +72,8 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     f->deadstemp = p->wdecay * (s->stempimm + s->stempmob * \
     (1.0 - p->wretrans));
     
-    //fprintf(stderr, "deadstemp %f\n", f->deadstemp);
-    //fprintf(stderr, "stempimm %f\n", s->stempimm);
-    //fprintf(stderr, "stempmob %f\n", s->stempmob);
-    //fprintf(stderr, "wdecay %f\n", p->wdecay);
-    //fprintf(stderr, "wretrans %f\n", p->wretrans);
+    //fprintf(stderr, "deadbranchp %f\n", f->deadbranchp*100000);
+    //fprintf(stderr, "deadstemp %f\n", f->deadstemp*100000);
     
     /* Animal grazing? */
 

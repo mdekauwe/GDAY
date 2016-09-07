@@ -125,7 +125,6 @@ void initialise_params(params *p) {
     p->fdecay = 0.59988;
     p->fdecaydry = 0.59988;
     p->fhw = 0.8;      
-    p->fhwp = 0.8;     /* seems ok */
     p->fix_lai = -999.9;
     p->finesoil = 0.51;
     p->fmleaf = 0.0;

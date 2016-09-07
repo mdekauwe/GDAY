@@ -244,7 +244,6 @@ typedef struct {
     double fdecay;                          /* foliage turnover rate (1/yr) */
     double fdecaydry;                       /* Foliage turnover rate - dry soil (1/yr) */
     double fhw;                             /* n:c ratio of stemwood - immobile pool and new ring */
-    double fhwp;                            /* p:c ratio of stemwood - immobile pool and new ring */
     double finesoil;                        /* clay+silt fraction */
     double fmleaf;
     double fmroot;
