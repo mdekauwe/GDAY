@@ -146,6 +146,9 @@ BNF (kg N ha-1 yr-1) is then calculated as a function of ET:
 BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
 
+## Phosphorus component
+Organic phosphorus (P) pools and fluxes follow the same modelling structure of the nitrogen. A total of five inorganic phosphorus pools is implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via constant input rate from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in plant limits photosythesis through its explicit effect on Jmax and a potential effect on Triose-phosphates. 
+
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
 

@@ -391,10 +391,6 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
       
     /* calculate P:C ratios */
     if (pitfac < npitfac) {
-      
-      fprintf(stderr, "flag in pitfac < npitfac \n");
-      
-      
       /* p:c ratio of new branch wood*/
       *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
       
@@ -578,10 +574,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
         f->ppbranch = f->npp * f->albranch * pcbnew;
         f->ppcroot = f->npp * f->alcroot * pccnew;
-        
-        fprintf(stderr, "pcwnew %f\n", pcwnew);
-        fprintf(stderr, "pcwimm %f\n", pcwimm);
-        
+
         /* If we have allocated more N than we have available
             - cut back C prodn */
         arg1 = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
@@ -1132,9 +1125,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     
     s->stempmob += (f->ppstemmob - p->wdecay * s->stempmob - p->retransmob *
                     s->stempmob);
-    fprintf(stderr, "ppstemmob %f\n", f->ppstemmob*10000000000);
 
-    fprintf(stderr, "stempmob after deletion %f\n", s->stempmob*10000000000);
     s->stemp = s->stempimm + s->stempmob;
 
 
@@ -1309,30 +1300,16 @@ void precision_control(fluxes *f, state *s) {
         s->stemnimm = 0.00004;
     }
     
-    fprintf(stderr, "stempmob before tolerance %f\n", s->stempmob*10000000000);
-
     if (s->stempmob < tolerance) {
       f->deadstemp += s->stempmob;
       s->stempmob = 0.0;
-      
-      fprintf(stderr, "deadstemp in stempmob %f\n", f->deadstemp*10000000000);
-      
     }
-    
-    //fprintf(stderr, "stempmob %f\n", s->stempmob*10000000000);
-    //fprintf(stderr, "tolerance %f\n", tolerance*10000000000);
-    
+
     if (s->stempimm < tolerance) {
       f->deadstemp += s->stempimm;
       s->stempimm = 0.000003;
       
     }
-    
-    //fprintf(stderr, "stempmob %f\n", s->stempmob*10000000000);
-    //fprintf(stderr, "tolerance %f\n", tolerance*10000000000);
-    
-    //fprintf(stderr, "deadbranchp in precision control %f\n", f->deadbranchp*100000);
-    //fprintf(stderr, "deadstemp in precision control %f\n", f->deadstemp*100000);
     
     return;
 }

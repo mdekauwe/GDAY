@@ -72,9 +72,6 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     f->deadstemp = p->wdecay * (s->stempimm + s->stempmob * \
     (1.0 - p->wretrans));
     
-    //fprintf(stderr, "deadbranchp %f\n", f->deadbranchp*100000);
-    //fprintf(stderr, "deadstemp %f\n", f->deadstemp*100000);
-    
     /* Animal grazing? */
 
     /* Daily... */
