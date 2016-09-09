@@ -4,6 +4,7 @@
 *.obj
 *.elf
 **/.DS_Store
+*/.DS_Store
 
 # Libraries
 *.lib
