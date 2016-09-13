@@ -363,7 +363,7 @@ typedef struct {
     double *cond3;
     double *porosity;
     double *field_capacity;
-    double wetting;
+    int     wetting;         /* number of wetting layers */
 
 } params;
 

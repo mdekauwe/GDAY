@@ -259,7 +259,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     if (c->water_balance == HYDRAULICS) {
-        initialise_roots(p, s);
+        initialise_roots(f, p, s);
     }
 
     /*

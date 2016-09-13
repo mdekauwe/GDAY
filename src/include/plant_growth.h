@@ -48,7 +48,7 @@ void   calculate_ncwood_ratios(control *c, params *, state *, double, double *,
 void   calc_root_exudation(control *c, fluxes *, params *p, state *);
 
 /* hydraulics */
-void   initialise_roots(params *, state *);
+void   initialise_roots(fluxes *, params *, state *);
 void   update_roots(control *, params *, state *);
 double calc_root_dist(double, double, double, double, double, double);
 

@@ -68,6 +68,22 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
             s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
         }
 
+        /*
+        ** The loop needs to be outside the func as we need to be able to
+        ** calculate the soil conductance per layer and call this via
+        ** the integration func when we update the soil water balance
+        */
+        for (i = 0; i < p->n_layers; i++) {
+            f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
+                                                        p->cond1[i], p->cond2[i],
+                                                        p->cond3[i]);
+        }
+
+        calc_soil_root_resistance(f, p, s);
+        calc_soil_water_potential(f, p, s);
+
+        /* Calculate the weighted soil-water-potential */
+        calc_water_uptake_per_layer(f, p, s);
     }
 
     free(fsoil_top);
@@ -467,8 +483,8 @@ void calc_saxton_stuff(params *p, double *fsoil) {
         p->field_capacity[i] = zbrent(&saxton_field_capacity, x1, x2, tol,
                                       p->potA[i], p->potB[i],
                                       dummy, dummy, dummy);
-
     }
+
     return;
 }
 
@@ -517,8 +533,8 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     }
 
     return;
-
 }
+
 void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     /* head of pressure (MPa/m) */
@@ -532,6 +548,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
     double root_xsec_area = M_PI * p->root_radius * p->root_radius;
 
     for (i = 0; i < p->n_layers; i++) {
+
         /* converts from ms-1 to m2 s-1 MPa-1 */
         Lsoil = f->soil_conduct[i] / head;
 
@@ -539,7 +556,6 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
         } else {
-
             rs = sqrt(1.0 / (s->root_length[i] * M_PI));
             rs2 = log(rs / p->root_radius) / \
                      (2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil);
@@ -583,6 +599,7 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
             f->fraction_uptake[i] = est_evap[i] / total_est_evap;
         }
         s->weighted_swp /= total_est_evap;
+
     } else {
         /* No water was evaporated */
         f->fraction_uptake[i] = 1.0 / (double)s->rooted_layers;
@@ -592,7 +609,6 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
         fprintf(stderr, "Problem with the uptake fraction\n");
         exit(EXIT_FAILURE);
     }
-    //printf("%.10lf\n", s->weighted_swp);
 
     return;
 }

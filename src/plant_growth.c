@@ -1178,7 +1178,7 @@ double calculate_nuptake(control *c, params *p, state *s) {
 }
 
 
-void initialise_roots(params *p, state *s) {
+void initialise_roots(fluxes *f, params *p, state *s) {
     /* Set up all the rooting arrays for use with the hydraulics assumptions */
     int    i;
     double thick;
