@@ -1255,7 +1255,6 @@ void update_roots(control *c, params *p, state *s) {
         }
     }
 
-
     /* how for into the soil do the reach extend? */
     root_reach = s->layer_depth[s->rooted_layers];
 

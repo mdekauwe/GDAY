@@ -148,8 +148,11 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         }
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
-        calc_water_uptake_per_layer(f, p, s);
 
+        /* If we have leaves we are transpiring */
+        if (s->lai > 0.0) {
+            calc_water_uptake_per_layer(f, p, s);
+        }
 
         /* calculate potential canopy evap rate, this may be reduced later
            depending on canopy water storage */
@@ -615,10 +618,11 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
 
 void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
                          double surface_water) {
-    /*
-        surface wetting and drying determines thickness of dry layer
-        and thus soil evaporation
-    */
+
+    //
+    // surface wetting and drying determines thickness of dry layer
+    // and thus soil evaporation
+    //
 
     double seconds_per_step = 1800.0;
     double dmin = 0.001;
