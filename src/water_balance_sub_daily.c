@@ -637,10 +637,9 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     ar1 = 0;
     min_val = 9999.9;
     for (i = 0; i < p->n_layers; i++) {
-        if (s->wetting_bot[i] > 0.0) {
-            if (s->wetting_bot[i] < min_val) {
-                ar1 = i;
-                min_val = s->wetting_bot[i];
+        if (s->wetting_bot[i] > 0.0 && s->wetting_bot[i] < min_val) {
+            ar1 = i;
+            min_val = s->wetting_bot[i];
             }
         }
     }
