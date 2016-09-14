@@ -640,14 +640,17 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
         if (s->wetting_bot[i] > 0.0 && s->wetting_bot[i] < min_val) {
             ar1 = i;
             min_val = s->wetting_bot[i];
-            }
         }
     }
+
+    // Need to make this into a negative flux of energy from the soil's
+    // perspective to match remaining logic here, i.e. negative leaving the
+    // surface
+    soil_evap *= -1.0;
 
     /* Calulate the net change in wetting in the top zone */
     netc = (soil_evap * MM_TO_M) / airspace + \
            (surface_water * MM_TO_M) / airspace;
-
 
     /* wetting */
     if (netc > 0.0) {
@@ -686,7 +689,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
         }
     /* drying */
     } else {
-        /* Drying increases the wettingtop depth */
+        /* Drying increases the depth to top of wet soil layers */
         s->wetting_top[ar1] -= netc;
 
         /* Wetting layer is dried out. */
@@ -695,11 +698,10 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
             diff = s->wetting_top[ar1] - s->wetting_bot[ar1];
             s->wetting_top[ar1] = 0.0;
             s->wetting_bot[ar1] = 0.0;
-            ar2 = ar1;
-            ar2 -= 1;
+            ar2 = ar1 - 1;
 
             /* Move to deeper wetting layer */
-            if (ar2 > 0.0) {
+            if (ar2 > 0) {
                 /* dry out deeper layer */
                 s->wetting_top[ar2] += diff;
                 s->dry_thick = MAX(dmin, s->wetting_top[ar2]);
