@@ -1,14 +1,14 @@
 #ifndef RKQS_H
 #define RKQS_H
 
-#include "gday.h"
+//#include "gday.h"
 
 
 void rkqs(double [], double [], int, double *, double, double,
-             double *, double *, double *, double, double, double, double,
-             double,
-             void (*)(double, double [], double [],
-                      double, double, double, double, double));
+          double [], double *, double *,
+          double, double, double, double, double,
+          void (*)(double, double [], double [], double, double, double,
+                   double, double));
 
 
 

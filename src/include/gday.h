@@ -75,6 +75,8 @@
 #include "phenology.h"
 #include "soils.h"
 #include "version.h"
+#include "rkck.h"
+#include "rkqs.h"
 
 
 void   clparser(int, char **, control *);

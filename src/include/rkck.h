@@ -1,12 +1,11 @@
 #ifndef RKCK_H
 #define RKCK_H
 
-#include "gday.h"
+//#include "gday.h"
 
 
-
-void rkck(double [], double [], int, double, double, double [], double [],
-          double, double, double, double, double,
+void rkck(double [], double [], int, double, double, double [],
+          double [], double, double, double, double, double,
 	      void (*)(double, double [], double [], double, double, double,
                    double, double));
 

@@ -17,7 +17,7 @@
 
 /* fifth-order Runge-Kutta stepping routine */
 #include <math.h>
-#include "gday.h"
+#include "rkqs.h"
 #define NRANSI
 #include "nrutil.h"
 #define SAFETY 0.9

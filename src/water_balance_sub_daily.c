@@ -85,9 +85,10 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
         /* Calculate the weighted soil-water-potential */
         calc_water_uptake_per_layer(f, p, s);
     }
-
-    free(fsoil_top);
-    free(fsoil_root);
+    if (c->calc_sw_params) {
+        free(fsoil_top);
+        free(fsoil_root);
+    }
 
     return;
 }
@@ -222,6 +223,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         /* Update the soil water storage */
         root_zone_total = 0.0;
+
         for (i = 0; i < p->n_layers; i++) {
 
             /* water content of soil layer (m) */
@@ -235,6 +237,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                      f->water_gain[i] + \
                                      f->ppt_gain[i] - \
                                      f->water_loss[i]);
+
 
             /* Determine new total water content of layer (m) */
             s->water_frac[i] = water_content / s->thickness[i];
@@ -784,11 +787,12 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     double hmin = 0.0;          /* minimum value of the integrator step */
     double x1 = 1.0;             /* initial time */
     double x2 = 2.0;             /* final time */
-    /* value affecting the max time interval at which variables should b calc */
-    double soilpor = p->porosity[soil_layer];
-    double unsat, drain_layer, liquid, new_water_frac, change;
 
+    /* value affecting the max time interval at which variables should b calc */
+    double  soilpor = p->porosity[soil_layer];
+    double  unsat, drain_layer, liquid, new_water_frac, change;
     double *ystart = NULL;
+
     ystart = dvector(1,N);
     for (i = 1; i <= N; i++) {
         ystart[i] = 0.0;
@@ -833,6 +837,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         fprintf(stderr, "waterloss probem in soil_balance\n");
         exit(EXIT_FAILURE);
     }
+
     free_dvector(ystart, 1, N);
 
     return;

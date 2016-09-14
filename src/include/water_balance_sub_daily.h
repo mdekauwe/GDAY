@@ -8,7 +8,7 @@
 #include "zbrent.h"
 #include "nrutil.h"
 #include "odeint.h"
-#include "rkck.h"
+//#include "rkck.h"
 #include "rkqs.h"
 
 

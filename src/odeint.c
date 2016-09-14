@@ -21,13 +21,12 @@
 
 
 #include <math.h>
-#include "gday.h"
 #define NRANSI
 #include "nrutil.h"
 #define MAXSTP 10000
 #define TINY 1.0e-30
 
-#include "rkqs.h"
+#include "odeint.h"
 
 /*
 I'm declaring these within the function...so this means we can't interface
@@ -54,11 +53,11 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
                                   double, double, double))) {
 
 
-	int     kmax, kount;
-	int     nstp, i;
-	double  xsav,x,hnext,hdid,h;
-	double *yscal,*y,*dydx;
-	double *xp, **yp, dxsav;
+	int      kmax, kount;
+	int      nstp, i;
+	double   dxsav, xsav, x, hnext, hdid, h;
+	double  *yscal=NULL, *y=NULL, *dydx=NULL, *xp=NULL;
+	double **yp=NULL;
 
 	/* initialising this within the func, which means this isn't generic*/
 	kmax = 100;
@@ -101,12 +100,16 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 			free_dvector(dydx,1,nvar);
 			free_dvector(y,1,nvar);
 			free_dvector(yscal,1,nvar);
+            free_dvector(xp,1,kmax);
+            free_dmatrix(yp,1,nvar,1,kmax);
 			return;
 		}
 		if (fabs(hnext) <= hmin) nrerror("Step size too small in odeint");
 		h=hnext;
 	}
 	nrerror("Too many steps in routine odeint");
+
+
 }
 #undef MAXSTP
 #undef TINY
