@@ -216,6 +216,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         ** is considered runoff
         */
         runoff = calc_infiltration(f, p, s, surface_water);
+
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
 
@@ -767,7 +768,7 @@ double calc_infiltration(fluxes *f, params *p, state *s,
     } else {
        runoff = 0.0;
     }
-    
+
     return (runoff);
 }
 
