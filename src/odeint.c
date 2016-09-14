@@ -72,6 +72,7 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 	h=SIGN(h1,x2-x1);
 	*nok = (*nbad) = kount = 0;
 
+    //printf("* %lf\n", ystart[1]);
 	for (i=1;i<=nvar;i++) y[i]=ystart[i];
 	if (kmax > 0) xsav=x-dxsav*2.0;
 	for (nstp=1;nstp<=MAXSTP;nstp++) {
@@ -102,6 +103,8 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 			free_dvector(yscal,1,nvar);
             free_dvector(xp,1,kmax);
             free_dmatrix(yp,1,nvar,1,kmax);
+
+            //printf("** %lf\n", ystart[1]);
 			return;
 		}
 		if (fabs(hnext) <= hmin) nrerror("Step size too small in odeint");

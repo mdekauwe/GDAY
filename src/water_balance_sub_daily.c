@@ -640,7 +640,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     */
     ar1 = 0;
     min_val = 9999.9;
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->wetting; i++) {
         if (s->wetting_bot[i] > 0.0 && s->wetting_bot[i] < min_val) {
             ar1 = i;
             min_val = s->wetting_bot[i];
@@ -817,8 +817,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         ystart[1] = s->water_frac[soil_layer];
 
-        odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
-               unsat, drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
+        odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, unsat,
+               drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
                p->cond3[soil_layer], soil_water_store, rkqs);
 
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
@@ -857,7 +857,7 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     double drainage;
 
     drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
-
+    //printf("*** %lf %lf %lf\n", cond1, cond2, cond3);
     /* Convert units, soil conductivity is in m s-1 */
     drainage *= SEC_2_HLFHR;
 
