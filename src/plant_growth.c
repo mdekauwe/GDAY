@@ -1241,8 +1241,11 @@ void update_roots(control *c, params *p, state *s) {
     double x2 = 10.0;       /* upper bound for brent search */
     double tol = 0.0001;    /* tolerance for brent search */
 
-    root_biomass = MAX(min_biomass, s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
-    /*root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS); */
+    // Fix this to some made up value, concerned it isn't working as we have no
+    // roots to get water
+    root_biomass = MAX(min_biomass, 250.0 * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    //root_biomass = MAX(min_biomass, s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
