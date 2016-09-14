@@ -740,27 +740,34 @@ double calc_infiltration(fluxes *f, params *p, state *s,
 
     runoff = 0.0;
     for (i = 0; i < p->n_layers; i++) {
+        // determine the available pore space in current soil layer
         wdiff = MAX(0.0, (p->porosity[i] - s->water_frac[i]) * \
                           s->thickness[i] - f->water_gain[i] + \
                           f->water_loss[i]);
+
+        // is the input of water greater than available space?
         if (add > wdiff) {
+            // if so fill and subtract from input and move on to the next layer
             f->ppt_gain[i] = wdiff;
             add -= wdiff;
         } else {
+            // otherwise infiltate all in the current layer
             f->ppt_gain[i] = add;
             add = 0.0;
         }
 
-        if (add < 0.0) {
-            fprintf(stderr, "Error in infiltration calculation\n");
-            exit(EXIT_FAILURE);
-        }
-
-        if (add > 0.0) {
-            runoff += add;
-        }
+        // if we have added all available water we are done
+        if (add <= 0.0)
+            break;
     }
 
+    // if after all of this we have some water left assume it is runoff
+    if (add >  0.0) {
+       runoff = add;
+    } else {
+       runoff = 0.0;
+    }
+    
     return (runoff);
 }
 
@@ -802,19 +809,19 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     if ( (liquid > 0.0) && (s->water_frac[soil_layer] > drain_layer) ) {
 
         /* there is liquid water */
-
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         ystart[1] = s->water_frac[soil_layer];
 
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad,
                unsat, drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
                p->cond3[soil_layer], soil_water_store, rkqs);
+
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         new_water_frac = ystart[1];
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
-                    s->thickness[soil_layer];
+                  s->thickness[soil_layer];
 
         /* update soil layer below with drained liquid */
         f->water_gain[soil_layer+1] += change;
