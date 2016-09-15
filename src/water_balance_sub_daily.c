@@ -85,6 +85,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
         /* Calculate the weighted soil-water-potential */
         calc_water_uptake_per_layer(f, p, s);
     }
+
     if (c->calc_sw_params) {
         free(fsoil_top);
         free(fsoil_root);
@@ -124,16 +125,14 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             model)
         rnet_leaf : double
             total canopy rnet (Dummy argument, only passed for sub-daily model)
-
     */
+
     int    i, rr;
     double soil_evap, et, interception, runoff, conv, transpiration, net_rad;
     double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
     double gs_pm, LE_am, LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am;
     double gpp_am, gpp_pm, omega_pm, throughfall, canopy_evap;
     double water_content, surface_water, root_zone_total;
-
-
 
     if (c->water_balance == HYDRAULICS) {
 
@@ -147,7 +146,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         */
         for (i = 0; i < p->n_layers; i++) {
             f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
-                                                        p->cond1[i], p->cond2[i],
+                                                        p->cond1[i],
+                                                        p->cond2[i],
                                                         p->cond3[i]);
         }
         calc_soil_water_potential(f, p, s);
@@ -183,24 +183,27 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         /* update surface water puddle */
         surface_water += throughfall;
 
-        /* determine water loss in upper layers due to evaporation */
+        // Calculates the thickness of the top dry layer and determines water
+        // lost in upper layers due to evaporation
         calc_wetting_layers(f, p, s, soil_evap, surface_water);
 
-        /*  From which layer is evap water withdrawn? */
+        // Is soil evap taken from first or second layer?
         if (s->dry_thick < s->thickness[0]) {
-            rr = 1;     /* The dry zone does not extend beneath the top layer */
+            // The dry zone does not extend beneath the top layer
+            rr = 1;
         } else {
-            rr = 2;     /* The dry zone does extend beneath the top layer */
+            // The dry zone does extend beneath the top layer
+            rr = 2;
         }
 
-        /* determine water loss in upper layers due to evaporation */
+        // Determine water loss in upper layers due to evaporation
         if (soil_evap > 0.0) {
-          /* Evaporation (m 30min-1) */
+          // Evaporation (m 30min-1)
           f->water_loss[rr] += soil_evap * MM_TO_M;
-        } /* ignoring water gain due to due formation...
+      } // ignoring water gain due to due formation...
 
 
-        /* Determing water loss from each layer due to transpiration */
+        // Determing water loss from each layer due to transpiration
         for (i = 0; i < s->rooted_layers; i++) {
             f->water_loss[i] += (transpiration * MM_TO_M) * \
                                     f->fraction_uptake[i];
@@ -221,29 +224,22 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         */
         runoff = calc_infiltration(f, p, s, surface_water);
 
-        calc_soil_water_potential(f, p, s);
-        calc_soil_root_resistance(f, p, s);
+        // Don't see point of calculating these again
+        //calc_soil_water_potential(f, p, s);
+        //calc_soil_root_resistance(f, p, s);
 
-        /* Update the soil water storage */
+        // Update the soil water storage
         root_zone_total = 0.0;
-
         for (i = 0; i < p->n_layers; i++) {
 
-            /* water content of soil layer (m) */
+            // water content of soil layer (m)
             water_content = s->water_frac[i] * s->thickness[i];
+            water_content = MAX(0.0, water_content +    \
+                                     f->water_gain[i] + \
+                                     f->ppt_gain[i] -   \
+                                     f->water_loss[i]);
 
-            /*
-            ** Net change in water content (m);
-            ** max condition to ensure
-            */
-            water_content += f->water_gain[i] + \
-                             f->ppt_gain[i] - \
-                             f->water_loss[i];
-
-
-            water_content = MAX(0.0, water_content);
-
-            /* Determine new total water content of layer (m) */
+            // Determine volumetric water content water content of layer (m)
             s->water_frac[i] = water_content / s->thickness[i];
 
             // update old GDAY effective two-layer buckets
