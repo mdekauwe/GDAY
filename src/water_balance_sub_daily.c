@@ -233,11 +233,12 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             ** Net change in water content (m);
             ** max condition to ensure
             */
-            water_content = MAX(0.0, water_content + \
-                                     f->water_gain[i] + \
-                                     f->ppt_gain[i] - \
-                                     f->water_loss[i]);
+            water_content += f->water_gain[i] + \
+                             f->ppt_gain[i] - \
+                             f->water_loss[i];
 
+
+            water_content = MAX(0.0, water_content);
 
             /* Determine new total water content of layer (m) */
             s->water_frac[i] = water_content / s->thickness[i];
@@ -486,7 +487,7 @@ void calc_saxton_stuff(params *p, double *fsoil) {
 
         p->porosity[i] = H + J * sand + K * log10(clay);
 
-        /* field capacity is water content at which SWP = -10 kPa */
+        // field capacity is water content at which SWP = -10 kPa
         p->field_capacity[i] = zbrent(&saxton_field_capacity, x1, x2, tol,
                                       p->potA[i], p->potB[i],
                                       dummy, dummy, dummy);
@@ -510,7 +511,9 @@ double saxton_field_capacity(double xval, double potA, double potB,
 
 double calc_soil_conductivity(double water_frac, double cond1, double cond2,
                               double cond3) {
-    /* Soil conductivity (m s-1 ) per layer */
+    //
+    // Soil hydraulic conductivity (m s-1 ) per soil layer based on
+    // Saxton et al. (1986) equations. Used in the soil drainage integrator
     double scond;
 
     /* Avoid floating-underflow error */
@@ -524,9 +527,11 @@ double calc_soil_conductivity(double water_frac, double cond1, double cond2,
 
 void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     //
-    // Calculate the SWP (MPa) without updating the water fraction in each
+    // Calculate the SWP (MPa) in each soil layer based on algorithms from
+    // Saxton et al. (1986). We are not updating the water fraction in each
     // layer
     //
+
     int    i;
     double arg1, arg2;
 
@@ -585,13 +590,18 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
 void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     //
-    // Figure out which layer water is extracted from
+    // Determine which layer water is extracted from. This is achieved by
+    // roughly estimating the maximum rate of water supply from each rooted
+    // soil layer, using SWP and hydraulic resistance of each layer. Actual
+    // water from each layer is determined using the estimated value as a
+    // weighted factor.
     //
+
     int    i;
     double est_evap[p->n_layers];
     double total_est_evap;
 
-    /* Estimate max transpiration from gradient-gravity / soil resistance. */
+    // Estimate max transpiration from gradient-gravity / soil resistance
     total_est_evap = 0.0;
     for (i = 0; i < s->rooted_layers; i++) {
         est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
@@ -606,7 +616,6 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
             f->fraction_uptake[i] = est_evap[i] / total_est_evap;
         }
         s->weighted_swp /= total_est_evap;
-
     } else {
         /* No water was evaporated */
         f->fraction_uptake[i] = 1.0 / (double)s->rooted_layers;
@@ -622,10 +631,9 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
 
 void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
                          double surface_water) {
-
     //
-    // surface wetting and drying determines thickness of dry layer
-    // and thus soil evaporation
+    // Tracks surface wetting and drying in the top soil layer and so the
+    // thickness of the uppermost dry layer and thus soil evaporation
     //
 
     double seconds_per_step = 1800.0;
@@ -634,10 +642,10 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     double min_val, netc, diff;
     int    i, ar1, ar2;
 
-    /*
-    ** soil LE should be withdrawn from the wetting layer with the
-    ** smallest depth..
-    */
+    //
+    // soil LE should be withdrawn from the wetting layer with the
+    // smallest depth..
+    //
     ar1 = 0;
     min_val = 9999.9;
     for (i = 0; i < p->wetting; i++) {
@@ -652,51 +660,51 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     // surface
     soil_evap *= -1.0;
 
-    /* Calulate the net change in wetting in the top zone */
+    // Calulate the net change in wetting in the top zone
     netc = (soil_evap * MM_TO_M) / airspace + \
            (surface_water * MM_TO_M) / airspace;
 
-    /* wetting */
+    // wetting
     if (netc > 0.0) {
         /*
         ** resaturate the layer if top is dry and recharge is greater
         **  than dry_thick
         */
         if ((netc > s->wetting_top[ar1]) && (s->wetting_top[ar1] > 0.0)) {
-            /* extra water to deepen wetting layer */
+            // extra water to deepen wetting layer
             diff = netc - s->wetting_top[ar1];
             s->wetting_top[ar1] = 0.0;
             if (ar1 > 0) {
-                /* Not in primary layer (primary layer can't extend deeper) */
+                // Not in primary layer (primary layer can't extend deeper)
                 s->wetting_bot[ar1] += diff;
             }
             s->dry_thick = dmin;
         } else {
             if (s->wetting_top[ar1] == 0.0) {
-                /* surface is already wet, so extend depth of this wet zone */
+                // surface is already wet, so extend depth of this wet zone
                 if (ar1 > 0) {
-                    /* not in primary lay (primary layer can't extend deeper) */
+                    // not in primary lay (primary layer can't extend deeper)
                     s->wetting_bot[ar1] += netc;
                     if (s->wetting_bot[ar1] >= s->wetting_top[ar1-1]) {
-                        /* Layers are conterminous.. */
+                        // Layers are conterminous..
                         s->wetting_top[ar1-1] = s->wetting_top[ar1];
                         s->wetting_top[ar1] = 0.;     /* remove layer */
                         s->wetting_bot[ar1] = 0.;    /* remove layer */
                     }
                 }
             } else {
-                /* Create a new wetting zone */
+                // Create a new wetting zone
                 s->wetting_top[ar1+1] = 0.0;
                 s->wetting_bot[ar1+1] = netc;
             }
             s->dry_thick = dmin;
         }
-    /* drying */
+    // Drying
     } else {
-        /* Drying increases the depth to top of wet soil layers */
+        // Drying increases the depth to top of wet soil layers
         s->wetting_top[ar1] -= netc;
 
-        /* Wetting layer is dried out. */
+        // Wetting layer is dried out.
         if (s->wetting_top[ar1] > s->wetting_bot[ar1]) {
             /* How much more drying is there? */
             diff = s->wetting_top[ar1] - s->wetting_bot[ar1];
@@ -817,6 +825,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         /* ystart is a vector 1..N, so need to index from 1 not 0 */
         ystart[1] = s->water_frac[soil_layer];
 
+        // Runge-Kunte ODE integrator used to estimate soil gravitational
+        // drainage during each time-step
         odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, unsat,
                drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
                p->cond3[soil_layer], soil_water_store, rkqs);
