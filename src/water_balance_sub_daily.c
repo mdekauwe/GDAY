@@ -136,9 +136,6 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
     if (c->water_balance == HYDRAULICS) {
 
-        /* assume that water infiltrates within a timestep */
-        surface_water = 0.0;
-
         /*
         ** The loop needs to be outside the func as we need to be able to
         ** calculate the soil conductance per layer and call this via
@@ -179,9 +176,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                         SEC_2_HLFHR;
 
         et = transpiration + soil_evap + canopy_evap;
-
-        /* update surface water puddle */
-        surface_water += throughfall;
+        surface_water = throughfall;
 
         // Calculates the thickness of the top dry layer and determines water
         // lost in upper layers due to evaporation
