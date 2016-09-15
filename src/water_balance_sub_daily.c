@@ -101,26 +101,29 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         Calculate the water balance (including all water fluxes).
         - we are using all the hydraulics instead
 
-    Parameters:
-    ----------
-    control : structure
-        control structure
-    fluxes : structure
-        fluxes structure
-    met : structure
-        meteorological drivers structure
-    params : structure
-        parameters structure
-    day : int
-        project day. (Dummy argument, only passed for daily model)
-    daylen : double
-        length of day in hours. (Dummy argument, only passed for daily model)
-    trans_leaf : double
-        leaf transpiration (Dummy argument, only passed for sub-daily model)
-    omega_leaf : double
-        decoupling coefficient (Dummy argument, only passed for sub-daily model)
-    rnet_leaf : double
-        total canopy rnet (Dummy argument, only passed for sub-daily model)
+        Parameters:
+        ----------
+        control : structure
+            control structure
+        fluxes : structure
+            fluxes structure
+        met : structure
+            meteorological drivers structure
+        params : structure
+            parameters structure
+        day : int
+            project day. (Dummy argument, only passed for daily model)
+        daylen : double
+            length of day in hours. (Dummy argument, only passed for daily
+            model)
+        trans_leaf : double
+            leaf transpiration (Dummy argument, only passed for sub-daily
+            model)
+        omega_leaf : double
+            decoupling coefficient (Dummy argument, only passed for sub-daily
+            model)
+        rnet_leaf : double
+            total canopy rnet (Dummy argument, only passed for sub-daily model)
 
     */
     int    i, rr;
@@ -785,7 +788,9 @@ double calc_infiltration(fluxes *f, params *p, state *s,
 
 
 void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
-    /* Integrator for soil gravitational drainage */
+    //
+    // Integrator for soil gravitational drainage
+    //
 
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
