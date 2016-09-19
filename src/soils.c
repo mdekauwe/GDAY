@@ -1861,12 +1861,15 @@ void calculate_p_min_fluxes(fluxes *f, params *p, state *s) {
   f->p_sorb_in = tot_in * (numer / denom2);
   f->p_sorb_out = tot_out * (numer / denom2);
 
-  
   /* calculating fraction of labile P available for plant uptake */
   p->p_lab_avail = MAX(min_frac_p_available_to_plant, 
                        MIN(min_frac_p_available_to_plant + s->inorgn * 
                        (max_frac_p_available_to_plant - min_frac_p_available_to_plant) /
                        mineral_n_with_max_p, max_frac_p_available_to_plant));
+  
+  //fprintf(stderr, "p_lab_in %f\n", f->p_lab_in);
+  //fprintf(stderr, "p_lab_out %f\n", f->p_lab_out);
+  //fprintf(stderr, "puptake %f\n", f->puptake);
   
   return;
   

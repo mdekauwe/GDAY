@@ -32,6 +32,7 @@ typedef struct {
     int   modeljm;
     int   ncycle;
     int   pcycle;
+    int   triose_p;
     int   num_years;
     int   nuptake_model;
     int   puptake_model;
@@ -267,6 +268,8 @@ typedef struct {
     double jmax;                            /* maximum rate of electron transport (umol m-2 s-1) */
     double jmaxna;                          /* slope of the reln btween jmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double jmaxnb;                          /* intercept of jmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
+    double jmaxpa;                          /* slope of the reln btween jmax and leaf P content, units = (umol [gP]-1 s-1) */
+    double jmaxpb;                          /* intercept of jmax vs p, units = (umol [gP]-1 s-1)  */
     double jv_intercept;                    /* Jmax to Vcmax intercept */
     double jv_slope;                        /* Jmax to Vcmax slope */
     double kc25;                            /* Base rate for carboxylation by Rubisco at 25degC [mmol mol-1] */
@@ -410,6 +413,8 @@ typedef struct {
     double vcmax;                           /* maximum rate of carboxylation (umol m-2 s-1)  */
     double vcmaxna;                         /* slope of the reln btween vcmax and leaf N content, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
     double vcmaxnb;                         /* intercept of vcmax vs n, units = (umol [gN]-1 s-1) # And for Vcmax-N slopes (vcmaxna) see Table 8.2 in CLM4_tech_note, Oleson et al. 2010. */
+    double vcmaxpa;
+    double vcmaxpb;
     double watdecaydry;                     /* water fractn for dry litterfall rates */
     double watdecaywet;                     /* water fractn for wet litterfall rates */
     double wcapac_root;                     /* Max plant avail soil water -root zone, i.e. total (mm) (smc_sat-smc_wilt) * root_depth (750mm) = [mm (water) / m (soil depth)] */

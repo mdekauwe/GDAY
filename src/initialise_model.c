@@ -34,6 +34,7 @@ void initialise_control(control *c) {
     c->modeljm = 1;                 /* modeljm=0, Jmax and Vcmax parameters are read in, modeljm=1, parameters are calculated from leaf N & P content, modeljm=2, Vcmax is calculated from leaf N & P content but Jmax is related to Vcmax */
     c->ncycle = TRUE;               /* Nitrogen cycle on or off? */
     c->pcycle = TRUE;               /* Phosphorus cycle on or off? */
+    c->triose_p = TRUE;             /* Triose phosphates limitation on photosynthesis on or off? */
     c->nuptake_model = 1;           /* 0=constant uptake, 1=func of N inorgn, 2=depends on rate of soil N availability */
     c->puptake_model = 1;           /* 0=constant uptake, 1=func of P inorgp, 2=depends on rate of soil P availability */
     c->output_ascii = TRUE;         /* If this is false you get a binary file as an output. */
@@ -146,8 +147,10 @@ void initialise_params(params *p) {
     p->htpower = 0.35;
     p->intercep_frac = 0.15;
     p->jmax = -999.9;
-    p->jmaxna = 62.0;
-    p->jmaxnb = 0.0;
+    p->jmaxna = 67.994;
+    p->jmaxnb = 0.2464;
+    p->jmaxpa = 188.76;       /* power function, tropical data fit, Walker et al. 2014, http://dx.doi.org/10.3334/ORNLDAAC/1224 */
+    p->jmaxpb = 0.4144;       /* power function, tropical data fit, Walker et al. 2014, http://dx.doi.org/10.3334/ORNLDAAC/1224 */
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
     p->kc25 = 404.9;      /* MM coefft of Rubisco for CO2 (umol mol-1) */
@@ -164,7 +167,7 @@ void initialise_params(params *p) {
     p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;
     p->kr = 0.5;         /* this value is 1.0 in Wang et al. 2007 Global Biogeochemical Cycles, Kn Michaelis-Menten constant for plant N uptake [g P m-2] */
-    p->krp = 0.1;        /* Wang et al. 2007 Global Biogeochemical Cycles, Kp Michaelis-Menten constant for plant P uptake [g P m-2] */
+    p->krp = 0.01;        /* Wang et al. 2007 Global Biogeochemical Cycles, Kp Michaelis-Menten constant for plant P uptake [g P m-2] */
     p->ks = 0.003;       /* used intermediately weatherred soil value of 0.3 [g P m-2] in Yang et al. 2016 */
     p->lai_closed = 0.5;
     p->latitude = 35.9;
@@ -224,7 +227,7 @@ void initialise_params(params *p) {
     p->pf_crit = 0.002;      /* based on P:C ratio of 500, guess value */
     p->pf_min = 0.0002;      /* based on P:C ratio of 5000, guess value */
     p->phmax = 7.6;
-    p->phmin = 5;
+    p->phmin = 5.0;
     p->phtextmin = 0.000008;
     p->phtextmax = 0.00015;
     p->phtextslope = 0.00004;/* CENTURY */
@@ -234,7 +237,7 @@ void initialise_params(params *p) {
     p->pmin0 = 0.0;
     p->pmincrit = 2.0;       /* Based on CENTURY VARAT1(2,3) = 2 value */
     p->prateloss = 0.005;    
-    p->prateuptake = 5;
+    p->prateuptake = 365.0;
     p->prescribed_leaf_NC = 0.03;
     p->prescribed_leaf_PC = 0.00249;   /*Crous et al. 2015, C:P ratio of 400, Figure 3, Plant Soil */
     p->previous_ncd = 35.0;
@@ -286,8 +289,10 @@ void initialise_params(params *p) {
     p->topsoil_depth = 350.0;
     strcpy(p->topsoil_type, "clay_loam");
     p->vcmax = -999.9;
-    p->vcmaxna = 22.29;
-    p->vcmaxnb = 8.45;
+    p->vcmaxna = 31.933;         /* power function, tropical data fit, Walker et al. 2014, http://dx.doi.org/10.3334/ORNLDAAC/1224 */
+    p->vcmaxnb = 0.3928;         /* power function, tropical data fit, Walker et al. 2014, http://dx.doi.org/10.3334/ORNLDAAC/1224 */
+    p->vcmaxpa = 102.75;         /* power function, tropical data fit, Walker et al. 2014, http://dx.doi.org/10.3334/ORNLDAAC/1224 */
+    p->vcmaxpb = 0.4426;         /* power function, tropical data fit, Walker et al. 2014, http://dx.doi.org/10.3334/ORNLDAAC/1224 */
     p->watdecaydry = 0.0;
     p->watdecaywet = 0.1;
     p->wcapac_root = 96.75;

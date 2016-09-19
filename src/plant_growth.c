@@ -50,6 +50,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     
     //fprintf(stderr, "nitfac %f\n", nitfac);
     //fprintf(stderr, "pitfac %f\n", pitfac);
+    //fprintf(stderr, "shootpc %f\n", s->shootpc);
    
     /* checking for pcycle control parameter */ 
     if(c->pcycle == TRUE) {
@@ -221,6 +222,8 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
         /* average leaf phosphorus content (g P m-2 leaf) */
         leafp = (s->shootpc * p->cfracts / p->sla * KG_AS_G);
+        
+        //fprintf(stderr, "shootpc %f\n", s->shootpc);
       
         /* total nitrogen content of the canopy */
         ncontent = leafn * s->lai;
@@ -231,6 +234,10 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         ncontent = 0.0;
         pcontent = 0.0;
     }
+    
+    //fprintf(stderr, "leafp %f\n", leafp);
+    //fprintf(stderr, "ncontent %f\n", ncontent);
+    //fprintf(stderr, "pcontent %f\n", pcontent);
 
     /* When canopy is not closed, canopy light interception is reduced
         - calculate the fractional ground cover */
@@ -288,6 +295,9 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
     /* Calculate NPP */
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    
+    //fprintf(stderr, "flag npp in daily_production %f\n", f->npp);
+    //fprintf(stderr, "flag gpp in daily_production %f\n", f->gpp_gCm2);
 
     return;
 }
@@ -574,6 +584,12 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
         f->ppbranch = f->npp * f->albranch * pcbnew;
         f->ppcroot = f->npp * f->alcroot * pccnew;
+        
+        //fprintf(stderr, "npp %f\n", f->npp*100000000);
+        //fprintf(stderr, "albranch %f\n", f->albranch);
+        //fprintf(stderr, "pcbnew %f\n", pcbnew);
+        //fprintf(stderr, "npbranch %f\n", f->npbranch);
+        //fprintf(stderr, "ppbranch %f\n", f->ppbranch);
 
         /* If we have allocated more N than we have available
             - cut back C prodn */
@@ -1015,7 +1031,7 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         f->cpbranch = f->npp * f->albranch;
         f->cpstem = f->npp * f->alstem;
     }
-
+    
     /* evaluate SLA of new foliage accounting for variation in SLA
        with tree and leaf age (Sands and Landsberg, 2002). Assume
        SLA of new foliage is linearly related to leaf N:C ratio
@@ -1051,6 +1067,8 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         s->lai = p->fix_lai;
     }
     
+    //fprintf(stderr, "lai %f\n", s->lai);
+    
     return;
 }
 
@@ -1082,6 +1100,9 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     s->croot += f->cpcroot - f->deadcroots;
     s->branch += f->cpbranch - f->deadbranch;
     s->stem += f->cpstem - f->deadstems;
+    
+    //fprintf(stderr, "cproot %f\n", f->cproot);
+    //fprintf(stderr, "deadroots %f\n", f->deadroots);
 
     /* annoying but can't see an easier way with the code as it is.
        If we are modelling grases, i.e. no stem them without this
@@ -1108,6 +1129,9 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     } else {
         s->shootn += f->npleaf - fdecay * s->shootn - f->neaten;
         s->shootp += f->ppleaf - fdecay * s->shootp - f->peaten;
+        
+        //fprintf(stderr, "shootp in update plant state 1 %f\n", s->shootp*100000);
+        
     }
 
     s->branchn += f->npbranch - p->bdecay * s->branchn;
@@ -1221,6 +1245,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
         }
     }
     
+    //fprintf(stderr, "shootp in update plant state 2 %f\n", s->shootp*100000);
     
     /* Update deciduous storage pools */
     if (c->deciduous_model)
@@ -1582,6 +1607,9 @@ double calculate_nuptake(control *c, params *p, state *s) {
         U0 = p->rateuptake * s->inorgn;
         Kr = p->kr;
         nuptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
+        
+        //fprintf(stderr, "inorgn %f\n", s->inorgn);
+        //fprintf(stderr, "nuptake %f\n", nuptake);
 
         /* Make minimum uptake rate supply rate for deciduous_model cases
            otherwise it is possible when growing from scratch we don't have
@@ -1627,6 +1655,14 @@ double calculate_puptake(control *c, params *p, state *s) {
     Kr = p->krp;
     puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
     
+    //fprintf(stderr, "prateuptake %f\n", p->prateuptake);
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp*100000);
+    //fprintf(stderr, "p_lab_avail %f\n", p->p_lab_avail);
+    //fprintf(stderr, "U0 %f\n", U0*100000);
+    //fprintf(stderr, "root/(root+kr) %f\n", s->root/(s->root+Kr));
+    //fprintf(stderr, "root %f\n", s->root);
+    //fprintf(stderr, "puptake %f\n", puptake*100000);
+
     /* Make minimum uptake rate supply rate for deciduous_model cases
     otherwise it is possible when growing from scratch we don't have
     enough root mass to obtain N at the annual time step

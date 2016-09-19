@@ -817,8 +817,9 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     } else {
         s->shootnc = s->shootn / s->shoot;
         s->shootpc = s->shootp / s->shoot;
-        //fprintf(stderr, "shootp %f\n", s->shootp);
+        //fprintf(stderr, "shootp %f\n", s->shootp*100000);
         //fprintf(stderr, "shootc %f\n", s->shoot);
+        //fprintf(stderr, "shootpc %f\n", s->shootpc);
     }
 
     /* Explicitly set the shoot N:C */
@@ -867,6 +868,9 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
         s->passivesoiln = p->passivesoilnz;
         s->passivesoilp = p->passivesoilpz;
     }
+    
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
     
     if (init == FALSE)
         /* Required so max leaf & root N:C can depend on Age */
@@ -930,6 +934,7 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
                m->sw_rad_am, m->sw_rad_pm, m->rain, m->vpd_am, m->vpd_pm,
                m->wind_am, m->wind_pm, m->press, m->ndep, m->tsoil, m->Tk_am,
                m->Tk_pm);*/
+        //fprintf(stderr, "tpm in unpack_met %f\n", ma->tpm[c->day_idx]);
 
     }
 

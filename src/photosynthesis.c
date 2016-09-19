@@ -568,12 +568,14 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* Calculate mate params & account for temperature dependencies */
     N0 = calculate_top_of_canopy_n(p, s, ncontent);   //Unit: g N m-2;
     
+    //fprintf(stderr, "Tk_pm %f\n", m->Tk_pm);
+    
     if(c->pcycle == TRUE) {
       P0 = calculate_top_of_canopy_p(p, s, pcontent);   //Unit: g P m-2
     } else {
       P0 = 0.0;
     }
-
+    
     gamma_star_am = calculate_co2_compensation_point(p, m->Tk_am, mt);
     gamma_star_pm = calculate_co2_compensation_point(p, m->Tk_pm, mt);
 
@@ -594,7 +596,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* quantum efficiency calculated for C3 plants */
     alpha_am = calculate_quantum_efficiency(p, ci_am, gamma_star_am);
     alpha_pm = calculate_quantum_efficiency(p, ci_pm, gamma_star_pm);
-
+    
     /* Rubisco carboxylation limited rate of photosynthesis */
     ac_am = assim(ci_am, gamma_star_am, vcmax_am, Km_am);
     ac_pm = assim(ci_pm, gamma_star_pm, vcmax_pm, Km_pm);
@@ -604,6 +606,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     aj_pm = assim(ci_pm, gamma_star_pm, jmax_pm/4.0, 2.0*gamma_star_pm);
     
     if(c->pcycle == TRUE) {
+      
+      if(c->triose_p == TRUE) {
       /* Triose-phosphates limited rate of photosynthesis */
       ap_am = assim_p(P0);
       ap_pm = assim_p(P0);
@@ -611,11 +615,21 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
       /* light-saturated photosynthesis rate at the top of the canopy (gross) */
       asat_am = MIN(aj_am, MIN(ac_am, ap_am));
       asat_pm = MIN(aj_pm, MIN(ac_pm, ap_pm));
+      } else {
+        asat_am = MIN(aj_am, ac_am);
+        asat_pm = MIN(aj_pm, ac_pm);
+      }
+      
     } else {
       asat_am = MIN(aj_am, ac_am);
       asat_pm = MIN(aj_pm, ac_pm);
     }
-
+    
+    //fprintf(stderr, "ac_pm %f\n", ac_pm);
+    //fprintf(stderr, "aj_pm %f\n", aj_pm);
+    //fprintf(stderr, "ap_pm %f\n", ap_pm);
+    //fprintf(stderr, "asat_pm %f\n", asat_pm);
+    
     /* Covert PAR units (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
     m->par *= conv;
@@ -930,8 +944,8 @@ void calculate_jmax_and_vcmax_with_p(control *c, params *p, state *s, double Tk,
   */
   double jmax25, vcmax25;
   double jmax25p, jmax25n;
-  double conv;
-  
+  double vcmax25p, vcmax25n;
+
   *vcmax = 0.0;
   *jmax = 0.0;
   
@@ -940,11 +954,11 @@ void calculate_jmax_and_vcmax_with_p(control *c, params *p, state *s, double Tk,
     *vcmax = p->vcmax;
   } else if (c->modeljm == 1) {
     /* the maximum rate of electron transport at 25 degC */
-    jmax25n = p->jmaxna * N0 + p->jmaxnb;
+    jmax25n = p->jmaxna * pow(N0, p->jmaxnb);
     
-    /* P limitation on jmax, Ellsworth et al. 2015 Plant, Cell and Environment */
-    conv = MMOL_TO_MOL * 31.0;
-    jmax25p = 400.99 * (P0 * conv) + 88.56;
+    /* P limitation on jmax */
+    jmax25p = p->jmaxpa * pow(P0, p->jmaxpb);
+    
     jmax25 = MIN(jmax25n, jmax25p);
     
     /* this response is well-behaved for TLEAF < 0.0 */
@@ -952,7 +966,12 @@ void calculate_jmax_and_vcmax_with_p(control *c, params *p, state *s, double Tk,
                         p->delsj, p->edj);
     
     /* the maximum rate of electron transport at 25 degC */
-    vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+    vcmax25n = p->vcmaxna * pow(N0, p->vcmaxnb);
+    
+    /* P limitation on jmax */
+    vcmax25p = p->vcmaxpa * pow(P0, p->vcmaxpb);
+    
+    vcmax25 = MIN(vcmax25n, vcmax25p);
     
     *vcmax = arrh(mt, vcmax25, p->eav, Tk);
     
