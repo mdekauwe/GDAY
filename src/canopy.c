@@ -56,7 +56,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         /* calculates diffuse frac from half-hourly incident radiation */
         calculate_solar_geometry(cw, p, doy, hod);
         get_diffuse_frac(cw, doy, m->sw_rad);
-
+        
         /* Is the sun up? */
         if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->par);
@@ -243,7 +243,7 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
 
     /* leaf mass per area (g C m-2 leaf) */
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
-
+    
     if (s->lai > 0.0) {
         /* the total amount of nitrogen in the canopy */
         Ntot = s->shootnc * LMA * s->lai;

@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     } else {
         run_sim(cw, c, f, ma, m, p, s);
     }
-    
+
     /* clean up */
     fclose(c->ofp);
     if (c->print_options == SUBDAILY ) {
@@ -263,6 +263,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     } else {
         s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                             p->cfracts * s->shoot));
+
     }
 
     if (c->disturbance) {
@@ -452,9 +453,15 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     * Murty, D and McMurtrie, R. E. (2000) Ecological Modelling, 134,
       185-205, specifically page 196.
     */
-    double tol = 5E-03;
+    double tol_c = 5E-03;
+    double tol_n = 5E-04;
+    double tol_p = 5E-05;
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
+    double prev_plantn = 99999.9;
+    double prev_soiln = 99999.9;
+    double prev_plantp = 99999.9;
+    double prev_soilp = 99999.9;
     int i, cntrl_flag;
     /* check for convergences in units of kg/m2 */
     double conv = TONNES_HA_2_KG_M2;
@@ -475,12 +482,20 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
     fprintf(stderr, "Spinning up the model...\n");
     while (TRUE) {
-        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
-            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol_c &&
+            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol_c &&
+            fabs((prev_plantn*conv) - (s->plantn*conv)) < tol_n &&
+            fabs((prev_soiln*conv) - (s->soiln*conv)) < tol_n &&
+            fabs((prev_plantp*conv) - (s->plantp*conv)) < tol_p &&
+            fabs((prev_soilp*conv) - (s->soilp*conv)) < tol_p) {
             break;
         } else {
             prev_plantc = s->plantc;
             prev_soilc = s->soilc;
+            prev_plantn = s->plantn;
+            prev_soiln = s->soiln;
+            prev_plantp = s->plantp;
+            prev_soilp = s->soilp;
 
             /* 1000 years (50 yrs x 20 cycles) */
             for (i = 0; i < 20; i++) {
@@ -489,7 +504,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* Have we reached a steady state? */
             fprintf(stderr,
-              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+              "Spinup: Plant C - %f, Soil C - %f, Soil N - %f, Soil P - %f\n", 
+              s->plantc, s->soilc, s->soiln, s->soilp);
         }
     }
     write_final_state(c, p, s);
