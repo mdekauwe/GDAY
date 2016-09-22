@@ -50,7 +50,7 @@ double nitrogen_retrans(control *, fluxes *, params *, state *,
 /* P stuff */
 
 double calculate_growth_stress_limitation(params *, state *, control *);
-double calculate_puptake(control *, params *, state *);
+double calculate_puptake(control *, params *, state *, fluxes *);
 double phosphorus_retrans(control *, fluxes *, params *, state *,
                         double, double, int);
 

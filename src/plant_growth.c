@@ -216,6 +216,8 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
     double leafn, leafp, fc, ncontent, pcontent;
+  
+    //fprintf(stderr, "flag 1 carbon production \n");
 
     if (s->lai > 0.0) {
         /* average leaf nitrogen content (g N m-2 leaf) */
@@ -296,9 +298,6 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
     
-    //fprintf(stderr, "flag npp in daily_production %f\n", f->npp);
-    //fprintf(stderr, "flag gpp in daily_production %f\n", f->gpp_gCm2);
-
     return;
 }
 
@@ -500,7 +499,9 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->retrans = nitrogen_retrans(c, f, p, s, fdecay, rdecay, doy);
     f->retransp = phosphorus_retrans(c, f, p, s, fdecay, rdecay, doy);
     f->nuptake = calculate_nuptake(c, p, s);
-    f->puptake = calculate_puptake(c, p, s);
+    f->puptake = calculate_puptake(c, p, s, f);
+    
+    //fprintf(stderr, "flag 3 after puptake \n");
      
     /*  Ross's Root Model. */
     if (c->model_optroot) {
@@ -509,7 +510,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         nsupply = (calculate_nuptake(c, p, s) *
                    TONNES_HA_2_G_M2 * DAYS_IN_YRS);
       
-        psupply = (calculate_puptake(c, p, s) *
+        psupply = (calculate_puptake(c, p, s, f) *
                   TONNES_HA_2_G_M2 * DAYS_IN_YRS);
 
         /* covnert t ha-1 to kg DM m-2 */
@@ -538,13 +539,16 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->nloss = p->rateloss * s->inorgn;
     
     /* Mineralised P lost from the system by leaching */
-    f->ploss = p->prateloss * s->inorglabp;
-    
+    if (s->inorgsorbp > 0.0) {
+      f->ploss = p->prateloss * s->inorglabp;
+    } else {
+      f->ploss = 0.0;
+    }
+
     /* total nitrogen/phosphorus to allocate */
     ntot = MAX(0.0, f->nuptake + f->retrans);
     ptot = MAX(0.0, f->puptake + f->retransp);
     
-
     if (c->deciduous_model) {
         /* allocate N to pools with fixed N:C ratios */
 
@@ -584,12 +588,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
         f->ppbranch = f->npp * f->albranch * pcbnew;
         f->ppcroot = f->npp * f->alcroot * pccnew;
-        
-        //fprintf(stderr, "npp %f\n", f->npp*100000000);
-        //fprintf(stderr, "albranch %f\n", f->albranch);
-        //fprintf(stderr, "pcbnew %f\n", pcbnew);
-        //fprintf(stderr, "npbranch %f\n", f->npbranch);
-        //fprintf(stderr, "ppbranch %f\n", f->ppbranch);
 
         /* If we have allocated more N than we have available
             - cut back C prodn */
@@ -769,6 +767,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->pproot = ptot - f->ppleaf;
         
     }
+    
     return (recalc_wb);
 }
 
@@ -787,6 +786,8 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
     } else {
         nlim = 1.0;
     }
+    
+    //fprintf(stderr, "shootpc %f\n", s->shootpc);
     
     if(c->pcycle == TRUE) {
       /* P limitation based on leaf PC ratio */
@@ -816,6 +817,10 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
     } else {
       current_limitation = MAX(0.1, MIN(nlim,s->wtfac_root));
     }
+    
+    //fprintf(stderr, "nlim %f\n", nlim);
+    //fprintf(stderr, "plim %f\n", plim);
+    //fprintf(stderr, "current %f\n", current_limitation);
     
     return (current_limitation);
 }
@@ -1626,7 +1631,7 @@ double calculate_nuptake(control *c, params *p, state *s) {
 }
 
 
-double calculate_puptake(control *c, params *p, state *s) {
+double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
   /* P uptake depends on the rate at which soil mineral P is made
   available to the plants.
   
@@ -1643,25 +1648,30 @@ double calculate_puptake(control *c, params *p, state *s) {
     puptake = p->puptakez;
     
   } else if (c->puptake_model == 1) {
-    /* evaluate puptake : proportional to lab P pool that is available to plant uptake (a function of mineral N) */
-    puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    /* evaluate puptake : proportional to lab P pool that is available to plant uptake */
+    //if (s->inorgsorbp > 0.0) {
+      puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    //} else {
+    //  puptake = MIN((f->p_par_to_min + f->pmineralisation +
+    //               f->purine + f->p_slow_biochemical), 
+    //               (p->prateuptake * s->inorglabp * p->p_lab_avail));
+    //}
     
   } else if (c->puptake_model == 2) {
     /* P uptake is a saturating function on root biomass following
     Dewar and McMurtrie, 1996. */
     
     /* supply rate of available mineral P */
-    U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    if (s->inorgsorbp > 0.0) {
+      U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    } else {
+      U0 = MIN((f->p_par_to_min + f->pmineralisation +
+               f->purine + f->p_slow_biochemical), 
+               (p->prateuptake * s->inorglabp * p->p_lab_avail));
+    }
+    
     Kr = p->krp;
     puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
-    
-    //fprintf(stderr, "prateuptake %f\n", p->prateuptake);
-    //fprintf(stderr, "inorglabp %f\n", s->inorglabp*100000);
-    //fprintf(stderr, "p_lab_avail %f\n", p->p_lab_avail);
-    //fprintf(stderr, "U0 %f\n", U0*100000);
-    //fprintf(stderr, "root/(root+kr) %f\n", s->root/(s->root+Kr));
-    //fprintf(stderr, "root %f\n", s->root);
-    //fprintf(stderr, "puptake %f\n", puptake*100000);
 
     /* Make minimum uptake rate supply rate for deciduous_model cases
     otherwise it is possible when growing from scratch we don't have

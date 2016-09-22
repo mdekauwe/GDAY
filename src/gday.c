@@ -356,7 +356,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             if(c->pcycle == TRUE) {
               calculate_psoil_flows(c, f, p, s, doy);
             }
-
+            
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
                  /*
@@ -374,7 +374,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 sma(SMA_ADD, hw, current_limitation);
                 s->prev_sma = sma(SMA_MEAN, hw).sma;
             }
-
+            
             /*
              * if grazing took place need to reset "stress" running mean
              * calculation for grasses
@@ -419,6 +419,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
     }
 
+   
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
@@ -487,7 +488,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             fabs((prev_plantn*conv) - (s->plantn*conv)) < tol_n &&
             fabs((prev_soiln*conv) - (s->soiln*conv)) < tol_n &&
             fabs((prev_plantp*conv) - (s->plantp*conv)) < tol_p &&
-            fabs((prev_soilp*conv) - (s->soilp*conv)) < tol_p) {
+            fabs((prev_soilp*conv) - (s->inorgavlp*conv)) < tol_p) {
             break;
         } else {
             prev_plantc = s->plantc;
@@ -495,17 +496,23 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             prev_plantn = s->plantn;
             prev_soiln = s->soiln;
             prev_plantp = s->plantp;
-            prev_soilp = s->soilp;
+            prev_soilp = s->inorgavlp;
 
             /* 1000 years (50 yrs x 20 cycles) */
             for (i = 0; i < 20; i++) {
                 run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
             }
-
+            if (c->pcycle) {
             /* Have we reached a steady state? */
             fprintf(stderr,
-              "Spinup: Plant C - %f, Soil C - %f, Soil N - %f, Soil P - %f\n", 
-              s->plantc, s->soilc, s->soiln, s->soilp);
+              "Spinup: Plant C - %f, Soil C - %f, Soil N - %f, Soil avl P - %f\n", 
+              s->plantc, s->soilc, s->soiln, s->inorgavlp);
+            } else {
+              /* Have we reached a steady state? */
+              fprintf(stderr,
+                      "Spinup: Plant C - %f, Soil C - %f\n", 
+                      s->plantc, s->soilc);
+            }
         }
     }
     write_final_state(c, p, s);
@@ -863,12 +870,12 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     
     /* total plant, soil & litter phosphorus */
     s->inorgp = s->inorglabp + s->inorgsorbp + s->inorgssorbp + s->inorgoccp + s->inorgparp;
-    s->soilp = s->inorgp + s->activesoilp + s->slowsoilp + s->passivesoilp;
+    s->soilp = s->inorgavlp + s->activesoilp + s->slowsoilp + s->passivesoilp;
     s->litterpag = s->structsurfp + s->metabsurfp;
     s->litterpbg = s->structsoilp + s->metabsoilp;
     s->litterp = s->litterpag + s->litterpbg;
     s->plantp = s->shootp + s->rootp + s->crootp + s->branchp + s->stemp;
-    s->totalp = s->plantp + s->litterp + s->soilp;
+    s->totalp = s->plantp + s->litterp + s->soilp + s->inorgssorbp + s->inorgoccp + s->inorgparp;
 
     /* total plant, soil, litter and system carbon */
     s->soilc = s->activesoil + s->slowsoil + s->passivesoil;

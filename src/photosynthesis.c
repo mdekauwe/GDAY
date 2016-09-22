@@ -576,6 +576,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
       P0 = 0.0;
     }
     
+    //fprintf(stderr, "flag 2 C3_photo \n");
+    
     gamma_star_am = calculate_co2_compensation_point(p, m->Tk_am, mt);
     gamma_star_pm = calculate_co2_compensation_point(p, m->Tk_pm, mt);
 
