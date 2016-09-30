@@ -1230,40 +1230,28 @@ void soil_soprtion_parameters(char *soil_order, params *p) {
   
   if (strcmp(soil_order, "andisol") == 0) {
     p->smax = 10;
-    p->ks = 0.006;
   } else if (strcmp(soil_order, "gelisol") == 0) {
     p->smax = 5;
-    p->ks = 0.006;
   } else if (strcmp(soil_order, "histosol") == 0) {
     p->smax = 5;
-    p->ks = 0.006;
   } else if (strcmp(soil_order, "entisol") == 0) {
     p->smax = 5;
-    p->ks = 0.006;
   } else if (strcmp(soil_order, "inceptisol") == 0) {
     p->smax = 5;
-    p->ks = 0.006;
   } else if (strcmp(soil_order, "aridsol") == 0) {
     p->smax = 7;
-    p->ks = 0.003;
   } else if (strcmp(soil_order, "vertisol") == 0) {
     p->smax = 7;
-    p->ks = 0.003;
   } else if (strcmp(soil_order, "mollisol") == 0) {
     p->smax = 7;
-    p->ks = 0.003;
   } else if (strcmp(soil_order, "alfisol") == 0) {
     p->smax = 7;
-    p->ks = 0.003;
   } else if (strcmp(soil_order, "spodosol") == 0) {
     p->smax = 9;
-    p->ks = 0.0012;
   } else if (strcmp(soil_order, "ultisol") == 0) {
     p->smax = 9;
-    p->ks = 0.0012;
   } else if (strcmp(soil_order, "oxisol") == 0) {
     p->smax = 9;
-    p->ks = 0.0012;
   } else {
     prog_error("Could not understand soil order", __LINE__);
   }
@@ -2079,7 +2067,10 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
   s->inorglabp += f->p_lab_in - f->p_lab_out;
   s->inorgsorbp += f->p_sorb_in - f->p_sorb_out;
   
-  //fprintf(stderr, "inorglabp 2 %f\n", s->inorglabp);
+  //fprintf(stderr, "psorb calc %f\n", (9 * s->inorglabp)/(0.0012+s->inorglabp));
+  
+  //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+  //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
   
   /* Daily increment of soil inorganic available P pool (lab + sorb) */
   s->inorgavlp = s->inorglabp + s->inorgsorbp;

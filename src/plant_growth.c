@@ -1134,9 +1134,6 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     } else {
         s->shootn += f->npleaf - fdecay * s->shootn - f->neaten;
         s->shootp += f->ppleaf - fdecay * s->shootp - f->peaten;
-        
-        //fprintf(stderr, "shootp in update plant state 1 %f\n", s->shootp*100000);
-        
     }
 
     s->branchn += f->npbranch - p->bdecay * s->branchn;
@@ -1148,7 +1145,19 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     s->stemn = s->stemnimm + s->stemnmob;
     
     s->branchp += f->ppbranch - p->bdecay * s->branchp;
+    
     s->rootp += f->pproot - rdecay * s->rootp;
+    
+    //fprintf(stderr, "nuptake %f\n", f->nuptake*100000);
+    //fprintf(stderr, "puptake %f\n", f->puptake*100000);
+    //fprintf(stderr, "nproot %f\n", f->nproot);
+    //fprintf(stderr, "pproot %f\n", f->pproot);
+    //fprintf(stderr, "rootc %f\n", s->root);
+    //fprintf(stderr, "rootn %f\n", s->rootn);
+    //fprintf(stderr, "rootp %f\n", s->rootp);
+    //fprintf(stderr, "ncrfac calc %f\n", (s->rootn/s->root)/(s->shootn/s->shoot));
+    //fprintf(stderr, "pcrfac calc %f\n", (s->rootp/s->root)/(s->shootp/s->shoot));
+
     s->crootp += f->ppcroot - p->crdecay * s->crootp;
     s->stempimm += f->ppstemimm - p->wdecay * s->stempimm;
     
@@ -1198,7 +1207,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
                     extrasn = f->nuptake;
 
                 s->shootn -= extrasn;
-                f->nuptake -= extrasn;
+                //f->nuptake -= extrasn;
             }
         }
         
@@ -1213,7 +1222,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
               extrasp = f->puptake;
             
             s->shootp -= extrasp;
-            f->puptake -= extrasp;
+            //f->puptake -= extrasp;
           }
         }
 
@@ -1232,9 +1241,9 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
                 extrarn = f->nuptake - extrasn;
 
             s->rootn -= extrarn;
-            f->nuptake -= extrarn;
+            f->nuptake -= (extrarn+extrasn);
         }
-
+        
         /* max root p:c */
         pcmaxr = pcmaxf * p->pcrfac;
         extrarp = 0.0;
@@ -1244,13 +1253,11 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
           /* Ensure P uptake cannot be reduced below zero. */
           if ((extrasp + extrarp) > f->puptake)
             extrarp = f->puptake - extrasp;
-          
+
           s->rootp -= extrarp;
-          f->puptake -= extrarp;
+          f->puptake -= (extrarp + extrasp);
         }
     }
-    
-    //fprintf(stderr, "shootp in update plant state 2 %f\n", s->shootp*100000);
     
     /* Update deciduous storage pools */
     if (c->deciduous_model)
@@ -1649,17 +1656,10 @@ double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
     
   } else if (c->puptake_model == 1) {
     /* evaluate puptake : proportional to lab P pool that is available to plant uptake */
-    //if (s->inorgsorbp > 0.0) {
       puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
-    //} else {
-    //  puptake = MIN((f->p_par_to_min + f->pmineralisation +
-    //               f->purine + f->p_slow_biochemical), 
-    //               (p->prateuptake * s->inorglabp * p->p_lab_avail));
-    //}
     
   } else if (c->puptake_model == 2) {
-    /* P uptake is a saturating function on root biomass following
-    Dewar and McMurtrie, 1996. */
+    /* P uptake is a saturating function on root biomass, as N */
     
     /* supply rate of available mineral P */
     if (s->inorgsorbp > 0.0) {
@@ -1673,12 +1673,6 @@ double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
     Kr = p->krp;
     puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
 
-    /* Make minimum uptake rate supply rate for deciduous_model cases
-    otherwise it is possible when growing from scratch we don't have
-    enough root mass to obtain N at the annual time step
-    I don't see an obvious better solution?
-    if c->deciduous_model:
-    nuptake = max(U0 * s->root / (s->root + Kr), U0) */
   } else {
     fprintf(stderr, "Unknown P uptake option\n");
     exit(EXIT_FAILURE);

@@ -166,9 +166,9 @@ void initialise_params(params *p) {
     p->kp = 0.3;         
     p->ko25 = 278400.0;  /* MM coefft of Rubisco for O2 (umol mol-1) */
     p->kq10 = 0.08;
-    p->kr = 0.5;         /* this value is 1.0 in Wang et al. 2007 Global Biogeochemical Cycles, Kn Michaelis-Menten constant for plant N uptake [g P m-2] */
+    p->kr = 0.5;          /* this value is 1.0 in Wang et al. 2007 Global Biogeochemical Cycles, Kn Michaelis-Menten constant for plant N uptake [g P m-2] */
     p->krp = 0.01;        /* Wang et al. 2007 Global Biogeochemical Cycles, Kp Michaelis-Menten constant for plant P uptake [g P m-2] */
-    p->ks = 0.003;       /* used intermediately weatherred soil value of 0.3 [g P m-2] in Yang et al. 2016 */
+    p->ks = 0.5;          /* used intermediately weatherred soil value of 0.3 [g P m-2] in Yang et al. 2016 */
     p->lai_closed = 0.5;
     p->latitude = 35.9;
     p->leaf_width = 0.01;
