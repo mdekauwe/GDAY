@@ -147,16 +147,25 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                                         p->cond2[i],
                                                         p->cond3[i]);
         }
+
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
+
+
+        for (i = 0; i < s->rooted_layers; i++) {
+            printf("%d %lf\n", i, f->soilR[i]);
+
+        }
+        exit(1);
+
 
         /* If we have leaves we are transpiring */
         if (s->lai > 0.0) {
             calc_water_uptake_per_layer(f, p, s);
         }
 
-        /* calculate potential canopy evap rate, this may be reduced later
-           depending on canopy water storage */
+        // calculate potential canopy evap rate, this may be reduced later
+        // depending on canopy water storage
         canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
 
         /* mol m-2 s-1 to mm d-1 */
@@ -201,7 +210,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         // Determing water loss from each layer due to transpiration
         for (i = 0; i < s->rooted_layers; i++) {
             f->water_loss[i] += (transpiration * MM_TO_M) * \
-                                    f->fraction_uptake[i];
+                                 f->fraction_uptake[i];
         }
 
         /*
@@ -529,7 +538,8 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     int    i;
     double arg1, arg2;
 
-    for (i = 0; i < p->n_layers; i++) {
+    //for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < s->rooted_layers; i++) {
 
         if (s->water_frac[i] > 0.0) {
             f->swp[i] = -0.001 * p->potA[i] * pow(s->water_frac[i], p->potB[i]);
@@ -553,11 +563,12 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     double root_xsec_area = M_PI * p->root_radius * p->root_radius;
 
-    for (i = 0; i < p->n_layers; i++) {
+    //for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < s->rooted_layers; i++) {
 
         /* converts from ms-1 to m2 s-1 MPa-1 */
         Lsoil = f->soil_conduct[i] / head;
-
+        printf("%d %.10lf %.10lf %lf\n", i, Lsoil, f->soil_conduct[i], head);
         if (Lsoil < 1e-35) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
@@ -578,6 +589,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
         }
     }
 
+    printf("\n");
     return;
 }
 
@@ -605,7 +617,7 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     s->weighted_swp = 0.0;
     if (total_est_evap > 0.0) {
         /* fraction of water taken from layer */
-        for (i = 0; i < p->n_layers; i++) {
+        for (i = 0; i < s->rooted_layers; i++) {
             s->weighted_swp += f->swp[i] * est_evap[i];
             f->fraction_uptake[i] = est_evap[i] / total_est_evap;
         }
@@ -815,10 +827,9 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     ** initial conditions; i.e. is there liquid water and more
     ** water than layer can hold
     */
-    if ( (liquid > 0.0) && (s->water_frac[soil_layer] > drain_layer) ) {
+    if (liquid > 0.0 && liquid > drain_layer) {
 
-        /* there is liquid water */
-        /* ystart is a vector 1..N, so need to index from 1 not 0 */
+        // ystart is a vector 1..N, so need to index from 1 not 0
         ystart[1] = s->water_frac[soil_layer];
 
         // Runge-Kunte ODE integrator used to estimate soil gravitational
@@ -827,7 +838,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
                drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
                p->cond3[soil_layer], soil_water_store, rkqs);
 
-        /* ystart is a vector 1..N, so need to index from 1 not 0 */
+        /* ystart is a vector 1..N, so need to index from 1 */
         new_water_frac = ystart[1];
 
         /* convert from water fraction to absolute amount (m) */
@@ -859,25 +870,25 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     ** from the odeint func with 1, not 0
     */
     int index = 1;
-    /* determines gravitational water drainage */
+
     double drainage;
 
     drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
-    //printf("*** %lf %lf %lf\n", cond1, cond2, cond3);
-    /* Convert units, soil conductivity is in m s-1 */
+
+    // Convert units, soil conductivity is in m s-1 //
     drainage *= SEC_2_HLFHR;
 
-    /* gravitational drainage above field_capacity */
+    // gravitational drainage above field_capacity
     if (y[index] <= drain_layer) {
         drainage = 0.0;
     }
 
-    /* layer below cannot accept more water than unsat */
+    // layer below cannot accept more water than unsat
     if (drainage > unsat) {
         drainage = unsat;
     }
 
-    /* waterloss from this layer */
+    // waterloss from this layer
     dydt[index] = -drainage;
 
     return;
