@@ -624,7 +624,9 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
         s->weighted_swp /= total_est_evap;
     } else {
         /* No water was evaporated */
-        f->fraction_uptake[i] = 1.0 / (double)s->rooted_layers;
+        for (i = 0; i < s->rooted_layers; i++) {
+            f->fraction_uptake[i] = 1.0 / (double)s->rooted_layers;
+        }
     }
 
     if (f->fraction_uptake[0] > 1 || f->fraction_uptake[0] < 0) {
