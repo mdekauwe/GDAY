@@ -136,6 +136,13 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
     if (c->water_balance == HYDRAULICS) {
 
+        /* Need to zero everything first */
+        for (i = 0; i < p->n_layers; i++) {
+            f->water_loss[i] = 0.0;
+            f->water_gain[i] = 0.0;
+            f->ppt_gain[i] = 0.0;
+        }
+
         /*
         ** The loop needs to be outside the func as we need to be able to
         ** calculate the soil conductance per layer and call this via
@@ -192,11 +199,12 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             rr = 1;
         }
 
+
         // Determine water loss in upper layers due to evaporation
         if (soil_evap > 0.0) {
           // Evaporation (m 30min-1)
           f->water_loss[rr] += soil_evap * MM_TO_M;
-      } // ignoring water gain due to due formation...
+        } // ignoring water gain due to due formation...
 
 
         // Determing water loss from each layer due to transpiration
