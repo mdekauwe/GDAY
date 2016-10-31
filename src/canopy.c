@@ -115,7 +115,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             if (hod == 10) {
                 s->saved_swp = s->weighted_swp;
                 /*_calc_soil_water_potential(c, p, s);*/
-                /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
+                //printf("%.10lf %.10lf %.10lf\n", s->weighted_swp, s->wtfac_root, s->psi_s_root );
             }
 
         }
@@ -139,12 +139,14 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         /* Calculate the soil moisture availability factors [0,1] in the
            topsoil and the entire root zone */
         calculate_soil_water_fac(c, p, s);
+        
         /*printf("%lf %.10lf\n", s->wtfac_root, s->saved_swp);*/
     } else {
         /* really this should only be a debugging option! */
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
+
 
     return;
 }

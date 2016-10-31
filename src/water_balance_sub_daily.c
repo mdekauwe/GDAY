@@ -151,14 +151,6 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
 
-
-        for (i = 0; i < s->rooted_layers; i++) {
-            printf("%d %lf\n", i, f->soilR[i]);
-
-        }
-        exit(1);
-
-
         /* If we have leaves we are transpiring */
         if (s->lai > 0.0) {
             calc_water_uptake_per_layer(f, p, s);
@@ -194,10 +186,10 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         // Is soil evap taken from first or second layer?
         if (s->dry_thick < s->thickness[0]) {
             // The dry zone does not extend beneath the top layer
-            rr = 1;
+            rr = 0;
         } else {
             // The dry zone does extend beneath the top layer
-            rr = 2;
+            rr = 1;
         }
 
         // Determine water loss in upper layers due to evaporation
@@ -229,8 +221,9 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         runoff = calc_infiltration(f, p, s, surface_water);
 
         // Don't see point of calculating these again
-        //calc_soil_water_potential(f, p, s);
-        //calc_soil_root_resistance(f, p, s);
+        // Find SWP & soil resistance without updating waterfrac yet
+        calc_soil_water_potential(f, p, s);
+        calc_soil_root_resistance(f, p, s);
 
         // Update the soil water storage
         root_zone_total = 0.0;
@@ -238,11 +231,12 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
             // water content of soil layer (m)
             water_content = s->water_frac[i] * s->thickness[i];
+
             water_content = MAX(0.0, water_content +    \
                                      f->water_gain[i] + \
                                      f->ppt_gain[i] -   \
                                      f->water_loss[i]);
-
+            printf("[+] %d %lf %lf %lf %lf\n", i, water_content, f->water_gain[i]+f->ppt_gain[i]-f->water_loss[i], f->ppt_gain[i], throughfall);
             // Determine volumetric water content water content of layer (m)
             s->water_frac[i] = water_content / s->thickness[i];
 
@@ -255,7 +249,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         }
         s->pawater_root = root_zone_total;
-
+        printf("%lf %lf %lf %lf %lf %lf\n", s->weighted_swp, surface_water, transpiration, soil_evap, canopy_evap, s->lai);
     } else {
 
         /* Simple soil water bucket appoximation */
@@ -283,6 +277,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         ** update_water_storage if we don't have sufficient water
         */
         et = transpiration + soil_evap + canopy_evap;
+
 
         update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
                              &transpiration, &soil_evap, &et, &runoff);
@@ -568,7 +563,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
         /* converts from ms-1 to m2 s-1 MPa-1 */
         Lsoil = f->soil_conduct[i] / head;
-        printf("%d %.10lf %.10lf %lf\n", i, Lsoil, f->soil_conduct[i], head);
+
         if (Lsoil < 1e-35) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
@@ -589,7 +584,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
         }
     }
 
-    printf("\n");
+
     return;
 }
 
@@ -666,19 +661,24 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     // Need to make this into a negative flux of energy from the soil's
     // perspective to match remaining logic here, i.e. negative leaving the
     // surface
-    soil_evap *= -1.0;
+    if (soil_evap > 0.0)
+        soil_evap *= -1.0;
 
     // Calulate the net change in wetting in the top zone
     netc = (soil_evap * MM_TO_M) / airspace + \
            (surface_water * MM_TO_M) / airspace;
 
+    printf("NETC: %f %f %f\n", netc, soil_evap, surface_water);
     // wetting
     if (netc > 0.0) {
+
         /*
         ** resaturate the layer if top is dry and recharge is greater
         **  than dry_thick
         */
+
         if ((netc > s->wetting_top[ar1]) && (s->wetting_top[ar1] > 0.0)) {
+
             // extra water to deepen wetting layer
             diff = netc - s->wetting_top[ar1];
             s->wetting_top[ar1] = 0.0;
@@ -688,7 +688,9 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
             }
             s->dry_thick = dmin;
         } else {
+
             if (s->wetting_top[ar1] == 0.0) {
+
                 // surface is already wet, so extend depth of this wet zone
                 if (ar1 > 0) {
                     // not in primary lay (primary layer can't extend deeper)
@@ -701,12 +703,14 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
                     }
                 }
             } else {
+
                 // Create a new wetting zone
                 s->wetting_top[ar1+1] = 0.0;
                 s->wetting_bot[ar1+1] = netc;
             }
             s->dry_thick = dmin;
         }
+
     // Drying
     } else {
         // Drying increases the depth to top of wet soil layers
@@ -776,6 +780,7 @@ double calc_infiltration(fluxes *f, params *p, state *s,
             add = 0.0;
         }
 
+
         // if we have added all available water we are done
         if (add <= 0.0)
             break;
@@ -800,7 +805,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
     int    i, N = 1, max_iter;
-    double eps = 1.0e-3;        /* precision */
+    double eps = 1.0e-4;        /* precision */
     double h1 = .001;           /* first guess at integrator size */
     double hmin = 0.0;          /* minimum value of the integrator step */
     double x1 = 1.0;             /* initial time */
@@ -853,7 +858,8 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
     }
 
     if (f->water_loss[soil_layer] < 0.0) {
-        fprintf(stderr, "waterloss probem in soil_balance\n");
+        fprintf(stderr, "waterloss probem in soil_balance: %d %f\n",
+                soil_layer, f->water_loss[soil_layer]);
         exit(EXIT_FAILURE);
     }
 
