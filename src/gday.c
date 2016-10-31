@@ -386,7 +386,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 hurricane(f, p, s);
             }
 
-            printf("DAY: %d\n\n", doy);
+            
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
@@ -417,7 +417,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              * calculation for grasses
              */
             if (c->grazing == 2 && p->disturbance_doy == doy+1) {
-                printf("WHY HERE\n");
                 sma(SMA_FREE, hw);
                 hw = sma(SMA_NEW, p->growing_seas_len).handle;
             }
@@ -438,9 +437,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
             c->day_idx++;
-            printf("%lf %lf %lf\n", f->transpiration, f->soil_evap, f->canopy_evap);
 
-            printf("\n");
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */

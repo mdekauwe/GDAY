@@ -244,7 +244,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                      f->water_gain[i] + \
                                      f->ppt_gain[i] -   \
                                      f->water_loss[i]);
-            printf("[+] %d %lf %lf %lf %lf\n", i, water_content, f->water_gain[i]+f->ppt_gain[i]-f->water_loss[i], f->ppt_gain[i], throughfall);
+
             // Determine volumetric water content water content of layer (m)
             s->water_frac[i] = water_content / s->thickness[i];
 
@@ -257,7 +257,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         }
         s->pawater_root = root_zone_total;
-        printf("%lf %lf %lf %lf %lf %lf\n", s->weighted_swp, surface_water, transpiration, soil_evap, canopy_evap, s->lai);
+
     } else {
 
         /* Simple soil water bucket appoximation */
@@ -676,7 +676,6 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     netc = (soil_evap * MM_TO_M) / airspace + \
            (surface_water * MM_TO_M) / airspace;
 
-    printf("NETC: %f %f %f\n", netc, soil_evap, surface_water);
     // wetting
     if (netc > 0.0) {
 
