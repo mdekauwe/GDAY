@@ -386,7 +386,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 hurricane(f, p, s);
             }
 
-            
+
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
@@ -449,7 +449,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             allocate_stored_c_and_n(f, p, s);
         }
     }
-    exit(1);
+    
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
