@@ -83,8 +83,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, cw, f, m, p, s);
-
-
                     } else {
                         break;
                     }
@@ -352,6 +350,71 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
 
     cw->cscalar[SUNLIT] = (1.0 - exp(-(cw->kb + kn) * lai_sun)) / (cw->kb + kn);
     cw->cscalar[SHADED] = (1.0 - exp(-kn * lai_sha)) / kn - cw->cscalar[SUNLIT];
+
+    return;
+}
+
+void calc_delta_potential(state *s) {
+    // Calculate the change in leaf water potential
+
+    int     nbad;                /* N of unsuccessful changes of the step size*/
+    int     nok;                 /* N of successful changes of the step size */
+    int     i, N = 1, max_iter;
+    double  eps = 1.0e-4;        /* precision */
+    double  h1 = 0.01;           /* first guess at integrator size */
+    double  hmin = 0.0;          /* minimum value of the integrator step */
+    double  x1 = 1.0;             /* initial time */
+    double  x2 = 2.0;             /* final time */
+    double  dummy1, dummy2, dummy3, dummy4, dummy5;
+    double *ystart = NULL;
+
+    ystart = dvector(1,N);
+    for (i = 1; i <= N; i++) {
+        ystart[i] = 0.0;
+    }
+
+    // ystart is a vector 1..N, so need to index from 1 not 0
+    ystart[1] = s->lwp;
+
+    // Runge-Kunte ODE integrator used to estimate a new leaf water potential
+    odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, dummy1,
+           dummy2, dummy3, dummy4, dummy5, lwp_diff_eqn, rkqs);
+
+    // ystart is a vector 1..N, so need to index from 1
+    s->lwp = ystart[1];
+
+    free_dvector(ystart, 1, N);
+
+    return;
+}
+
+void lwp_diff_eqn(double time_dummy, double y[], double dydt[],
+                  double dummy1, double dummy2, double dummy3,
+                  double dummy4, double dummy5) {
+    //
+    // differential equation describing change in leaf water potential given
+    // supply & demand. NB. numerical lib vectors are index 1..n, so
+    // we need to index the return from the odeint func with 1, not 0
+    //
+    int index = 1;
+
+    // head of pressure  (MPa/m)
+    double head = 0.009807;
+
+    // leaf capacitance (mmol m-2 LA MPa-1)
+    double capac = 4000.0;
+    double layer_capac = capac * s->lai;
+    double gplant = 20.0;
+
+    // conductance is constant with height (MPa s mmol-1)
+    double rplant = 1. / (gplant * s->lai);
+    //double rplant = ht / ( gplant * s->lai );  // MPa s mmol-1 (per layer)
+    double rsoil = 0.0; // need to add calculation
+
+    // should this be sunlit LAI only?
+    dydt[index] = (s->weighted_swp - (head * s->canht) - 1000.0 * s->lai * \
+                   f->transpiration * (rplant + rsoil) - y[index]) \
+                  / (layer_capac * (rplant + rsoil));
 
     return;
 }

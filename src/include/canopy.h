@@ -29,5 +29,10 @@ double  calc_leaf_net_rad(params *, state *, double, double, double);
 void    calculate_top_of_canopy_leafn(canopy_wk *, params *, state *);
 void    calc_leaf_to_canopy_scalar(canopy_wk *, params *);
 
+/* SPA stuff */
+void    calc_delta_potential(state *);
+void    lwp_diff_eqn(double, double [], double [], double, double, double,
+                     double, double);
+
 
 #endif /* CANOPY_H */
