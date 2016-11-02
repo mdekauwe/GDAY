@@ -245,7 +245,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                      f->ppt_gain[i] -   \
                                      f->water_loss[i]);
 
-            // Determine volumetric water content water content of layer (m)
+            // Determine volumetric water content water content of layer (m3 m-3)
             s->water_frac[i] = water_content / s->thickness[i];
 
             // update old GDAY effective two-layer buckets

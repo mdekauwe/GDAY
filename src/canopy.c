@@ -109,9 +109,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             cw->tleaf[SHADED] = m->tair;
 
             /*
-             * pre-dawn soil water potential, clearly one should link this
-             * the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
-             */
+            ** pre-dawn soil water potential (MPa), clearly one should link this
+            ** the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
+            **/
             if (hod == 10) {
                 s->saved_swp = s->weighted_swp;
                 /*_calc_soil_water_potential(c, p, s);*/
