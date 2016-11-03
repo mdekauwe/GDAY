@@ -42,7 +42,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE;
-    double doy, year, dummy2=0.0, delta_sw, previous_sw, current_sw;
+    double doy, year, dummy2=0.0, previous_sw, current_sw;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -148,7 +148,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     if (debug) {
-        delta_sw = previous_sw - (s->pawater_topsoil + s->pawater_root);
         current_sw = s->pawater_topsoil + s->pawater_root;
         check_water_balance(f, previous_sw, current_sw);
     }
