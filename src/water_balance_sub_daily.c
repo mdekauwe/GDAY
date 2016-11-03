@@ -251,9 +251,9 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             // - this is just for outputting, these aren't used.
             if (i == 0) {
                 s->pawater_topsoil = water_content * M_TO_MM;
+            } else {
+                root_zone_total += water_content * M_TO_MM;
             }
-            root_zone_total += water_content * M_TO_MM;
-
         }
         s->pawater_root = root_zone_total;
 
