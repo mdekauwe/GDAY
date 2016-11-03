@@ -431,7 +431,7 @@ void check_water_balance(fluxes *f, double previous_sw, double current_sw) {
 
     double delta_sw;
 
-    delta_sw = previous_sw - current_sw;
+    delta_sw = current_sw - previous_sw;
     f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_sw);
     printf("%lf %lf %lf %lf %lf %lf\n",
            f->day_ppt, f->runoff, f->et, delta_sw, previous_sw, current_sw);
