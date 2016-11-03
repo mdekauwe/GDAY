@@ -262,18 +262,9 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                 root_zone_total += water_content * M_TO_MM;
             }
 
-            if (c->pdebug) {
-                printf("%d %.10lf\n", i, f->water_loss[i]);
-            }
         }
         s->pawater_root = root_zone_total;
 
-
-        //if (c->pdebug) {
-        //    printf("%d %lf %lf %lf %lf\n",
-        //            i, water_content, f->water_gain[i], \
-        //            f->ppt_gain[i], f->water_loss[i]);
-        //}
     } else {
 
         /* Simple soil water bucket appoximation */
@@ -883,7 +874,6 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer,
         } else {
             // We are draining through the bottom soil layer
             *water_lost += change;
-            printf("THIS HAPPENED\n");
         }
         f->water_loss[soil_layer] += change;
 

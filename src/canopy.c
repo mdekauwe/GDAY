@@ -433,11 +433,10 @@ void check_water_balance(control *c, fluxes *f, double previous_sw,
 
     delta_sw = current_sw - previous_sw;
     f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_sw);
-    if (c->pdebug) {
-        printf("%lf %lf %lf %lf %lf %lf %lf\n\n",
-               f->day_wbal, f->day_ppt, f->runoff, \
-               f->et, delta_sw, previous_sw, current_sw);
-    }
+
+    //printf("%lf %lf %lf %lf %lf %lf\n",
+    //       f->day_ppt, f->runoff, \
+    //       f->et, delta_sw, previous_sw, current_sw);
 
     return;
 }
