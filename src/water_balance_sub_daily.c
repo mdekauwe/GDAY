@@ -291,7 +291,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                              &transpiration, &soil_evap, &et, &runoff);
 
     }
-
+    
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             throughfall, canopy_evap, runoff, omega_leaf,
                             m->rain);
@@ -773,6 +773,7 @@ double calc_infiltration(fluxes *f, params *p, state *s,
 
     runoff = 0.0;
     for (i = 0; i < p->n_layers; i++) {
+
         // determine the available pore space in current soil layer
         wdiff = MAX(0.0, (p->porosity[i] - s->water_frac[i]) * \
                           s->thickness[i] - f->water_gain[i] + \
@@ -790,8 +791,9 @@ double calc_infiltration(fluxes *f, params *p, state *s,
         }
 
         // if we have added all available water we are done
-        if (add <= 0.0)
+        if (add <= 0.0) {
             break;
+        }
     }
 
     // if after all of this we have some water left assume it is runoff
@@ -800,6 +802,7 @@ double calc_infiltration(fluxes *f, params *p, state *s,
     } else {
        runoff = 0.0;
     }
+
 
     return (runoff);
 }
