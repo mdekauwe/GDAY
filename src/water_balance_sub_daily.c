@@ -134,6 +134,9 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
     double gpp_am, gpp_pm, omega_pm, throughfall, canopy_evap;
     double water_content, surface_water, root_zone_total;
 
+    // Water drained through the bottom soil layer
+    double water_lost = 0.0;
+
     if (c->water_balance == HYDRAULICS) {
 
         /* Need to zero everything first */
@@ -216,8 +219,10 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         ** determines water movement between soil layers due drainage
         ** down the profile
         */
+
+
         for (i = 0; i < p->n_layers; i++) {
-            calc_soil_balance(f, p, s, i);
+            calc_soil_balance(f, p, s, i, &water_lost);
         }
 
         /*
@@ -226,6 +231,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         ** is considered runoff
         */
         runoff = calc_infiltration(f, p, s, surface_water);
+        runoff += water_lost * M_TO_MM;
 
         // Don't see point of calculating these again
         // Find SWP & soil resistance without updating waterfrac yet
@@ -257,7 +263,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             }
 
             if (c->pdebug) {
-                printf("%d %.10lf\n", i, f->water_gain[i]);
+                printf("%d %.10lf\n", i, f->water_loss[i]);
             }
         }
         s->pawater_root = root_zone_total;
@@ -817,11 +823,11 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
 }
 
 
-void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
+void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer,
+                       double *water_lost) {
     //
     // Integrator for soil gravitational drainage
     //
-
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
     int    i, N = 1, max_iter;
@@ -872,8 +878,13 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         change = (s->water_frac[soil_layer] - new_water_frac) * \
                   s->thickness[soil_layer];
 
-        /* update soil layer below with drained liquid */
-        f->water_gain[soil_layer+1] += change;
+        if (soil_layer+1 < p->n_layers) {
+            f->water_gain[soil_layer+1] += change;
+        } else {
+            // We are draining through the bottom soil layer
+            *water_lost += change;
+            printf("THIS HAPPENED\n");
+        }
         f->water_loss[soil_layer] += change;
 
     }
