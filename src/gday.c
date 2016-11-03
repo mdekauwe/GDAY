@@ -333,6 +333,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         else
             c->num_days = 365;
 
+        if (year > 2000.0)
+            exit(1);
         calculate_daylength(c->num_days, p->latitude, *(&day_length));
 
         if (c->deciduous_model) {
@@ -440,6 +442,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
 
 
+            //printf("%d %d %lf\n", (int)year, doy, f->day_wbal);
             //
             //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
             //printf("%d %d %f", (int)year, doy, s->water_frac[0]);

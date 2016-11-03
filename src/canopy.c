@@ -41,11 +41,13 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
-    double doy, year, dummy2=0.0;
+    int    debug = TRUE;
+    double doy, year, dummy2=0.0, delta_sw, previous_sw, current_sw;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
+    previous_sw = s->pawater_topsoil + s->pawater_root;
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
@@ -145,6 +147,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_root = 1.0;
     }
 
+    if (debug) {
+        delta_sw = previous_sw - (s->pawater_topsoil + s->pawater_root);
+        current_sw = s->pawater_topsoil + s->pawater_root;
+        check_water_balance(f, previous_sw, current_sw);
+    }
 
     return;
 }
@@ -417,5 +424,17 @@ void lwp_diff_eqn(double time_dummy, double y[], double dydt[],
                    transpiration * (rplant + rsoil) - y[index]) / \
                   (layer_capac * (rplant + rsoil));
 
+    return;
+}
+
+void check_water_balance(fluxes *f, double previous_sw, double current_sw) {
+
+    double delta_sw;
+
+    delta_sw = previous_sw - current_sw;
+    f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_sw);
+
+    //printf("%lf %lf %lf %lf %lf %lf\n",
+    //       f->day_ppt, f->runoff, f->et, delta_sw, previous_sw, current_sw);
     return;
 }

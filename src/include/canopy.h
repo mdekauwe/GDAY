@@ -33,6 +33,7 @@ void    calc_leaf_to_canopy_scalar(canopy_wk *, params *);
 void    calc_delta_potential(fluxes *, state *);
 void    lwp_diff_eqn(double, double [], double [], double, double, double,
                      double, double);
+void check_water_balance(fluxes *, double, double);
 
 
 #endif /* CANOPY_H */

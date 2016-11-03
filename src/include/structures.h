@@ -487,6 +487,7 @@ typedef struct {
     double ga_mol_m2_sec;
     double omega;
     double day_ppt;
+    double day_wbal;
 
     /* daily C production */
     double cpleaf;

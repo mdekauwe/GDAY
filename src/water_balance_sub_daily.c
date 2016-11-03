@@ -789,15 +789,16 @@ double calc_infiltration(fluxes *f, params *p, state *s,
             add = 0.0;
         }
 
-
         // if we have added all available water we are done
         if (add <= 0.0)
             break;
+
+        printf("%d %lf %d\n", i, add* M_TO_MM, p->n_layers);
     }
 
     // if after all of this we have some water left assume it is runoff
     if (add >  0.0) {
-       runoff = add;
+       runoff = add * M_TO_MM;
     } else {
        runoff = 0.0;
     }

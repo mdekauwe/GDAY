@@ -301,6 +301,7 @@ void initialise_fluxes(fluxes *f) {
     f->ga_mol_m2_sec = 0.0;
     f->omega = 0.0;
     f->day_ppt = 0.0;
+    f->day_wbal = 0.0;
 
     /* daily C production */
     f->cpleaf = 0.0;
