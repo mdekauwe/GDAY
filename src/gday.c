@@ -472,7 +472,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             //
             //}
             //printf("\n");
-            printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
+            //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
