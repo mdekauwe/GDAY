@@ -239,6 +239,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             // water content of soil layer (m)
             water_content = s->water_frac[i] * s->thickness[i];
 
+            // NB water gain here is drainage from the layer above
             water_content = MAX(0.0, water_content +    \
                                      f->water_gain[i] + \
                                      f->ppt_gain[i] -   \
@@ -254,13 +255,19 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             } else {
                 root_zone_total += water_content * M_TO_MM;
             }
+
+            if (c->pdebug) {
+                printf("%d %.10lf\n", i, f->water_gain[i]);
+            }
         }
         s->pawater_root = root_zone_total;
-        if (c->pdebug) {
-            printf("%d %lf %lf %lf %lf\n",
-                    i, water_content, f->water_gain[i], \
-                    f->ppt_gain[i], f->water_loss[i]);
-        }
+
+
+        //if (c->pdebug) {
+        //    printf("%d %lf %lf %lf %lf\n",
+        //            i, water_content, f->water_gain[i], \
+        //            f->ppt_gain[i], f->water_loss[i]);
+        //}
     } else {
 
         /* Simple soil water bucket appoximation */
@@ -759,8 +766,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     return;
 }
 
-double calc_infiltration(fluxes *f, params *p, state *s,
-                         double surface_water) {
+double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
     /*
         Takes surface_water and distrubutes it among top layers. Assumes
         total infilatration in timestep.
@@ -773,8 +779,6 @@ double calc_infiltration(fluxes *f, params *p, state *s,
     for (i = 0; i < p->n_layers; i++) {
         f->ppt_gain[i] = 0.0;
     }
-
-
 
     runoff = 0.0;
     for (i = 0; i < p->n_layers; i++) {
@@ -795,7 +799,6 @@ double calc_infiltration(fluxes *f, params *p, state *s,
             add = 0.0;
         }
 
-        //printf("** %d %lf\n", i, f->ppt_gain[i]);
         // if we have added all available water we are done
         if (add <= 0.0) {
             break;
