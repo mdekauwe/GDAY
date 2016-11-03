@@ -293,7 +293,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
     }
 
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
-                            throughfall, canopy_evap, runoff, omega_leaf);
+                            throughfall, canopy_evap, runoff, omega_leaf,
+                            m->rain);
 
 
 }
@@ -375,7 +376,9 @@ void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
                              double interception_hlf_hr,
                              double thoughfall_hlf_hr,
                              double canopy_evap_hlf_hr,
-                             double runoff_hlf_hr, double omega_hlf_hr) {
+                             double runoff_hlf_hr,
+                             double omega_hlf_hr,
+                             double rain_hlf_hr) {
 
     /* add half hour fluxes to day total store */
     f->soil_evap += soil_evap_hlf_hr;
@@ -386,11 +389,10 @@ void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
     f->canopy_evap += canopy_evap_hlf_hr;
     f->runoff += runoff_hlf_hr;
     f->omega += omega_hlf_hr; /* average at the end of hour loop */
+    f->day_ppt += rain_hlf_hr;
 
     return;
 }
-
-
 
 void calc_saxton_stuff(params *p, double *fsoil) {
     /*

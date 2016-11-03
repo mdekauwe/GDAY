@@ -1396,6 +1396,7 @@ void zero_water_day_fluxes(fluxes *f) {
     f->throughfall = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
+    f->day_ppt = 0.0;
 
     return;
 }

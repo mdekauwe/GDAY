@@ -300,6 +300,7 @@ void initialise_fluxes(fluxes *f) {
     f->gs_mol_m2_sec = 0.0;
     f->ga_mol_m2_sec = 0.0;
     f->omega = 0.0;
+    f->day_ppt = 0.0;
 
     /* daily C production */
     f->cpleaf = 0.0;
@@ -491,6 +492,7 @@ void initialise_state(state *s) {
     s->dry_thick = 0.1;
     s->rooted_layers = 0;
     s->saved_swp = 0.0;
+    s->lwp = 0.0;
 
     return;
 }

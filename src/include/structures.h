@@ -156,6 +156,7 @@ typedef struct {
     double dry_thick;   /* Thickness of dry soil layer above water table (m)*/
     int    rooted_layers;
     double saved_swp;
+    double lwp;
 
 } state;
 
@@ -485,6 +486,7 @@ typedef struct {
     double gs_mol_m2_sec;
     double ga_mol_m2_sec;
     double omega;
+    double day_ppt;
 
     /* daily C production */
     double cpleaf;

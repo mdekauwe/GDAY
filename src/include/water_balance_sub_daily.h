@@ -21,7 +21,7 @@ void    setup_hydraulics_arrays(fluxes *, params *, state *);
 
 
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
-                                double, double, double, double);
+                                double, double, double, double, double);
 
 void    calc_saxton_stuff(params *, double *);
 double  saxton_field_capacity(double, double, double, double, double, double);

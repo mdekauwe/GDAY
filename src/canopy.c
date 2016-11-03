@@ -354,7 +354,7 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
     return;
 }
 
-void calc_delta_potential(state *s) {
+void calc_delta_potential(fluxes *f, state *s) {
     // Calculate the change in leaf water potential
 
     int     nbad;                /* N of unsuccessful changes of the step size*/
@@ -377,8 +377,9 @@ void calc_delta_potential(state *s) {
     ystart[1] = s->lwp;
 
     // Runge-Kunte ODE integrator used to estimate a new leaf water potential
-    odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, dummy1,
-           dummy2, dummy3, dummy4, dummy5, lwp_diff_eqn, rkqs);
+    odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, s->lai,
+           s->weighted_swp, s->canht, f->transpiration, dummy5,
+           lwp_diff_eqn, rkqs);
 
     // ystart is a vector 1..N, so need to index from 1
     s->lwp = ystart[1];
@@ -389,8 +390,8 @@ void calc_delta_potential(state *s) {
 }
 
 void lwp_diff_eqn(double time_dummy, double y[], double dydt[],
-                  double dummy1, double dummy2, double dummy3,
-                  double dummy4, double dummy5) {
+                  double lai, double swp, double height,
+                  double transpiration, double dummy5) {
     //
     // differential equation describing change in leaf water potential given
     // supply & demand. NB. numerical lib vectors are index 1..n, so
@@ -403,18 +404,18 @@ void lwp_diff_eqn(double time_dummy, double y[], double dydt[],
 
     // leaf capacitance (mmol m-2 LA MPa-1)
     double capac = 4000.0;
-    double layer_capac = capac * s->lai;
+    double layer_capac = capac * lai;
     double gplant = 20.0;
 
     // conductance is constant with height (MPa s mmol-1)
-    double rplant = 1. / (gplant * s->lai);
-    //double rplant = ht / ( gplant * s->lai );  // MPa s mmol-1 (per layer)
+    double rplant = 1. / (gplant * lai);
+    //double rplant = ht / ( gplant * lai );  // MPa s mmol-1 (per layer)
     double rsoil = 0.0; // need to add calculation
 
     // should this be sunlit LAI only?
-    dydt[index] = (s->weighted_swp - (head * s->canht) - 1000.0 * s->lai * \
-                   f->transpiration * (rplant + rsoil) - y[index]) \
-                  / (layer_capac * (rplant + rsoil));
+    dydt[index] = (swp - (head * height) - 1000.0 * lai * \
+                   transpiration * (rplant + rsoil) - y[index]) / \
+                  (layer_capac * (rplant + rsoil));
 
     return;
 }
