@@ -342,6 +342,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     c->day_idx = 0;
     c->hour_idx = 0;
 
+
+
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
         if (c->sub_daily) {
@@ -354,8 +356,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         else
             c->num_days = 365;
 
-        if (year > 2000.0)
+        if (year > 2000.0) {
             exit(1);
+        }
+
         calculate_daylength(c->num_days, p->latitude, *(&day_length));
 
         if (c->deciduous_model) {
@@ -376,6 +380,12 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         **   D A Y   L O O P   **
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
+
+            if (doy+1 == 54) {
+                c->pdebug = TRUE;
+            } else if (doy+1 == 55) {
+                exit(1);
+            }
 
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, day_length[doy]);

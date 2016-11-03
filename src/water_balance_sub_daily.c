@@ -256,7 +256,11 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             }
         }
         s->pawater_root = root_zone_total;
-
+        if (c->pdebug) {
+            printf("%d %lf %lf %lf %lf\n",
+                    i, water_content, f->water_gain[i], \
+                    f->ppt_gain[i], f->water_loss[i]);
+        }
     } else {
 
         /* Simple soil water bucket appoximation */
@@ -770,6 +774,8 @@ double calc_infiltration(fluxes *f, params *p, state *s,
         f->ppt_gain[i] = 0.0;
     }
 
+
+
     runoff = 0.0;
     for (i = 0; i < p->n_layers; i++) {
 
@@ -789,6 +795,7 @@ double calc_infiltration(fluxes *f, params *p, state *s,
             add = 0.0;
         }
 
+        //printf("** %d %lf\n", i, f->ppt_gain[i]);
         // if we have added all available water we are done
         if (add <= 0.0) {
             break;
@@ -865,6 +872,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer) {
         /* update soil layer below with drained liquid */
         f->water_gain[soil_layer+1] += change;
         f->water_loss[soil_layer] += change;
+
     }
 
     if (f->water_loss[soil_layer] < 0.0) {

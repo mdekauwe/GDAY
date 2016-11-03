@@ -52,6 +52,7 @@ typedef struct {
     int   num_hlf_hrs;
     long  hour_idx;
     long  day_idx;
+    int   pdebug;
 
 } control;
 

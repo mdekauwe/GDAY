@@ -149,7 +149,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
     if (debug) {
         current_sw = s->pawater_topsoil + s->pawater_root;
-        check_water_balance(f, previous_sw, current_sw);
+        check_water_balance(c, f, previous_sw, current_sw);
     }
 
     return;
@@ -426,13 +426,18 @@ void lwp_diff_eqn(double time_dummy, double y[], double dydt[],
     return;
 }
 
-void check_water_balance(fluxes *f, double previous_sw, double current_sw) {
+void check_water_balance(control *c, fluxes *f, double previous_sw,
+                         double current_sw) {
 
     double delta_sw;
 
     delta_sw = current_sw - previous_sw;
     f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_sw);
-    printf("%lf %lf %lf %lf %lf %lf\n",
-           f->day_ppt, f->runoff, f->et, delta_sw, previous_sw, current_sw);
+    if (c->pdebug) {
+        printf("%lf %lf %lf %lf %lf %lf %lf\n\n",
+               f->day_wbal, f->day_ppt, f->runoff, \
+               f->et, delta_sw, previous_sw, current_sw);
+    }
+
     return;
 }
