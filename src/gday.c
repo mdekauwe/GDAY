@@ -295,8 +295,29 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     } else {
         initialise_soils_day(c, f, p, s);
     }
-    s->pawater_root = p->wcapac_root;
-    s->pawater_topsoil = p->wcapac_topsoil;
+
+    if (c->water_balance == HYDRAULICS) {
+        double root_zone_total, water_content;
+
+        // Update the soil water storage
+        root_zone_total = 0.0;
+        for (i = 0; i < p->n_layers; i++) {
+
+            // water content of soil layer (m)
+            water_content = s->water_frac[i] * s->thickness[i];
+
+            // update old GDAY effective two-layer buckets
+            // - this is just for outputting, these aren't used.
+            if (i == 0) {
+                s->pawater_topsoil = water_content * M_TO_MM;
+            }
+            root_zone_total += water_content * M_TO_MM;
+        }
+        s->pawater_root = root_zone_total;
+    } else {
+        s->pawater_root = p->wcapac_root;
+        s->pawater_topsoil = p->wcapac_topsoil;
+    }
 
     if (c->fixed_lai) {
         s->lai = p->fix_lai;
@@ -314,6 +335,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                            &num_disturbance_yrs);
     }
 
+    printf("%lf %lf %lf\n", s->pawater_topsoil + s->pawater_root, s->pawater_topsoil , s->pawater_root);
 
     /* ====================== **
     **   Y E A R    L O O P   **
@@ -355,6 +377,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         **   D A Y   L O O P   **
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
+
+            if (doy > 0)
+                exit(1);
+
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
             }

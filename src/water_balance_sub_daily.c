@@ -199,7 +199,6 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             rr = 1;
         }
 
-
         // Determine water loss in upper layers due to evaporation
         if (soil_evap > 0.0) {
           // Evaporation (m 30min-1)
@@ -291,7 +290,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                              &transpiration, &soil_evap, &et, &runoff);
 
     }
-    
+
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             throughfall, canopy_evap, runoff, omega_leaf,
                             m->rain);
