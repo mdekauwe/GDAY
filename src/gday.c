@@ -335,8 +335,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                            &num_disturbance_yrs);
     }
 
-    printf("%lf %lf %lf\n", s->pawater_topsoil + s->pawater_root, s->pawater_topsoil , s->pawater_root);
-
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
