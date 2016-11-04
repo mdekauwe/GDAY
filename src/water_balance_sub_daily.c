@@ -127,24 +127,39 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             total canopy rnet (Dummy argument, only passed for sub-daily model)
     */
 
-    int    i, rr;
+    int    i;
     double soil_evap, et, interception, runoff, conv, transpiration, net_rad;
     double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
-    double gs_pm, LE_am, LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am;
-    double gpp_am, gpp_pm, omega_pm, throughfall, canopy_evap;
-    double water_content, surface_water, root_zone_total;
+    double canopy_evap, surface_water;
 
     // Water drained through the bottom soil layer
     double water_lost = 0.0;
 
     if (c->water_balance == HYDRAULICS) {
 
-        /* Need to zero everything first */
-        for (i = 0; i < p->n_layers; i++) {
-            f->water_loss[i] = 0.0;
-            f->water_gain[i] = 0.0;
-            f->ppt_gain[i] = 0.0;
-        }
+        zero_water_movement(f, p);
+
+        // calculate potential canopy evap rate, this may be reduced later
+        // depending on canopy water storage
+        canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
+
+        /* mol m-2 s-1 to mm d-1 */
+        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+        canopy_evap *= conv;
+
+        /* We could now replace this interception bit with the Rutter scheme? */
+        calc_interception(c, m, p, f, s, &surface_water, &interception,
+                          &canopy_evap);
+
+        net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
+        soil_evap = calc_soil_evaporation(m, p, s, net_rad);
+        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+
+        /* mol m-2 s-1 to mm/30 min */
+        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
+                        SEC_2_HLFHR;
+
+        et = transpiration + soil_evap + canopy_evap;
 
         /*
         ** The loop needs to be outside the func as we need to be able to
@@ -166,70 +181,24 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             calc_water_uptake_per_layer(f, p, s);
         }
 
-        // calculate potential canopy evap rate, this may be reduced later
-        // depending on canopy water storage
-        canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
-
-        /* mol m-2 s-1 to mm d-1 */
-        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-        canopy_evap *= conv;
-
-        /* We could now replace this interception bit with the Rutter scheme? */
-        calc_interception(c, m, p, f, s, &throughfall, &interception,
-                          &canopy_evap);
-
-        net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-        soil_evap = calc_soil_evaporation(m, p, s, net_rad);
-        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-
-        /* mol m-2 s-1 to mm/30 min */
-        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                        SEC_2_HLFHR;
-
-        et = transpiration + soil_evap + canopy_evap;
-        surface_water = throughfall;
-
         // Calculates the thickness of the top dry layer and determines water
         // lost in upper layers due to evaporation
         calc_wetting_layers(f, p, s, soil_evap, surface_water);
+        extract_water_from_layers(f, s, soil_evap, transpiration);
 
-        // Is soil evap taken from first or second layer?
-        if (s->dry_thick < s->thickness[0]) {
-            // The dry zone does not extend beneath the top layer
-            rr = 0;
-        } else {
-            // The dry zone does extend beneath the top layer
-            rr = 1;
-        }
-
-        // Determine water loss in upper layers due to evaporation
-        if (soil_evap > 0.0) {
-          // Evaporation (m 30min-1)
-          f->water_loss[rr] += soil_evap * MM_TO_M;
-        } // ignoring water gain due to due formation...
-
-
-        // Determing water loss from each layer due to transpiration
-        for (i = 0; i < s->rooted_layers; i++) {
-            f->water_loss[i] += (transpiration * MM_TO_M) * \
-                                 f->fraction_uptake[i];
-        }
-
-        /*
-        ** determines water movement between soil layers due drainage
-        ** down the profile
-        */
-
-
+        //
+        // determines water movement between soil layers due drainage
+        // down the profile
+        //
         for (i = 0; i < p->n_layers; i++) {
             calc_soil_balance(f, p, s, i, &water_lost);
         }
 
-        /*
-        ** how much surface water infiltrantes the first soil layer in the
-        ** current time step? Water which does not infiltrate in a single step
-        ** is considered runoff
-        */
+        //
+        // how much surface water infiltrantes the first soil layer in the
+        // current time step? Water which does not infiltrate in a single step
+        // is considered runoff
+        //
         runoff = calc_infiltration(f, p, s, surface_water);
         runoff += water_lost * M_TO_MM;
 
@@ -238,45 +207,20 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
 
-        // Update the soil water storage
-        root_zone_total = 0.0;
-        for (i = 0; i < p->n_layers; i++) {
-
-            // water content of soil layer (m)
-            water_content = s->water_frac[i] * s->thickness[i];
-
-            // NB water gain here is drainage from the layer above
-            water_content = MAX(0.0, water_content +    \
-                                     f->water_gain[i] + \
-                                     f->ppt_gain[i] -   \
-                                     f->water_loss[i]);
-
-            // Determine volumetric water content water content of layer (m3 m-3)
-            s->water_frac[i] = water_content / s->thickness[i];
-
-            // update old GDAY effective two-layer buckets
-            // - this is just for outputting, these aren't used.
-            if (i == 0) {
-                s->pawater_topsoil = water_content * M_TO_MM;
-            } else {
-                root_zone_total += water_content * M_TO_MM;
-            }
-
-        }
-        s->pawater_root = root_zone_total;
+        update_soil_water_storage(f, p, s);
 
     } else {
 
-        /* Simple soil water bucket appoximation */
+        // Simple soil water bucket appoximation
 
-        /* calculate potential canopy evap rate, this may be reduced later
-           depending on canopy water storage */
+        // calculate potential canopy evap rate, this may be reduced later
+        // depending on canopy water storage
         canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
 
         /* mol m-2 s-1 to mm/day */
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         canopy_evap *= conv;
-        calc_interception(c, m, p, f, s, &throughfall, &interception,
+        calc_interception(c, m, p, f, s, &surface_water, &interception,
                           &canopy_evap);
 
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
@@ -294,18 +238,32 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         et = transpiration + soil_evap + canopy_evap;
 
 
-        update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
+        update_water_storage(c, f, p, s, surface_water, interception, canopy_evap,
                              &transpiration, &soil_evap, &et, &runoff);
 
     }
 
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
-                            throughfall, canopy_evap, runoff, omega_leaf,
+                            surface_water, canopy_evap, runoff, omega_leaf,
                             m->rain);
 
 
 }
 
+void zero_water_movement(fluxes *f, params *p) {
+
+    // Losses and gains of water both from PPT and between layers need to be
+    // zero'd at the start of each timestep
+    int i;
+
+    for (i = 0; i < p->n_layers; i++) {
+        f->water_loss[i] = 0.0;
+        f->water_gain[i] = 0.0;
+        f->ppt_gain[i] = 0.0;
+    }
+
+    return;
+}
 
 void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
     /* Allocate the necessary memory for all the hydraulics arrays */
@@ -920,6 +878,70 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
 
     // waterloss from this layer
     dydt[index] = -drainage;
+
+    return;
+}
+
+void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
+                               double transpiration) {
+
+    // Extract soil evaporation and transpiration from the soil profile
+
+    int rr, i;
+
+    // Is soil evap taken from first or second layer?
+    if (s->dry_thick < s->thickness[0]) {
+        // The dry zone does not extend beneath the top layer
+        rr = 0;
+    } else {
+        // The dry zone does extend beneath the top layer
+        rr = 1;
+    }
+
+    if (soil_evap > 0.0) {
+      f->water_loss[rr] += soil_evap * MM_TO_M;
+    } // ignoring water gain due to due formation...
+
+
+    // Determing water loss from each layer due to transpiration
+    for (i = 0; i < s->rooted_layers; i++) {
+        f->water_loss[i] += (transpiration * MM_TO_M) * \
+                             f->fraction_uptake[i];
+    }
+
+    return;
+}
+
+void update_soil_water_storage(fluxes *f, params *p, state *s) {
+    // Update the soil water storage at the end of the timestep
+
+    double root_zone_total, water_content;
+    int    i;
+
+    root_zone_total = 0.0;
+    for (i = 0; i < p->n_layers; i++) {
+
+        // water content of soil layer (m)
+        water_content = s->water_frac[i] * s->thickness[i];
+
+        // NB water gain here is drainage from the layer above
+        water_content = MAX(0.0, water_content +    \
+                                 f->water_gain[i] + \
+                                 f->ppt_gain[i] -   \
+                                 f->water_loss[i]);
+
+        // Determine volumetric water content water content of layer (m3 m-3)
+        s->water_frac[i] = water_content / s->thickness[i];
+
+        // update old GDAY effective two-layer buckets
+        // - this is just for outputting, these aren't used.
+        if (i == 0) {
+            s->pawater_topsoil = water_content * M_TO_MM;
+        } else {
+            root_zone_total += water_content * M_TO_MM;
+        }
+    }
+    s->pawater_root = root_zone_total;
 
     return;
 }
