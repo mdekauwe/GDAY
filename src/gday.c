@@ -478,13 +478,18 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ** ======================= */
         }
 
-
-
-
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
             allocate_stored_c_and_n(f, p, s);
+        }
+
+        // Adjust rooting distribution at the end of the year to account for
+        // growth of new roots. It is debatable when this should be done. I've
+        // picked the year end for computation reasons and probably because
+        // plants wouldn't do this as dynamcially as on a daily basis. Probably
+        if (c->water_balance == HYDRAULICS) {
+            update_roots(c, p, s);
         }
     }
 

@@ -107,10 +107,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
-    if (c->water_balance == HYDRAULICS) {
-        update_roots(c, p, s);
-    }
-
+    
     precision_control(f, s);
 
     return;
