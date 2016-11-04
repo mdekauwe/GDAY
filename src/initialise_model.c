@@ -303,7 +303,7 @@ void initialise_fluxes(fluxes *f) {
     f->omega = 0.0;
     f->day_ppt = 0.0;
     f->day_wbal = 0.0;
-    f->soil_to_root_resistance = 0.0;
+    f->total_soil_to_root_resist = 0.0;
 
     /* daily C production */
     f->cpleaf = 0.0;
