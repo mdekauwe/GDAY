@@ -551,7 +551,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
         } else {
             rs = sqrt(1.0 / (s->root_length[i] * M_PI));
 
-            arg1 = log(rs / p->root_radius)
+            arg1 = log(rs / p->root_radius);
             arg2 = 2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil;
             rs2 = arg1 / arg2;
 
