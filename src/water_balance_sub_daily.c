@@ -528,7 +528,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     /* saxton water retention equation are off by default */
     double ab = 1.0;
-    double Lsoil, rs, rs2, soilR1, soilR2;
+    double Lsoil, rs, rs2, soilR1, soilR2, arg1, arg2;
     int    i;
 
     double root_xsec_area = M_PI * p->root_radius * p->root_radius;
@@ -550,8 +550,10 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
         } else {
             rs = sqrt(1.0 / (s->root_length[i] * M_PI));
-            rs2 = log(rs / p->root_radius) / \
-                     (2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil);
+
+            arg1 = log(rs / p->root_radius)
+            arg2 = 2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil;
+            rs2 = arg1 / arg2;
 
             //printf("** %d %lf %.15lf %lf %lf %lf %lf\n", i, rs, Lsoil, f->soil_conduct[i], p->root_radius, s->root_length[i], s->thickness[i]);
             /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
