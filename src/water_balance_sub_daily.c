@@ -548,7 +548,10 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
                      (2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil);
 
             /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
-            soilR1 = rs2 * 1E-6 * 18 * 0.001;
+            soilR1 = rs2 * 1E-6 * 18. * 0.001;
+
+            // Save for LWP calculation
+            f->soil_to_root_resistance = soilR1;
 
             /*
             ** second component of below ground resistance related to root
@@ -558,7 +561,6 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
         }
     }
-
 
     return;
 }

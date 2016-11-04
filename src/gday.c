@@ -377,6 +377,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
 
+            if (year == 2002 && doy+1 == 240) {
+                c->pdebug = TRUE;
+            }
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
             }
@@ -473,6 +476,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             //}
             //printf("\n");
             //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
+
+            //printf("\n");
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */

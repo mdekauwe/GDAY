@@ -112,7 +112,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ** pre-dawn soil water potential (MPa), clearly one should link this
             ** the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
             **/
-            if (hod == 10) {
+            if (c->water_balance == HYDRAULICS && hod == 10) {
                 s->saved_swp = s->weighted_swp;
                 /*_calc_soil_water_potential(c, p, s);*/
                 //printf("%.10lf %.10lf\n", s->weighted_swp, s->wtfac_root);
@@ -125,6 +125,15 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
+        if (c->water_balance == HYDRAULICS) {
+            calc_leaf_water_potential(f, s, cw->trans_canopy);
+            if (c->pdebug) {
+                printf("%d %lf %lf\n", hod, s->weighted_swp, s->lwp);
+            }
+        }
+
+        //printf("%lf\n", cw->trans_canopy);
+        //exit(1);
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);
         }
@@ -152,6 +161,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         check_water_balance(c, f, previous_sw, current_sw);
     }
 
+    if (c->pdebug) {
+        exit(1);
+    }
     return;
 }
 
@@ -437,6 +449,26 @@ void check_water_balance(control *c, fluxes *f, double previous_sw,
     //printf("%lf %lf %lf %lf %lf %lf\n",
     //       f->day_ppt, f->runoff, \
     //       f->et, delta_sw, previous_sw, current_sw);
+
+    return;
+}
+
+void calc_leaf_water_potential(fluxes *f, state *s, double transpiration) {
+
+    // leaf-specific hydraulic conductance (mmol m–2 s–1 MPa–1)
+    double kl;
+
+    // plant component of the leaf-specific hydraulic conductance
+    // (mmol m–2 s–1 MPa–1)
+    double kp = 2.0;
+
+    kl = 1.0 / ((1.0 / kp) + (1.0 / f->soil_to_root_resistance) * s->lai);
+
+    if (transpiration > 0.0) {
+        s->lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
+    } else {
+        s->lwp = s->weighted_swp;
+    }
 
     return;
 }

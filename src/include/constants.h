@@ -5,7 +5,7 @@
         - Holds all the macro definitions for constants used in GDAY
 */
 
-
+#define MOL_2_MMOL 1000.0
 #define NDAYS_IN_YR 365.25
 #define DEG_TO_KELVIN 273.15
 #define RGAS 8.314
