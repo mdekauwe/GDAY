@@ -161,11 +161,11 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         et = transpiration + soil_evap + canopy_evap;
 
-        /*
-        ** The loop needs to be outside the func as we need to be able to
-        ** calculate the soil conductance per layer and call this via
-        ** the integration func when we update the soil water balance
-        */
+        //
+        // The loop needs to be outside the func as we need to be able to
+        // calculate the soil conductance per layer and call this via
+        // the integration func when we update the soil water balance
+        //
         for (i = 0; i < p->n_layers; i++) {
             f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
                                                         p->cond1[i],
@@ -176,7 +176,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         calc_soil_water_potential(f, p, s);
         calc_soil_root_resistance(f, p, s);
 
-        /* If we have leaves we are transpiring */
+        // If we have leaves we are transpiring
         if (s->lai > 0.0) {
             calc_water_uptake_per_layer(f, p, s);
         }
