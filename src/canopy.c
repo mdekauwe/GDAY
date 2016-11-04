@@ -128,7 +128,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         if (c->water_balance == HYDRAULICS) {
             calc_leaf_water_potential(f, s, cw->trans_canopy);
             if (c->pdebug) {
-                printf("%d %lf %lf\n", hod, s->weighted_swp, s->lwp);
+                printf("%d %lf %lf %lf\n", hod, s->weighted_swp, s->lwp, f->soil_to_root_resistance);
             }
         }
 
@@ -462,7 +462,7 @@ void calc_leaf_water_potential(fluxes *f, state *s, double transpiration) {
     // (mmol m–2 s–1 MPa–1)
     double kp = 2.0;
 
-    kl = 1.0 / ((1.0 / kp) + (1.0 / f->soil_to_root_resistance) * s->lai);
+    kl = 1.0 / ((1.0 / kp) + f->soil_to_root_resistance * s->lai);
 
     if (transpiration > 0.0) {
         s->lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
