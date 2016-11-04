@@ -204,8 +204,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         // Don't see point of calculating these again
         // Find SWP & soil resistance without updating waterfrac yet
-        calc_soil_water_potential(f, p, s);
-        calc_soil_root_resistance(f, p, s);
+        //calc_soil_water_potential(f, p, s);
+        //calc_soil_root_resistance(f, p, s);
 
         update_soil_water_storage(f, p, s);
 
