@@ -533,8 +533,9 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     double root_xsec_area = M_PI * p->root_radius * p->root_radius;
 
-
-    //for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->n_layers; i++) {
+        f->soilR[i] = 0.0;
+    }
 
     // Store each layers resistance, used in LWP calculatons
     double rsn = 0.0;
