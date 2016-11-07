@@ -541,10 +541,10 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
         /* converts from ms-1 to m2 s-1 MPa-1 */
         Lsoil = f->soil_conduct[i] / head;
 
-        if (Lsoil < 1e-35) {
+        if (Lsoil < 1e-10) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
-
+            rsn += 1e35;
         } else {
             rs = sqrt(1.0 / (s->root_length[i] * M_PI));
 
@@ -552,9 +552,10 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             arg2 = 2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil;
             rs2 = arg1 / arg2;
 
-            //printf("** %d %lf %.15lf %lf %lf %lf %lf\n", i, rs, Lsoil, f->soil_conduct[i], p->root_radius, s->root_length[i], s->thickness[i]);
             /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
             soilR1 = rs2 * 1E-6 * 18. * 0.001;
+
+            //printf("** %d %.20lf\n", i, Lsoil);
 
             // Need to combine resistances in parallel
             rsn += 1.0 / soilR1;
@@ -563,6 +564,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             // hydraulics
             soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i] / ab);
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
+
         }
     }
 
