@@ -533,10 +533,6 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     double root_xsec_area = M_PI * p->root_radius * p->root_radius;
 
-    for (i = 0; i < p->n_layers; i++) {
-        f->soilR[i] = 0.0;
-    }
-
     // Store each layers resistance, used in LWP calculatons
     double rsn = 0.0;
 
@@ -563,10 +559,8 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             // Need to combine resistances in parallel
             rsn += 1.0 / soilR1;
 
-            /*
-            ** second component of below ground resistance related to root
-            ** hydraulics
-            */
+            // second component of below ground resistance related to root
+            // hydraulics
             soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i] / ab);
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
         }
