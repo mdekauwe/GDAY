@@ -463,7 +463,7 @@ void calc_leaf_water_potential(fluxes *f, state *s, double transpiration) {
     double kp = 2.0;
 
     kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist * s->lai);
-
+    printf("%.20lf\n", kl);
     if (transpiration > 0.0) {
         s->lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
     } else {
