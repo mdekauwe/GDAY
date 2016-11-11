@@ -555,11 +555,11 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
             soilR1 = rs2 * 1E-6 * 18. * 0.001;
 
-            printf("** %d %.20lf %.20lf %.20lf\n", i, Lsoil, soilR1);
+            //printf("** %d %.20lf %.20lf %.20lf\n", i, Lsoil, soilR1);
 
             // Need to combine resistances in parallel
             rsn += 1.0 / soilR1;
-            printf("** %d %.20lf %.20lf %.20lf\n", i, Lsoil, soilR1, rsn);
+            //printf("** %d %.20lf %.20lf %.20lf\n", i, Lsoil, soilR1, rsn);
             // second component of below ground resistance related to root
             // hydraulics
             soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i] / ab);
@@ -570,7 +570,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     // Calculated by assuming the resistances are coupled in parallel
     f->total_soil_to_root_resist = 1.0 / rsn;
-    printf("*** %.20lf\n", f->total_soil_to_root_resist);
+    //printf("*** %.20lf\n", f->total_soil_to_root_resist);
     return;
 }
 

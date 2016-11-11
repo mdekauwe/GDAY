@@ -497,7 +497,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             update_roots(c, p, s);
         }
     }
-
+    
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */

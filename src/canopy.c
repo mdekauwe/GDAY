@@ -127,9 +127,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
         if (c->water_balance == HYDRAULICS) {
             calc_leaf_water_potential(f, s, cw->trans_canopy);
-            if (c->pdebug) {
-                printf("%d %lf %lf %lf\n", hod, s->weighted_swp, s->lwp, f->total_soil_to_root_resist);
-            }
+            //if (c->pdebug) {
+            //    printf("%d %lf %lf %lf\n", hod, s->weighted_swp, s->lwp, f->total_soil_to_root_resist);
+            //}
+            printf("%d %lf %lf\n", hod, s->weighted_swp, s->lwp);
         }
 
         //printf("%lf\n", cw->trans_canopy);
