@@ -90,8 +90,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                         calculate_emax(cw, f, m, p, s, &emax_leaf, &etest, &kl);
 
-                        // leaf water potential reached
-                        s->lwp = s->weighted_swp - (etest * MOL_2_MMOL / ktot);
+                        // leaf water potential
                         cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl, etest);
 
                         if (etest > emax_leaf) {
@@ -103,9 +102,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                             // Minimum leaf water potential reached
                             // - recalculate LWP
-                            s->lwp = s->weighted_swp - \
-                                     (emax_leaf * MOL_2_MMOL / ktot);
-
                             cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl,
                                                                emax_leaf);
 
