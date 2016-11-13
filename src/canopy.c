@@ -92,7 +92,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                         // leaf water potential
                         cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl, etest);
-
+                        
                         if (etest > emax_leaf) {
 
                             // gs in mol m-2 s-1
@@ -487,9 +487,9 @@ double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
 
     double lwp;
 
-    s->lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
-    if (s->lwp < -20.0) {
-        s->lwp = -20.0;
+    lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
+    if (lwp < -20.0) {
+        lwp = -20.0;
     }
 
     return (lwp);
@@ -505,10 +505,10 @@ void calculate_emax(canopy_wk *cw, fluxes *f, met *m, params *p, state *s,
     //kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist * s->lai);
     *kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist);
 
-    // Maximum transpiration rate
+    // Maximum transpiration rate (mol m-2 s-1;)
     *emax_leaf = *kl * (s->weighted_swp - p->min_lwp);
 
-    // Leaf transpiration in mol m-2 s-1; ignoring boundary layer effects!
+    // Leaf transpiration (mol m-2 s-1); ignoring boundary layer effects!
     *etest = (cw->dleaf / m->press) * cw->gsc_leaf[cw->ileaf] * GSVGSC;
 
     return;
