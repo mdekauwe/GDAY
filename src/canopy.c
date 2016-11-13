@@ -92,7 +92,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                         // leaf water potential
                         cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl, etest);
-                        
+
                         if (etest > emax_leaf) {
 
                             // gs in mol m-2 s-1
@@ -334,7 +334,9 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw) {
     cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
 
     if (c->water_balance == HYDRAULICS) {
-        cw->lwp_canopy = cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED];
+        // Not sure about this...leave it for now as it doesn't affect the
+        // calculations
+        cw->lwp_canopy = (cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED]) / 2.0;
     }
 
     return;
