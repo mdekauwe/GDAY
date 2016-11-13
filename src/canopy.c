@@ -86,8 +86,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         exit(EXIT_FAILURE);
                     }
 
-                    double plant_K, ktot, emax_leaf, etest;
-
                     if (c->water_balance == HYDRAULICS) {
 
                         calculate_emax(cw, f, m, p, s, &emax_leaf, &etest, &kl);
@@ -151,7 +149,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             if (c->water_balance == HYDRAULICS && hod == 10) {
                 s->saved_swp = s->weighted_swp;
                 /*_calc_soil_water_potential(c, p, s);*/
-                //printf("%.10lf %.10lf\n", s->weighted_swp, s->wtfac_root);
+
             }
 
         }
@@ -161,8 +159,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
-
-
+        if (c->pdebug) {
+            printf("%d %.10lf %.10lf\n", hod, s->weighted_swp, cw->lwp_canopy);
+        }
         //printf("%lf\n", cw->trans_canopy);
         //exit(1);
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
