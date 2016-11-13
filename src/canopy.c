@@ -42,7 +42,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE;
-    double doy, year, dummy2=0.0, previous_sw, current_sw;
+    double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
+    double emax_leaf, etest;
+
+    // leaf-specific hydraulic conductance (mmol m–2 s–1 MPa–1)
+    double kl;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -82,6 +86,38 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         exit(EXIT_FAILURE);
                     }
 
+                    double plant_K, ktot, emax_leaf, etest;
+
+                    if (c->water_balance == HYDRAULICS) {
+
+                        calculate_emax(cw, f, m, p, s, &emax_leaf, &etest, &kl);
+
+                        // leaf water potential reached
+                        s->lwp = s->weighted_swp - (etest * MOL_2_MMOL / ktot);
+                        cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl, etest);
+
+                        if (etest > emax_leaf) {
+
+                            // gs in mol m-2 s-1
+                            gsv = MMOL_2_MOL * \
+                                  emax_leaf / (cw->dleaf / m->press);
+                            cw->gsc_leaf[cw->ileaf] = gsv / GSVGSC;
+
+                            // Minimum leaf water potential reached
+                            // - recalculate LWP
+                            s->lwp = s->weighted_swp - \
+                                     (emax_leaf * MOL_2_MMOL / ktot);
+
+                            cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl,
+                                                               emax_leaf);
+
+                            // Now that GS is known, resolve A
+                            photosynthesis_C3_emax(c, cw, m, p, s);
+
+                        }
+
+                    }
+
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, cw, f, m, p, s);
@@ -119,19 +155,13 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
         }
-        scale_leaf_to_canopy(cw);
+        scale_leaf_to_canopy(c, cw);
         sum_hourly_carbon_fluxes(cw, f, p);
         calculate_water_balance_sub_daily(c, f, m, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
-        if (c->water_balance == HYDRAULICS) {
-            calc_leaf_water_potential(f, s, cw->trans_canopy);
-            //if (c->pdebug) {
-            //    printf("%d %lf %lf %lf\n", hod, s->weighted_swp, s->lwp, f->total_soil_to_root_resist);
-            //}
-            printf("%d %lf %lf\n", hod, s->weighted_swp, s->lwp);
-        }
+
 
         //printf("%lf\n", cw->trans_canopy);
         //exit(1);
@@ -169,7 +199,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 }
 
 void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
-                              params *p, state *s) {
+                               params *p, state *s) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -298,7 +328,7 @@ void zero_hourly_fluxes(canopy_wk *cw) {
     return;
 }
 
-void scale_leaf_to_canopy(canopy_wk *cw) {
+void scale_leaf_to_canopy(control *c, canopy_wk *cw) {
 
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
     cw->rd_canopy = cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED];
@@ -307,6 +337,10 @@ void scale_leaf_to_canopy(canopy_wk *cw) {
     cw->trans_canopy = cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED];
     cw->omega_canopy = (cw->omega_leaf[SUNLIT] + cw->omega_leaf[SHADED]) / 2.0;
     cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
+
+    if (c->water_balance == HYDRAULICS) {
+        cw->lwp_canopy = cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED];
+    }
 
     return;
 }
@@ -454,21 +488,33 @@ void check_water_balance(control *c, fluxes *f, double previous_sw,
     return;
 }
 
-void calc_leaf_water_potential(fluxes *f, state *s, double transpiration) {
+double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
 
-    // leaf-specific hydraulic conductance (mmol m–2 s–1 MPa–1)
-    double kl;
-
-    // plant component of the leaf-specific hydraulic conductance
-    // (mmol m–2 s–1 MPa–1)
-    double kp = 2.0;
-
-    kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist * s->lai);
+    double lwp;
 
     s->lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
     if (s->lwp < -20.0) {
         s->lwp = -20.0;
     }
+
+    return (lwp);
+}
+
+void calculate_emax(canopy_wk *cw, fluxes *f, met *m, params *p, state *s,
+                    double *emax_leaf, double *etest, double *kl) {
+
+    // plant component of the leaf-specific hydraulic conductance
+    // (mmol m–2 s–1 MPa–1)
+    double kp = 2.0;
+
+    //kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist * s->lai);
+    *kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist);
+
+    // Maximum transpiration rate
+    *emax_leaf = *kl * (s->weighted_swp - p->min_lwp);
+
+    // Leaf transpiration in mol m-2 s-1; ignoring boundary layer effects!
+    *etest = (cw->dleaf / m->press) * cw->gsc_leaf[cw->ileaf] * GSVGSC;
 
     return;
 }

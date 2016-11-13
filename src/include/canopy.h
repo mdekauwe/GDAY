@@ -24,7 +24,7 @@ void    canopy(canopy_wk *, control *, fluxes *, met_arrays *, met *, params *,
 void    solve_leaf_energy_balance(control *, canopy_wk *, fluxes *, met *,
                                   params *, state *);
 void    sum_hourly_carbon_fluxes(canopy_wk *, fluxes *, params *);
-void    scale_leaf_to_canopy(canopy_wk *);
+void    scale_leaf_to_canopy(control *c, canopy_wk *);
 double  calc_leaf_net_rad(params *, state *, double, double, double);
 void    calculate_top_of_canopy_leafn(canopy_wk *, params *, state *);
 void    calc_leaf_to_canopy_scalar(canopy_wk *, params *);
@@ -34,6 +34,7 @@ void    calc_delta_potential(fluxes *, state *);
 void    lwp_diff_eqn(double, double [], double [], double, double, double,
                      double, double);
 void    check_water_balance(control *, fluxes *, double, double);
-void    calc_leaf_water_potential(fluxes *, state *, double);
-
+double  calc_lwp(fluxes *, state *, double, double);
+void    calculate_emax(canopy_wk *, fluxes *, met *, params *, state *,
+                       double *, double *, double *);
 #endif /* CANOPY_H */

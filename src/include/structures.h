@@ -646,6 +646,7 @@ typedef struct {
     double lai_leaf[2];     /* sunlit and shaded leaf area (m2 m-2) */
     double omega_leaf[2];   /* leaf decoupling coefficient (-) */
     double tleaf[2];        /* leaf temperature (deg C) */
+    double lwp_leaf[2];     /* leaf water potential */
     double an_canopy;       /* canopy net photosynthesis (umol m-2 s-1) */
     double rd_canopy;       /* canopy respiration in the light (umol m-2 s-1) */
     double gsc_canopy;      /* canopy stomatal conductance to CO2 (mol m-2 s-1) */
@@ -653,6 +654,7 @@ typedef struct {
     double omega_canopy;    /* canopy decoupling coefficient (-) */
     double trans_canopy;    /* canopy transpiration (mm 30min-1) */
     double rnet_canopy;     /* canopy net radiation (W m-2) */
+    double lwp_canopy;      /* Leaf water potential for the canopy */
     double N0;              /* top of canopy nitrogen (g N m-2)) */
     double elevation;       /* sun elevation angle in degrees */
     double cos_zenith;      /* cos(zenith angle of sun) in radians */
@@ -663,6 +665,15 @@ typedef struct {
     double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
     double kb;              /* beam radiation ext coeff of canopy */
     double cscalar[2];      /* scale from single leaf to canopy */
+
+    // Used in the hydraulics calculations when water is limiting //
+    double ts_Cs;           // Temporary variable to store Cs //
+    double ts_vcmax;        // Temporary variable to store vcmax //
+    double ts_km;           // Temporary variable to store km //
+    double ts_gamma_star;   // Temporary variable to store gamma_star //
+    double ts_rd;           // Temporary variable to store rd //
+    double ts_Vj;           // Temporary variable to store Vj //
+
 } canopy_wk;
 
 

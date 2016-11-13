@@ -6,6 +6,7 @@
 */
 
 #define MOL_2_MMOL 1000.0
+#define MMOL_2_MOL 1E-03
 #define NDAYS_IN_YR 365.25
 #define DEG_TO_KELVIN 273.15
 #define RGAS 8.314
@@ -49,6 +50,7 @@
 #define METER_OF_HEAD_TO_MPA 9.81 * KPA_2_MPA /* Height (m) x gravity (m/s2) = pressure (kPa) */
 #define PA_2_KPA 0.001
 #define CM_2_M 0.01
+
 /* Solar radiaiton 1 W m-2 ~ 2.3 umol m-2 s-1 PAR
    Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
 #define SW_2_PAR 2.3
