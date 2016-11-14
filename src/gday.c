@@ -417,7 +417,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
-            /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
+            //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
 
@@ -467,14 +467,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
 
             //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
-            printf("%d %d %f", (int)year, doy, s->water_frac[0]);
-            for (i = 1; i < p->n_layers; i++) {
+            //printf("%d %d %f", (int)year, doy, s->water_frac[0]);
+            //for (i = 1; i < p->n_layers; i++) {
             //
             //    //printf(" %f", s->water_frac[i] * s->thickness[i] * M_TO_MM);
-                printf(" %f", s->water_frac[i]);
+            //    printf(" %f", s->water_frac[i]);
             //
-            }
-            printf("\n");
+            //}
+            //printf("\n");
             //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
 
             //printf("%d %d %lf %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root, s->saved_swp);

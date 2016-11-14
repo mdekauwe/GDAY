@@ -119,6 +119,7 @@ void write_output_header(control *c, FILE **fp) {
 
 
     /* Misc */
+    fprintf(*fp, "swp");
     fprintf(*fp, "leafretransn\n");
 
 
@@ -243,6 +244,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,", f->rexc_cue);
 
     /* Misc */
+    fprintf(c->ofp, "%.10f,", s->saved_swp);
     fprintf(c->ofp, "%.10f\n", f->leafretransn);
 
 
