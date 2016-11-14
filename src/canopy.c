@@ -107,9 +107,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                             // Now that GS is known, resolve A
                             photosynthesis_C3_emax(c, cw, m, p, s);
-
                         }
-
                     }
 
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
@@ -155,9 +153,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
-        if (c->pdebug) {
-            printf("%d %.10lf %.10lf\n", hod, s->weighted_swp, cw->lwp_canopy);
-        }
+        //if (c->pdebug) {
+        //    printf("%d %.10lf %.10lf\n", hod, s->weighted_swp, cw->lwp_canopy);
+        //}
         //printf("%lf\n", cw->trans_canopy);
         //exit(1);
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
