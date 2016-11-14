@@ -466,8 +466,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             c->day_idx++;
 
 
-            printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
-            //printf("%d %d %f", (int)year, doy, s->water_frac[0]);
+            #printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
+            printf("%d %d %f", (int)year, doy, s->water_frac[0]);
             for (i = 1; i < p->n_layers; i++) {
             //
             //    //printf(" %f", s->water_frac[i] * s->thickness[i] * M_TO_MM);
