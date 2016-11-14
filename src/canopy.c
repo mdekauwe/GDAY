@@ -153,9 +153,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
-        if (c->pdebug) {
-            printf("%d %.10lf %.10lf\n", hod, s->weighted_swp, cw->lwp_canopy);
-        }
+        //if (c->pdebug) {
+        //  printf("%d %.10lf %.10lf\n", hod, s->weighted_swp, cw->lwp_canopy);
+        //}
         //printf("%lf\n", cw->trans_canopy);
         //exit(1);
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
@@ -185,9 +185,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         check_water_balance(c, f, previous_sw, current_sw);
     }
 
-    if (c->pdebug) {
-        exit(1);
-    }
+    //if (c->pdebug) {
+    //    exit(1);
+    //}
     return;
 }
 
