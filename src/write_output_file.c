@@ -119,7 +119,7 @@ void write_output_header(control *c, FILE **fp) {
 
 
     /* Misc */
-    fprintf(*fp, "swp");
+    fprintf(*fp, "swp,");
     fprintf(*fp, "leafretransn\n");
 
 
