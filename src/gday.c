@@ -377,9 +377,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
 
-            //if (year == 2002 && doy+1 == 240) {
-            //    c->pdebug = TRUE;
-            //}
+            if (year == 2001 && doy+1 == 230) {
+                c->pdebug = TRUE;
+            }
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
             }
@@ -467,20 +467,20 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
 
             //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
-            printf("%d %d %f", (int)year, doy, s->water_frac[0]);
-            for (i = 1; i < p->n_layers; i++) {
+            //printf("%d %d %f", (int)year, doy, s->water_frac[0]);
+            //for (i = 1; i < p->n_layers; i++) {
             //
             //    //printf(" %f", s->water_frac[i] * s->thickness[i] * M_TO_MM);
-                printf(" %f", s->water_frac[i]);
+            //    printf(" %f", s->water_frac[i]);
             //
-            }
-            printf("\n");
+            //}
+            //printf("\n");
             //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
 
             //printf("%d %d %lf %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root, s->saved_swp);
             //printf("%d %d %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root);
 
-            printf("\n");
+
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */

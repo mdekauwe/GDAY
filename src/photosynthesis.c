@@ -74,7 +74,13 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         if (dleaf_kpa < 0.05) {
             dleaf_kpa = 0.05;
         }
-        gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
+
+        // This is calculated by SPA hydraulics so we don't need
+        if (c->water_balance == HYDRAULICS) {
+            gs_over_a = (1.0 + p->g1 / sqrt(dleaf_kpa)) / Cs;
+        } else {
+            gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
+        }
         g0 = g0_zero;
 
         /* Solution when Rubisco activity is limiting */
