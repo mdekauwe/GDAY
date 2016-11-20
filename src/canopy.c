@@ -141,13 +141,16 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ** the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
             **/
             if (c->water_balance == HYDRAULICS && hod == 10) {
-                s->saved_swp = s->weighted_swp;
+                s->predawn_swp = s->weighted_swp;
                 /*_calc_soil_water_potential(c, p, s);*/
 
             }
 
         }
         scale_leaf_to_canopy(c, cw);
+        if (c->water_balance == HYDRAULICS && hod == 24) {
+            s->midday_lwp = cw->lwp_canopy;
+        }
         sum_hourly_carbon_fluxes(cw, f, p);
         calculate_water_balance_sub_daily(c, f, m, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
@@ -168,7 +171,13 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* work out average omega for the day over sunlight hours */
     f->omega /= sunlight_hrs;
 
-    if (c->water_stress) {
+    if (c->water_stress && c->water_balance == HYDRAULICS) {
+        // We should probably add the non-stomatal stuff, but if using the SPA
+        // bit then we are using stuff via emax/lwp calcs above not via the soil
+        // stuff, so set this all to 1
+        s->wtfac_topsoil = 1.0;
+        s->wtfac_root = 1.0;
+    } else if (c->water_stress && c->water_balance == BUCKET) {
         /* Calculate the soil moisture availability factors [0,1] in the
            topsoil and the entire root zone */
         calculate_soil_water_fac(c, p, s);

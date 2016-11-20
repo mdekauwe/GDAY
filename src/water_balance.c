@@ -1284,8 +1284,13 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         sf = 1.9;
         psi_f = -1.85;
 
-        s->wtfac_topsoil = exp(b * s->saved_swp);
-        s->wtfac_root = exp(b * s->saved_swp);
+        s->wtfac_topsoil = exp(b * s->predawn_swp);
+        s->wtfac_root = exp(b * s->predawn_swp);
+
+        //s->wtfac_topsoil_ns = (1.0 + exp(sf * psi_f)) / \
+        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
+        //s->wtfac_root_ns = (1.0 + exp(sf * psi_f)) / \
+        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
 
         /*
         s->wtfac_topsoil = exp(p->g1_b * s->psi_s_topsoil);

@@ -156,7 +156,8 @@ typedef struct {
     double weighted_swp;
     double dry_thick;   /* Thickness of dry soil layer above water table (m)*/
     int    rooted_layers;
-    double saved_swp;
+    double predawn_swp;     /* MPa */
+    double midday_lwp;     /* MPa */
     double lwp;
 
 } state;
@@ -646,7 +647,7 @@ typedef struct {
     double lai_leaf[2];     /* sunlit and shaded leaf area (m2 m-2) */
     double omega_leaf[2];   /* leaf decoupling coefficient (-) */
     double tleaf[2];        /* leaf temperature (deg C) */
-    double lwp_leaf[2];     /* leaf water potential */
+    double lwp_leaf[2];     /* leaf water potential (MPa) */
     double an_canopy;       /* canopy net photosynthesis (umol m-2 s-1) */
     double rd_canopy;       /* canopy respiration in the light (umol m-2 s-1) */
     double gsc_canopy;      /* canopy stomatal conductance to CO2 (mol m-2 s-1) */
@@ -654,7 +655,7 @@ typedef struct {
     double omega_canopy;    /* canopy decoupling coefficient (-) */
     double trans_canopy;    /* canopy transpiration (mm 30min-1) */
     double rnet_canopy;     /* canopy net radiation (W m-2) */
-    double lwp_canopy;      /* Leaf water potential for the canopy */
+    double lwp_canopy;      /* Leaf water potential for the canopy(MPa) */
     double N0;              /* top of canopy nitrogen (g N m-2)) */
     double elevation;       /* sun elevation angle in degrees */
     double cos_zenith;      /* cos(zenith angle of sun) in radians */
