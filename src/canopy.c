@@ -514,7 +514,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     if (etest > emax_leaf) {
 
         // gs in mol m-2 s-1
-        gsv = MMOL_2_MOL * emax_leaf / (cw->dleaf / m->press);
+        gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
         cw->gsc_leaf[idx] = gsv / GSVGSC;
 
         // Minimum leaf water potential reached so recalculate LWP
