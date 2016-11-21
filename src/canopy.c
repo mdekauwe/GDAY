@@ -497,6 +497,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // (mmol m–2 s–1 MPa–1)
     double kp = 2.0;
     double ktot, emax_leaf, etest, gsv;
+    int    idx = cw->ileaf;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
@@ -508,16 +509,16 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     etest = (cw->dleaf / m->press) * cw->gsc_leaf[cw->ileaf] * GSVGSC;
 
     // leaf water potential
-    cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, ktot, etest);
+    cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, etest);
 
     if (etest > emax_leaf) {
 
         // gs in mol m-2 s-1
         gsv = MMOL_2_MOL * emax_leaf / (cw->dleaf / m->press);
-        cw->gsc_leaf[cw->ileaf] = gsv / GSVGSC;
+        cw->gsc_leaf[idx] = gsv / GSVGSC;
 
         // Minimum leaf water potential reached so recalculate LWP
-        cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, ktot, emax_leaf);
+        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
 
         // Now that Gs is known, re-solve An
         photosynthesis_C3_emax(c, cw, m, p, s);
