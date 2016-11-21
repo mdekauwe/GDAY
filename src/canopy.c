@@ -83,7 +83,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     }
 
                     if (c->water_balance == HYDRAULICS) {
-                        // Ensure transpiration
+                        // Ensure transpiration does not exceed Emax, if it
+                        // does we recalculate gs and An
                         calculate_emax(c, cw, f, m, p, s);
                     }
 
@@ -495,19 +496,19 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // plant component of the leaf-specific hydraulic conductance
     // (mmol m–2 s–1 MPa–1)
     double kp = 2.0;
-    double kl, emax_leaf, etest, gsv;
+    double ktot, emax_leaf, etest, gsv;
 
-    //kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist * s->lai);
-    kl = 1.0 / ((1.0 / kp) + f->total_soil_to_root_resist);
+    // Hydraulic conductance of the entire soil-to-leaf pathway
+    ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
 
     // Maximum transpiration rate (mol m-2 s-1;)
-    emax_leaf = kl * (s->weighted_swp - p->min_lwp);
+    emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
 
     // Leaf transpiration (mol m-2 s-1); ignoring boundary layer effects!
     etest = (cw->dleaf / m->press) * cw->gsc_leaf[cw->ileaf] * GSVGSC;
 
     // leaf water potential
-    cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl, etest);
+    cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, ktot, etest);
 
     if (etest > emax_leaf) {
 
@@ -516,7 +517,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         cw->gsc_leaf[cw->ileaf] = gsv / GSVGSC;
 
         // Minimum leaf water potential reached so recalculate LWP
-        cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, kl, emax_leaf);
+        cw->lwp_leaf[cw->ileaf] = calc_lwp(f, s, ktot, emax_leaf);
 
         // Now that Gs is known, re-solve An
         photosynthesis_C3_emax(c, cw, m, p, s);

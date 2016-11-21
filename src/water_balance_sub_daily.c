@@ -525,16 +525,13 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     /* head of pressure (MPa/m) */
     double head = 0.009807;
-
-    /* saxton water retention equation are off by default */
-    double ab = 1.0;
-    double Lsoil, rs, rs2, soilR1, soilR2, arg1, arg2;
+    double Lsoil, rs, soilR1, soilR2, arg1, arg2;
     int    i;
 
     double root_xsec_area = M_PI * p->root_radius * p->root_radius;
 
     // Store each layers resistance, used in LWP calculatons
-    double rsn = 0.0;
+    double rsum = 0.0;
 
     for (i = 0; i < s->rooted_layers; i++) {
 
@@ -544,33 +541,29 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
         if (Lsoil < 1e-35) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
-            rsn += 1e35;
+            rsum += 1e35;
         } else {
             rs = sqrt(1.0 / (s->root_length[i] * M_PI));
-
             arg1 = log(rs / p->root_radius);
             arg2 = 2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil;
-            rs2 = arg1 / arg2;
 
             /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
-            soilR1 = rs2 * 1E-6 * 18. * 0.001;
+            soilR1 = (arg1 / arg2) * 1E-6 * 18. * 0.001;
 
-            //printf("** %d %.20lf %.20lf %.20lf\n", i, Lsoil, soilR1);
+            // Need to combine resistances in parallel, but we only want the
+            // soil term as the root component is part of the plant resistance
+            rsum += 1.0 / soilR1;
 
-            // Need to combine resistances in parallel
-            rsn += 1.0 / soilR1;
-            //printf("** %d %.20lf %.20lf %.20lf\n", i, Lsoil, soilR1, rsn);
             // second component of below ground resistance related to root
             // hydraulics
-            soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i] / ab);
+            soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i]);
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
 
         }
     }
 
-    // Calculated by assuming the resistances are coupled in parallel
-    f->total_soil_to_root_resist = 1.0 / rsn;
-    //printf("*** %.20lf\n", f->total_soil_to_root_resist);
+    f->total_soil_resist = 1.0 / rsum;
+
     return;
 }
 

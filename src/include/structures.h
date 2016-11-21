@@ -631,7 +631,7 @@ typedef struct {
     double *ppt_gain;
     double *water_loss;
     double *water_gain;
-    double total_soil_to_root_resist;
+    double total_soil_resist;
 
 } fluxes;
 
