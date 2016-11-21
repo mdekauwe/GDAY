@@ -35,6 +35,5 @@ void    lwp_diff_eqn(double, double [], double [], double, double, double,
                      double, double);
 void    check_water_balance(control *, fluxes *, double, double);
 double  calc_lwp(fluxes *, state *, double, double);
-void    calculate_emax(canopy_wk *, fluxes *, met *, params *, state *,
-                       double *, double *, double *);
+void    calculate_emax(control *, canopy_wk *, fluxes *, met *, params *, state *);
 #endif /* CANOPY_H */
