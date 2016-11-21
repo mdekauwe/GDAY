@@ -470,18 +470,6 @@ void check_water_balance(control *c, fluxes *f, double previous_sw,
     return;
 }
 
-double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
-
-    double lwp;
-
-    lwp = s->weighted_swp - (transpiration * MOL_2_MMOL / kl);
-    if (lwp < -20.0) {
-        lwp = -20.0;
-    }
-
-    return (lwp);
-}
-
 void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
                     state *s) {
 
@@ -502,27 +490,39 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // Hydraulic conductance of the entire soil-to-leaf pathway
     ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
 
-    // Maximum transpiration rate (mol m-2 s-1;)
+    // Maximum transpiration rate (mmol m-2 s-1)
     emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
 
-    // Leaf transpiration (mol m-2 s-1); ignoring boundary layer effects!
-    etest = (cw->dleaf / m->press) * cw->gsc_leaf[cw->ileaf] * GSVGSC;
+    // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
+    etest = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
 
-    // leaf water potential
+    // leaf water potential (MPa)
     cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, etest);
 
     if (etest > emax_leaf) {
 
-        // gs in mol m-2 s-1
+        // Calculate gs (mol m-2 s-1) given emax_leaf
         gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
         cw->gsc_leaf[idx] = gsv / GSVGSC;
 
-        // Minimum leaf water potential reached so recalculate LWP
+        // Minimum leaf water potential reached so recalculate LWP (MPa)
         cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
 
-        // Now that Gs is known, re-solve An
+        // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
     }
 
     return;
+}
+
+double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
+
+    double lwp;
+
+    lwp = s->weighted_swp - (transpiration / kl);
+    if (lwp < -20.0) {
+        lwp = -20.0;
+    }
+
+    return (lwp);
 }
