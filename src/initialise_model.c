@@ -241,7 +241,7 @@ void initialise_params(params *p) {
 
     /* hydraulics */
     p->layer_thickness = 0.1; /* soil layer thickness (m) */
-    p->n_layers = 20; /* soil layer thickness (m) */
+    p->n_layers = 20;         /* number of soil layers */
     p->root_k = 100.0;
     p->root_radius = 0.0005;
     p->root_density = 0.5e6;
