@@ -104,18 +104,13 @@ int main(int argc, char **argv)
 
     if (c->water_balance == HYDRAULICS) {
         initialise_roots(f, p, s);
+        setup_hydraulics_arrays(f, p, s);
     }
 
     if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
     } else {
         read_daily_met_data(argv, c, ma);
-    }
-
-    if (c->sub_daily) {
-        initialise_soils_sub_daily(c, f, p, s);
-    } else {
-        initialise_soils_day(c, f, p, s);
     }
 
     if (c->spin_up) {
@@ -294,7 +289,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     correct_rate_constants(p, FALSE);
     day_end_calculations(c, p, s, -99, TRUE);
 
-
+    if (c->sub_daily) {
+        initialise_soils_sub_daily(c, f, p, s);
+    } else {
+        initialise_soils_day(c, f, p, s);
+    }
 
     if (c->water_balance == HYDRAULICS) {
         double root_zone_total, water_content;

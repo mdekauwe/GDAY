@@ -51,7 +51,6 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     /* Set up all the hydraulics stuff */
     if (c->water_balance == HYDRAULICS) {
         calc_saxton_stuff(p, fsoil_root);
-        setup_hydraulics_arrays(f, p, s);
 
         for (i = 0; i < p->wetting; i++) {
             s->wetting_bot[i] = 0.0;
@@ -267,6 +266,47 @@ void zero_water_movement(fluxes *f, params *p) {
 
 void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
     /* Allocate the necessary memory for all the hydraulics arrays */
+    p->potA = malloc(p->n_layers * sizeof(double));
+    if (p->potA == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's potA\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->potB = malloc(p->n_layers * sizeof(double));
+    if (p->potB == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's potB\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->cond1 = malloc(p->n_layers * sizeof(double));
+    if (p->cond1 == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's cond1\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->cond2 = malloc(p->n_layers * sizeof(double));
+    if (p->cond1 == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's cond2\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->cond3 = malloc(p->n_layers * sizeof(double));
+    if (p->cond1 == NULL) {
+        fprintf(stderr, "malloc failed allocating Saxton's cond3\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->porosity = malloc(p->n_layers * sizeof(double));
+    if (p->porosity == NULL) {
+        fprintf(stderr, "malloc failed allocating porosity\n");
+        exit(EXIT_FAILURE);
+    }
+
+    p->field_capacity = malloc(p->n_layers * sizeof(double));
+    if (p->field_capacity == NULL) {
+        fprintf(stderr, "malloc failed allocating field_capacity\n");
+        exit(EXIT_FAILURE);
+    }
 
     f->soil_conduct = malloc(p->n_layers * sizeof(double));
     if (f->soil_conduct == NULL) {
@@ -310,7 +350,6 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
-
     /* Depth to bottom of wet soil layers (m) */
     s->water_frac = malloc(p->n_layers * sizeof(double));
     if (s->water_frac == NULL) {
@@ -332,9 +371,8 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
+    return;
 }
-
-
 
 void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
                              double transpiration_hlf_hr, double et_hlf_hr,
@@ -400,54 +438,11 @@ void calc_saxton_stuff(params *p, double *fsoil) {
     double sand = fsoil[SAND] * 100.0;
     double clay = fsoil[CLAY] * 100.0;
 
-    p->potA = malloc(p->n_layers * sizeof(double));
-    if (p->potA == NULL) {
-        fprintf(stderr, "malloc failed allocating Saxton's potA\n");
-        exit(EXIT_FAILURE);
-    }
-
-    p->potB = malloc(p->n_layers * sizeof(double));
-    if (p->potB == NULL) {
-        fprintf(stderr, "malloc failed allocating Saxton's potB\n");
-        exit(EXIT_FAILURE);
-    }
-
-    p->cond1 = malloc(p->n_layers * sizeof(double));
-    if (p->cond1 == NULL) {
-        fprintf(stderr, "malloc failed allocating Saxton's cond1\n");
-        exit(EXIT_FAILURE);
-    }
-
-    p->cond2 = malloc(p->n_layers * sizeof(double));
-    if (p->cond1 == NULL) {
-        fprintf(stderr, "malloc failed allocating Saxton's cond2\n");
-        exit(EXIT_FAILURE);
-    }
-
-    p->cond3 = malloc(p->n_layers * sizeof(double));
-    if (p->cond1 == NULL) {
-        fprintf(stderr, "malloc failed allocating Saxton's cond3\n");
-        exit(EXIT_FAILURE);
-    }
-
-    p->porosity = malloc(p->n_layers * sizeof(double));
-    if (p->porosity == NULL) {
-        fprintf(stderr, "malloc failed allocating porosity\n");
-        exit(EXIT_FAILURE);
-    }
-
-    p->field_capacity = malloc(p->n_layers * sizeof(double));
-    if (p->field_capacity == NULL) {
-        fprintf(stderr, "malloc failed allocating field_capacity\n");
-        exit(EXIT_FAILURE);
-    }
-
     /*
     ** As we aren't currently changing texture by layer, the loop is redundant,
     ** but it is probably best to leave it under the assumption we change
     ** this later
     */
-
 
     for (i = 0; i < p->n_layers; i++) {
         p->potA[i] = exp(A + B * clay + CC * sand * \
