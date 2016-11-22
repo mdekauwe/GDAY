@@ -90,6 +90,9 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         C = ( -(1.0 - Cs * gs_over_a) * (vcmax * gamma_star + km * rd) -
                g0 * km * Cs );
 
+        printf("* %f %f %f %f\n", vcmax, Cs, km, gamma_star);
+        printf("* %f %f %f\n", A, B, C);
+
         /* intercellular CO2 concentration */
         qudratic_error = FALSE;
         large_root = TRUE;
@@ -136,6 +139,9 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         cw->ts_rd = rd;
         cw->ts_Vj = Vj;
     }
+
+    printf("* %f %f %f\n\n", Ac, Aj, cw->gsc_leaf[idx]);
+
     return;
 }
 
@@ -173,6 +179,9 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     B = (0.0 - vcmax) / gs - Cs - km;
     C = vcmax * (Cs - gamma_star);
 
+    printf("** %f %f %f %f %f\n", gs,vcmax, Cs, km, gamma_star);
+    printf("** %f %f %f\n", A, B, C);
+
     qudratic_error = FALSE;
     large_root = TRUE;
     Ac = quad(A, B, C, large_root, &qudratic_error);
@@ -189,13 +198,13 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     qudratic_error = FALSE;
     large_root = TRUE;
     Aj = quad(A, B, C, large_root, &qudratic_error);
-
     if (qudratic_error) {
         Aj = 0.0;
     }
 
     cw->an_leaf[idx] = MIN(Ac, Aj);
-
+    printf("** %f %f %f\n", Ac, Aj, gs);
+    exit(1);
     return;
 }
 

@@ -509,8 +509,10 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         // Minimum leaf water potential reached so recalculate LWP (MPa)
         cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
 
+
         // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
+        
     }
 
     return;
