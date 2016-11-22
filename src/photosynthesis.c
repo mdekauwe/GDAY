@@ -160,7 +160,7 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     km = cw->ts_km;
     gamma_star = cw->ts_gamma_star;
     rd = cw->ts_rd;
-    Vj = cw->ts_rd;
+    Vj = cw->ts_Vj;
 
     // A very low minimum; for numerical stability.
     if (cw->gsc_leaf[idx] < g0_zero) {

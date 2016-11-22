@@ -82,13 +82,14 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         exit(EXIT_FAILURE);
                     }
 
-                    if (c->water_balance == HYDRAULICS) {
-                        // Ensure transpiration does not exceed Emax, if it
-                        // does we recalculate gs and An
-                        calculate_emax(c, cw, f, m, p, s);
-                    }
-
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
+
+                        if (c->water_balance == HYDRAULICS) {
+                            // Ensure transpiration does not exceed Emax, if it
+                            // does we recalculate gs and An
+                            calculate_emax(c, cw, f, m, p, s);
+                        }
+
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, cw, f, m, p, s);
                     } else {
