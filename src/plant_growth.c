@@ -107,7 +107,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
-    
+
     precision_control(f, s);
 
     return;
@@ -1180,6 +1180,9 @@ void initialise_roots(fluxes *f, params *p, state *s) {
     int    i;
     double thick;
 
+    // Using CABLE depths, but spread over 2 m.
+    //double cable_thickness[6] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248};
+
     s->thickness = malloc(p->n_layers * sizeof(double));
     if (s->thickness == NULL) {
         fprintf(stderr, "malloc failed allocating thickness\n");
@@ -1217,6 +1220,21 @@ void initialise_roots(fluxes *f, params *p, state *s) {
         s->rooted_layers = p->n_layers;
     }
 
+    //thick = cable_thickness[0];
+    //for (i = 0; i < p->n_layers; i++) {
+    //    s->layer_depth[i] = thick;
+    //    thick += cable_thickness[i];
+    //    s->thickness[i] = cable_thickness[i];
+    //
+    //    /* made up initalisation, following SPA, get replaced second timestep */
+    //    s->root_mass[i] = 0.1;
+    //    s->root_length[i] = 0.1;
+    //    s->rooted_layers = p->n_layers;
+    //
+    //    //printf("%f %f %f\n", thick, s->thickness[i], s->layer_depth[i]);
+    //}
+
+
     return;
 }
 
@@ -1240,8 +1258,8 @@ void update_roots(control *c, params *p, state *s) {
 
     // Fix this to some made up value, concerned it isn't working as we have no
     // roots to get water
-    root_biomass = MAX(min_biomass, s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
-    //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
+    //root_biomass = MAX(min_biomass, s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);

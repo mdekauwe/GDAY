@@ -102,10 +102,20 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    if (c->water_balance == HYDRAULICS) {
+        initialise_roots(f, p, s);
+    }
+
     if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
     } else {
         read_daily_met_data(argv, c, ma);
+    }
+
+    if (c->sub_daily) {
+        initialise_soils_sub_daily(c, f, p, s);
+    } else {
+        initialise_soils_day(c, f, p, s);
     }
 
     if (c->spin_up) {
@@ -148,15 +158,9 @@ int main(int argc, char **argv)
             free(f->ppt_gain);
             free(f->water_loss);
             free(f->water_gain);
-
             free(s->water_frac);
             free(s->wetting_bot);
             free(s->wetting_top);
-            free(s->thickness);
-            free(s->root_mass);
-            free(s->root_length);
-            free(s->layer_depth);
-
             free(p->potA);
             free(p->potB);
             free(p->cond1);
@@ -164,6 +168,10 @@ int main(int argc, char **argv)
             free(p->cond3);
             free(p->porosity);
             free(p->field_capacity);
+            free(s->thickness);
+            free(s->root_mass);
+            free(s->root_length);
+            free(s->layer_depth);
         }
 
     } else {
@@ -258,10 +266,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         open_output_file(c, c->out_param_fname, &(c->ofp));
     }
 
-    if (c->water_balance == HYDRAULICS) {
-        initialise_roots(f, p, s);
-    }
-
     /*
      * Window size = root lifespan in days...
      * For deciduous species window size is set as the length of the
@@ -290,11 +294,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     correct_rate_constants(p, FALSE);
     day_end_calculations(c, p, s, -99, TRUE);
 
-    if (c->sub_daily) {
-        initialise_soils_sub_daily(c, f, p, s);
-    } else {
-        initialise_soils_day(c, f, p, s);
-    }
+
 
     if (c->water_balance == HYDRAULICS) {
         double root_zone_total, water_content;
@@ -335,6 +335,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         figure_out_years_with_disturbances(c, ma, p, &disturbance_yrs,
                                            &num_disturbance_yrs);
     }
+
+
+    // Just set root distribution once, assuming a root mass, just testing
+    if (c->water_balance == HYDRAULICS) {
+        update_roots(c, p, s);
+    }
+
 
     /* ====================== **
     **   Y E A R    L O O P   **
@@ -496,9 +503,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         // growth of new roots. It is debatable when this should be done. I've
         // picked the year end for computation reasons and probably because
         // plants wouldn't do this as dynamcially as on a daily basis. Probably
-        if (c->water_balance == HYDRAULICS) {
-            update_roots(c, p, s);
-        }
+        //if (c->water_balance == HYDRAULICS) {
+        //    update_roots(c, p, s);
+        //}
     }
 
     /* ========================= **

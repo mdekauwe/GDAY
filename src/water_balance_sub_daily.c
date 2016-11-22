@@ -557,6 +557,7 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             // second component of below ground resistance related to root
             // hydraulics
             soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i]);
+            //f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
 
         }
