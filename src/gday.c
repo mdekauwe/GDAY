@@ -336,12 +336,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
 
-    // Just set root distribution once, assuming a root mass, just testing
-    if (c->water_balance == HYDRAULICS) {
-        update_roots(c, p, s);
-    }
-
-
     /* ====================== **
     **   Y E A R    L O O P   **
     ** ====================== */
@@ -502,9 +496,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         // growth of new roots. It is debatable when this should be done. I've
         // picked the year end for computation reasons and probably because
         // plants wouldn't do this as dynamcially as on a daily basis. Probably
-        //if (c->water_balance == HYDRAULICS) {
-        //    update_roots(c, p, s);
-        //}
+        if (c->water_balance == HYDRAULICS) {
+            update_roots(c, p, s);
+        }
     }
 
     /* ========================= **
