@@ -2,7 +2,7 @@
 
 GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b). The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESPA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993).
 
-In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If using the sub-daily version there is now the option to use the SPA-style representation of hydraulics. GDAY-SPA resolves multiple soil layers, soil and leaf water potential and limits gas exchange following the Emax approach (see [MAESPA](http://maespa.github.io/manual.html) for more details). 
+In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If using the sub-daily version there is now the option to use the SPA-style representation of hydraulics. GDAY-SPA resolves multiple soil layers, soil and leaf water potential and limits gas exchange following the Emax approach (see [MAESPA](http://maespa.github.io/manual.html) for more details).
 
 <p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
 
@@ -144,6 +144,9 @@ BNF (kg N ha-1 yr-1) is then calculated as a function of ET:
 ```python
 BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
+
+## Hydraulics
+I should add some details here ...
 
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
