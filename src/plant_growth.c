@@ -1181,7 +1181,7 @@ void initialise_roots(fluxes *f, params *p, state *s) {
     double thick;
 
     // Using CABLE depths, but spread over 2 m.
-    //double cable_thickness[6] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248};
+    double cable_thickness[7] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248, 2.0};
 
     s->thickness = malloc(p->n_layers * sizeof(double));
     if (s->thickness == NULL) {
@@ -1208,31 +1208,23 @@ void initialise_roots(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
-    thick = p->layer_thickness;
-    for (i = 0; i < p->n_layers; i++) {
-        s->layer_depth[i] = thick;
+    // force a thin top layer = 0.1
+    thick = 0.1;
+    s->layer_depth[0] = thick;
+    s->thickness[0] = thick;
+    //printf("%d %f %f\n", 0, s->thickness[0], s->layer_depth[0]);
+    for (i = 1; i < p->n_layers; i++) {
         thick += p->layer_thickness;
+        s->layer_depth[i] = thick;
         s->thickness[i] = p->layer_thickness;
+
+        //printf("%d %f %f\n", i, s->thickness[i], s->layer_depth[i]);
 
         /* made up initalisation, following SPA, get replaced second timestep */
         s->root_mass[i] = 0.1;
         s->root_length[i] = 0.1;
         s->rooted_layers = p->n_layers;
     }
-
-    //thick = cable_thickness[0];
-    //for (i = 0; i < p->n_layers; i++) {
-    //    s->layer_depth[i] = thick;
-    //    thick += cable_thickness[i];
-    //    s->thickness[i] = cable_thickness[i];
-    //
-    //    /* made up initalisation, following SPA, get replaced second timestep */
-    //    s->root_mass[i] = 0.1;
-    //    s->root_length[i] = 0.1;
-    //    s->rooted_layers = p->n_layers;
-    //
-    //    //printf("%f %f %f\n", thick, s->thickness[i], s->layer_depth[i]);
-    //}
 
 
     return;
@@ -1255,10 +1247,18 @@ void update_roots(control *c, params *p, state *s) {
     double x1 = 0.1;        /* lower bound for brent search */
     double x2 = 10.0;       /* upper bound for brent search */
     double tol = 0.0001;    /* tolerance for brent search */
+    double fine_root, fine_root_min;
 
-    // Fix this to some made up value, concerned it isn't working as we have no
-    // roots to get water
-    root_biomass = MAX(min_biomass, s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    // Enforcing a minimum fine root mass, otherwise during spinup this can go
+    // wrong.
+    fine_root_min = 50.0;
+    if (s->root < fine_root_min) {
+        fine_root = fine_root_min;
+    } else {
+        fine_root = s->root;
+    }
+    
+    root_biomass = MAX(min_biomass, fine_root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
     //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
