@@ -126,7 +126,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
         }
-        scale_leaf_to_canopy(c, cw);
+        scale_leaf_to_canopy(c, cw, s);
         if (c->water_balance == HYDRAULICS && hod == 24) {
             s->midday_lwp = cw->lwp_canopy;
         }
@@ -135,11 +135,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
-        //if (c->pdebug) {
-        //  printf("%d %.10lf %.10lf\n", hod, s->weighted_swp, cw->lwp_canopy);
-        //}
-        //printf("%lf\n", cw->trans_canopy);
-        //exit(1);
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);
         }
@@ -150,28 +145,21 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* work out average omega for the day over sunlight hours */
     f->omega /= sunlight_hrs;
 
-    if (c->water_stress && c->water_balance == HYDRAULICS) {
-        // We should probably add the non-stomatal stuff, but if using the SPA
-        // bit then we are using stuff via emax/lwp calcs above not via the soil
-        // stuff, so set this all to 1
-        s->wtfac_topsoil = 1.0;
-        s->wtfac_root = 1.0;
-    } else if (c->water_stress && c->water_balance == BUCKET) {
-        /* Calculate the soil moisture availability factors [0,1] in the
-           topsoil and the entire root zone */
+    if (c->water_stress) {
+        // Calculate the soil moisture availability factors [0,1] in the
+        // topsoil and the entire root zone
         calculate_soil_water_fac(c, p, s);
 
-        /*printf("%lf %.10lf\n", s->wtfac_root, s->saved_swp);*/
+        //printf("%lf %.10lf\n", s->wtfac_root, s->saved_swp);
     } else {
-        /* really this should only be a debugging option! */
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
 
-    if (debug) {
-        current_sw = s->pawater_topsoil + s->pawater_root;
-        check_water_balance(c, f, previous_sw, current_sw);
-    }
+    //if (debug) {
+    //    current_sw = s->pawater_topsoil + s->pawater_root;
+    //    check_water_balance(c, f, previous_sw, current_sw);
+    //}
 
     //if (c->pdebug) {
     //    exit(1);
@@ -309,7 +297,9 @@ void zero_hourly_fluxes(canopy_wk *cw) {
     return;
 }
 
-void scale_leaf_to_canopy(control *c, canopy_wk *cw) {
+void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
+
+    double beta;
 
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
     cw->rd_canopy = cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED];
@@ -320,10 +310,13 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw) {
     cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
 
     if (c->water_balance == HYDRAULICS) {
-        // Not sure about this...leave it for now as it doesn't affect the
-        // calculations
         cw->lwp_canopy = (cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED]) / 2.0;
+
+        beta = (cw->fwsoil_leaf[SUNLIT] + cw->fwsoil_leaf[SHADED]) / 2.0;
+        s->wtfac_topsoil = beta;
+        s->wtfac_root = beta;
     }
+
 
     return;
 }
@@ -443,11 +436,17 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         // Minimum leaf water potential reached so recalculate LWP (MPa)
         cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
 
-
         // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
 
+        // Need to calculate an effective beta to use in soil decomposition
+        cw->fwsoil_leaf[idx] = emax_leaf / etest;
+    } else {
+        cw->fwsoil_leaf[idx] = 1.0;
+
     }
+
+
 
     return;
 }

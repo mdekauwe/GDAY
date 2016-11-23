@@ -1242,7 +1242,11 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
     double b, sf, psi_f;
     /*double psi_swp_topsoil;*/
 
-    if (c->sw_stress_model == 0) {
+    //if (c->water_balance == HYDRAULICS) {
+    //    continue;
+    //    // should put non-stomatal limitation stuff in here.
+
+    if (c->water_balance == BUCKET && c->sw_stress_model == 0) {
         /* JULES type model, see Egea et al. (2011) */
         s->wtfac_topsoil = calc_beta(s->pawater_topsoil, p->topsoil_depth,
                                      p->theta_fc_topsoil, p->theta_wp_topsoil,
@@ -1252,7 +1256,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
                                      p->theta_fc_root, p->theta_wp_root,
                                      p->qs);
 
-    } else if (c->sw_stress_model == 1) {
+    } else if (c->water_balance == BUCKET && c->sw_stress_model == 1) {
         /* Landsberg and Waring, (1997) */
         moisture_ratio_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
         moisture_ratio_root = s->pawater_root / p->wcapac_root;
@@ -1263,7 +1267,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         s->wtfac_root = calc_sw_modifier(moisture_ratio_root, p->ctheta_root,
                                          p->ntheta_root);
 
-    } else if (c->sw_stress_model == 2) {
+    } else if (c->water_balance == BUCKET && c->sw_stress_model == 2) {
         /*
             Zhou et al.(2013) Agricultural & Forest Met. 182–183, 204–214
             Assuming that overnight 􏰀pre-dawn leaf water potential =

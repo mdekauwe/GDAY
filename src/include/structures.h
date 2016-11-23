@@ -648,6 +648,7 @@ typedef struct {
     double omega_leaf[2];   /* leaf decoupling coefficient (-) */
     double tleaf[2];        /* leaf temperature (deg C) */
     double lwp_leaf[2];     /* leaf water potential (MPa) */
+    double fwsoil_leaf[2];  /* Effective beta */
     double an_canopy;       /* canopy net photosynthesis (umol m-2 s-1) */
     double rd_canopy;       /* canopy respiration in the light (umol m-2 s-1) */
     double gsc_canopy;      /* canopy stomatal conductance to CO2 (mol m-2 s-1) */
@@ -695,7 +696,7 @@ typedef struct {
     double   *ak6;
     double   *ytemp;
     double   *yerr;
-    
+
 
 
 } nrutil;
