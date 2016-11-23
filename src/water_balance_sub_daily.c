@@ -534,14 +534,12 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 
     /* head of pressure (MPa/m) */
     double head = 0.009807;
-    double Lsoil, rs, soilR1, soilR2, arg1, arg2;
+    double Lsoil, rs, soilR1, soilR2, arg1, arg2, rsum;
+    double root_xsec_area = M_PI * p->root_radius * p->root_radius;
     int    i;
 
-    double root_xsec_area = M_PI * p->root_radius * p->root_radius;
-
     // Store each layers resistance, used in LWP calculatons
-    double rsum = 0.0;
-
+    rsum = 0.0;
     for (i = 0; i < s->rooted_layers; i++) {
 
         /* converts from ms-1 to m2 s-1 MPa-1 */
@@ -550,7 +548,6 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
         if (Lsoil < 1e-35) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
-            rsum += 1e35;
         } else {
             rs = sqrt(1.0 / (s->root_length[i] * M_PI));
             arg1 = log(rs / p->root_radius);
@@ -568,7 +565,6 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i]);
             //f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
-
         }
     }
 
