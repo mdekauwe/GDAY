@@ -52,11 +52,11 @@ double day_length(int doy, int num_days, double latitude) {
     return 12.0 * (1.0 + (2.0 / M_PI) * asin(a / b));
 }
 
-void calculate_daylength(int num_days, double latitude, double *dayl) {
+void calculate_daylength(state *s, int num_days, double latitude) {
     /* wrapper to put the day length into an array */
     int i;
     for (i = 0; i < num_days; i++) {
-        dayl[i] = day_length(i+1, num_days, latitude);
+        s->day_length[i] = day_length(i+1, num_days, latitude);
     }
     return;
 }

@@ -58,6 +58,8 @@ typedef struct {
 
 
 typedef struct {
+    double *day_length;
+
     double activesoil;                  /* active C som pool (t/ha) */
     double activesoiln;                 /* active N som pool (t/ha) */
     double age;                         /* Current stand age (years) */

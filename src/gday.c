@@ -84,6 +84,13 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    // potentially allocating 1 extra spot, but will be fine as we always
+    // index by num_days
+    if ((s->day_length = (double *)calloc(366, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for day_length\n");
+		exit(EXIT_FAILURE);
+    }
+
     initialise_control(c);
     initialise_params(p);
     initialise_fluxes(f);
@@ -210,6 +217,7 @@ int main(int argc, char **argv)
         free(ma->par_am);
         free(ma->par_pm);
     }
+    free(s->day_length);
     free(ma);
     free(m);
     free(p);
@@ -230,16 +238,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
     double fdecay, rdecay, current_limitation, nitfac, year;
     int   *disturbance_yrs = NULL;
-
-    /*
-     * potentially allocating 1 extra spot, but will be fine as we always
-     * index by num_days
-     */
-    double *day_length = NULL;
-    if ((day_length = (double *)calloc(366, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for day_length\n");
-		exit(EXIT_FAILURE);
-    }
 
     if (c->deciduous_model) {
         /* Are we reading in last years average growing season? */
@@ -384,10 +382,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         else
             c->num_days = 365;
 
-        calculate_daylength(c->num_days, p->latitude, *(&day_length));
+        calculate_daylength(s, c->num_days, p->latitude);
 
         if (c->deciduous_model) {
-            phenology(c, f, ma, p, s, day_length);
+            phenology(c, f, ma, p, s);
 
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
@@ -409,7 +407,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             //    c->pdebug = TRUE;
             //}
             if (! c->sub_daily) {
-                unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
+                unpack_met_data(c, f, ma, m, dummy, s->day_length[doy]);
             }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
@@ -442,7 +440,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
 
-            calc_day_growth(cw, c, f, ma, m, nr, p, s, day_length[doy],
+            calc_day_growth(cw, c, f, ma, m, nr, p, s, s->day_length[doy],
                             doy, fdecay, rdecay);
 
             //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
@@ -539,7 +537,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     sma(SMA_FREE, hw);
-    free(day_length);
     if (c->disturbance) {
         free(disturbance_yrs);
     }

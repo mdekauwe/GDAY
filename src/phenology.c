@@ -1,7 +1,6 @@
 #include "phenology.h"
 
-void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s,
-               double *daylen) {
+void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s) {
     /*
     There are two phenology schemes currently implemented, one which should
     generally be applicable for deciduous broadleaf forests && one for
@@ -69,7 +68,7 @@ void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s,
     }
 
 
-    calculate_leafon_off(c, ma, p, daylen, grass_temp_threshold, tmax_ann,
+    calculate_leafon_off(c, ma, p, s, grass_temp_threshold, tmax_ann,
                          Tmin_avg, ppt_sum_crit, project_day,
                          &leaf_on, &leaf_off, &leaf_on_found,
                          &leaf_off_found, gdd_thresh);
@@ -81,7 +80,7 @@ void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s,
     */
     if (leaf_off_found == FALSE) {
         grass_temp_threshold = 5.0;
-        calculate_leafon_off(c, ma, p, daylen, grass_temp_threshold, tmax_ann,
+        calculate_leafon_off(c, ma, p, s, grass_temp_threshold, tmax_ann,
                              Tmin_avg, ppt_sum_crit, project_day,
                              &leaf_on, &leaf_off, &leaf_on_found,
                              &leaf_off_found, gdd_thresh);
@@ -125,7 +124,7 @@ void phenology(control *c, fluxes *f, met_arrays *ma, params *p, state *s,
     return;
 }
 
-void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
+void calculate_leafon_off(control *c, met_arrays *ma, params *p, state *s,
                           double grass_temp_threshold, double tmax_ann,
                           double Tmin_avg, double ppt_sum_crit,
                           int project_day, int *leaf_on, int *leaf_off,
@@ -274,7 +273,8 @@ void calculate_leafon_off(control *c, met_arrays *ma, params *p, double *daylen,
                     less than the threshold very soon after leaf out.
                 */
                 if (d > 182) {
-                    drop_leaves = leaf_drop(daylen[d-1], Tsoil, Tsoil_next_3days);
+                    drop_leaves = leaf_drop(s->day_length[d-1], Tsoil,
+                                            Tsoil_next_3days);
                     if (drop_leaves) {
                         *leaf_off_found = TRUE;
                         *leaf_off = d;
