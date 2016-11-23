@@ -914,7 +914,7 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
     return;
 }
 
-void allocate_numerical_libs_stuff(nr) {
+void allocate_numerical_libs_stuff(nrutil *nr) {
 
     nr->xp = dvector(1, nr->kmax);
     nr->yp = dmatrix(1, nr->N, 1, nr->kmax);

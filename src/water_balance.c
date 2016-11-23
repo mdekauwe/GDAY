@@ -154,10 +154,8 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
                           double *soil_evap, double *et, double *runoff) {
     /*
         Calculate top soil, root zone plant available water & runoff.
-
         NB. et, transpiration & soil evap may all be adjusted in
         if we don't have sufficient water
-
     */
     double transpiration_topsoil, transpiration_root, previous,
            delta_topsoil, topsoil_loss;
@@ -202,15 +200,13 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     ** Root zone
     ** - this is the layer we are actually taking all the water out of.
     **   it really encompasses the topsoil so as well, so we need to have
-    **   the soil evpaoration here as well
+    **   the soil evpaoration here as well, although we aren't adjusting
+    **   that if water isn't available as we've already calculated that
+    **   above based on the top soil layer. Ditto the transpiration taken
+    **   from the top soil layer.
     */
 
     previous = s->pawater_root;
-
-    /*
-    ** Account for transpiration and soil evaporation we have
-    ** already extracted from the topsoil
-    */
     transpiration_root = *transpiration - transpiration_topsoil;
     s->pawater_root += throughfall - transpiration_root - *soil_evap;
 
@@ -241,8 +237,8 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     /* Update transpiration & et accounting for the actual available water */
     *transpiration = transpiration_topsoil + transpiration_root;
-
     *et = *transpiration + *soil_evap + canopy_evap;
+
     s->delta_sw_store = s->pawater_root - previous;
 
     /* calculated at the end of the day for sub_daily */
@@ -264,12 +260,10 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
                                   met *m) {
     /* Calculate root and top soil plant available water and runoff.
-
     Soil drainage is estimated using a "leaky-bucket" approach with two
     soil layers. In reality this is a combined drainage and runoff
     calculation, i.e. "outflow". There is no drainage out of the "bucket"
     soil.
-
     Returns:
     --------
     outflow : float
