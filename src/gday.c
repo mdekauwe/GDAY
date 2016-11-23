@@ -553,8 +553,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* Spin up model plant & soil pools to equilibrium.
 
     - Examine sequences of 50 years and check if C pools are changing
-      by more than 0.005 units per 1000 yrs. Note this check is done in
-      units of: kg m-2.
+      by more than 0.005 units per 1000 yrs.
 
     References:
     ----------
@@ -566,9 +565,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     int i, cntrl_flag;
-    /* check for convergences in units of kg/m2 */
-    double conv = TONNES_HA_2_KG_M2;
-
+    
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
 
@@ -585,8 +582,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
     fprintf(stderr, "Spinning up the model...\n");
     while (TRUE) {
-        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol &&
-            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol) {
+        if (fabs(prev_plantc - s->plantc) < tol &&
+            fabs(prev_soilc - s->soilc) < tol) {
             break;
         } else {
             prev_plantc = s->plantc;
