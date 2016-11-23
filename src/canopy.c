@@ -439,7 +439,8 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         photosynthesis_C3_emax(c, cw, m, p, s);
 
         // Need to calculate an effective beta to use in soil decomposition
-        cw->fwsoil_leaf[idx] = emax_leaf / etest;
+        //cw->fwsoil_leaf[idx] = emax_leaf / etest;
+        cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
     } else {
         cw->fwsoil_leaf[idx] = 1.0;
 
