@@ -409,7 +409,7 @@ void initialise_fluxes(fluxes *f) {
     f->alstem = 0.0;
 
     /* Misc stuff */
-    f-> cica_avg = 0.0; /* used in water balance, only when running mate model */
+    f->cica_avg = 0.0; /* used in water balance, only when running mate model */
 
     f->rabove = 0.0;
     f->tfac_soil_decomp = 0.0;
@@ -429,6 +429,7 @@ void initialise_fluxes(fluxes *f) {
     f->ppt_gain = NULL;
     f->water_loss = NULL;
     f->water_gain = NULL;
+    f->est_evap = NULL;
 
 
     return;

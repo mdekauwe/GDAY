@@ -174,6 +174,7 @@ int main(int argc, char **argv)
             free(f->ppt_gain);
             free(f->water_loss);
             free(f->water_gain);
+            free(f->est_evap);
             free(s->water_frac);
             free(s->wetting_bot);
             free(s->wetting_top);
@@ -188,6 +189,7 @@ int main(int argc, char **argv)
             free(s->root_mass);
             free(s->root_length);
             free(s->layer_depth);
+
 
             free_dvector(nr->y, 1, nr->N);
             free_dvector(nr->ystart, 1, nr->N);

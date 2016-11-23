@@ -372,6 +372,19 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
+    /* Depth to top of wet soil layers (m) */
+    s->wetting_top = malloc(p->wetting * sizeof(double));
+    if (s->wetting_top == NULL) {
+        fprintf(stderr, "malloc failed allocating wetting_top\n");
+        exit(EXIT_FAILURE);
+    }
+
+    f->est_evap = malloc(p->n_layers * sizeof(double));
+    if (f->est_evap == NULL) {
+        fprintf(stderr, "malloc failed allocating est_evap\n");
+        exit(EXIT_FAILURE);
+    }
+
     return;
 }
 
@@ -575,22 +588,21 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     //
 
     int    i;
-    double est_evap[p->n_layers];
     double total_est_evap;
 
     // Estimate max transpiration from gradient-gravity / soil resistance
     total_est_evap = 0.0;
     for (i = 0; i < s->rooted_layers; i++) {
-        est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
-        total_est_evap += est_evap[i];
+        f->est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
+        total_est_evap += f->est_evap[i];
     }
 
     s->weighted_swp = 0.0;
     if (total_est_evap > 0.0) {
         /* fraction of water taken from layer */
         for (i = 0; i < s->rooted_layers; i++) {
-            s->weighted_swp += f->swp[i] * est_evap[i];
-            f->fraction_uptake[i] = est_evap[i] / total_est_evap;
+            s->weighted_swp += f->swp[i] * f->est_evap[i];
+            f->fraction_uptake[i] = f->est_evap[i] / total_est_evap;
         }
         s->weighted_swp /= total_est_evap;
     } else {
