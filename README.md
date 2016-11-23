@@ -148,7 +148,7 @@ BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
 
 ## Hydraulics
-From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage between layers. We also implement the soil-to-leaf hydraulics from SPA, which includes weighting soil water potential. We limit gas exchange following the Emax approach (Duursma et al. 2008).
+From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage between layers. We also implement the soil-to-leaf hydraulics from SPA, which includes weighting soil water potential. We limit gas exchange following the Emax approach (Duursma et al. 2008). This approach therefore assumes isohydric behaviour, i.e. the plant maintains a leaf water potential above a critical minimum value.
 
 We do not currently implement the thermal calculations which would allow you to estimate soil temperature.
 
