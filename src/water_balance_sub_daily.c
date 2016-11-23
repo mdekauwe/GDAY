@@ -260,6 +260,7 @@ void zero_water_movement(fluxes *f, params *p) {
         f->water_loss[i] = 0.0;
         f->water_gain[i] = 0.0;
         f->ppt_gain[i] = 0.0;
+        f->est_evap[i] = 0.0;
     }
 
     return;
