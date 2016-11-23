@@ -565,7 +565,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double prev_plantc = 99999.9;
     double prev_soilc = 99999.9;
     int i, cntrl_flag;
-    
+
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
 
