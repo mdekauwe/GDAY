@@ -118,9 +118,11 @@ int main(int argc, char **argv)
 
     if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
+        fill_up_solar_arrays(cw, c, ma, p);
     } else {
         read_daily_met_data(argv, c, ma);
     }
+
 
     if (c->spin_up) {
         spin_up_pools(cw, c, f, ma, m, p, s, nr);
@@ -152,6 +154,9 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
+        free(cw->cz_store);
+        free(cw->ele_store);
+        free(cw->df_store);
 
         /* Clean up hydraulics */
         if (c->water_balance == HYDRAULICS) {
@@ -931,4 +936,55 @@ void allocate_numerical_libs_stuff(nrutil *nr) {
     nr->yerr = dvector(1, nr->N);
 
     return;
+}
+
+
+void fill_up_solar_arrays(canopy_wk *cw, control *c, met_arrays *ma, params *p) {
+
+    // This is a suprisingly big time hog. So I'm going to unpack it once into
+    // an array which we can then access during spinup to save processing time
+
+    int    nyr, doy, hod;
+    long   ntimesteps = c->total_num_days * 48;
+    double year, sw_rad;
+
+    cw->cz_store = malloc(ntimesteps * sizeof(double));
+    if (cw->cz_store == NULL) {
+        fprintf(stderr, "malloc failed allocating cz store\n");
+        exit(EXIT_FAILURE);
+    }
+
+    cw->ele_store = malloc(ntimesteps * sizeof(double));
+    if (cw->ele_store == NULL) {
+        fprintf(stderr, "malloc failed allocating ele store\n");
+        exit(EXIT_FAILURE);
+    }
+
+    cw->df_store = malloc(ntimesteps * sizeof(double));
+    if (cw->df_store == NULL) {
+        fprintf(stderr, "malloc failed allocating df store\n");
+        exit(EXIT_FAILURE);
+    }
+
+    c->hour_idx = 0;
+    for (nyr = 0; nyr < c->num_years; nyr++) {
+        year = ma->year[c->hour_idx];
+        if (is_leap_year(year))
+            c->num_days = 366;
+        else
+            c->num_days = 365;
+        for (doy = 0; doy < c->num_days; doy++) {
+            for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+                calculate_solar_geometry(cw, p, doy, hod);
+                sw_rad = ma->par[c->hour_idx] * PAR_2_SW; /* W m-2 */
+                get_diffuse_frac(cw, doy, sw_rad);
+                cw->cz_store[c->hour_idx] = cw->cos_zenith;
+                cw->ele_store[c->hour_idx] = cw->elevation;
+                cw->df_store[c->hour_idx] = cw->diffuse_frac;
+                c->hour_idx++;
+            }
+        }
+    }
+    return;
+
 }

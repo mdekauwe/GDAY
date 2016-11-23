@@ -56,8 +56,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         unpack_met_data(c, f, ma, m, hod, dummy2);
 
         /* calculates diffuse frac from half-hourly incident radiation */
-        calculate_solar_geometry(cw, p, doy, hod);
-        get_diffuse_frac(cw, doy, m->sw_rad);
+        unpack_solar_geometry(cw, c);
 
         /* Is the sun up? */
         if (cw->elevation > 0.0 && m->par > 20.0) {
@@ -461,4 +460,19 @@ double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
     }
 
     return (lwp);
+}
+
+void unpack_solar_geometry(canopy_wk *cw, control *c) {
+
+    // This geometry calculations are suprisingly intensive which is a waste
+    // during spinup, so we are now doing this once and then we are just
+    // accessing the 30-min value from the array position
+
+    //calculate_solar_geometry(cw, p, doy, hod);
+    //get_diffuse_frac(cw, doy, m->sw_rad);
+    cw->cos_zenith = cw->cz_store[c->hour_idx];
+    cw->elevation = cw->ele_store[c->hour_idx];
+    cw->diffuse_frac = cw->df_store[c->hour_idx];
+
+    return;
 }
