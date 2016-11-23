@@ -678,4 +678,26 @@ typedef struct {
 } canopy_wk;
 
 
+typedef struct {
+    double  *ystart;
+    double   *yscal;
+    double   *y;
+    double   *dydx;
+    double   *xp;
+	double  **yp;
+    int       N;
+    int       kmax;
+
+    double   *ak2;
+    double   *ak3;
+    double   *ak4;
+    double   *ak5;
+    double   *ak6;
+    double   *ytemp;
+    double   *yerr;
+    
+
+
+} nrutil;
+
 #endif

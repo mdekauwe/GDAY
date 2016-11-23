@@ -94,8 +94,9 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 }
 
 void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
-                                       params *p, state *s, int daylen,
-                                       double trans_leaf, double omega_leaf,
+                                       nrutil *nr, params *p, state *s,
+                                       int daylen, double trans_leaf,
+                                       double omega_leaf,
                                        double rnet_leaf) {
     /*
         Calculate the water balance (including all water fluxes).
@@ -190,7 +191,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         // down the profile
         //
         for (i = 0; i < p->n_layers; i++) {
-            calc_soil_balance(f, p, s, i, &water_lost);
+            calc_soil_balance(f, nr, p, s, i, &water_lost);
         }
 
         //
@@ -772,8 +773,8 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
 }
 
 
-void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer,
-                       double *water_lost) {
+void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
+                       int soil_layer, double *water_lost) {
     //
     // Integrator for soil gravitational drainage
     //
@@ -789,11 +790,11 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer,
     /* value affecting the max time interval at which variables should b calc */
     double  soilpor = p->porosity[soil_layer];
     double  unsat, drain_layer, liquid, new_water_frac, change;
-    double *ystart = NULL;
+    //double *ystart = NULL;
+    //ystart = dvector(1,N);
 
-    ystart = dvector(1,N);
     for (i = 1; i <= N; i++) {
-        ystart[i] = 0.0;
+        nr->ystart[i] = 0.0;
     }
 
     /* unsaturated volume of layer below (m3 m-2) */
@@ -812,16 +813,16 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer,
     if (liquid > 0.0 && liquid > drain_layer) {
 
         // ystart is a vector 1..N, so need to index from 1 not 0
-        ystart[1] = s->water_frac[soil_layer];
+        nr->ystart[1] = s->water_frac[soil_layer];
 
         // Runge-Kunte ODE integrator used to estimate soil gravitational
         // drainage during each time-step
-        odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, unsat,
+        odeint(nr->ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, unsat,
                drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
-               p->cond3[soil_layer], soil_water_store, rkqs);
+               p->cond3[soil_layer], nr, soil_water_store, rkqs);
 
         /* ystart is a vector 1..N, so need to index from 1 */
-        new_water_frac = ystart[1];
+        new_water_frac = nr->ystart[1];
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
@@ -843,7 +844,7 @@ void calc_soil_balance(fluxes *f, params *p, state *s, int soil_layer,
         exit(EXIT_FAILURE);
     }
 
-    free_dvector(ystart, 1, N);
+    //free_dvector(ystart, 1, N);
 
     return;
 }

@@ -15,8 +15,8 @@
 
 void    initialise_soils_sub_daily(control *, fluxes *, params *, state *);
 void    calculate_water_balance_sub_daily(control *, fluxes *, met *,
-                                           params *, state *, int, double,
-                                           double, double);
+                                          nrutil *, params *, state *, int,
+                                          double, double, double);
 void    setup_hydraulics_arrays(fluxes *, params *, state *);
 
 
@@ -31,7 +31,7 @@ void    calc_soil_root_resistance(fluxes *, params *, state *);
 void    calc_water_uptake_per_layer(fluxes *, params *, state *);
 void    calc_wetting_layers(fluxes *, params *, state *, double, double);
 double  calc_infiltration(fluxes *, params *, state *, double);
-void    calc_soil_balance(fluxes *, params *, state *, int, double *);
+void    calc_soil_balance(fluxes *, nrutil *, params *, state *, int, double *);
 void    soil_water_store(double, double [], double [], double, double, double,
                          double, double);
 

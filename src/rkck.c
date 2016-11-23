@@ -4,14 +4,16 @@
 * - From numerical recipies in C, see Press et al. 1992.
 *
 * NOTES:
-* See comment in odeint.c
+* I've refactored this function so that all the allocation/free calls have
+* been extracted to speed things up as it was eating 40-50% of the time
+* spent. Instead we now pass nrutil which contains all the needed vars
 *
 *
 * AUTHOR:
 *   Martin De Kauwe
 *
 * DATE:
-*   11.08.2016
+*   23.11.2016
 *
 * =========================================================================== */
 
@@ -22,6 +24,7 @@
 
 void rkck(double y[], double dydx[], int n, double x, double h, double yout[],
 	      double yerr[], double aa, double bb, double cc, double dd, double ee,
+		  nrutil *nr,
 	      void (*derivs)(double, double [], double [], double, double, double,
 		  				 double, double))
 {
@@ -35,41 +38,41 @@ void rkck(double y[], double dydx[], int n, double x, double h, double yout[],
 				  dc5 = -277.0/14336.0;
 	double        dc1=c1-2825.0/27648.0,dc3=c3-18575.0/48384.0,
 		          dc4=c4-13525.0/55296.0,dc6=c6-0.25;
-	double       *ak2, *ak3, *ak4, *ak5, *ak6, *ytemp;
+	//double       *ak2, *ak3, *ak4, *ak5, *ak6, *ytemp;
 
 
-	ak2=dvector(1,n);
-	ak3=dvector(1,n);
-	ak4=dvector(1,n);
-	ak5=dvector(1,n);
-	ak6=dvector(1,n);
-	ytemp=dvector(1,n);
+	//ak2=dvector(1,n);
+	//ak3=dvector(1,n);
+	//ak4=dvector(1,n);
+	//ak5=dvector(1,n);
+	//ak6=dvector(1,n);
+	//ytemp=dvector(1,n);
 
 	for (i=1;i<=n;i++)
-		ytemp[i]=y[i]+b21*h*dydx[i];
-	(*derivs)(x+a2*h,ytemp,ak2, aa, bb, cc, dd, ee);
+		nr->ytemp[i]=y[i]+b21*h*dydx[i];
+	(*derivs)(x+a2*h,nr->ytemp,nr->ak2, aa, bb, cc, dd, ee);
 	for (i=1;i<=n;i++)
-		ytemp[i]=y[i]+h*(b31*dydx[i]+b32*ak2[i]);
-	(*derivs)(x+a3*h,ytemp,ak3, aa, bb, cc, dd, ee);
+		nr->ytemp[i]=y[i]+h*(b31*dydx[i]+b32*nr->ak2[i]);
+	(*derivs)(x+a3*h,nr->ytemp,nr->ak3, aa, bb, cc, dd, ee);
 	for (i=1;i<=n;i++)
-		ytemp[i]=y[i]+h*(b41*dydx[i]+b42*ak2[i]+b43*ak3[i]);
-	(*derivs)(x+a4*h,ytemp,ak4, aa, bb, cc, dd, ee);
+		nr->ytemp[i]=y[i]+h*(b41*dydx[i]+b42*nr->ak2[i]+b43*nr->ak3[i]);
+	(*derivs)(x+a4*h,nr->ytemp,nr->ak4, aa, bb, cc, dd, ee);
 	for (i=1;i<=n;i++)
-		ytemp[i]=y[i]+h*(b51*dydx[i]+b52*ak2[i]+b53*ak3[i]+b54*ak4[i]);
-	(*derivs)(x+a5*h,ytemp,ak5, aa, bb, cc, dd, ee);
+		nr->ytemp[i]=y[i]+h*(b51*dydx[i]+b52*nr->ak2[i]+b53*nr->ak3[i]+b54*nr->ak4[i]);
+	(*derivs)(x+a5*h,nr->ytemp,nr->ak5, aa, bb, cc, dd, ee);
 	for (i=1;i<=n;i++)
-		ytemp[i]=y[i]+h*(b61*dydx[i]+b62*ak2[i]+b63*ak3[i]+b64*ak4[i]+b65*ak5[i]);
-	(*derivs)(x+a6*h,ytemp,ak6, aa, bb, cc, dd, ee);
+		nr->ytemp[i]=y[i]+h*(b61*dydx[i]+b62*nr->ak2[i]+b63*nr->ak3[i]+b64*nr->ak4[i]+b65*nr->ak5[i]);
+	(*derivs)(x+a6*h,nr->ytemp,nr->ak6, aa, bb, cc, dd, ee);
 	for (i=1;i<=n;i++)
-		yout[i]=y[i]+h*(c1*dydx[i]+c3*ak3[i]+c4*ak4[i]+c6*ak6[i]);
+		yout[i]=y[i]+h*(c1*dydx[i]+c3*nr->ak3[i]+c4*nr->ak4[i]+c6*nr->ak6[i]);
 	for (i=1;i<=n;i++)
-		yerr[i]=h*(dc1*dydx[i]+dc3*ak3[i]+dc4*ak4[i]+dc5*ak5[i]+dc6*ak6[i]);
+		yerr[i]=h*(dc1*dydx[i]+dc3*nr->ak3[i]+dc4*nr->ak4[i]+dc5*nr->ak5[i]+dc6*nr->ak6[i]);
 
-	free_dvector(ytemp, 1, n);
-	free_dvector(ak6, 1, n);
-	free_dvector(ak5, 1, n);
-	free_dvector(ak4, 1, n);
-	free_dvector(ak3, 1, n);
-	free_dvector(ak2, 1, n);
+	//free_dvector(ytemp, 1, n);
+	//free_dvector(ak6, 1, n);
+	//free_dvector(ak5, 1, n);
+	//free_dvector(ak4, 1, n);
+	//free_dvector(ak3, 1, n);
+	//free_dvector(ak2, 1, n);
 }
 #undef NRANSI

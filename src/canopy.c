@@ -21,7 +21,7 @@
 #include "canopy.h"
 
 void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-            params *p, state *s) {
+            nrutil *nr, params *p, state *s) {
     /*
         Canopy module consists of two parts:
         (1) a radiation sub-model to calculate apar of sunlit/shaded leaves
@@ -131,7 +131,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             s->midday_lwp = cw->lwp_canopy;
         }
         sum_hourly_carbon_fluxes(cw, f, p);
-        calculate_water_balance_sub_daily(c, f, m, p, s, dummy,
+        calculate_water_balance_sub_daily(c, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
 
@@ -390,72 +390,6 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
     return;
 }
 
-void calc_delta_potential(fluxes *f, state *s) {
-    // Calculate the change in leaf water potential
-
-    int     nbad;                /* N of unsuccessful changes of the step size*/
-    int     nok;                 /* N of successful changes of the step size */
-    int     i, N = 1, max_iter;
-    double  eps = 1.0e-4;        /* precision */
-    double  h1 = 0.01;           /* first guess at integrator size */
-    double  hmin = 0.0;          /* minimum value of the integrator step */
-    double  x1 = 1.0;             /* initial time */
-    double  x2 = 2.0;             /* final time */
-    double  dummy1, dummy2, dummy3, dummy4, dummy5;
-    double *ystart = NULL;
-
-    ystart = dvector(1,N);
-    for (i = 1; i <= N; i++) {
-        ystart[i] = 0.0;
-    }
-
-    // ystart is a vector 1..N, so need to index from 1 not 0
-    ystart[1] = s->lwp;
-
-    // Runge-Kunte ODE integrator used to estimate a new leaf water potential
-    odeint(ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, s->lai,
-           s->weighted_swp, s->canht, f->transpiration, dummy5,
-           lwp_diff_eqn, rkqs);
-
-    // ystart is a vector 1..N, so need to index from 1
-    s->lwp = ystart[1];
-
-    free_dvector(ystart, 1, N);
-
-    return;
-}
-
-void lwp_diff_eqn(double time_dummy, double y[], double dydt[],
-                  double lai, double swp, double height,
-                  double transpiration, double dummy5) {
-    //
-    // differential equation describing change in leaf water potential given
-    // supply & demand. NB. numerical lib vectors are index 1..n, so
-    // we need to index the return from the odeint func with 1, not 0
-    //
-    int index = 1;
-
-    // head of pressure  (MPa/m)
-    double head = 0.009807;
-
-    // leaf capacitance (mmol m-2 LA MPa-1)
-    double capac = 4000.0;
-    double layer_capac = capac * lai;
-    double gplant = 20.0;
-
-    // conductance is constant with height (MPa s mmol-1)
-    double rplant = 1. / (gplant * lai);
-    //double rplant = ht / ( gplant * lai );  // MPa s mmol-1 (per layer)
-    double rsoil = 0.0; // need to add calculation
-
-    // should this be sunlit LAI only?
-    dydt[index] = (swp - (head * height) - 1000.0 * lai * \
-                   transpiration * (rplant + rsoil) - y[index]) / \
-                  (layer_capac * (rplant + rsoil));
-
-    return;
-}
-
 void check_water_balance(control *c, fluxes *f, double previous_sw,
                          double current_sw) {
 
@@ -512,7 +446,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
         // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
-        
+
     }
 
     return;

@@ -34,6 +34,7 @@ int main(int argc, char **argv)
     met *m;
     params *p;
     state *s;
+    nrutil *nr;
 
     c = (control *)malloc(sizeof(control));
     if (c == NULL) {
@@ -77,10 +78,17 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
+    nr = (nrutil *)malloc(sizeof(nrutil));
+    if (nr == NULL) {
+        fprintf(stderr, "nrutil structure: Not allocated enough memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
     initialise_control(c);
     initialise_params(p);
     initialise_fluxes(f);
     initialise_state(s);
+    initialise_nrutil(nr);
 
     clparser(argc, argv, c);
     /*
@@ -103,6 +111,7 @@ int main(int argc, char **argv)
     }
 
     if (c->water_balance == HYDRAULICS) {
+        allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
     }
@@ -114,9 +123,9 @@ int main(int argc, char **argv)
     }
 
     if (c->spin_up) {
-        spin_up_pools(cw, c, f, ma, m, p, s);
+        spin_up_pools(cw, c, f, ma, m, p, s, nr);
     } else {
-        run_sim(cw, c, f, ma, m, p, s);
+        run_sim(cw, c, f, ma, m, p, s, nr);
     }
 
     /* clean up */
@@ -167,6 +176,20 @@ int main(int argc, char **argv)
             free(s->root_mass);
             free(s->root_length);
             free(s->layer_depth);
+
+            free_dvector(nr->y, 1, nr->N);
+            free_dvector(nr->ystart, 1, nr->N);
+            free_dvector(nr->dydx, 1, nr->N);
+			free_dvector(nr->yscal, 1, nr->N);
+            free_dvector(nr->xp, 1, nr->kmax);
+            free_dmatrix(nr->yp, 1, nr->N, 1, nr->kmax);
+            free_dvector(nr->ytemp, 1, nr->N);
+        	free_dvector(nr->ak6, 1, nr->N);
+        	free_dvector(nr->ak5, 1, nr->N);
+        	free_dvector(nr->ak4, 1, nr->N);
+        	free_dvector(nr->ak3, 1, nr->N);
+        	free_dvector(nr->ak2, 1, nr->N);
+            free_dvector(nr->yerr, 1, nr->N);
         }
 
     } else {
@@ -194,7 +217,7 @@ int main(int argc, char **argv)
 }
 
 void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-             params *p, state *s){
+             params *p, state *s, nrutil *nr){
 
     int    nyr, doy, window_size, i, dummy = 0;
     int    fire_found = FALSE;;
@@ -414,7 +437,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
 
-            calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
+            calc_day_growth(cw, c, f, ma, m, nr, p, s, day_length[doy],
                             doy, fdecay, rdecay);
 
             //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
@@ -522,7 +545,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 }
 
 void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-                   params *p, state *s){
+                   params *p, state *s, nrutil *nr){
     /* Spin up model plant & soil pools to equilibrium.
 
     - Examine sequences of 50 years and check if C pools are changing
@@ -551,7 +574,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         c->disturbance = FALSE;
         /*  200 years (50 yrs x 4 cycles) */
         for (i = 0; i < 4; i++) {
-            run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+            run_sim(cw, c, f, ma, m, p, s, nr); /* run GDAY */
         }
         c->disturbance = cntrl_flag;
     }
@@ -567,7 +590,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* 1000 years (50 yrs x 20 cycles) */
             for (i = 0; i < 20; i++) {
-                run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+                run_sim(cw, c, f, ma, m, p, s, nr); /* run GDAY */
             }
 
             /* Have we reached a steady state? */
@@ -887,6 +910,25 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
 
     /* N deposition + biological N fixation */
     f->ninflow = m->ndep + m->nfix;
+
+    return;
+}
+
+void allocate_numerical_libs_stuff(nr) {
+
+    nr->xp = dvector(1, nr->kmax);
+    nr->yp = dmatrix(1, nr->N, 1, nr->kmax);
+    nr->yscal = dvector(1, nr->N);
+    nr->y = dvector(1, nr->N);
+    nr->dydx = dvector(1, nr->N);
+    nr->ystart = dvector(1, nr->N);
+    nr->ak2 = dvector(1, nr->N);
+    nr->ak3 = dvector(1, nr->N);
+    nr->ak4 = dvector(1, nr->N);
+    nr->ak5 = dvector(1, nr->N);
+    nr->ak6 = dvector(1, nr->N);
+    nr->ytemp = dvector(1, nr->N);
+    nr->yerr = dvector(1, nr->N);
 
     return;
 }

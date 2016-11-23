@@ -4,14 +4,15 @@
 * - From numerical recipies in C, see Press et al. 1992.
 *
 * NOTES:
-* See comment in odeint.c
-*
+* I've refactored this function so that all the allocation/free calls have
+* been extracted to speed things up as it was eating 40-50% of the time
+* spent. Instead we now pass nrutil which contains all the needed vars
 *
 * AUTHOR:
 *   Martin De Kauwe
 *
 * DATE:
-*   11.08.2016
+*   23.11.2016
 *
 * =========================================================================== */
 
@@ -28,7 +29,7 @@
 
 void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 	      double yscal[], double *hdid, double *hnext,
-		  double aa, double bb, double cc, double dd, double ee,
+		  double aa, double bb, double cc, double dd, double ee, nrutil *nr,
 	      void (*derivs)(double, double [], double [], double, double, double,
 		  				 double, double))
 
@@ -36,21 +37,22 @@ void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 {
 	void rkck(double y[], double dydx[], int n, double x, double h,
               double yout[], double yerr[], double aa, double bb, double cc,
-			  double dd, double ee,
+			  double dd, double ee, nrutil *nr,
 			  void (*derivs)(double, double [], double [],
 				  			 double, double, double, double, double));
 
 	int i;
-	double errmax,h,xnew,*yerr,*ytemp;
+	double errmax,h,xnew;
+	//double *yerr,*ytemp;
 
-	yerr=dvector(1,n);
-	ytemp=dvector(1,n);
+	//yerr=dvector(1,n);
+	//ytemp=dvector(1,n);
 
 	h=htry;
 	for (;;) {
-		rkck(y,dydx,n,*x,h,ytemp,yerr, aa, bb, cc, dd, ee, derivs);
+		rkck(y,dydx,n,*x,h,nr->ytemp,nr->yerr, aa, bb, cc, dd, ee, nr, derivs);
 		errmax=0.0;
-		for (i=1;i<=n;i++) errmax=FMAX(errmax,fabs(yerr[i]/yscal[i]));
+		for (i=1;i<=n;i++) errmax=FMAX(errmax,fabs(nr->yerr[i]/yscal[i]));
 		errmax /= eps;
 		if (errmax > 1.0) {
 			h=SAFETY*h*pow(errmax,PSHRNK);
@@ -62,12 +64,12 @@ void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 			if (errmax > ERRCON) *hnext=SAFETY*h*pow(errmax,PGROW);
 			else *hnext=5.0*h;
 			*x += (*hdid=h);
-			for (i=1;i<=n;i++) y[i]=ytemp[i];
+			for (i=1;i<=n;i++) y[i]=nr->ytemp[i];
 			break;
 		}
 	}
-	free_dvector(ytemp,1,n);
-	free_dvector(yerr,1,n);
+	//free_dvector(ytemp,1,n);
+	//free_dvector(yerr,1,n);
 }
 #undef SAFETY
 #undef PGROW

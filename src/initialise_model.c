@@ -502,3 +502,25 @@ void initialise_state(state *s) {
 
     return;
 }
+
+void initialise_nrutil(nrutil *nr) {
+
+    nr->kmax = 100;
+    nr->N = 1;
+    nr->xp = NULL;
+	nr->yp = NULL;
+	nr->yscal = NULL;
+	nr->y = NULL;
+	nr->dydx = NULL;
+    nr->ystart = NULL;
+
+    nr->ak2 = NULL;
+    nr->ak3 = NULL;
+    nr->ak4 = NULL;
+    nr->ak5 = NULL;
+    nr->ak6 = NULL;
+    nr->ytemp = NULL;
+    nr->yerr = NULL;
+
+    return;
+}

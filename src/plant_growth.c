@@ -22,8 +22,8 @@
 
 
 void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
-                     met *m, params *p, state *s, double day_length, int doy,
-                     double fdecay, double rdecay)
+                     met *m, nrutil *nr, params *p, state *s, double day_length,
+                     int doy, double fdecay, double rdecay)
 {
     double previous_topsoil_store, dummy=0.0,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
@@ -35,7 +35,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     if (c->sub_daily) {
         /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
-        canopy(cw, c, f, ma, m, p, s);
+        canopy(cw, c, f, ma, m, nr, p, s);
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, day_length);
