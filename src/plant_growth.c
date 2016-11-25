@@ -17,11 +17,11 @@
 * =========================================================================== */
 #include "plant_growth.h"
 #include "water_balance.h"
-
+#include "zbrent.h"
 
 void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
-                     met *m, params *p, state *s, double day_length, int doy,
-                     double fdecay, double rdecay)
+                     met *m, nrutil *nr, params *p, state *s, double day_length,
+                     int doy, double fdecay, double rdecay)
 {
    double previous_topsoil_store, dummy=0.0, previous_rootzone_store;
    double nitfac, pitfac, npitfac;
@@ -35,7 +35,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     if (c->sub_daily) {
         /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
-        canopy(cw, c, f, ma, m, p, s);
+        canopy(cw, c, f, ma, m, nr, p, s);
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, day_length);
@@ -123,6 +123,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
+
     precision_control(f, s);
 
     return;
@@ -1682,6 +1683,158 @@ double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
 }
 
 
+void initialise_roots(fluxes *f, params *p, state *s) {
+    /* Set up all the rooting arrays for use with the hydraulics assumptions */
+    int    i;
+    double thick;
+
+    // Using CABLE depths, but spread over 2 m.
+    double cable_thickness[7] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248, 2.0};
+
+    s->thickness = malloc(p->n_layers * sizeof(double));
+    if (s->thickness == NULL) {
+        fprintf(stderr, "malloc failed allocating thickness\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* root mass is g biomass, i.e. ~twice the C content */
+    s->root_mass = malloc(p->n_layers * sizeof(double));
+    if (s->root_mass == NULL) {
+        fprintf(stderr, "malloc failed allocating root_mass\n");
+        exit(EXIT_FAILURE);
+    }
+
+    s->root_length = malloc(p->n_layers * sizeof(double));
+    if (s->root_length == NULL) {
+        fprintf(stderr, "malloc failed allocating root_length\n");
+        exit(EXIT_FAILURE);
+    }
+
+    s->layer_depth = malloc(p->n_layers * sizeof(double));
+    if (s->layer_depth == NULL) {
+        fprintf(stderr, "malloc failed allocating layer_depth\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // force a thin top layer = 0.1
+    thick = 0.1;
+    s->layer_depth[0] = thick;
+    s->thickness[0] = thick;
+    //printf("%d %f %f\n", 0, s->thickness[0], s->layer_depth[0]);
+    for (i = 1; i < p->n_layers; i++) {
+        thick += p->layer_thickness;
+        s->layer_depth[i] = thick;
+        s->thickness[i] = p->layer_thickness;
+
+        //printf("%d %f %f\n", i, s->thickness[i], s->layer_depth[i]);
+
+        /* made up initalisation, following SPA, get replaced second timestep */
+        s->root_mass[i] = 0.1;
+        s->root_length[i] = 0.1;
+        s->rooted_layers = p->n_layers;
+    }
 
 
+    return;
+}
 
+void update_roots(control *c, params *p, state *s) {
+    /*
+        Given the amount of roots grown by GDAY predict the assoicated rooting
+        distribution accross soil layers
+        - These assumptions come from Mat's SPA model.
+
+        TODO: implement CABLE version.
+    */
+    int    i;
+    double soil_layers[p->n_layers];
+    double C_2_BIOMASS = 2.0;
+    double min_biomass = 10.0; /* To exend at least a layer; g C m-2 */
+    double root_biomass, root_cross_sec_area, root_depth, root_reach, mult;
+    double surf_biomass, prev, curr, slope, cumulative_depth;
+    double x1 = 0.1;        /* lower bound for brent search */
+    double x2 = 10.0;       /* upper bound for brent search */
+    double tol = 0.0001;    /* tolerance for brent search */
+    double fine_root, fine_root_min;
+
+    // Enforcing a minimum fine root mass, otherwise during spinup this can go
+    // wrong.
+    fine_root_min = 50.0;
+    if (s->root < fine_root_min) {
+        fine_root = fine_root_min;
+    } else {
+        fine_root = s->root;
+    }
+    
+    root_biomass = MAX(min_biomass, fine_root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
+
+    root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
+    root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
+
+    s->rooted_layers = 0;
+    for (i = 0; i < p->n_layers; i++) {
+        if (s->layer_depth[i] > root_depth) {
+            s->rooted_layers = i;
+            break;
+        }
+    }
+
+    /* how for into the soil do the reach extend? */
+    root_reach = s->layer_depth[s->rooted_layers];
+
+    /* Enforce 50 % of root mass in the top 1/4 of the rooted layers. */
+    mult = MIN(1.0 / s->thickness[0], \
+               MAX(2.0, 11.0 * exp(-0.006 * root_biomass)));
+
+    /*
+    ** assume surface root density is related to total root biomass by a
+    ** scalar dependent on root biomass
+    */
+    surf_biomass = root_biomass * mult;
+
+    if (s->rooted_layers > 1) {
+        /*
+        ** determine slope of root distribution given rooting depth
+        ** and ratio of root mass to surface root density
+        */
+        slope = zbrent(&calc_root_dist, x1, x2, tol, root_biomass,
+                       surf_biomass, s->rooted_layers, s->thickness[0],
+                       root_reach);
+
+        prev = 1.0 / slope;
+        cumulative_depth = 0.0;
+        for (i = 0; i <= s->rooted_layers; i++) {
+            cumulative_depth += s->thickness[i];
+            curr = 1.0 / slope * exp(-slope * cumulative_depth);
+            s->root_mass[i] = (prev - curr) * surf_biomass;
+
+            /* (m m-3 soil) */
+            s->root_length[i] = s->root_mass[i] / (p->root_density * \
+                                                   root_cross_sec_area);
+            prev = curr;
+        }
+    } else {
+        s->root_mass[0] = root_biomass;
+    }
+
+    return;
+}
+
+
+double calc_root_dist(double slope, double root_biomass, double surf_biomass,
+                      double rooted_layers, double top_lyr_thickness,
+                      double root_reach) {
+    /*
+        This function is used in the in the zbrent numerical algorithm to
+        figure out the slope of the rooting distribution for a given depth
+    */
+    double one, two, arg1, arg2;
+
+    one = (1.0 - exp(-slope * rooted_layers * top_lyr_thickness)) / slope;
+    two = root_biomass / surf_biomass;
+    arg1 = (1.0 - exp(-slope * root_reach)) / slope;
+    arg2 = root_biomass / surf_biomass;
+
+    return (arg1 - arg2);
+}

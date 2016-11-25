@@ -79,7 +79,14 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         if (dleaf_kpa < 0.05) {
             dleaf_kpa = 0.05;
         }
-        gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
+
+        // This is calculated by SPA hydraulics so we don't need to account for
+        // water stress on gs.
+        if (c->water_balance == HYDRAULICS) {
+            gs_over_a = (1.0 + p->g1 / sqrt(dleaf_kpa)) / Cs;
+        } else {
+            gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
+        }
         g0 = g0_zero;
 
         /* Solution when Rubisco activity is limiting */
@@ -124,6 +131,81 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         cw->rd_leaf[idx] = rd;
         cw->gsc_leaf[idx] = MAX(g0, g0 + gs_over_a * cw->an_leaf[idx]);
     }
+
+    // Pack calculated values into a temporary array as we may need to
+    // recalculate A if water is limiting, i.e. the Emax case below
+    if (c->water_balance == HYDRAULICS) {
+        cw->ts_Cs = Cs;
+        cw->ts_vcmax = vcmax;
+        cw->ts_km = km;
+        cw->ts_gamma_star = gamma_star;
+        cw->ts_rd = rd;
+        cw->ts_Vj = Vj;
+    }
+
+    return;
+}
+
+void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
+                            state *s) {
+    /*
+        Calculate photosynthesis as above but for here we are resolving Ci and
+        A for a given gs (Jarvis style) to get the Emax solution.
+
+        This follows MAESPA code.
+    */
+
+    double gamma_star, km, jmax, vcmax, rd, Vj, gs;
+    double A, B, C, Ac, Aj, Cs;
+    double g0_zero = 1E-09; /* numerical issues, don't use zero */
+    int    idx, qudratic_error = FALSE, large_root;
+
+    // Unpack calculated properties from first photosynthesis solution
+    idx = cw->ileaf;
+    Cs = cw->ts_Cs;
+    vcmax = cw->ts_vcmax;
+    km = cw->ts_km;
+    gamma_star = cw->ts_gamma_star;
+    rd = cw->ts_rd;
+    Vj = cw->ts_Vj;
+
+    // A very low minimum; for numerical stability.
+    if (cw->gsc_leaf[idx] < g0_zero) {
+        cw->gsc_leaf[idx] = g0_zero;
+    }
+    gs = cw->gsc_leaf[idx];
+
+    /* Solution when Rubisco rate is limiting */
+    //A = 1.0 / gs;
+    //B = (0.0 - vcmax) / gs - Cs - km;
+    //C = vcmax * (Cs - gamma_star);
+
+    // From MAESTRA, not sure of the reason for the difference.
+    A = 1.0 / gs;
+    B = (rd - vcmax) / gs - Cs - km;
+    C = vcmax * (Cs - gamma_star) - rd * (Cs + km);
+
+    qudratic_error = FALSE;
+    large_root = FALSE;
+    Ac = quad(A, B, C, large_root, &qudratic_error);
+    if (qudratic_error) {
+        Ac = 0.0;
+    }
+
+    /* Solution when electron transport rate is limiting */
+    A = 1.0 / gs;
+    B = (rd - Vj) / gs - Cs - 2.0 * gamma_star;
+    C = Vj * (Cs - gamma_star) - rd * (Cs + 2.0 * gamma_star);
+
+    qudratic_error = FALSE;
+    large_root = FALSE;
+    Aj = quad(A, B, C, large_root, &qudratic_error);
+    if (qudratic_error) {
+        Aj = 0.0;
+    }
+
+    cw->an_leaf[idx] = MIN(Ac, Aj);
+
     return;
 }
 
@@ -251,8 +333,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     }
 
     /* reduce photosynthetic capacity with moisture stress */
-    *jmax *= s->wtfac_root;
-    *vcmax *= s->wtfac_root;
+    if (c->water_balance == BUCKET) {
+        *jmax *= s->wtfac_root;
+        *vcmax *= s->wtfac_root;
+    } // Should add non-stomal limitation here
 
     /* Jmax/Vcmax forced linearly to zero at low T */
     if (tleaf < lower_bound) {

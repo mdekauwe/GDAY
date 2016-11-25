@@ -27,23 +27,24 @@ int main(int argc, char **argv)
     /*
      * Setup structures, initialise stuff, e.g. zero fluxes.
      */
-    canopy_wk *cw;
     control *c;
+    canopy_wk *cw;
     fluxes *f;
     met_arrays *ma;
     met *m;
     params *p;
     state *s;
-
-    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
-    if (cw == NULL) {
-        fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
-    	exit(EXIT_FAILURE);
-    }
+    nrutil *nr;
 
     c = (control *)malloc(sizeof(control));
     if (c == NULL) {
         fprintf(stderr, "control structure: Not allocated enough memory!\n");
+    	exit(EXIT_FAILURE);
+    }
+
+    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
+    if (cw == NULL) {
+        fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
 
@@ -77,10 +78,24 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
+    nr = (nrutil *)malloc(sizeof(nrutil));
+    if (nr == NULL) {
+        fprintf(stderr, "nrutil structure: Not allocated enough memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // potentially allocating 1 extra spot, but will be fine as we always
+    // index by num_days
+    if ((s->day_length = (double *)calloc(366, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for day_length\n");
+		exit(EXIT_FAILURE);
+    }
+
     initialise_control(c);
     initialise_params(p);
     initialise_fluxes(f);
     initialise_state(s);
+    initialise_nrutil(nr);
 
     clparser(argc, argv, c);
     /*
@@ -96,16 +111,30 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    /* House keeping! */
+    if (c->water_balance == HYDRAULICS && c->sub_daily == FALSE) {
+        fprintf(stderr, "You can't run the hydraulics model with daily flag\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (c->water_balance == HYDRAULICS) {
+        allocate_numerical_libs_stuff(nr);
+        initialise_roots(f, p, s);
+        setup_hydraulics_arrays(f, p, s);
+    }
+
     if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
+        fill_up_solar_arrays(cw, c, ma, p);
     } else {
         read_daily_met_data(argv, c, ma);
     }
 
+
     if (c->spin_up) {
-        spin_up_pools(cw, c, f, ma, m, p, s);
+        spin_up_pools(cw, c, f, ma, m, p, s, nr);
     } else {
-        run_sim(cw, c, f, ma, m, p, s);
+        run_sim(cw, c, f, ma, m, p, s, nr);
     }
 
     /* clean up */
@@ -118,10 +147,8 @@ int main(int argc, char **argv)
         fclose(c->ofp_hdr);
     }
 
-
     free(cw);
     free(c);
-    free(f);
     free(ma->year);
     free(ma->tair);
     free(ma->rain);
@@ -134,6 +161,51 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
+        free(cw->cz_store);
+        free(cw->ele_store);
+        free(cw->df_store);
+
+        /* Clean up hydraulics */
+        if (c->water_balance == HYDRAULICS) {
+            free(f->soil_conduct);
+            free(f->swp);
+            free(f->soilR);
+            free(f->fraction_uptake);
+            free(f->ppt_gain);
+            free(f->water_loss);
+            free(f->water_gain);
+            free(f->est_evap);
+            free(s->water_frac);
+            free(s->wetting_bot);
+            free(s->wetting_top);
+            free(p->potA);
+            free(p->potB);
+            free(p->cond1);
+            free(p->cond2);
+            free(p->cond3);
+            free(p->porosity);
+            free(p->field_capacity);
+            free(s->thickness);
+            free(s->root_mass);
+            free(s->root_length);
+            free(s->layer_depth);
+
+
+            free_dvector(nr->y, 1, nr->N);
+            free_dvector(nr->ystart, 1, nr->N);
+            free_dvector(nr->dydx, 1, nr->N);
+			free_dvector(nr->yscal, 1, nr->N);
+            free_dvector(nr->xp, 1, nr->kmax);
+            free_dmatrix(nr->yp, 1, nr->N, 1, nr->kmax);
+            free_dvector(nr->ytemp, 1, nr->N);
+        	free_dvector(nr->ak6, 1, nr->N);
+        	free_dvector(nr->ak5, 1, nr->N);
+        	free_dvector(nr->ak4, 1, nr->N);
+        	free_dvector(nr->ak3, 1, nr->N);
+        	free_dvector(nr->ak2, 1, nr->N);
+            free_dvector(nr->yerr, 1, nr->N);
+        }
+
     } else {
         free(ma->prjday);
         free(ma->tam);
@@ -147,18 +219,20 @@ int main(int argc, char **argv)
         free(ma->par_am);
         free(ma->par_pm);
     }
+    free(s->day_length);
     free(ma);
     free(m);
     free(p);
     free(s);
+    free(f);
+
+
 
     exit(EXIT_SUCCESS);
 }
 
-
-
 void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-             params *p, state *s){
+             params *p, state *s, nrutil *nr){
 
     int    nyr, doy, window_size, i, dummy = 0;
     int    fire_found = FALSE;;
@@ -167,18 +241,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double fdecay, rdecay, current_limitation, npitfac, year;
     int   *disturbance_yrs = NULL;
 
-    /*
-     * potentially allocating 1 extra spot, but will be fine as we always
-     * index by num_days
-     */
-    double *day_length = NULL;
-    if ((day_length = (double *)calloc(366, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for day_length\n");
-		exit(EXIT_FAILURE);
-    }
-
     if (c->deciduous_model) {
-
         /* Are we reading in last years average growing season? */
         if (float_eq(s->avg_alleaf, 0.0) &&
             float_eq(s->avg_alstem, 0.0) &&
@@ -254,9 +317,35 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     correct_rate_constants(p, FALSE);
     day_end_calculations(c, p, s, -99, TRUE);
 
-    initialise_soil_moisture_parameters(c, p);
-    s->pawater_root = p->wcapac_root;
-    s->pawater_topsoil = p->wcapac_topsoil;
+    if (c->sub_daily) {
+        initialise_soils_sub_daily(c, f, p, s);
+    } else {
+        initialise_soils_day(c, f, p, s);
+    }
+
+    if (c->water_balance == HYDRAULICS) {
+        double root_zone_total, water_content;
+
+        // Update the soil water storage
+        root_zone_total = 0.0;
+        for (i = 0; i < p->n_layers; i++) {
+
+            // water content of soil layer (m)
+            water_content = s->water_frac[i] * s->thickness[i];
+
+            // update old GDAY effective two-layer buckets
+            // - this is just for outputting, these aren't used.
+            if (i == 0) {
+                s->pawater_topsoil = water_content * M_TO_MM;
+            } else {
+                root_zone_total += water_content * M_TO_MM;
+            }
+        }
+        s->pawater_root = root_zone_total;
+    } else {
+        s->pawater_root = p->wcapac_root;
+        s->pawater_topsoil = p->wcapac_topsoil;
+    }
 
     if (c->fixed_lai) {
         s->lai = p->fix_lai;
@@ -282,6 +371,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     c->day_idx = 0;
     c->hour_idx = 0;
 
+
+
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
         if (c->sub_daily) {
@@ -294,10 +385,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         else
             c->num_days = 365;
 
-        calculate_daylength(c->num_days, p->latitude, *(&day_length));
+        calculate_daylength(s, c->num_days, p->latitude);
 
         if (c->deciduous_model) {
-            phenology(c, f, ma, p, s, day_length);
+            phenology(c, f, ma, p, s);
 
             /* Change window size to length of growing season */
             sma(SMA_FREE, hw);
@@ -314,8 +405,12 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         **   D A Y   L O O P   **
         ** =================== */
         for (doy = 0; doy < c->num_days; doy++) {
+
+            //if (year == 2001 && doy+1 == 230) {
+            //    c->pdebug = TRUE;
+            //}
             if (! c->sub_daily) {
-                unpack_met_data(c, f, ma, m, dummy, day_length[doy]);
+                unpack_met_data(c, f, ma, m, dummy, s->day_length[doy]);
             }
             calculate_litterfall(c, f, p, s, doy, &fdecay, &rdecay);
 
@@ -346,10 +441,12 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* Hurricane? */
                 hurricane(f, p, s);
             }
-            calc_day_growth(cw, c, f, ma, m, p, s, day_length[doy],
+
+
+            calc_day_growth(cw, c, f, ma, m, nr, p, s, s->day_length[doy],
                             doy, fdecay, rdecay);
 
-            /*printf("%d %f %f\n", doy, f->gpp*100, s->lai);*/
+            //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
             
@@ -407,6 +504,23 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
             c->day_idx++;
+
+
+            //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
+            //printf("%d %d %f", (int)year, doy, s->water_frac[0]);
+            //for (i = 1; i < p->n_layers; i++) {
+            //
+            //    //printf(" %f", s->water_frac[i] * s->thickness[i] * M_TO_MM);
+            //    printf(" %f", s->water_frac[i]);
+            //
+            //}
+            //printf("\n");
+            //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
+
+            //printf("%d %d %lf %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root, s->saved_swp);
+            //printf("%d %d %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root);
+
+
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
@@ -416,6 +530,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         if (c->deciduous_model) {
             calculate_average_alloc_fractions(f, s, p->growing_seas_len);
             allocate_stored_cnp(f, p, s);
+        }
+
+        // Adjust rooting distribution at the end of the year to account for
+        // growth of new roots. It is debatable when this should be done. I've
+        // picked the year end for computation reasons and probably because
+        // plants wouldn't do this as dynamcially as on a daily basis. Probably
+        if (c->water_balance == HYDRAULICS) {
+            update_roots(c, p, s);
         }
     }
 
@@ -430,7 +552,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     sma(SMA_FREE, hw);
-    free(day_length);
     if (c->disturbance) {
         free(disturbance_yrs);
     }
@@ -441,12 +562,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 }
 
 void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-                   params *p, state *s){
+                   params *p, state *s, nrutil *nr){
     /* Spin up model plant & soil pools to equilibrium.
 
     - Examine sequences of 50 years and check if C pools are changing
-      by more than 0.005 units per 1000 yrs. Note this check is done in
-      units of: kg m-2.
+      by more than 0.005 units per 1000 yrs.
 
     References:
     ----------
@@ -464,8 +584,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double prev_plantp = 99999.9;
     double prev_soilp = 99999.9;
     int i, cntrl_flag;
-    /* check for convergences in units of kg/m2 */
-    double conv = TONNES_HA_2_KG_M2;
 
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
@@ -476,7 +594,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         c->disturbance = FALSE;
         /*  200 years (50 yrs x 4 cycles) */
         for (i = 0; i < 4; i++) {
-            run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+            run_sim(cw, c, f, ma, m, p, s, nr); /* run GDAY */
         }
         c->disturbance = cntrl_flag;
     }
@@ -500,7 +618,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* 1000 years (50 yrs x 20 cycles) */
             for (i = 0; i < 20; i++) {
-                run_sim(cw, c, f, ma, m, p, s); /* run GDAY */
+                run_sim(cw, c, f, ma, m, p, s, nr); /* run GDAY */
             }
             if (c->pcycle) {
             /* Have we reached a steady state? */
@@ -965,4 +1083,74 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
     f->ninflow = m->ndep + m->nfix;
 
     return;
+}
+
+void allocate_numerical_libs_stuff(nrutil *nr) {
+
+    nr->xp = dvector(1, nr->kmax);
+    nr->yp = dmatrix(1, nr->N, 1, nr->kmax);
+    nr->yscal = dvector(1, nr->N);
+    nr->y = dvector(1, nr->N);
+    nr->dydx = dvector(1, nr->N);
+    nr->ystart = dvector(1, nr->N);
+    nr->ak2 = dvector(1, nr->N);
+    nr->ak3 = dvector(1, nr->N);
+    nr->ak4 = dvector(1, nr->N);
+    nr->ak5 = dvector(1, nr->N);
+    nr->ak6 = dvector(1, nr->N);
+    nr->ytemp = dvector(1, nr->N);
+    nr->yerr = dvector(1, nr->N);
+
+    return;
+}
+
+
+void fill_up_solar_arrays(canopy_wk *cw, control *c, met_arrays *ma, params *p) {
+
+    // This is a suprisingly big time hog. So I'm going to unpack it once into
+    // an array which we can then access during spinup to save processing time
+
+    int    nyr, doy, hod;
+    long   ntimesteps = c->total_num_days * 48;
+    double year, sw_rad;
+
+    cw->cz_store = malloc(ntimesteps * sizeof(double));
+    if (cw->cz_store == NULL) {
+        fprintf(stderr, "malloc failed allocating cz store\n");
+        exit(EXIT_FAILURE);
+    }
+
+    cw->ele_store = malloc(ntimesteps * sizeof(double));
+    if (cw->ele_store == NULL) {
+        fprintf(stderr, "malloc failed allocating ele store\n");
+        exit(EXIT_FAILURE);
+    }
+
+    cw->df_store = malloc(ntimesteps * sizeof(double));
+    if (cw->df_store == NULL) {
+        fprintf(stderr, "malloc failed allocating df store\n");
+        exit(EXIT_FAILURE);
+    }
+
+    c->hour_idx = 0;
+    for (nyr = 0; nyr < c->num_years; nyr++) {
+        year = ma->year[c->hour_idx];
+        if (is_leap_year(year))
+            c->num_days = 366;
+        else
+            c->num_days = 365;
+        for (doy = 0; doy < c->num_days; doy++) {
+            for (hod = 0; hod < c->num_hlf_hrs; hod++) {
+                calculate_solar_geometry(cw, p, doy, hod);
+                sw_rad = ma->par[c->hour_idx] * PAR_2_SW; /* W m-2 */
+                get_diffuse_frac(cw, doy, sw_rad);
+                cw->cz_store[c->hour_idx] = cw->cos_zenith;
+                cw->ele_store[c->hour_idx] = cw->elevation;
+                cw->df_store[c->hour_idx] = cw->diffuse_frac;
+                c->hour_idx++;
+            }
+        }
+    }
+    return;
+
 }

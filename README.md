@@ -1,6 +1,10 @@
 # GDAY model
 
-GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b). The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESTRA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993). The water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone.
+GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b).
+
+The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESPA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a [SPA](http://www.geos.ed.ac.uk/homes/mwilliam/spa.html)-style representation of hydraulics. GDAY-SPA resolves multiple soil layers, soil and leaf water potential and limits gas exchange following the Emax approach (see [MAESPA](http://maespa.github.io/manual.html) for more details).
+
+GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993).
 
 <p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
 
@@ -149,6 +153,13 @@ BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ## Phosphorus component
 Organic phosphorus (P) pools and fluxes follow the same modelling structure of the nitrogen. A total of five inorganic phosphorus pools is implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via constant input rate from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in plant limits photosythesis through its explicit effect on Jmax and a potential effect on Triose-phosphates. 
 
+
+## Hydraulics
+From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage between layers. We also implement the soil-to-leaf hydraulics from SPA, which includes weighting soil water potential. We limit gas exchange following the Emax approach (Duursma et al. 2008). This approach therefore assumes isohydric behaviour, i.e. the plant maintains a leaf water potential above a critical minimum value.
+
+We do not currently implement the thermal calculations which would allow you to estimate soil temperature.
+
+
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
 
@@ -174,6 +185,9 @@ of photosynthesis from leaves to canopies without the errors of big-leaf models.
 8. Wang, Y-P. and Leuning R. (1998) A two-leaf model for canopy conductance, photosynthesis and portioning of available energy I: Model description and comparison with a multi-layered model. *Agricultural and Forest Meteorology*, 91, 89–111.
 9. Parton, W.J., Schimel, D.S., Cole, C.V., and Ojima, D.S. (1987) Analysis of factors controlling soil organic matter levels in Great Plains grasslands. Soil Sc. Soc. Am. J. 51: 1173–1179.
 10. Parton, W.J., Scurlock, J.M.O., Ojima, D.S., Gilmanov, T.G., Scholes, R.J., Schimel, D.S., Kirchner, T., Menaut, J.-C., Seastedt, T., Garcia Moya, E. Kamnalrut, A., and Kinyamario, J.I. (1993) Observations and modeling of biomass and soil or- ganic matter dynamics for the grassland biome worldwide. Global Biogeochem. Cycles, 7: 785–809.
+11. Duursma, RA and Kolari, P and Perämäki, M and Nikinmaa, E and Hari, P and Delzon, S and Loustau, D and Ilvesniemi, H and Pumpanen, J and Mäkelä, A. (2008) Predicting the decline in daily maximum transpiration rate of two pine stands during drought based on constant minimum leaf water potential and plant hydraulic conductance. Tree physiology, 28, 265-276.
+12. Duusma, R. A. and Medlyn, B. E. (2012) MAESPA: a model to study interactions between water limitation, environmental drivers and vegetation function at tree and stand levels, with an example application to [CO2] x drought interactions. Geoscientific Model Development, 5, 919-940.
+
 
 ## Contacts
 * [Martin De Kauwe](http://mdekauwe.github.io/).

@@ -16,7 +16,8 @@
 
 /* C stuff */
 void    calc_day_growth(canopy_wk *, control *, fluxes *, met_arrays *ma, met *,
-                        params *, state *, double, int, double, double);
+                        nrutil *, params *, state *, double, int, double,
+                        double);
 void    carbon_allocation(control *, fluxes *, params *, state *,
                                                      double, int);
 void    calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,
@@ -57,6 +58,9 @@ double phosphorus_retrans(control *, fluxes *, params *, state *,
 /* Priming/Exudation stuff */
 void   calc_root_exudation(control *c, fluxes *, params *p, state *);
 
-/* misc */
+/* hydraulics */
+void   initialise_roots(fluxes *, params *, state *);
+void   update_roots(control *, params *, state *);
+double calc_root_dist(double, double, double, double, double, double);
 
 #endif /* PLANT_GROWTH */

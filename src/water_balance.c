@@ -1,4 +1,66 @@
 #include "water_balance.h"
+#include "zbrent.h"
+#include "nrutil.h"
+#include "odeint.h"
+#include "rkck.h"
+#include "rkqs.h"
+
+void initialise_soils_day(control *c, fluxes *f, params *p, state *s) {
+    /* Initialise soil water state & parameters  */
+
+    double *fsoil_top = NULL, *fsoil_root = NULL;
+    int     i;
+
+    /* site params not known, so derive them based on Cosby et al */
+
+    if (c->calc_sw_params) {
+        fsoil_top = get_soil_fracs(p->topsoil_type);
+        fsoil_root = get_soil_fracs(p->rootsoil_type);
+
+        /* top soil */
+        calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,
+                         &p->theta_sp_topsoil, &p->b_topsoil,
+                         &p->psi_sat_topsoil);
+
+        /* Plant available water in top soil (mm) */
+        p->wcapac_topsoil = p->topsoil_depth  *\
+                            (p->theta_fc_topsoil - p->theta_wp_topsoil);
+        /* Root zone */
+        calc_soil_params(fsoil_root, &p->theta_fc_root, &p->theta_wp_root,
+                         &p->theta_sp_root, &p->b_root, &p->psi_sat_root);
+
+        /* Plant available water in rooting zone (mm) */
+        p->wcapac_root = p->rooting_depth * \
+                            (p->theta_fc_root - p->theta_wp_root);
+    }
+
+
+    /* calculate Landsberg and Waring SW modifier parameters if not
+       specified by the user based on a site calibration */
+    if (p->ctheta_topsoil < -900.0 && p->ntheta_topsoil  < -900.0 &&
+        p->ctheta_root < -900.0 && p->ntheta_root < -900.0) {
+        get_soil_params(p->topsoil_type, &p->ctheta_topsoil, &p->ntheta_topsoil);
+        get_soil_params(p->rootsoil_type, &p->ctheta_root, &p->ntheta_root);
+    }
+    /*
+    printf("%f\n", p->wcapac_topsoil);
+    printf("%f\n\n", p->wcapac_root);
+
+    printf("%f\n", p->ctheta_topsoil);
+    printf("%f\n", p->ntheta_topsoil);
+    printf("%f\n", p->ctheta_root);
+    printf("%f\n", p->ntheta_root);
+    printf("%f\n", p->rooting_depth);
+
+    exit(1); */
+
+
+
+    free(fsoil_top);
+    free(fsoil_root);
+
+    return;
+}
 
 
 void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
@@ -40,61 +102,36 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     SEC_2_DAY = 60.0 * 60.0 * daylen;
     DAY_2_SEC = 1.0 / SEC_2_DAY;
 
-    if (c->sub_daily) {
-        /* calculate potential canopy evap rate, this may be reduced later
-           depending on canopy water storage */
-        canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
+    /* don't need to work out the canopy evap */
+    calc_interception(c, m, p, f, s, &throughfall, &interception,
+                      &canopy_evap);
 
-        /* mol m-2 s-1 to mm/day */
-        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-        canopy_evap *= conv;
-        calc_interception(c, m, p, f, s, &throughfall, &interception,
-                          &canopy_evap);
-    } else {
-        /* don't need to work out the canopy evap */
-        calc_interception(c, m, p, f, s, &throughfall, &interception,
-                          &canopy_evap);
+    net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
+    net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
+    soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
 
-    }
+    /* gC m-2 day-1 -> umol m-2 s-1 */
+    conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
+    gpp_am = f->gpp_am * conv;
+    gpp_pm = f->gpp_pm * conv;
 
-    net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-    soil_evap = calc_soil_evaporation(m, p, s, net_rad);
-    if (c->sub_daily) {
-        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-    } else {
-        net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
-        net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
-        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
-    }
+    penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
+                          net_rad_am, m->Ca, gpp_am, &ga_am, &gs_am,
+                          &transpiration_am, &LE_am, &omega_am);
+    penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
+                          net_rad_pm, m->Ca, gpp_pm, &ga_pm, &gs_pm,
+                          &transpiration_pm, &LE_pm, &omega_pm);
 
-    if (c->sub_daily) {
-        /* mol m-2 s-1 to mm/30 min */
-        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                        SEC_2_HLFHR;
+    /* mol m-2 s-1 to mm/day */
+    conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
+    transpiration = (transpiration_am + transpiration_pm) * conv;
 
-    } else {
-        /* gC m-2 day-1 -> umol m-2 s-1 */
-        conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
-        gpp_am = f->gpp_am * conv;
-        gpp_pm = f->gpp_pm * conv;
+    f->omega = (omega_am + omega_pm) / 2.0;
 
-        penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
-                              net_rad_am, m->Ca, gpp_am, &ga_am, &gs_am,
-                              &transpiration_am, &LE_am, &omega_am);
-        penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
-                              net_rad_pm, m->Ca, gpp_pm, &ga_pm, &gs_pm,
-                              &transpiration_pm, &LE_pm, &omega_pm);
+    /* output in mol H20 m-2 s-1 */
+    f->gs_mol_m2_sec = gs_am + gs_pm;
+    f->ga_mol_m2_sec = ga_am + ga_pm;
 
-        /* mol m-2 s-1 to mm/day */
-        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
-        transpiration = (transpiration_am + transpiration_pm) * conv;
-
-        f->omega = (omega_am + omega_pm) / 2.0;
-
-        /* output in mol H20 m-2 s-1 */
-        f->gs_mol_m2_sec = gs_am + gs_pm;
-        f->ga_mol_m2_sec = ga_am + ga_pm;
-    }
 
     /*
     ** NB. et, transpiration & soil evap may all be adjusted in
@@ -105,13 +142,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
                          &transpiration, &soil_evap, &et, &runoff);
 
-    if (c->sub_daily) {
-        sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
-                                throughfall, canopy_evap, runoff, omega_leaf);
-    } else {
-        update_daily_water_struct(f, soil_evap, transpiration, et, interception,
-                                  throughfall, canopy_evap, runoff);
-    }
+    update_daily_water_struct(f, soil_evap, transpiration, et, interception,
+                              throughfall, canopy_evap, runoff);
 
     return;
 }
@@ -122,10 +154,8 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
                           double *soil_evap, double *et, double *runoff) {
     /*
         Calculate top soil, root zone plant available water & runoff.
-
         NB. et, transpiration & soil evap may all be adjusted in
         if we don't have sufficient water
-
     */
     double transpiration_topsoil, transpiration_root, previous,
            delta_topsoil, topsoil_loss;
@@ -227,16 +257,13 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     return;
 }
 
-
 void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
                                   met *m) {
     /* Calculate root and top soil plant available water and runoff.
-
     Soil drainage is estimated using a "leaky-bucket" approach with two
     soil layers. In reality this is a combined drainage and runoff
     calculation, i.e. "outflow". There is no drainage out of the "bucket"
     soil.
-
     Returns:
     --------
     outflow : float
@@ -1262,9 +1289,14 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
     */
 
     double moisture_ratio_topsoil, moisture_ratio_root;
+    double b, sf, psi_f;
     /*double psi_swp_topsoil;*/
 
-    if (c->sw_stress_model == 0) {
+    //if (c->water_balance == HYDRAULICS) {
+    //    continue;
+    //    // should put non-stomatal limitation stuff in here.
+
+    if (c->water_balance == BUCKET && c->sw_stress_model == 0) {
         /* JULES type model, see Egea et al. (2011) */
         s->wtfac_topsoil = calc_beta(s->pawater_topsoil, p->topsoil_depth,
                                      p->theta_fc_topsoil, p->theta_wp_topsoil,
@@ -1274,7 +1306,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
                                      p->theta_fc_root, p->theta_wp_root,
                                      p->qs);
 
-    } else if (c->sw_stress_model == 1) {
+    } else if (c->water_balance == BUCKET && c->sw_stress_model == 1) {
         /* Landsberg and Waring, (1997) */
         moisture_ratio_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
         moisture_ratio_root = s->pawater_root / p->wcapac_root;
@@ -1285,14 +1317,29 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         s->wtfac_root = calc_sw_modifier(moisture_ratio_root, p->ctheta_root,
                                          p->ntheta_root);
 
-    } else if (c->sw_stress_model == 2) {
+    } else if (c->water_balance == BUCKET && c->sw_stress_model == 2) {
         /*
             Zhou et al.(2013) Agricultural & Forest Met. 182–183, 204–214
             Assuming that overnight 􏰀pre-dawn leaf water potential =
             pre-dawn soil water potential.
         */
-        fprintf(stderr, "Zhou model not implemented\n");
-        exit(EXIT_FAILURE);
+        //fprintf(stderr, "Zhou model not implemented\n");
+        //exit(EXIT_FAILURE);
+
+        // Hardwiring this for testing. Values taken from Table, 1 in
+        // De Kauwe et al. 2015, Biogeosciences
+        b = 0.82;
+        sf = 1.9;
+        psi_f = -1.85;
+
+        s->wtfac_topsoil = exp(b * s->predawn_swp);
+        s->wtfac_root = exp(b * s->predawn_swp);
+
+        //s->wtfac_topsoil_ns = (1.0 + exp(sf * psi_f)) / \
+        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
+        //s->wtfac_root_ns = (1.0 + exp(sf * psi_f)) / \
+        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
+
         /*
         s->wtfac_topsoil = exp(p->g1_b * s->psi_s_topsoil);
         s->wtfac_root = exp(p->g1_b * s->psi_s_root);
@@ -1352,7 +1399,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 }
 
 
-void calc_soil_water_potential(control *c, params *p, state *s) {
+void _calc_soil_water_potential(control *c, params *p, state *s) {
     /*
         Estimate pre-dawn soil water potential from soil water content
     */
@@ -1373,25 +1420,6 @@ void calc_soil_water_potential(control *c, params *p, state *s) {
 }
 
 
-void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
-                             double transpiration_hlf_hr, double et_hlf_hr,
-                             double interception_hlf_hr,
-                             double thoughfall_hlf_hr,
-                             double canopy_evap_hlf_hr,
-                             double runoff_hlf_hr, double omega_hlf_hr) {
-
-    /* add half hour fluxes to day total store */
-    f->soil_evap += soil_evap_hlf_hr;
-    f->transpiration += transpiration_hlf_hr;
-    f->et += et_hlf_hr;
-    f->interception += interception_hlf_hr;
-    f->throughfall += thoughfall_hlf_hr;
-    f->canopy_evap += canopy_evap_hlf_hr;
-    f->runoff += runoff_hlf_hr;
-    f->omega += omega_hlf_hr; /* average at the end of hour loop */
-
-    return;
-}
 
 void update_daily_water_struct(fluxes *f, double day_soil_evap,
                                double day_transpiration, double day_et,
@@ -1421,6 +1449,7 @@ void zero_water_day_fluxes(fluxes *f) {
     f->throughfall = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
+    f->day_ppt = 0.0;
 
     return;
 }

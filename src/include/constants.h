@@ -5,7 +5,8 @@
         - Holds all the macro definitions for constants used in GDAY
 */
 
-
+#define MOL_2_MMOL 1000.0
+#define MMOL_2_MOL 1E-03
 #define NDAYS_IN_YR 365.25
 #define DEG_TO_KELVIN 273.15
 #define RGAS 8.314
@@ -19,6 +20,7 @@
 #define WATT_HR_TO_MJ 0.0036
 #define MJ_TO_WATT_HR 1.0 / 0.0036
 #define MM_TO_M  0.001
+#define M_TO_MM  1000.0
 #define GRAMS_C_TO_MOL_C 1.0 / 12.0
 #define UMOL_TO_MOL 1E-6
 #define MOL_TO_UMOL 1E6
@@ -49,6 +51,7 @@
 #define METER_OF_HEAD_TO_MPA 9.81 * KPA_2_MPA /* Height (m) x gravity (m/s2) = pressure (kPa) */
 #define PA_2_KPA 0.001
 #define CM_2_M 0.01
+
 /* Solar radiaiton 1 W m-2 ~ 2.3 umol m-2 s-1 PAR
    Landsberg and Sands, Cp2, pg 20. (1.0 / 2.3) */
 #define SW_2_PAR 2.3

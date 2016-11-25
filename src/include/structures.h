@@ -47,6 +47,7 @@ typedef struct {
     int   text_effect_p;
     int   use_eff_nc;
     int   water_stress;
+    int   water_balance;
     int   num_days;
     int   total_num_days;
     char  git_code_ver[STRING_LENGTH];
@@ -58,11 +59,14 @@ typedef struct {
     int   num_hlf_hrs;
     long  hour_idx;
     long  day_idx;
+    int   pdebug;
 
 } control;
 
 
 typedef struct {
+    double *day_length;
+
     double activesoil;                  /* active C som pool (t/ha) */
     double activesoiln;                 /* active N som pool (t/ha) */
     double activesoilp;                 /* active P som pool (t/ha) */
@@ -184,6 +188,23 @@ typedef struct {
     double canopy_store;
     double psi_s_topsoil;
     double psi_s_root;
+
+    /* hydraulics */
+    double *thickness;
+    double *root_mass;
+    double *root_length;
+    double *layer_depth;
+    double *wetting_bot;
+    double *wetting_top;
+    double *water_frac;
+    double initial_water;
+    double weighted_swp;
+    double dry_thick;   /* Thickness of dry soil layer above water table (m)*/
+    int    rooted_layers;
+    double predawn_swp;     /* MPa */
+    double midday_lwp;     /* MPa */
+    double lwp;
+
 } state;
 
 typedef struct {
@@ -433,6 +454,27 @@ typedef struct {
     double root_exu_CUE;
     double leaf_width;
     double leaf_abs;
+
+    /* hydraulics */
+    double layer_thickness;                 /* Soil layer thickness (m) */
+    int    n_layers;                        /* Number of soil layers */
+    double root_k;    /* mass of roots for reaching 50% maximum depth (g m-2) */
+    double root_radius;  /* (m) */
+    double root_density; /* g biomass m-3*/
+    double max_depth;    /* (m) */
+    double root_resist;
+    double min_lwp;         /* minimum leaf water potential (MPa) */
+
+    /* not shared via cmd line */
+    double *potA;
+    double *potB;
+    double *cond1;
+    double *cond2;
+    double *cond3;
+    double *porosity;
+    double *field_capacity;
+    int     wetting;         /* number of wetting layers */
+
 } params;
 
 typedef struct {
@@ -552,6 +594,8 @@ typedef struct {
     double gs_mol_m2_sec;
     double ga_mol_m2_sec;
     double omega;
+    double day_ppt;
+    double day_wbal;
 
     /* daily C production */
     double cpleaf;
@@ -740,7 +784,18 @@ typedef struct {
     double rtslow;
     double rexc_cue;
 
-    double ninflow;  /* N inflow flux from N-fix and Ndep */
+    double ninflow;
+
+    /* hydraulics */
+    double *soil_conduct;
+    double *swp;
+    double *soilR;
+    double *fraction_uptake;
+    double *ppt_gain;
+    double *water_loss;
+    double *water_gain;
+    double *est_evap;
+    double total_soil_resist;
 
 } fluxes;
 
@@ -756,6 +811,8 @@ typedef struct {
     double lai_leaf[2];     /* sunlit and shaded leaf area (m2 m-2) */
     double omega_leaf[2];   /* leaf decoupling coefficient (-) */
     double tleaf[2];        /* leaf temperature (deg C) */
+    double lwp_leaf[2];     /* leaf water potential (MPa) */
+    double fwsoil_leaf[2];  /* Effective beta */
     double an_canopy;       /* canopy net photosynthesis (umol m-2 s-1) */
     double rd_canopy;       /* canopy respiration in the light (umol m-2 s-1) */
     double gsc_canopy;      /* canopy stomatal conductance to CO2 (mol m-2 s-1) */
@@ -763,6 +820,7 @@ typedef struct {
     double omega_canopy;    /* canopy decoupling coefficient (-) */
     double trans_canopy;    /* canopy transpiration (mm 30min-1) */
     double rnet_canopy;     /* canopy net radiation (W m-2) */
+    double lwp_canopy;      /* Leaf water potential for the canopy(MPa) */
     double N0;              /* top of canopy nitrogen (g N m-2)) */
     double P0;              /* top of canopy phosphorus (g P m-2)) */
     double elevation;       /* sun elevation angle in degrees */
@@ -774,7 +832,41 @@ typedef struct {
     double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
     double kb;              /* beam radiation ext coeff of canopy */
     double cscalar[2];      /* scale from single leaf to canopy */
+    double *cz_store;       /* Array to hold coz zenith angles */
+    double *ele_store;      /* Array to hold elevations */
+    double *df_store;       /* Array to hold diffuse fractions */
+
+    // Used in the hydraulics calculations when water is limiting //
+    double ts_Cs;           // Temporary variable to store Cs //
+    double ts_vcmax;        // Temporary variable to store vcmax //
+    double ts_km;           // Temporary variable to store km //
+    double ts_gamma_star;   // Temporary variable to store gamma_star //
+    double ts_rd;           // Temporary variable to store rd //
+    double ts_Vj;           // Temporary variable to store Vj //
+
 } canopy_wk;
 
+
+typedef struct {
+    double  *ystart;
+    double   *yscal;
+    double   *y;
+    double   *dydx;
+    double   *xp;
+	double  **yp;
+    int       N;
+    int       kmax;
+
+    double   *ak2;
+    double   *ak3;
+    double   *ak4;
+    double   *ak5;
+    double   *ak6;
+    double   *ytemp;
+    double   *yerr;
+
+
+
+} nrutil;
 
 #endif
