@@ -95,7 +95,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 
 void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                        nrutil *nr, params *p, state *s,
-                                       int daylen, double trans_leaf,
+                                       int daylen, double trans,
                                        double omega_leaf,
                                        double rnet_leaf) {
     /*
@@ -117,8 +117,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         daylen : double
             length of day in hours. (Dummy argument, only passed for daily
             model)
-        trans_leaf : double
-            leaf transpiration (Dummy argument, only passed for sub-daily
+        trans : double
+            transpiration (Dummy argument, only passed for sub-daily
             model)
         omega_leaf : double
             decoupling coefficient (Dummy argument, only passed for sub-daily
@@ -155,8 +155,9 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         soil_evap = calc_soil_evaporation(m, p, s, net_rad);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
+
         /* mol m-2 s-1 to mm/30 min */
-        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
+        transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
 
         et = transpiration + soil_evap + canopy_evap;
@@ -204,11 +205,11 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
         // Don't see point of calculating these again
         // Find SWP & soil resistance without updating waterfrac yet
-        //calc_soil_water_potential(f, p, s);
-        //calc_soil_root_resistance(f, p, s);
+        calc_soil_water_potential(f, p, s);
+        calc_soil_root_resistance(f, p, s);
 
-        update_soil_water_storage(f, p, s);
-
+        update_soil_water_storage(f, p, s, &soil_evap, &transpiration);
+        et = transpiration + soil_evap + canopy_evap;
     } else {
 
         // Simple soil water bucket appoximation
@@ -228,7 +229,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
         /* mol m-2 s-1 to mm/30 min */
-        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
+        transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
 
         /*
@@ -260,6 +261,8 @@ void zero_water_movement(fluxes *f, params *p) {
         f->water_loss[i] = 0.0;
         f->water_gain[i] = 0.0;
         f->ppt_gain[i] = 0.0;
+        f->fraction_uptake[i] = 0.0;
+        f->est_evap[i] = 0.0;
     }
 
     return;
@@ -586,14 +589,15 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     int    i;
     double total_est_evap;
 
-    // Estimate max transpiration from gradient-gravity / soil resistance
     total_est_evap = 0.0;
+    s->weighted_swp = 0.0;
+
+    // Estimate max transpiration from gradient-gravity / soil resistance
     for (i = 0; i < s->rooted_layers; i++) {
         f->est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
         total_est_evap += f->est_evap[i];
     }
 
-    s->weighted_swp = 0.0;
     if (total_est_evap > 0.0) {
         /* fraction of water taken from layer */
         for (i = 0; i < s->rooted_layers; i++) {
@@ -836,10 +840,11 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
         change = (s->water_frac[soil_layer] - new_water_frac) * \
                   s->thickness[soil_layer];
 
+        // update soil layer below with drained liquid
         if (soil_layer+1 < p->n_layers) {
             f->water_gain[soil_layer+1] += change;
         } else {
-            // We are draining through the bottom soil layer
+            // We are draining through the bottom soil layer, add to runoff
             *water_lost += change;
         }
         f->water_loss[soil_layer] += change;
@@ -921,17 +926,54 @@ void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
     return;
 }
 
-void update_soil_water_storage(fluxes *f, params *p, state *s) {
+void update_soil_water_storage(fluxes *f, params *p, state *s,
+                               double *soil_evap, double *transpiration) {
     // Update the soil water storage at the end of the timestep
 
-    double root_zone_total, water_content;
-    int    i;
+    double root_zone_total, water_content, needed, taken, prev_soil_evap;
+    int    i, rr;
+    double soil_evap_overshoot, transpiration_overshoot, prev_trans;
+
+
 
     root_zone_total = 0.0;
     for (i = 0; i < p->n_layers; i++) {
 
         // water content of soil layer (m)
         water_content = s->water_frac[i] * s->thickness[i];
+
+        needed = water_content + f->water_gain[i] + \
+                 f->ppt_gain[i] - f->water_loss[i];
+
+        // Is soil evap taken from first or second layer?
+        if (s->dry_thick < s->thickness[0]) {
+            // The dry zone does not extend beneath the top layer
+            rr = 0;
+        } else {
+            // The dry zone does extend beneath the top layer
+            rr = 1;
+        }
+
+        // Correction for potential to over-evaporate if using Emax drought
+        // stress correction. This stops that happening.
+        if (i == rr) {
+            if (needed < 0.0) {
+                prev_soil_evap = *soil_evap;
+                *soil_evap = MAX(0.0, *soil_evap + (needed * M_TO_MM));
+                if (*soil_evap > 0.0) {
+                    taken = (prev_soil_evap - *soil_evap) * MM_TO_M;
+                    needed -= taken;
+                    f->water_loss[i] += taken;
+                }
+            }
+        } else {
+            if (needed < 0.0) {
+                prev_trans = *transpiration;
+                *transpiration = MAX(0.0, *transpiration + (needed * M_TO_MM));
+                taken = (prev_trans - *transpiration) * MM_TO_M;
+                f->water_loss[i] += taken;
+            }
+        }
 
         // NB water gain here is drainage from the layer above
         water_content = MAX(0.0, water_content +    \
