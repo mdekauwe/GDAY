@@ -30,7 +30,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     /* litter N:C ratios, roots and shoot */
     ncflit = s->shootnc * (1.0 - p->fretrans);
     ncrlit = s->rootnc * (1.0 - p->rretrans);
-    
+
     /* litter P:C ratios, roots and shoot */
     pcflit = s->shootpc * (1.0 - p->fretransp);
     pcrlit = s->rootpc * (1.0 - p->rretrans);
@@ -50,7 +50,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
 
     /* N litter production */
     f->deadleafn = f->deadleaves * ncflit;
-    
+
     /* P litter production */
     f->deadleafp = f->deadleaves * pcflit;
 
@@ -59,7 +59,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     f->deadrootn = f->deadroots * ncrlit;
     f->deadcrootn = p->crdecay * s->crootn * (1.0 - p->cretrans);
     f->deadbranchn = p->bdecay * s->branchn * (1.0 - p->bretrans);
-    
+
     f->deadrootp = f->deadroots * pcrlit;
     f->deadcrootp = p->crdecay * s->crootp * (1.0 - p->cretrans);
     f->deadbranchp = p->bdecay * s->branchp * (1.0 - p->bretrans);
@@ -70,8 +70,8 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
 
     /* P in stemwood litter - only mobile p is retranslocated */
     f->deadstemp = p->wdecay * (s->stempimm + s->stempmob * \
-    (1.0 - p->wretrans));
-    
+                   (1.0 - p->wretrans));
+
     /* Animal grazing? */
 
     /* Daily... */
@@ -112,7 +112,7 @@ void daily_grazing_calc(double fdecay, params *p, fluxes *f, state *s) {
     f->ceaten = fdecay * p->fracteaten / (1.0 - p->fracteaten) * s->shoot;
     f->neaten = fdecay * p->fracteaten / (1.0 - p->fracteaten) * s->shootn;
     f->peaten = fdecay * p->fracteaten / (1.0 - p->fracteaten) * s->shootp;
-    
+
 
     return;
 }
@@ -133,7 +133,7 @@ void annual_grazing_calc(params *p, fluxes *f, state *s) {
     f->ceaten = s->shoot * p->fracteaten;
     f->neaten = s->shootn * p->fracteaten;
     f->peaten = s->shootp * p->fracteaten;
-    
+
 
     return;
 }
