@@ -20,6 +20,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
                           int doy, double *fdecay, double *rdecay) {
 
     double  ncflit, ncrlit;
+    double  pcflit, pcrlit;
 
     /* Leaf/root litter rates are higher during dry periods and therefore is
     dependent on soil water content */
@@ -29,6 +30,10 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     /* litter N:C ratios, roots and shoot */
     ncflit = s->shootnc * (1.0 - p->fretrans);
     ncrlit = s->rootnc * (1.0 - p->rretrans);
+    
+    /* litter P:C ratios, roots and shoot */
+    pcflit = s->shootpc * (1.0 - p->fretransp);
+    pcrlit = s->rootpc * (1.0 - p->rretrans);
 
     /* C litter production */
     f->deadroots = *rdecay * s->root;
@@ -45,17 +50,28 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
 
     /* N litter production */
     f->deadleafn = f->deadleaves * ncflit;
+    
+    /* P litter production */
+    f->deadleafp = f->deadleaves * pcflit;
 
     /* Assuming fraction is retranslocated before senescence, i.e. a fracion
        of nutrients is stored within the plant */
     f->deadrootn = f->deadroots * ncrlit;
     f->deadcrootn = p->crdecay * s->crootn * (1.0 - p->cretrans);
     f->deadbranchn = p->bdecay * s->branchn * (1.0 - p->bretrans);
+    
+    f->deadrootp = f->deadroots * pcrlit;
+    f->deadcrootp = p->crdecay * s->crootp * (1.0 - p->cretrans);
+    f->deadbranchp = p->bdecay * s->branchp * (1.0 - p->bretrans);
 
     /* N in stemwood litter - only mobile n is retranslocated */
     f->deadstemn = p->wdecay * (s->stemnimm + s->stemnmob * \
                     (1.0 - p->wretrans));
 
+    /* P in stemwood litter - only mobile p is retranslocated */
+    f->deadstemp = p->wdecay * (s->stempimm + s->stempmob * \
+    (1.0 - p->wretrans));
+    
     /* Animal grazing? */
 
     /* Daily... */
@@ -70,6 +86,7 @@ void calculate_litterfall(control *c, fluxes *f, params *p, state *s,
     } else {
         f->ceaten = 0.0;
         f->neaten = 0.0;
+        f->peaten = 0.0;
     }
     return;
 
@@ -88,10 +105,14 @@ void daily_grazing_calc(double fdecay, params *p, fluxes *f, state *s) {
     ceaten : float
         C consumed by grazers [tonnes C/ha/day]
     neaten : float
-        N consumed by grazers [tonnes C/ha/day]
+        N consumed by grazers [tonnes N/ha/day]
+    peaten : float
+        P consumed by grazers [tonnes P/ha/day]
     */
     f->ceaten = fdecay * p->fracteaten / (1.0 - p->fracteaten) * s->shoot;
     f->neaten = fdecay * p->fracteaten / (1.0 - p->fracteaten) * s->shootn;
+    f->peaten = fdecay * p->fracteaten / (1.0 - p->fracteaten) * s->shootp;
+    
 
     return;
 }
@@ -105,10 +126,14 @@ void annual_grazing_calc(params *p, fluxes *f, state *s) {
     ceaten : float
         C consumed by grazers [tonnes C/ha/day]
     neaten : float
-        N consumed by grazers [tonnes C/ha/day]
+        N consumed by grazers [tonnes N/ha/day]
+    peaten : float
+        P consumed by grazers [tonnes P/ha/day]
     */
     f->ceaten = s->shoot * p->fracteaten;
     f->neaten = s->shootn * p->fracteaten;
+    f->peaten = s->shootp * p->fracteaten;
+    
 
     return;
 }

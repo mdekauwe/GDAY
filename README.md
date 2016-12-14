@@ -88,6 +88,9 @@ The git hash allows you to connect which version of the model code produced whic
 
 - The deciduous phenology scheme does not currently work with the two-leaf version of the model (can be fixed).
 
+- The current set-up of the model resulted in pmineralisation to be negative from time to time during the spin-up process, as plittreelase can be a negatvie value, and pmineralisation is the result of pgross - pimmob + plittrelease. This resulted in potentially negative total P input from organic to (lab+sorb) mineral P pool, and from time to time, influx into sorbed P pool can be negative. This only affects the spin-up process and seems to not affect the equilibrated results so leave as is for now.
+
+
 ## Meteorological driving file
 
 **30-minute file:**
@@ -146,6 +149,10 @@ BNF (kg N ha-1 yr-1) is then calculated as a function of ET:
 ```python
 BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
+
+## Phosphorus component
+Organic phosphorus (P) pools and fluxes follow the same modelling structure of the nitrogen. A total of five inorganic phosphorus pools is implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via constant input rate from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in plant limits photosythesis through its explicit effect on Jmax and a potential effect on Triose-phosphates. 
+
 
 ## Hydraulics
 From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage between layers. We also implement the soil-to-leaf hydraulics from SPA, which includes weighting soil water potential. We limit gas exchange following the Emax approach (Duursma et al. 2008). This approach therefore assumes isohydric behaviour, i.e. the plant maintains a leaf water potential above a critical minimum value.

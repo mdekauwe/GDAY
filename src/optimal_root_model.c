@@ -23,14 +23,14 @@
 #include "optimal_root_model.h"
 
 void calc_opt_root_depth(double d0, double r0, double top_soil_depth,
-                         double rtoti, double nsupply, double depth_guess,
-                         double *root_depth, double *nuptake, double *rabove) {
+                         double rtoti, double nsupply, double psupply, double depth_guess,
+                         double *root_depth, double *nuptake, double *puptake, double *rabove) {
     /*
 
         Parameters:
         -----------
         d0 : float
-            Length scale for exponential decline of Umax(z)
+            Length scale for exponential decline of Umax(z) and Pmax(z)
         r0 : float
             root C at half-maximum N uptake (kg C/m3)
         top_soil_depth : float
@@ -40,6 +40,8 @@ void calc_opt_root_depth(double d0, double r0, double top_soil_depth,
             Initial fine root C mass -> from G'DAY
         nsupply : float
             daily net N mineralisation in top soil layer from G'DAY
+        psupply : float
+            daily net P mineralisation in top soil layer from G'DAY
         depth_guess : float
             Initial guess at the rooting depth, used as the first point in the
             root depth optimisation scheme [m].
@@ -50,6 +52,8 @@ void calc_opt_root_depth(double d0, double r0, double top_soil_depth,
             rooting depth [m]
         nuptake : float
             N uptake from roots [gN m-2 yr-1]
+        puptake : fload
+            P uptake from roots [gP m-2 yr-1]
         rabove : float
 
     */
@@ -59,6 +63,8 @@ void calc_opt_root_depth(double d0, double r0, double top_soil_depth,
     *root_depth = depth;
     /* Optimised plant N uptake */
     *nuptake = calc_plant_nuptake(depth, nsupply, d0, top_soil_depth);
+    /* Optimised plant P uptake */
+    *puptake = calc_plant_puptake(depth, psupply, d0, top_soil_depth);
 
     /* G'DAY requires root litter input to the top 30 cm of soil, so
        return the roots above this depth */
@@ -239,6 +245,53 @@ double calc_umax(double nsupply, double top_soil_depth, double d0) {
     */
     return (nsupply / (1.0 - exp(-top_soil_depth / d0)));
 }
+
+double calc_plant_puptake(double root_depth, double psupply, double d0,
+                          double top_soil_depth) {
+  /* Plant P uptake (Utot) as a func of maximum rooting depth
+  
+  This is the alternative eqn from McM word document
+  
+  Parameters
+  ----------
+  root_depth : float
+  max rooting depth [m]
+  z : float
+  incremental depth provided by integration func
+  psupply : float
+  soil P supply rate to plants per day [P/m2]
+  top_soil_depth : float
+  Depth of soil assumed by G'DAY model [m]
+  
+  Returns
+  -------
+  puptake : float
+  plant P uptake
+  */
+  double Pmax, arg;
+  
+  Pmax = calc_pmax(psupply, top_soil_depth, d0);
+  arg = 1.0 - exp(-root_depth / (2.0 * d0));
+  
+  return (Pmax * (arg * arg));
+}
+
+double calc_pmax(double psupply, double top_soil_depth, double d0) {
+  /* Calculate potential P uptake integrated over all soil depths
+  
+  Parameters
+  ----------
+  psupply : float
+  P supply rate to a specified soil depth (probably 30 cm)
+  
+  Returns
+  -------
+  Pmax : float
+  potential P uptake integrated over all soil depths
+  */
+  return (psupply / (1.0 - exp(-top_soil_depth / d0)));
+}
+
 
 double calc_net_n_uptake(double nuptake, double Nr, double rabove,
                          double root_lifespan, double rootn) {

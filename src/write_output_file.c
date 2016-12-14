@@ -49,7 +49,7 @@ void write_output_header(control *c, FILE **fp) {
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-    int ncols = 86;
+    int ncols = 86;  /* change with number of variables ? total count below is 93 */
     int nrows = c->num_days;
 
     /* Git version */
@@ -66,13 +66,18 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "wtfac_root,wtfac_topsoil,pawater_root,");
 
     /* plant */
-    fprintf(*fp, "shoot,lai,branch,stem,root,croot,shootn,branchn,stemn,");
-    fprintf(*fp, "rootn,crootn,cstore,nstore,");
+    fprintf(*fp, "shoot,lai,branch,stem,root,croot,");
+    fprintf(*fp, "shootn,branchn,stemn,rootn,crootn,");
+    fprintf(*fp, "shootp,branchp,stemp,rootp,crootp,");
+    fprintf(*fp, "cstore,nstore,pstore,");
 
     /* belowground */
-    fprintf(*fp, "soilc,soiln,inorgn,litterc,littercag,littercbg,");
-    fprintf(*fp, "litternag,litternbg,activesoil,slowsoil,");
-    fprintf(*fp, "passivesoil,activesoiln,slowsoiln,passivesoiln,");
+    fprintf(*fp, "soilc,soiln,soilp,inorgn,");
+    fprintf(*fp, "inorgp,inorgavlp,inorglabp,inorgsorbp,inorgssorbp,inorgoccp,inorgparp,");
+    fprintf(*fp, "litterc,littercag,littercbg,litternag,litternbg,");
+    fprintf(*fp, "litterpag,litterpbg,");
+    fprintf(*fp, "activesoil,slowsoil,passivesoil,");
+    fprintf(*fp, "activesoiln,slowsoiln,passivesoiln,activesoilp,slowsoilp,passivesoilp,");
 
     /*
     ** FLUXES
@@ -85,16 +90,23 @@ void write_output_header(control *c, FILE **fp) {
     /* litter */
     fprintf(*fp, "deadleaves,deadbranch,deadstems,deadroots,deadcroots,");
     fprintf(*fp, "deadleafn,deadbranchn,deadstemn,deadrootn,deadcrootn,");
+    fprintf(*fp, "deadleafp,deadbranchp,deadstemp,deadrootp,deadcrootp,");
+    
 
     /* C fluxes */
     fprintf(*fp, "nep,gpp,npp,hetero_resp,auto_resp,apar,");
 
-    /* C & N growth */
+    /* C, N and P growth */
     fprintf(*fp, "cpleaf,cpbranch,cpstem,cproot,cpcroot,");
     fprintf(*fp, "npleaf,npbranch,npstemimm,npstemmob,nproot,npcroot,");
+    fprintf(*fp, "ppleaf,ppbranch,ppstemimm,ppstemmob,pproot,ppcroot,");
+    
 
     /* N stuff */
     fprintf(*fp, "nuptake,ngross,nmineralisation,nloss,");
+    
+    /* P stuff */
+    fprintf(*fp, "puptake,pgross,pmineralisation,ploss,");
 
     /* traceability stuff */
     fprintf(*fp, "tfac_soil_decomp,c_into_active,c_into_slow,");
@@ -111,14 +123,15 @@ void write_output_header(control *c, FILE **fp) {
     /* extra priming stuff */
     fprintf(*fp, "root_exc,");
     fprintf(*fp, "root_exn,");
+    fprintf(*fp, "root_exp,");
     fprintf(*fp, "co2_released_exud,");
     fprintf(*fp, "factive,");
     fprintf(*fp, "rtslow,");
     fprintf(*fp, "rexc_cue,");
 
-
-
     /* Misc */
+    fprintf(*fp, "leafretransn,"); 
+    fprintf(*fp, "leafretransp\n");
     fprintf(*fp, "predawn_swp,");
     fprintf(*fp, "midday_lwp,");
     fprintf(*fp, "leafretransn\n");
@@ -172,20 +185,38 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
             s->wtfac_root,s->wtfac_topsoil,s->pawater_root);
 
     /* plant */
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->shoot,s->lai,s->branch,s->stem,s->root,s->croot,
-                    s->shootn,s->branchn,s->stemn);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
-                    s->rootn,s->crootn,s->cstore,s->nstore);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->shoot,s->lai,s->branch,s->stem,s->root,s->croot);
+    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->shootn,s->branchn,s->stemn,s->rootn,s->crootn);
+    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->shootp,s->branchp,s->stemp,s->rootp,s->crootp);
+    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",   
+                    s->cstore,s->nstore,s->pstore);
 
     /* belowground */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
+                    s->soilc,s->soiln,s->soilp,s->inorgn);
+                    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->inorgp,s->inorgavlp,s->inorglabp,s->inorgsorbp,s->inorgssorbp,
+                    s->inorgoccp,s->inorgparp);
+    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    s->litterc,s->littercag,s->littercbg,s->litternag,s->litternbg);
+    
+    fprintf(c->ofp, "%.10f,%.10f,",
+                    s->litterpag,s->litterpbg);
+    
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
+                    s->activesoil,s->slowsoil,s->passivesoil);
+    
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->soilc,s->soiln,s->inorgn,s->litterc,s->littercag,
-                    s->littercbg);
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
-                    s->litternag,s->litternbg,s->activesoil,s->slowsoil,
-                    s->passivesoil,s->activesoiln,s->slowsoiln,
-                    s->passivesoiln);
+                    s->activesoiln,s->slowsoiln,s->passivesoiln,
+                    s->activesoilp,s->slowsoilp,s->passivesoilp);
     /*
     ** FLUXES
     */
@@ -203,22 +234,32 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
                     f->deadleafn,f->deadbranchn,f->deadstemn,f->deadrootn,
                     f->deadcrootn);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->deadleafp,f->deadbranchp,f->deadstemp,f->deadrootp,
+                    f->deadcrootp);
 
     /* C fluxes */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     f->nep,f->gpp,f->npp,f->hetero_resp,f->auto_resp,
                     f->apar);
 
-    /* C & N growth */
+    /* C N and P growth */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
                     f->cpleaf,f->cpbranch,f->cpstem,f->cproot,f->cpcroot);
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     f->npleaf,f->npbranch,f->npstemimm,f->npstemmob,f->nproot,
                     f->npcroot);
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
+                    f->ppleaf,f->ppbranch,f->ppstemimm,f->ppstemmob,f->pproot,
+                    f->ppcroot);
 
     /* N stuff */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
                     f->nuptake,f->ngross,f->nmineralisation,f->nloss);
+    
+    /* P stuff */
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
+                    f->puptake,f->pgross,f->pmineralisation,f->ploss);
 
 
     /* traceability stuff */
@@ -239,12 +280,15 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     /* extra priming stuff */
     fprintf(c->ofp, "%.10f,", f->root_exc);
     fprintf(c->ofp, "%.10f,", f->root_exn);
+    fprintf(c->ofp, "%.10f,", f->root_exp);
     fprintf(c->ofp, "%.10f,", f->co2_released_exud);
     fprintf(c->ofp, "%.10f,", f->factive);
     fprintf(c->ofp, "%.10f,", f->rtslow);
     fprintf(c->ofp, "%.10f,", f->rexc_cue);
 
     /* Misc */
+    fprintf(c->ofp, "%.10f,", f->leafretransn);
+    fprintf(c->ofp, "%.10f\n", f->leafretransp);
     fprintf(c->ofp, "%.10f,", s->predawn_swp);
     fprintf(c->ofp, "%.10f,", s->midday_lwp);
     fprintf(c->ofp, "%.10f\n", f->leafretransn);
@@ -412,6 +456,9 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "activesoiln")) {
         fprintf(c->ofp, "activesoiln = %.10f\n", s->activesoiln);
         *match = TRUE;
+    } else if (MATCH("state", "activesoilp")) {
+        fprintf(c->ofp, "activesoilp = %.10f\n", s->activesoilp);
+        *match = TRUE;
     } else if (MATCH("state", "age")) {
         fprintf(c->ofp, "age = %.10f\n", s->age);
         *match = TRUE;
@@ -436,6 +483,9 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "branchn")) {
         fprintf(c->ofp, "branchn = %.10f\n", s->branchn);
         *match = TRUE;
+    } else if (MATCH("state", "branchp")) {
+        fprintf(c->ofp, "branchp = %.10f\n", s->branchp);
+        *match = TRUE;
     } else if (MATCH("state", "canht")) {
         fprintf(c->ofp, "canht = %.10f\n", s->canht);
         *match = TRUE;
@@ -445,11 +495,35 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "crootn")) {
         fprintf(c->ofp, "crootn = %.10f\n", s->crootn);
         *match = TRUE;
+    } else if (MATCH("state", "crootp")) {
+        fprintf(c->ofp, "crootp = %.10f\n", s->crootp);
+        *match = TRUE;
     } else if (MATCH("state", "cstore")) {
         fprintf(c->ofp, "cstore = %.10f\n", s->cstore);
         *match = TRUE;
     } else if (MATCH("state", "inorgn")) {
         fprintf(c->ofp, "inorgn = %.10f\n", s->inorgn);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgp")) {
+        fprintf(c->ofp, "inorgp = %.10f\n", s->inorgp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgavlp")) {
+        fprintf(c->ofp, "inorgavlp = %.10f\n", s->inorgavlp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorglabp")) {
+        fprintf(c->ofp, "inorglabp = %.10f\n", s->inorglabp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgsorbp")) {
+        fprintf(c->ofp, "inorgsorbp = %.10f\n", s->inorgsorbp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgssorbp")) {
+        fprintf(c->ofp, "inorgssorbp = %.10f\n", s->inorgssorbp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgoccp")) {
+        fprintf(c->ofp, "inorgoccp = %.10f\n", s->inorgoccp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgparp")) {
+        fprintf(c->ofp, "inorgparp = %.10f\n", s->inorgparp);
         *match = TRUE;
     } else if (MATCH("state", "lai")) {
         fprintf(c->ofp, "lai = %.10f\n", s->lai);
@@ -460,20 +534,32 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "metabsoiln")) {
         fprintf(c->ofp, "metabsoiln = %.10f\n", s->metabsoiln);
         *match = TRUE;
+    } else if (MATCH("state", "metabsoilp")) {
+        fprintf(c->ofp, "metabsoilp = %.10f\n", s->metabsoilp);
+        *match = TRUE;
     } else if (MATCH("state", "metabsurf")) {
         fprintf(c->ofp, "metabsurf = %.10f\n", s->metabsurf);
         *match = TRUE;
     } else if (MATCH("state", "metabsurfn")) {
         fprintf(c->ofp, "metabsurfn = %.10f\n", s->metabsurfn);
         *match = TRUE;
+    } else if (MATCH("state", "metabsurfp")) {
+        fprintf(c->ofp, "metabsurfp = %.10f\n", s->metabsurfp);
+        *match = TRUE;
     } else if (MATCH("state", "nstore")) {
         fprintf(c->ofp, "nstore = %.10f\n", s->nstore);
+        *match = TRUE;
+    } else if (MATCH("state", "pstore")) {
+        fprintf(c->ofp, "pstore = %.10f\n", s->pstore);
         *match = TRUE;
     } else if (MATCH("state", "passivesoil")) {
         fprintf(c->ofp, "passivesoil = %.10f\n", s->passivesoil);
         *match = TRUE;
     } else if (MATCH("state", "passivesoiln")) {
         fprintf(c->ofp, "passivesoiln = %.10f\n", s->passivesoiln);
+        *match = TRUE;
+    } else if (MATCH("state", "passivesoilp")) {
+        fprintf(c->ofp, "passivesoilp = %.10f\n", s->passivesoilp);
         *match = TRUE;
     } else if (MATCH("state", "pawater_root")) {
         fprintf(c->ofp, "pawater_root = %.10f\n", s->pawater_root);
@@ -493,6 +579,9 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "rootn")) {
         fprintf(c->ofp, "rootn = %.10f\n", s->rootn);
         *match = TRUE;
+    } else if (MATCH("state", "rootp")) {
+        fprintf(c->ofp, "rootp = %.10f\n", s->rootp);
+        *match = TRUE;
     } else if (MATCH("state", "sapwood")) {
         fprintf(c->ofp, "sapwood = %.10f\n", s->sapwood);
         *match = TRUE;
@@ -502,6 +591,9 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "shootn")) {
         fprintf(c->ofp, "shootn = %.10f\n", s->shootn);
         *match = TRUE;
+    } else if (MATCH("state", "shootp")) {
+        fprintf(c->ofp, "shootp = %.10f\n", s->shootp);
+        *match = TRUE;
     } else if (MATCH("state", "sla")) {
         fprintf(c->ofp, "sla = %.10f\n", s->sla);
         *match = TRUE;
@@ -510,6 +602,9 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
         *match = TRUE;
     } else if (MATCH("state", "slowsoiln")) {
         fprintf(c->ofp, "slowsoiln = %.10f\n", s->slowsoiln);
+        *match = TRUE;
+    } else if (MATCH("state", "slowsoilp")) {
+        fprintf(c->ofp, "slowsoilp = %.10f\n", s->slowsoilp);
         *match = TRUE;
     } else if (MATCH("state", "stem")) {
         fprintf(c->ofp, "stem = %.10f\n", s->stem);
@@ -523,17 +618,32 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "stemnmob")) {
         fprintf(c->ofp, "stemnmob = %.10f\n", s->stemnmob);
         *match = TRUE;
+    } else if (MATCH("state", "stemp")) {
+        fprintf(c->ofp, "stemp = %.10f\n", s->stemp);
+        *match = TRUE;
+    } else if (MATCH("state", "stempimm")) {
+        fprintf(c->ofp, "stempimm = %.10f\n", s->stempimm);
+        *match = TRUE;
+    } else if (MATCH("state", "stempmob")) {
+        fprintf(c->ofp, "stempmob = %.10f\n", s->stempmob);
+        *match = TRUE;
     } else if (MATCH("state", "structsoil")) {
         fprintf(c->ofp, "structsoil = %.10f\n", s->structsoil);
         *match = TRUE;
     } else if (MATCH("state", "structsoiln")) {
         fprintf(c->ofp, "structsoiln = %.10f\n", s->structsoiln);
         *match = TRUE;
+    } else if (MATCH("state", "structsoilp")) {
+        fprintf(c->ofp, "structsoilp = %.10f\n", s->structsoilp);
+        *match = TRUE;
     } else if (MATCH("state", "structsurf")) {
         fprintf(c->ofp, "structsurf = %.10f\n", s->structsurf);
         *match = TRUE;
     } else if (MATCH("state", "structsurfn")) {
         fprintf(c->ofp, "structsurfn = %.10f\n", s->structsurfn);
+        *match = TRUE;
+    } else if (MATCH("state", "structsurfp")) {
+        fprintf(c->ofp, "structsurfp = %.10f\n", s->structsurfp);
         *match = TRUE;
     }
 
