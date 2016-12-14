@@ -278,11 +278,11 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
 }
 
 void calculate_cnp_wood_ratios(control *c, params *p, state *s,
-                             double npitfac, double nitfac, double pitfac,
-                             double *ncbnew, double *nccnew,
-                             double *ncwimm, double *ncwnew,
-                             double *pcbnew, double *pccnew,
-                             double *pcwimm, double *pcwnew) {
+                               double npitfac, double nitfac, double pitfac,
+                               double *ncbnew, double *nccnew,
+                               double *ncwimm, double *ncwnew,
+                               double *pcbnew, double *pccnew,
+                               double *pcwimm, double *pcwnew) {
     /* Estimate the N:C and P:C ratio in the branch and stem. Option to vary
     the N:C and P:C ratio of the stem following Jeffreys (1999) or keep it a fixed
     fraction
@@ -324,105 +324,106 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
 
     /* calculate N:C ratios */
     if (nitfac < npitfac) {
-      /* n:c ratio of new branch wood*/
-      *ncbnew = p->ncbnew + nitfac * (p->ncbnew - p->ncbnewz);
+        /* n:c ratio of new branch wood*/
+        *ncbnew = p->ncbnew + nitfac * (p->ncbnew - p->ncbnewz);
 
-      /* n:c ratio of coarse root */
-      *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
+        /* n:c ratio of coarse root */
+        *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
 
-      /* fixed N:C in the stemwood */
-      if (c->fixed_stem_nc) {
-        /* n:c ratio of stemwood - immobile pool and new ring */
-        *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
+        /* fixed N:C in the stemwood */
+        if (c->fixed_stem_nc) {
+            /* n:c ratio of stemwood - immobile pool and new ring */
+            *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
 
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = p->ncwnew + nitfac * (p->ncwnew - p->ncwnewz);
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = p->ncwnew + nitfac * (p->ncwnew - p->ncwnewz);
 
-        /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
-        Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
-        modelled here based on evidence as a linear function. */
-      } else {
-        *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
+        // vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
+        // Jeffreys 1999 showed that N:C ratio of new wood increases with
+        // foliar N:C ratio,modelled here based on evidence as a linear
+        // function.
+        } else {
+            *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
 
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
-      }
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
+        }
     } else {
-      /* n:c ratio of new branch wood*/
-      *ncbnew = p->ncbnew + npitfac * (p->ncbnew - p->ncbnewz);
+        /* n:c ratio of new branch wood*/
+        *ncbnew = p->ncbnew + npitfac * (p->ncbnew - p->ncbnewz);
 
-      /* n:c ratio of coarse root */
-      *nccnew = p->nccnew + npitfac * (p->nccnew - p->nccnewz);
+        /* n:c ratio of coarse root */
+        *nccnew = p->nccnew + npitfac * (p->nccnew - p->nccnewz);
 
-      /* fixed N:C in the stemwood */
-      if (c->fixed_stem_nc) {
-        /* n:c ratio of stemwood - immobile pool and new ring */
-        *ncwimm = p->ncwimm + npitfac * (p->ncwimm - p->ncwimmz);
+        /* fixed N:C in the stemwood */
+        if (c->fixed_stem_nc) {
+            /* n:c ratio of stemwood - immobile pool and new ring */
+            *ncwimm = p->ncwimm + npitfac * (p->ncwimm - p->ncwimmz);
 
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = p->ncwnew + npitfac * (p->ncwnew - p->ncwnewz);
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = p->ncwnew + npitfac * (p->ncwnew - p->ncwnewz);
 
-        /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
-        Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
-        modelled here based on evidence as a linear function. */
-      } else {
-        *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
+        // vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
+        // Jeffreys 1999 showed that N:C ratio of new wood increases with
+        // foliar N:C ratio,modelled here based on evidence as a linear
+        // function.
+        } else {
+            *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
 
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
-      }
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
+        }
     }
-
-
+    
     /* calculate P:C ratios */
     if (pitfac < npitfac) {
-      /* p:c ratio of new branch wood*/
-      *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
+        /* p:c ratio of new branch wood*/
+        *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
 
-      /* p:c ratio of coarse root */
-      *pccnew = p->pccnew + pitfac * (p->pccnew - p->pccnewz);
+        /* p:c ratio of coarse root */
+        *pccnew = p->pccnew + pitfac * (p->pccnew - p->pccnewz);
 
-      /* fixed P:C in the stemwood */
-      if (c->fixed_stem_pc) {
-        /* p:c ratio of stemwood - immobile pool and new ring */
-        *pcwimm = p->pcwimm + pitfac * (p->pcwimm - p->pcwimmz);
+        /* fixed P:C in the stemwood */
+        if (c->fixed_stem_pc) {
+            /* p:c ratio of stemwood - immobile pool and new ring */
+            *pcwimm = p->pcwimm + pitfac * (p->pcwimm - p->pcwimmz);
 
-        /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = p->pcwnew + pitfac * (p->pcwnew - p->pcwnewz);
+            /* New stem ring P:C at critical leaf P:C (mobile) */
+            *pcwnew = p->pcwnew + pitfac * (p->pcwnew - p->pcwnewz);
 
-        /* vary stem P:C based on reln with foliage,
-         equation based on data from Attiwill 1978 - 1980 paper series. */
-      } else {
-        *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
+            /* vary stem P:C based on reln with foliage,
+            equation based on data from Attiwill 1978 - 1980 paper series. */
+        } else {
+            *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
 
-        /* New stem ring P:C at critical leaf P:C (mobile),
-        equation based on data from Attiwill 1978 - 1980 paper series */
-        *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);
-      }
+            // New stem ring P:C at critical leaf P:C (mobile),
+            // equation based on data from Attiwill 1978 - 1980 paper series
+            *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);
+        }
     } else {
-      /* p:c ratio of new branch wood*/
-      *pcbnew = p->pcbnew + npitfac * (p->pcbnew - p->pcbnewz);
+        /* p:c ratio of new branch wood*/
+        *pcbnew = p->pcbnew + npitfac * (p->pcbnew - p->pcbnewz);
 
-      /* p:c ratio of coarse root */
-      *pccnew = p->pccnew + npitfac * (p->pccnew - p->pccnewz);
+        /* p:c ratio of coarse root */
+        *pccnew = p->pccnew + npitfac * (p->pccnew - p->pccnewz);
 
-      /* fixed P:C in the stemwood */
-      if (c->fixed_stem_pc) {
-        /* p:c ratio of stemwood - immobile pool and new ring */
-        *pcwimm = p->pcwimm + npitfac * (p->pcwimm - p->pcwimmz);
+        /* fixed P:C in the stemwood */
+        if (c->fixed_stem_pc) {
+            /* p:c ratio of stemwood - immobile pool and new ring */
+            *pcwimm = p->pcwimm + npitfac * (p->pcwimm - p->pcwimmz);
 
-        /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = p->pcwnew + npitfac * (p->pcwnew - p->pcwnewz);
+            /* New stem ring P:C at critical leaf P:C (mobile) */
+            *pcwnew = p->pcwnew + npitfac * (p->pcwnew - p->pcwnewz);
 
         /* vary stem P:C based on reln with foliage,
         equation based on data from Attiwill 1978 - 1980 paper series. */
-      } else {
-        *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
+        } else {
+            *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
 
-        /* New stem ring P:C at critical leaf P:C (mobile),
-        equation based on data from Attiwill 1978 - 1980 paper series */
-        *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);
-      }
+            /* New stem ring P:C at critical leaf P:C (mobile),
+            equation based on data from Attiwill 1978 - 1980 paper series */
+            *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);
+        }
     }
 
     return;
