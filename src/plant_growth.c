@@ -42,21 +42,16 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
         calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy, dummy);
     }
 
-    /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
-       foliage in young stand, and leaf P:C as a fraction of Pcmaxyoung;
-    */
+    // leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
+    //foliage in young stand, and leaf P:C as a fraction of Pcmaxyoung
     nitfac = MIN(1.0, s->shootnc / p->ncmaxfyoung);
     pitfac = MIN(1.0, s->shootpc / p->pcmaxfyoung);
 
-    //fprintf(stderr, "nitfac %f\n", nitfac);
-    //fprintf(stderr, "pitfac %f\n", pitfac);
-    //fprintf(stderr, "shootpc %f\n", s->shootpc);
-
     /* checking for pcycle control parameter */
-    if(c->pcycle == TRUE) {
-       npitfac = MIN(nitfac, pitfac);
+    if (c->pcycle == TRUE) {
+        npitfac = MIN(nitfac, pitfac);
     } else {
-       npitfac = nitfac;
+        npitfac = nitfac;
     }
 
     /* figure out the C allocation fractions */
@@ -133,27 +128,22 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
     /*
         Rhizodeposition (f->root_exc) is assumed to be a fraction of the
         current root growth rate (f->cproot), which increases with increasing
-        N and P stress of the plant.
+        N stress of the plant.
     */
-    double CN_leaf, CN_ref, arg1;
-    double CP_leaf, CP_ref, arg2;
-    double frac_to_rexc;
+    double CN_leaf, frac_to_rexc, CN_ref, arg;
 
-    if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0 || float_eq(s->shootp, 0.0))) {
+    if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
         /* nothing happens during leaf off period */
         CN_leaf = 0.0;
-        CP_leaf = 0.0;
         frac_to_rexc = 0.0;
     } else {
 
         if (c->deciduous_model) {
             /* broadleaf */
             CN_ref = 25.0;
-            CP_ref = 600;   /* Needs to get empirical evidence for this number */
         } else {
             /* conifer */
             CN_ref = 42.0;
-            CP_ref = 2500;  /* Needs to get empirical evidence for this number */
         }
 
         /*
@@ -161,27 +151,14 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
         ** to solutions lower than 0.5
         */
         CN_leaf = 1.0 / s->shootnc;
-        arg1 = MAX(0.0, (CN_leaf - CN_ref) / CN_ref);
-
-        CP_leaf = 1.0 / s->shootpc;
-        arg2 = MAX(0.0, (CP_leaf - CP_ref) / CP_ref);
-
-        //fprintf(stderr, "arg1 %f\n", arg1);
-        //fprintf(stderr, "arg2 %f\n", arg2);
-
-        if(c->pcycle == TRUE) {
-          frac_to_rexc = MIN(0.5, MIN(p->a0rhizo + p->a1rhizo * arg1, p->a0rhizo + p->a1rhizo * arg2));
-        } else {
-          frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg1);
-        }
-
+        arg = MAX(0.0, (CN_leaf - CN_ref) / CN_ref);
+        frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg);
     }
 
     /* Rhizodeposition */
     f->root_exc = frac_to_rexc * f->cproot;
     if (float_eq(f->cproot, 0.0)) {
         f->root_exn = 0.0;
-        f->root_exp = 0.0;
     } else {
         /*
         ** N flux associated with rhizodeposition is based on the assumption
@@ -189,7 +166,6 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
         ** growth
         */
         f->root_exn = f->root_exc * (f->nproot / f->cproot);
-        f->root_exp = f->root_exc * (f->pproot / f->cproot);
     }
 
     /*
@@ -198,7 +174,6 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
     */
     f->cproot -= f->root_exc;
     f->nproot -= f->root_exn;
-    f->pproot -= f->root_exp;
 
     return;
 }
