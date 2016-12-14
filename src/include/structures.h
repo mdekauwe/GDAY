@@ -653,7 +653,7 @@ typedef struct {
     double leafretransp;    /* P version of leafretransn */
 
 
-    /* C, N  & P Surface litter */
+    /* C, N & P Surface litter */
     double surf_struct_litter;
     double surf_metab_litter;
     double n_surf_struct_litter;
