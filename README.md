@@ -6,7 +6,7 @@ The model can be run at either a daily time step, or a 30-minute time step. When
 
 GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993).
 
-<p style="text-align:center"><img src="doc/outline.png" width="800"/></p>
+<p style="text-align:center"><img src="doc/outline.png" width="700"/></p>
 
 ## Installation
 To get the code your best route is probably to fork the repository, there is a nice [explanation on github](https://help.github.com/articles/fork-a-repo/).
