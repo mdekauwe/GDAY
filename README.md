@@ -4,7 +4,7 @@ GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulate
 
 The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESPA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a [SPA](http://www.geos.ed.ac.uk/homes/mwilliam/spa.html)-style representation of hydraulics. GDAY-SPA resolves multiple soil layers, soil and leaf water potential and limits gas exchange following the Emax approach (see [MAESPA](http://maespa.github.io/manual.html) for more details).
 
-GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon, nutrient and phosphorus dynamics (Parton et al. 1987; 1993).
+GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon, nutrient and phosphorus dynamics (Parton et al. 1987; 1993). The treatment of P is taken from a combination of approaches following CENTURY, CABLE and CLM-P (Yang and Post, 2011; Walker et al. 2014; Wang et al. 2007; Yang et al. 2014; Ellsworth et al. 2015).
 
 <p style="text-align:center"><img src="doc/outline.png" width="700"/></p>
 
@@ -189,7 +189,11 @@ of photosynthesis from leaves to canopies without the errors of big-leaf models.
 10. Parton, W.J., Scurlock, J.M.O., Ojima, D.S., Gilmanov, T.G., Scholes, R.J., Schimel, D.S., Kirchner, T., Menaut, J.-C., Seastedt, T., Garcia Moya, E. Kamnalrut, A., and Kinyamario, J.I. (1993) Observations and modeling of biomass and soil or- ganic matter dynamics for the grassland biome worldwide. Global Biogeochem. Cycles, 7: 785–809.
 11. Duursma, RA and Kolari, P and Perämäki, M and Nikinmaa, E and Hari, P and Delzon, S and Loustau, D and Ilvesniemi, H and Pumpanen, J and Mäkelä, A. (2008) Predicting the decline in daily maximum transpiration rate of two pine stands during drought based on constant minimum leaf water potential and plant hydraulic conductance. Tree physiology, 28, 265-276.
 12. Duusma, R. A. and Medlyn, B. E. (2012) MAESPA: a model to study interactions between water limitation, environmental drivers and vegetation function at tree and stand levels, with an example application to [CO2] x drought interactions. Geoscientific Model Development, 5, 919-940.
-
+13. Yang and Post, 2011. Phosphorus transformations as a function of pedogenesis: a synthesis of soil phosphorus data using Hedley fractionation method. Biogeosciences, 8:2907-2916.
+14. Walker, A.P., I. Aranda, A.P. Beckerman, H. Bown, L.A. Cernusak, Q.L. Dang, T.F. Domingues, L. Gu, S. Guo, Q. Han, J. Kattge, M. Kubiske, D. Manter, E. Merilo, G. Midgley, A. Porte, J.C. Scales, D. Tissue, T. Turnbull, C. Warren, G. Wohlfahrt, F.I. Woodward, and S.D. Wullschleger. 2014. A Global Data Set of Leaf Photosynthetic Rates, Leaf N and P, and Specific Leaf Area. Data set. Available on-line [http://daac.ornl.gov] from Oak Ridge National Laboratory Distributed Active Archive Center, Oak Ridge, Tennessee, USA. http://dx.doi.org/10.3334/ORNLDAAC/1224.
+15. Wang, Y.-P., B.Z. Houston and C.B. Field, 2007. A model of biogeochemical cycles of carbon, nitrogen, and phosphorus including symbiotic nitrogen fixation and phosphatase production. Global Biogeochemical Cycles, 21: GB1018.
+16. Yang, X., P.E. Thornton, D.M. Ricciuto, and W.M. Post, 2014. The role of phosphorus dynamics in tropical forests - a modeling study using CLM-CNP. Biogeosciences, 11:1667-1681.
+17. Ellsworth, D.S., et al., 2015. Phosphorus recycling in photorespiration maintains high photosynthetic capacity in woody species. Plant, Cell and Environment, 38: 1142-1156.
 
 ## Contacts
 * [Martin De Kauwe](http://mdekauwe.github.io/).
