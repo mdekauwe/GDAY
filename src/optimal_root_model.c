@@ -248,48 +248,48 @@ double calc_umax(double nsupply, double top_soil_depth, double d0) {
 
 double calc_plant_puptake(double root_depth, double psupply, double d0,
                           double top_soil_depth) {
-  /* Plant P uptake (Utot) as a func of maximum rooting depth
-  
-  This is the alternative eqn from McM word document
-  
-  Parameters
-  ----------
-  root_depth : float
-  max rooting depth [m]
-  z : float
-  incremental depth provided by integration func
-  psupply : float
-  soil P supply rate to plants per day [P/m2]
-  top_soil_depth : float
-  Depth of soil assumed by G'DAY model [m]
-  
-  Returns
-  -------
-  puptake : float
-  plant P uptake
-  */
-  double Pmax, arg;
-  
-  Pmax = calc_pmax(psupply, top_soil_depth, d0);
-  arg = 1.0 - exp(-root_depth / (2.0 * d0));
-  
-  return (Pmax * (arg * arg));
+    /* Plant P uptake (Utot) as a func of maximum rooting depth
+
+    This is the alternative eqn from McM word document
+
+    Parameters
+    ----------
+    root_depth : float
+    max rooting depth [m]
+    z : float
+    incremental depth provided by integration func
+    psupply : float
+    soil P supply rate to plants per day [P/m2]
+    top_soil_depth : float
+    Depth of soil assumed by G'DAY model [m]
+
+    Returns
+    -------
+    puptake : float
+    plant P uptake
+    */
+    double Pmax, arg;
+
+    Pmax = calc_pmax(psupply, top_soil_depth, d0);
+    arg = 1.0 - exp(-root_depth / (2.0 * d0));
+
+    return (Pmax * (arg * arg));
 }
 
 double calc_pmax(double psupply, double top_soil_depth, double d0) {
-  /* Calculate potential P uptake integrated over all soil depths
-  
-  Parameters
-  ----------
-  psupply : float
-  P supply rate to a specified soil depth (probably 30 cm)
-  
-  Returns
-  -------
-  Pmax : float
-  potential P uptake integrated over all soil depths
-  */
-  return (psupply / (1.0 - exp(-top_soil_depth / d0)));
+    /* Calculate potential P uptake integrated over all soil depths
+
+    Parameters
+    ----------
+    psupply : float
+    P supply rate to a specified soil depth (probably 30 cm)
+
+    Returns
+    -------
+    Pmax : float
+    potential P uptake integrated over all soil depths
+    */
+    return (psupply / (1.0 - exp(-top_soil_depth / d0)));
 }
 
 
