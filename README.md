@@ -151,7 +151,7 @@ BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
 
 ## Phosphorus component
-Organic phosphorus (P) pools and fluxes follow the same modelling structure of the nitrogen. A total of five inorganic phosphorus pools is implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via constant input rate from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in plant limits photosythesis through its explicit effect on Jmax and a potential effect on Triose-phosphates. 
+Organic phosphorus (P) pools and fluxes follow the same modelling structure as the nitrogen. A total of five inorganic phosphorus pools are implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via a constant input rate from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and is eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in the plant limits photosynthesis through its explicit effect on Jmax and a potential effect on Triose-phosphates. 
 
 
 ## Hydraulics
