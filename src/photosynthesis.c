@@ -374,7 +374,7 @@ void calculate_jmaxt_vcmaxt_with_p(control *c, canopy_wk *cw, params *p, state *
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
     double cscalar = cw->cscalar[cw->ileaf];
-    double conv = MMOL_TO_MOL * 31.0;
+    double conv = MMOL_2_MOL * 31.0;
 
     if (c->modeljm == 0) {
         if (cw->ileaf == SUNLIT) {
@@ -1228,7 +1228,7 @@ double assim_p(double P0) {
     //
     double ap, conv, tp;
 
-    conv = MMOL_TO_MOL * 31.0;
+    conv = MMOL_2_MOL * 31.0;
     tp = 6.51 + 14.64 * (P0 * conv);
     ap = 3.0 * tp;
 
