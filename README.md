@@ -8,7 +8,7 @@ GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/pro
 
 <p style="text-align:center"><img src="doc/outline.png" width="700"/></p>
 
-Fig. 1: Pools and fluxes of carbon (C), nitrogen (N) and phosphorus (P) in the GDAY model. 
+Fig. 1: Pools and fluxes of carbon (C), nitrogen (N) and phosphorus (P) in the GDAY model.
 
 ## Installation
 To get the code your best route is probably to fork the repository, there is a nice [explanation on github](https://help.github.com/articles/fork-a-repo/).
@@ -153,7 +153,7 @@ BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
 
 ## Phosphorus component
-Organic phosphorus (P) pools and fluxes follow the same modelling structure as the nitrogen. A total of five inorganic phosphorus pools are implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via a constant input rate from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and is eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in the plant limits photosynthesis through its explicit effect on Jmax and a potential effect on Triose-phosphates.
+Organic phosphorus (P) pools and fluxes follow the same modelling structure as the nitrogen. A total of five inorganic phosphorus pools are implemented: labile, sorbed, strongly sorbed, occluded and parent pools. Inorganic phosphorus enters into the system via a constant input rate (this will be change very soon) from the parent material pool. Labile and sorbed pools are in dynamic equilibration, and P gradually enters into the strongly sorbed pool and is eventually locked up in the occluded pool. Biochemical mineralisation occurs as a function of nitrogen availability. Phosphorus in the plant limits photosynthesis through its explicit effect on Jmax and a potential effect on Triose-phosphates.
 
 
 ## Hydraulics
