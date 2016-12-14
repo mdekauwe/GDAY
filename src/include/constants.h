@@ -12,7 +12,6 @@
 #define RGAS 8.314
 #define SECS_IN_HOUR 3600.0
 #define UMOL_TO_MOL 1E-6
-#define MMOL_TO_MOL 0.001
 #define MOL_C_TO_GRAMS_C 12.0
 #define G_AS_TONNES 1E-6
 #define M2_AS_HA 1E-4
