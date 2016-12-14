@@ -31,7 +31,8 @@ void    calculate_top_of_canopy_leafp(canopy_wk *, params *, state *);
 void    calc_leaf_to_canopy_scalar(canopy_wk *, params *);
 void    unpack_solar_geometry(canopy_wk *, control *);
 /* SPA stuff */
-void    check_water_balance(control *, fluxes *, double, double);
+void    check_water_balance(control *, fluxes *, state *s, double, double,
+                            double, double, double, int);
 double  calc_lwp(fluxes *, state *, double, double);
-void    calculate_emax(control *, canopy_wk *, fluxes *, met *, params *, state *);
+int     calculate_emax(control *, canopy_wk *, fluxes *, met *, params *, state *);
 #endif /* CANOPY_H */

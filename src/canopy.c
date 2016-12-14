@@ -41,13 +41,15 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
-    int    debug = TRUE;
+    int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
+    double previous_cs, current_cs;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
     previous_sw = s->pawater_topsoil + s->pawater_root;
+    previous_cs = s->canopy_store;
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
@@ -90,11 +92,13 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         if (c->water_balance == HYDRAULICS) {
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
-                            calculate_emax(c, cw, f, m, p, s);
+                            stressed = calculate_emax(c, cw, f, m, p, s);
                         }
 
-                        /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, cw, f, m, p, s);
+                        if (stressed == FALSE) {
+                            /* Calculate new Cs, dleaf, Tleaf */
+                            solve_leaf_energy_balance(c, cw, f, m, p, s);
+                        }
                     } else {
                         break;
                     }
@@ -134,6 +138,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             s->midday_lwp = cw->lwp_canopy;
         }
         sum_hourly_carbon_fluxes(cw, f, p);
+
         calculate_water_balance_sub_daily(c, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy);
@@ -158,6 +163,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
+
+    current_sw = s->pawater_topsoil + s->pawater_root;
+    current_cs = s->canopy_store;
+    check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
+                        current_cs, year, doy);
 
     //if (debug) {
     //    current_sw = s->pawater_topsoil + s->pawater_root;
@@ -409,22 +419,27 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
     return;
 }
 
-void check_water_balance(control *c, fluxes *f, double previous_sw,
-                         double current_sw) {
+void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
+                         double current_sw, double previous_cs,
+                         double current_cs, double year, int doy) {
 
-    double delta_sw;
+    double delta_sw, delta_cs;
 
     delta_sw = current_sw - previous_sw;
-    f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_sw);
+    delta_cs = current_cs - previous_cs;
+    f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_cs + delta_sw);
 
-    //printf("%lf %lf %lf %lf %lf %lf\n",
-    //       f->day_ppt, f->runoff, \
-    //       f->et, delta_sw, previous_sw, current_sw);
+    printf("%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+           (int)year, doy,
+           f->day_ppt, f->runoff, \
+           f->et, delta_sw, delta_cs, previous_sw, current_sw,
+           s->predawn_swp, s->midday_lwp, f->day_wbal);
+
 
     return;
 }
 
-void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
+int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
                     state *s) {
 
     // Assumption that during the day transpiration cannot exceed a maximum
@@ -438,8 +453,17 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // plant component of the leaf-specific hydraulic conductance
     // (mmol m–2 s–1 MPa–1)
     double kp = 2.0;
-    double ktot, emax_leaf, etest, gsv;
+    double ktot, emax_leaf, etest, gsv, frac;
     int    idx = cw->ileaf;
+    int    stressed = FALSE;
+
+    // Need to work out the direct/diffuse weighting to adjust the
+    // stressed gs/transpiration calculation.
+    //if (cw->ileaf == 0) {
+    //    frac = 1.0 - cw->diffuse_frac;
+    //} else {
+    //    frac = cw->diffuse_frac;
+    //}
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
@@ -454,10 +478,21 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, etest);
 
     if (etest > emax_leaf) {
+        stressed = TRUE;
 
         // Calculate gs (mol m-2 s-1) given emax_leaf
         gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
         cw->gsc_leaf[idx] = gsv / GSVGSC;
+
+
+        // Need to make sure transpiration solution is consistent, force
+        // Tleaf to Tair as we aren't solving this
+        cw->trans_leaf[idx] = emax_leaf * MMOL_2_MOL;
+
+        cw->tleaf[idx] = m->tair;
+        cw->tleaf_new = m->tair;
+        cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd,
+                                               cw->apar_leaf[idx] * PAR_2_SW);
 
         // Minimum leaf water potential reached so recalculate LWP (MPa)
         cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
@@ -475,7 +510,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
 
 
-    return;
+    return (stressed);
 }
 
 double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
