@@ -3,6 +3,10 @@
 *.ko
 *.obj
 *.elf
+.DS_Store
+*.DS_Store
+*/.DS_Store
+**/.DS_Store
 
 # Libraries
 *.lib
@@ -13,3 +17,4 @@
 src/gday
 src/version.c
 src/gday.dSYM*
+.Rproj.user
