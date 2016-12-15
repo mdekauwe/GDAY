@@ -432,7 +432,7 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
 int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
                   double nccnew, double ncwimm, double ncwnew, double pcbnew,
                   double pccnew, double pcwimm, double pcwnew,double fdecay,
-                  double rdecay, int doy)
+                  double rdecay, int doy) {
     /*
         Nitrogen and phosphorus distribution - allocate available N and
         P (mineral) through system. N and P is first allocated to the woody
@@ -780,7 +780,7 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
         } else {
             plim = 1.0;
         }
-        nutrient_lim = MIN(nlim, plim)
+        nutrient_lim = MIN(nlim, plim);
         current_limitation = MAX(0.1, MIN(nutrient_lim, s->wtfac_root));
     }
 
@@ -1638,7 +1638,7 @@ double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
         fprintf(stderr, "Unknown P uptake option\n");
         exit(EXIT_FAILURE);
     }
-    
+
     return (puptake);
 }
 

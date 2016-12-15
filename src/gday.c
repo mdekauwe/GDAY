@@ -599,19 +599,19 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
     fprintf(stderr, "Spinning up the model...\n");
     while (TRUE) {
-        if (fabs((prev_plantc*conv) - (s->plantc*conv)) < tol_c &&
-            fabs((prev_soilc*conv) - (s->soilc*conv)) < tol_c &&
-            //fabs((prev_plantn*conv) - (s->plantn*conv)) < tol_n &&
-            fabs((prev_soiln*conv) - (s->soiln*conv)) < tol_n &&
-            //fabs((prev_plantp*conv) - (s->plantp*conv)) < tol_p &&
-            fabs((prev_soilp*conv) - (s->inorgavlp*conv)) < tol_p) {
+        if (fabs((prev_plantc) - (s->plantc)) < tol_c &&
+            fabs((prev_soilc) - (s->soilc)) < tol_c &&
+            fabs((prev_plantn) - (s->plantn)) < tol_n &&
+            fabs((prev_soiln) - (s->soiln)) < tol_n &&
+            fabs((prev_plantp) - (s->plantp)) < tol_p &&
+            fabs((prev_soilp) - (s->inorgavlp)) < tol_p) {
             break;
         } else {
             prev_plantc = s->plantc;
             prev_soilc = s->soilc;
-            //prev_plantn = s->plantn;
+            prev_plantn = s->plantn;
             prev_soiln = s->soiln;
-            //prev_plantp = s->plantp;
+            prev_plantp = s->plantp;
             prev_soilp = s->inorgavlp;
 
             /* 1000 years (50 yrs x 20 cycles) */
