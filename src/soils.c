@@ -1305,10 +1305,6 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
     /* calculate P lab and sorb fluxes from gross P flux */
     calculate_p_min_fluxes(f, p, s);
 
-    if (c->exudation && c->alloc_model != GRASSES) {
-        calc_root_exudation_uptake_of_P(f, s);
-    }
-
     if (c->adjust_rtslow) {
         adjust_residence_time_of_slow_pool(f, p);
     } else {
@@ -1326,63 +1322,6 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
     return;
 }
 
-void calc_root_exudation_uptake_of_P(fluxes *f, state *s) {
-  /* When P mineralisation is large enough to allow a small amount of P
-  immobilisation, the amount of P which enters the active pool is
-  calculated according to REXC divided by the CP of the active pool. When
-  exudation enters the active pool, the CP ratio of the exudates drops
-  from REXC/REXP to the CP of the active pool. Which is consistent with
-  the CENTURY framework, where C flows between pools lead to either
-  mineralisation (P gain) or immobilisation (P loss) due to differences
-  in the CP ratio of the outgoing and incoming pools.
-
-  The amount of P added to the active pool is independent of the CUE of
-  the microbial pool in response to root exudation (REXCUE).
-  */
-  double P_available, active_PC, delta_Pact, P_miss, P_to_active_pool;
-
-  P_available = s->inorglabp -f->ploss - f->puptake;
-
-  active_PC = s->activesoilp / s->activesoil;
-  delta_Pact = f->root_exc * f->rexc_cue * active_PC;
-
-  /*
-  ** Demand for P from exudation to meet the C:P ratio of the active pool,
-  ** given the amount of P you add.
-  */
-  P_miss = delta_Pact - f->root_exp;
-
-  if (P_miss <= 0.0) {
-    /*
-    ** Root exudation includes more P than is needed by the microbes, the
-    ** excess is mineralised
-    */
-    f->pmineralisation -= P_miss;
-    P_to_active_pool = f->root_exp + P_miss;
-  } else {
-    /*
-    ** Not enough P in the soil to meet demand, so we are providing all
-    ** the P we have, which means that the C:P ratio of the active pool
-    ** changes.
-    */
-    if (P_miss > P_available) {
-      P_to_active_pool = f->root_exp + P_available;
-      f->pmineralisation -= P_available;
-    } else {
-      /*
-      ** Enough P to meet demand, so takes P from the mineralisation
-      ** and the active pool maintains the same C:P ratio.
-      */
-      P_to_active_pool = f->root_exp + P_miss;
-      f->pmineralisation -= P_miss;
-    }
-  }
-
-  /* update active pool */
-  s->activesoilp += P_to_active_pool;
-
-  return;
-}
 
 void grazer_inputs_p(control *c, fluxes *f, params *p) {
   /* Grazer inputs from faeces and urine, flux detd by faeces c:p */
