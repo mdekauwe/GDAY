@@ -1423,84 +1423,84 @@ void partition_plant_litter_p(control *c, fluxes *f, params *p, double psurf,
 }
 
 void pfluxes_from_structural_pools(fluxes *f, params *p, state *s) {
-  /* from structural pool */
-  double sigwt;
-  double structout_surf = s->structsurfp * p->decayrate[0];
-  double structout_soil = s->structsoilp * p->decayrate[2];
+    /* from structural pool */
+    double sigwt;
+    double structout_surf = s->structsurfp * p->decayrate[0];
+    double structout_soil = s->structsoilp * p->decayrate[2];
 
-  sigwt = structout_surf / (p->ligshoot * 0.7 + (1.0 - p->ligshoot) * 0.55);
+    sigwt = structout_surf / (p->ligshoot * 0.7 + (1.0 - p->ligshoot) * 0.55);
 
-  /* P flux from surface structural pool -> slow pool */
-  f->p_surf_struct_to_slow = sigwt * p->ligshoot * 0.7;
+    /* P flux from surface structural pool -> slow pool */
+    f->p_surf_struct_to_slow = sigwt * p->ligshoot * 0.7;
 
-  /* P flux surface structural pool -> active pool */
-  f->p_surf_struct_to_active = sigwt * (1.0 - p->ligshoot) * 0.55;
+    /* P flux surface structural pool -> active pool */
+    f->p_surf_struct_to_active = sigwt * (1.0 - p->ligshoot) * 0.55;
 
-  sigwt = structout_soil / (p->ligroot * 0.7 + (1. - p->ligroot) * 0.45);
+    sigwt = structout_soil / (p->ligroot * 0.7 + (1. - p->ligroot) * 0.45);
 
 
-  /* P flux from soil structural pool -> slow pool */
-  f->p_soil_struct_to_slow = sigwt * p->ligroot * 0.7;
+    /* P flux from soil structural pool -> slow pool */
+    f->p_soil_struct_to_slow = sigwt * p->ligroot * 0.7;
 
-  /* N flux from soil structural pool -> active pool */
-  f->p_soil_struct_to_active = sigwt * (1.0 - p->ligroot) * 0.45;
+    /* N flux from soil structural pool -> active pool */
+    f->p_soil_struct_to_active = sigwt * (1.0 - p->ligroot) * 0.45;
 
-  return;
+    return;
 }
 
 void pfluxes_from_metabolic_pool(fluxes *f, params *p, state *s) {
 
-  /* P flux surface metabolic pool -> active pool */
-  f->p_surf_metab_to_active = s->metabsurfp * p->decayrate[1];
+    /* P flux surface metabolic pool -> active pool */
+    f->p_surf_metab_to_active = s->metabsurfp * p->decayrate[1];
 
-  /* P flux soil metabolic pool  -> active pool */
-  f->p_soil_metab_to_active = s->metabsoilp * p->decayrate[3];
+    /* P flux soil metabolic pool  -> active pool */
+    f->p_soil_metab_to_active = s->metabsoilp * p->decayrate[3];
 
-  return;
+    return;
 }
 
 
 void pfluxes_from_active_pool(fluxes *f, params *p, state *s,
                               double frac_microb_resp) {
 
-  double activeout, sigwt;
-  /* P fluxes from active pool */
-  activeout = s->activesoilp * p->decayrate[4];
-  sigwt = activeout / (1.0 - frac_microb_resp);
+    double activeout, sigwt;
+    /* P fluxes from active pool */
+    activeout = s->activesoilp * p->decayrate[4];
+    sigwt = activeout / (1.0 - frac_microb_resp);
 
-  /* P flux active pool -> slow pool */
-  f->p_active_to_slow = sigwt * (1.0 - frac_microb_resp - 0.004);
+    /* P flux active pool -> slow pool */
+    f->p_active_to_slow = sigwt * (1.0 - frac_microb_resp - 0.004);
 
-  /* P flux active pool -> passive pool */
-  f->p_active_to_passive = sigwt * 0.004;
+    /* P flux active pool -> passive pool */
+    f->p_active_to_passive = sigwt * 0.004;
 
-  return;
+    return;
 }
 
 void pfluxes_from_slow_pool(fluxes *f, params *p, state *s) {
-  /* P fluxes from slow pools */
+    /* P fluxes from slow pools */
 
-  double slowout = s->slowsoilp * p->decayrate[5];
-  double sigwt = slowout / 0.45;
+    double slowout = s->slowsoilp * p->decayrate[5];
+    double sigwt = slowout / 0.45;
 
-  //fprintf(stderr, "slowsoilp %f\n", s->slowsoilp);
+    //fprintf(stderr, "slowsoilp %f\n", s->slowsoilp);
 
-  /* P flux slow pool -> active pool */
-  f->p_slow_to_active = sigwt * 0.42;
+    /* P flux slow pool -> active pool */
+    f->p_slow_to_active = sigwt * 0.42;
 
-  /* slow pool -> passive pool */
-  f->p_slow_to_passive = sigwt * 0.03;
+    /* slow pool -> passive pool */
+    f->p_slow_to_passive = sigwt * 0.03;
 
-  return;
+    return;
 }
 
 void pfluxes_from_passive_pool(fluxes *f, params *p, state *s) {
-  /* P fluxes from passive pool */
+    /* P fluxes from passive pool */
 
-  /* P flux passive pool -> active pool */
-  f->p_passive_to_active = s->passivesoilp * p->decayrate[6];
+    /* P flux passive pool -> active pool */
+    f->p_passive_to_active = s->passivesoilp * p->decayrate[6];
 
-  return;
+    return;
 }
 
 void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
