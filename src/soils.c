@@ -982,8 +982,6 @@ void calc_n_net_mineralisation(fluxes *f) {
     /* N Net mineralisation from microbial activity */
     f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;
 
-    //fprintf(stderr, "nmineralisation %f\n", f->nmineralisation);
-
     return;
 }
 
@@ -1218,40 +1216,41 @@ void precision_control_soil_n(fluxes *f, state *s) {
 }
 
 void soil_soprtion_parameters(char *soil_order, params *p) {
-  /*
-   * Parameterize Smax and Ks parameters based on soil order;
-   * Ref. Yang et al., 2016, GRL, Table S2
-   */
+    //
+    // Parameterize Smax and Ks parameters based on soil order;
+    // Ref. Yang et al., 2016, GRL, Table S2
+    //
 
-  if (strcmp(soil_order, "andisol") == 0) {
-    p->smax = 10;
-  } else if (strcmp(soil_order, "gelisol") == 0) {
-    p->smax = 5;
-  } else if (strcmp(soil_order, "histosol") == 0) {
-    p->smax = 5;
-  } else if (strcmp(soil_order, "entisol") == 0) {
-    p->smax = 5;
-  } else if (strcmp(soil_order, "inceptisol") == 0) {
-    p->smax = 5;
-  } else if (strcmp(soil_order, "aridsol") == 0) {
-    p->smax = 7;
-  } else if (strcmp(soil_order, "vertisol") == 0) {
-    p->smax = 7;
-  } else if (strcmp(soil_order, "mollisol") == 0) {
-    p->smax = 7;
-  } else if (strcmp(soil_order, "alfisol") == 0) {
-    p->smax = 7;
-  } else if (strcmp(soil_order, "spodosol") == 0) {
-    p->smax = 9;
-  } else if (strcmp(soil_order, "ultisol") == 0) {
-    p->smax = 9;
-  } else if (strcmp(soil_order, "oxisol") == 0) {
-    p->smax = 9;
-  } else {
-    prog_error("Could not understand soil order", __LINE__);
-  }
+    if (strcmp(soil_order, "andisol") == 0) {
+        p->smax = 10;
+    } else if (strcmp(soil_order, "gelisol") == 0) {
+        p->smax = 5;
+    } else if (strcmp(soil_order, "histosol") == 0) {
+        p->smax = 5;
+    } else if (strcmp(soil_order, "entisol") == 0) {
+        p->smax = 5;
+    } else if (strcmp(soil_order, "inceptisol") == 0) {
+        p->smax = 5;
+    } else if (strcmp(soil_order, "aridsol") == 0) {
+        p->smax = 7;
+    } else if (strcmp(soil_order, "vertisol") == 0) {
+        p->smax = 7;
+    } else if (strcmp(soil_order, "mollisol") == 0) {
+        p->smax = 7;
+    } else if (strcmp(soil_order, "alfisol") == 0) {
+        p->smax = 7;
+    } else if (strcmp(soil_order, "spodosol") == 0) {
+        p->smax = 9;
+    } else if (strcmp(soil_order, "ultisol") == 0) {
+        p->smax = 9;
+    } else if (strcmp(soil_order, "oxisol") == 0) {
+        p->smax = 9;
+    } else {
+        fprintf(stderr, "Could not understand soil order", __LINE__);
+        exit(EXIT_FAILURE);
+    }
 
-  return;
+    return;
 }
 
 
