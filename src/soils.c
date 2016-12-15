@@ -1643,39 +1643,38 @@ double calculate_pc_slope(params *p, double pcmax, double pcmin) {
 }
 
 
-void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
-                                            state *s) {
+void calculate_p_biochemical_mineralisation(fluxes *f, params *p, state *s) {
   /*
-  Calculate biochemical P mineralisation rate for slow SOM pool only;
+    Calculate biochemical P mineralisation rate for slow SOM pool only;
 
-  Ref: Wang et al., 2007, GB1018.
+    Ref: Wang et al., 2007, GB1018.
 
-  Parameters
-  ----------
-  n_cost_of_p: float
-  N cost of plant root P uptake [g N (g P)-1]
+    Parameters
+    ----------
+    n_cost_of_p: float
+    N cost of plant root P uptake [g N (g P)-1]
 
-  crit_n_cost_of_p: float
-  The critical value of N cost of root P uptake above which
-  phosphatase production starts [g N (g P)-1]
+    crit_n_cost_of_p: float
+    The critical value of N cost of root P uptake above which
+    phosphatase production starts [g N (g P)-1]
 
-  max_p_biochemical: float
-  Maximum rate of biochemical P mineralisation [g P m-2 y-1]
+    max_p_biochemical: float
+    Maximum rate of biochemical P mineralisation [g P m-2 y-1]
 
-  biochemical_p_constant: float
-  Michaelis-Menten constant for biochemical P mineralisation [g N (g P)-1]
+    biochemical_p_constant: float
+    Michaelis-Menten constant for biochemical P mineralisation [g N (g P)-1]
 
-  c_gain_of_p: float
-  Carbon per unit of P uptake (NPP/Puptake) [g C (g P)-1]
+    c_gain_of_p: float
+    Carbon per unit of P uptake (NPP/Puptake) [g C (g P)-1]
 
-  c_gain_of_n: float
-  Carbon per unit of N uptake (NPP/Nuptake) [g C (g N)-1]
+    c_gain_of_n: float
+    Carbon per unit of N uptake (NPP/Nuptake) [g C (g N)-1]
 
-  Return
-  ----------
-  p_slow_biochemical: float
-  biochemical P mineralisation rate in slow SOM pool
-  Unit [t/ha];
+    Return
+    ----------
+    p_slow_biochemical: float
+    biochemical P mineralisation rate in slow SOM pool
+    Unit [t/ha];
 
   */
 
@@ -1683,34 +1682,35 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p,
 
   /* Calculate C gain per unit P */
   if (f->puptake > 0.0) {
-    c_gain_of_p = f->npp/f->puptake;
+      c_gain_of_p = f->npp / f->puptake;
   } else {
-    c_gain_of_p = 0.0;
+      c_gain_of_p = 0.0;
   }
 
   /* Calculate C gain per unit N */
   if (f->nuptake > 0.0) {
-    c_gain_of_n = f->npp/f->nuptake;
+      c_gain_of_n = f->npp / f->nuptake;
   } else {
-    c_gain_of_n = 0.0;
+      c_gain_of_n = 0.0;
   }
 
   /* Calculate n cost of p */
-  if(c_gain_of_n > 0.0) {
-    n_cost_of_p = c_gain_of_p / c_gain_of_n;
+  if (c_gain_of_n > 0.0) {
+      n_cost_of_p = c_gain_of_p / c_gain_of_n;
   } else {
-    n_cost_of_p = 0.0;
+      n_cost_of_p = 0.0;
   }
 
-  /* Phosphatase production start when N cost of P is greater than critical
-  N cost of P value, and when carbon uptake is more strongly limited by the uptake
-  of P than by the uptake of N */
-  if(c_gain_of_p > c_gain_of_n && n_cost_of_p > p->crit_n_cost_of_p) {
-    f->p_slow_biochemical = p->max_p_biochemical *
-                            ((n_cost_of_p - p->crit_n_cost_of_p) /
-                            (n_cost_of_p - p->crit_n_cost_of_p + p->biochemical_p_constant));
+  // Phosphatase production start when N cost of P is greater than critical
+  // N cost of P value, and when carbon uptake is more strongly limited by
+  // the uptake of P than by the uptake of N */
+  if (c_gain_of_p > c_gain_of_n && n_cost_of_p > p->crit_n_cost_of_p) {
+      f->p_slow_biochemical = p->max_p_biochemical *
+                              ((n_cost_of_p - p->crit_n_cost_of_p) /
+                              (n_cost_of_p - p->crit_n_cost_of_p +
+                               p->biochemical_p_constant));
   } else {
-    f->p_slow_biochemical = 0.0;
+      f->p_slow_biochemical = 0.0;
   }
 
   return;
