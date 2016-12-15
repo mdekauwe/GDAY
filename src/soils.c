@@ -1305,12 +1305,6 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
     /* calculate P lab and sorb fluxes from gross P flux */
     calculate_p_min_fluxes(f, p, s);
 
-    if (c->adjust_rtslow) {
-        adjust_residence_time_of_slow_pool(f, p);
-    } else {
-        /* Need to correct units of rate constant */
-        f->rtslow = 1.0 / (p->kdec6 * NDAYS_IN_YR);
-    }
 
     /* Update model soil P pools */
     calculate_ppools(c, f, p, s, active_pc_slope, slow_pc_slope,
