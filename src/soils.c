@@ -1717,97 +1717,96 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p, state *s) {
 }
 
 void calculate_p_min_fluxes(fluxes *f, params *p, state *s) {
-  /* Calculate the mineral P fluxes (in and out)
+    /* Calculate the mineral P fluxes (in and out)
 
-  Parameters:
-  --------
+    Parameters:
+    --------
 
-  Returns:
-  --------
-  value : float
-  p_lab_in: P fluxes added into lab P;
-  p_lab_out: P fluxes out lab P;
-  p_sorb_in
-  p_sorb_out
+    Returns:
+    --------
+    value : float
+    p_lab_in: P fluxes added into lab P;
+    p_lab_out: P fluxes out lab P;
+    p_sorb_in
+    p_sorb_out
 
-  */
-  double numer, denom1, denom2;
-  double min_frac_p_available_to_plant = 0.4;
-  double max_frac_p_available_to_plant = 0.8;
-  double mineral_n_with_max_p = 0.02;              /* Unit [t N ha-1] */
-  double tot_in, tot_out;
+    */
+    double numer, denom1, denom2;
+    double min_frac_p_available_to_plant = 0.4;
+    double max_frac_p_available_to_plant = 0.8;
+    double mineral_n_with_max_p = 0.02;              /* Unit [t N ha-1] */
+    double tot_in, tot_out;
 
-  //fprintf(stderr, "flag 5 p_min_fluxes \n");
+    // Note: pmineralisation can be negative, and therefore, during spinup,
+    // when sorbp stock is low, the current approach resulted in negative sorbp
+    // in some cases, but it does not affect the final equilibrated state, so
+    // leave as is until better method is found
+    tot_in = f->p_par_to_min + f->pmineralisation +
+             f->purine + f->p_slow_biochemical +
+             f->p_ssorb_to_min;
 
-  /* Note: pmineralisation can be negative, and therefore, during spinup, when
-  sorbp stock is low, the current approach resulted in negative sorbp in some cases,
-  but it does not affect the final equilibrated state, so leave as is until better method
-  is found */
-  tot_in = f->p_par_to_min + f->pmineralisation +
-           f->purine + f->p_slow_biochemical +
-           f->p_ssorb_to_min;
+    if (s->inorglabp > 0) {
+        tot_out = f->puptake + f->ploss + f->p_min_to_ssorb;
+    } else {
+        f->puptake = 0.0;
+        f->ploss = 0.0;
+        f->p_min_to_ssorb = 0.0;
+        tot_out = f->puptake + f->ploss + f->p_min_to_ssorb;
+    }
 
-  if(s->inorglabp > 0) {
-    tot_out = f->puptake + f->ploss + f->p_min_to_ssorb;
-  } else {
-    f->puptake = 0.0;
-    f->ploss = 0.0;
-    f->p_min_to_ssorb = 0.0;
-    tot_out = f->puptake + f->ploss + f->p_min_to_ssorb;
-  }
+    /* Use soil order to obtain smax and ks values */
+    soil_soprtion_parameters(p->soil_order, p);
 
-  /* Use soil order to obtain smax and ks values */
-  soil_soprtion_parameters(p->soil_order, p);
+    /* Calculate lab P dynamics */
+    numer = p->smax * p->ks;
+    denom1 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks);
+    f->p_lab_in = tot_in / (1.0 + numer / denom1);
+    f->p_lab_out = tot_out / (1.0 + numer / denom1);
 
-  /* Calculate lab P dynamics */
-  numer = p->smax * p->ks;
-  denom1 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks);
-  f->p_lab_in = tot_in / (1.0 + numer/denom1);
-  f->p_lab_out = tot_out / (1.0 + numer/denom1);
+    /* calculate sorb P dynamics */
+    denom2 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks) + numer;
+    f->p_sorb_in = tot_in * (numer / denom2);
+    f->p_sorb_out = tot_out * (numer / denom2);
 
-  /* calculate sorb P dynamics */
-  denom2 = (s->inorglabp + p->ks) * (s->inorglabp + p->ks) + numer;
-  f->p_sorb_in = tot_in * (numer / denom2);
-  f->p_sorb_out = tot_out * (numer / denom2);
+    //fprintf(stderr, "mass balance p_min 1 %f\n",
+    //        ((f->p_lab_in + f->p_sorb_in) - tot_in)*100000000000000);
+    //fprintf(stderr, "mass balance p_min 2 %f\n",
+    //        ((f->p_lab_out + f->p_sorb_out) - tot_out)*100000000000000);
 
-  //fprintf(stderr, "mass balance p_min 1 %f\n",
-  //        ((f->p_lab_in + f->p_sorb_in) - tot_in)*100000000000000);
-  //fprintf(stderr, "mass balance p_min 2 %f\n",
-  //        ((f->p_lab_out + f->p_sorb_out) - tot_out)*100000000000000);
+    /* calculating fraction of labile P available for plant uptake */
+    p->p_lab_avail = MAX(min_frac_p_available_to_plant,
+                     MIN(min_frac_p_available_to_plant + s->inorgn *
+                    (max_frac_p_available_to_plant - min_frac_p_available_to_plant) /
+                     mineral_n_with_max_p, max_frac_p_available_to_plant));
 
-  /* calculating fraction of labile P available for plant uptake */
-  p->p_lab_avail = MAX(min_frac_p_available_to_plant,
-                       MIN(min_frac_p_available_to_plant + s->inorgn *
-                       (max_frac_p_available_to_plant - min_frac_p_available_to_plant) /
-                       mineral_n_with_max_p, max_frac_p_available_to_plant));
-
-  return;
+    return;
 
 }
 
 void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
-  /*calculate P transfer from strongly sorbed P pool to
-   sorbed P pool;
+    /*
+        calculate P transfer from strongly sorbed P pool to
+        sorbed P pool;
 
-   Parameters
-   ----------
-   phtextint: float
-   intercept for the texture equation of strongly sorbed P depends upon
-   pH input;
+        Parameters
+        ----------
+        phtextint: float
+        intercept for the texture equation of strongly sorbed P depends upon
+        pH input;
 
-   phtextslope: float
-   slope value used in determining effect of sand content on ssorb P flow
-   to mineral P;
+        phtextslope: float
+        slope value used in determining effect of sand content on ssorb P flow
+        to mineral P;
 
-   psecmn: float
-   controls the flow from secondary to mineral P;
+        psecmn: float
+        controls the flow from secondary to mineral P;
 
-   Returns:
-   ----------
-   p_ssorb_to_min: float
-   flux rate of p strongly sorbed pool to p sorbed pool;
+        Returns:
+        ----------
+        p_ssorb_to_min: float
+        flux rate of p strongly sorbed pool to p sorbed pool;
 
-   */
+    */
 
   double phtextint;
   double dely, delx, xslope, yint;
