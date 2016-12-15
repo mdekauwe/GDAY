@@ -350,8 +350,9 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
 }
 
 
-void calculate_jmaxt_vcmaxt_with_p(control *c, canopy_wk *cw, params *p, state *s,
-                            double tleaf, double *jmax, double *vcmax) {
+void calculate_jmaxt_vcmaxt_with_p(control *c, canopy_wk *cw, params *p,
+                                   state *s, double tleaf, double *jmax,
+                                   double *vcmax) {
     /*
     Calculate the potential electron transport rate (Jmax) and the
     maximum Rubisco activity (Vcmax) at the leaf temperature.
