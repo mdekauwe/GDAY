@@ -1717,20 +1717,7 @@ void calculate_p_biochemical_mineralisation(fluxes *f, params *p, state *s) {
 }
 
 void calculate_p_min_fluxes(fluxes *f, params *p, state *s) {
-    /* Calculate the mineral P fluxes (in and out)
-
-    Parameters:
-    --------
-
-    Returns:
-    --------
-    value : float
-    p_lab_in: P fluxes added into lab P;
-    p_lab_out: P fluxes out lab P;
-    p_sorb_in
-    p_sorb_out
-
-    */
+    /* Calculate the mineral P fluxes (in and out) */
     double numer, denom1, denom2;
     double min_frac_p_available_to_plant = 0.4;
     double max_frac_p_available_to_plant = 0.8;
@@ -1791,20 +1778,20 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
         Parameters
         ----------
         phtextint: float
-        intercept for the texture equation of strongly sorbed P depends upon
-        pH input;
+            intercept for the texture equation of strongly sorbed P depends upon
+            pH input;
 
         phtextslope: float
-        slope value used in determining effect of sand content on ssorb P flow
-        to mineral P;
+            slope value used in determining effect of sand content on ssorb P
+            flow to mineral P;
 
         psecmn: float
-        controls the flow from secondary to mineral P;
+            controls the flow from secondary to mineral P;
 
         Returns:
         ----------
         p_ssorb_to_min: float
-        flux rate of p strongly sorbed pool to p sorbed pool;
+            flux rate of p strongly sorbed pool to p sorbed pool;
 
     */
     double phtextint;
@@ -1875,11 +1862,11 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
         Parameters
         ----------
         active_pc_slope : float
-        active PC slope
+            active PC slope
         slow_pc_slope: float
-        slow PC slope
+            slow PC slope
         passive_pc_slope : float
-        passive PC slope
+            passive PC slope
 
     */
 
@@ -2010,33 +1997,34 @@ void calculate_ppools(control *c, fluxes *f, params *p, state *s,
 
 double pc_limit(fluxes *f, double cpool, double ppool, double pcmin,
                 double pcmax) {
-  /* Release P to 'Inorglabp' pool or fix P from 'Inorglabp', in order to keep
-  the  P:C ratio of a litter pool within the range 'pcmin' to 'pcmax'.
+    /*
+        Release P to 'Inorglabp' pool or fix P from 'Inorglabp', in order to keep
+        the  P:C ratio of a litter pool within the range 'pcmin' to 'pcmax'.
 
-  Parameters:
-  -----------
-  cpool : float
-  various C pool (state)
-  ppool : float
-  various P pool (state)
-  pcmin : float
-  min P:C ratio
-  pcmax : float
-  max P:C ratio
+        Parameters:
+        -----------
+        cpool : float
+            various C pool (state)
+        ppool : float
+            various P pool (state)
+        pcmin : float
+            min P:C ratio
+        pcmax : float
+            max P:C ratio
 
-  Returns:
-  --------
-  fix/rel : float
-  amount of P to be added/released from the inorganic pool
+        Returns:
+        --------
+        fix/rel : float
+            amount of P to be added/released from the inorganic pool
 
-  */
-  double rel, fix;
-  double pmax = cpool * pcmax;
-  double pmin = cpool * pcmin;
+    */
+    double rel, fix;
+    double pmax = cpool * pcmax;
+    double pmin = cpool * pcmin;
 
-  //fprintf(stderr, "ppool %f\n", ppool*100000);
-  //fprintf(stderr, "pmax %f\n", pmax*100000);
-  //fprintf(stderr, "pmin %f\n", pmin*100000);
+    //fprintf(stderr, "ppool %f\n", ppool*100000);
+    //fprintf(stderr, "pmax %f\n", pmax*100000);
+    //fprintf(stderr, "pmin %f\n", pmin*100000);
 
   if (ppool > pmax) {
     /* release */
