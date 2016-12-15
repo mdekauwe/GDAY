@@ -1606,40 +1606,40 @@ void calculate_p_immobilisation(fluxes *f, params *p, state *s, double *pimmob,
     return;
 }
 
-
 void calc_p_net_mineralisation(fluxes *f) {
-  /* P Net mineralisation from microbial activity,
-  excluding the (- f->p_sorb_to_ssorb + f->p_ssorb_to_sorb activity) */
-  f->pmineralisation = f->pgross - f->pimmob + f->plittrelease;
+    /*
+        P Net mineralisation from microbial activity,
+        excluding the (- f->p_sorb_to_ssorb + f->p_ssorb_to_sorb activity)
+    */
+    f->pmineralisation = f->pgross - f->pimmob + f->plittrelease;
 
-  //fprintf(stderr, "plitrelease %f\n", f->plittrelease);
-  return;
+    return;
 }
 
 double calculate_pc_slope(params *p, double pcmax, double pcmin) {
-  /* Returns P:C ratio of the mineral pool slope
-  Need to check back for good relationships; Currently using olde NC relationship
-  based on Parton et al., 1993
+    /* Returns P:C ratio of the mineral pool slope
+    Need to check back for good relationships; Currently using olde NC relationship
+    based on Parton et al., 1993
 
-  Parameters
-  ----------
-  pcmax : float
-  SOM pools maximum P:C
-  pcmin: float
-  SOM pools minimum P:C
+    Parameters
+    ----------
+    pcmax : float
+    SOM pools maximum P:C
+    pcmin: float
+    SOM pools minimum P:C
 
-  Returns:
-  --------
-  value : float
-  SOM pool P:C ratio
-  */
-  double arg1, arg2, conv;
+    Returns:
+    --------
+    value : float
+    SOM pool P:C ratio
+    */
+    double arg1, arg2, conv;
 
-  arg1 = pcmax - pcmin;
-  arg2 = p->pmincrit - p->pmin0;
-  conv = M2_AS_HA / G_AS_TONNES;
+    arg1 = pcmax - pcmin;
+    arg2 = p->pmincrit - p->pmin0;
+    conv = M2_AS_HA / G_AS_TONNES;
 
-  return (arg1 / arg2 * conv);
+    return (arg1 / arg2 * conv);
 }
 
 
