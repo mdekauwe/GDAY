@@ -1318,29 +1318,29 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
 
 
 void grazer_inputs_p(control *c, fluxes *f, params *p) {
-  /* Grazer inputs from faeces and urine, flux detd by faeces c:p */
-  double arg;
+    /* Grazer inputs from faeces and urine, flux detd by faeces c:p */
+    double arg;
 
-  if (c->grazing)
-    p->faecesp = f->faecesc / p->faecescp;
-  else
-    p->faecesp = 0.0;
+    if (c->grazing)
+        p->faecesp = f->faecesc / p->faecescp;
+    else
+        p->faecesp = 0.0;
 
-  /* make sure faecesp <= total p input to soil from grazing */
-  arg = f->peaten * p->fractosoilp;
-  if (p->faecesp > arg)
-    p->faecesp = f->peaten * p->fractosoilp;
+    /* make sure faecesp <= total p input to soil from grazing */
+    arg = f->peaten * p->fractosoilp;
+    if (p->faecesp > arg)
+        p->faecesp = f->peaten * p->fractosoilp;
 
-  /* urine=total-faeces */
-  if (c->grazing)
-    f->purine = f->peaten * p->fractosoilp - p->faecesp;
-  else
-    f->purine = 0.0;
+    /* urine=total-faeces */
+    if (c->grazing)
+        f->purine = f->peaten * p->fractosoilp - p->faecesp;
+    else
+        f->purine = 0.0;
 
-  if (f->purine < 0.0)
-    f->purine = 0.0;
+    if (f->purine < 0.0)
+        f->purine = 0.0;
 
-  return;
+    return;
 }
 
 void p_inputs_from_plant_litter(fluxes *f, params *p, double *psurf,
