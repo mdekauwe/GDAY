@@ -1521,26 +1521,26 @@ void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
 }
 
 void calculate_p_mineralisation(fluxes *f) {
-  /* P gross mineralisation rate is given by the excess of P outflows
-  over inflows. P mineralisation is the process by which organic P is
-  converted to plant available inorganic P, i.e. the microbial conversion
-  of organic P to H2PO4- or HPO42- forms of plant available P known as
-  orthophosphates.
+    /* P gross mineralisation rate is given by the excess of P outflows
+    over inflows. P mineralisation is the process by which organic P is
+    converted to plant available inorganic P, i.e. the microbial conversion
+    of organic P to H2PO4- or HPO42- forms of plant available P known as
+    orthophosphates.
 
-  Returns:
-  --------
-  value : float
-  Gross P mineralisation
-  Unit: t/ha/d
-  */
-  f->pgross =  (f->p_surf_struct_to_slow + f->p_surf_struct_to_active +
-                f->p_soil_struct_to_slow + f->p_soil_struct_to_active +
-                f->p_surf_metab_to_active + f->p_soil_metab_to_active +
-                f->p_active_to_slow + f->p_active_to_passive +
-                f->p_slow_to_active + f->p_slow_to_passive +
-                f->p_passive_to_active);
+    Returns:
+    --------
+    value : float
+    Gross P mineralisation
+    Unit: t/ha/d
+    */
+    f->pgross =  (f->p_surf_struct_to_slow + f->p_surf_struct_to_active +
+                  f->p_soil_struct_to_slow + f->p_soil_struct_to_active +
+                  f->p_surf_metab_to_active + f->p_soil_metab_to_active +
+                  f->p_active_to_slow + f->p_active_to_passive +
+                  f->p_slow_to_active + f->p_slow_to_passive +
+                  f->p_passive_to_active);
 
-  return;
+    return;
 }
 
 void calculate_p_immobilisation(fluxes *f, params *p, state *s, double *pimmob,
