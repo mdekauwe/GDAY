@@ -740,8 +740,11 @@ int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
 
 
 double calculate_growth_stress_limitation(params *p, state *s, control *c) {
-    /* Calculate level of stress due to nitrogen, phosphorus or water availability */
-    double nlim, plim, current_limitation;
+    //
+    // Calculate level of stress due to nitrogen, phosphorus or water
+    // availability
+    //
+    double nlim, plim, current_limitation, nutrient_lim;
     double nc_opt = 0.04;
     double pc_opt = 0.004;
 
@@ -754,22 +757,9 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
         nlim = 1.0;
     }
 
-    //fprintf(stderr, "shootpc %f\n", s->shootpc);
-
-    if(c->pcycle == TRUE) {
-      /* P limitation based on leaf PC ratio */
-      if (s->shootpc < p->pf_min) {
-        plim = 0.0;
-      } else if (s->shootpc < pc_opt && s->shootpc > p->pf_min) {
-        plim = 1.0 - ((pc_opt - s->shootpc) / (pc_opt - p->pf_min));
-      } else {
-        plim = 1.0;
-      }
-    }
-
     /*
-     * Limitation by nitrogen, water and phosphorus. Water constraint is implicit,
-     * in that, water stress results in an increase of root mass,
+     * Limitation by nutrients or water. Water constraint is
+     * implicit, in that, water stress results in an increase of root mass,
      * which are assumed to spread horizontally within the rooting zone.
      * So in effect, building additional root mass doesnt alleviate the
      * water limitation within the model. However, it does more
@@ -779,15 +769,20 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
      * that have a flexible bucket depth. Minimum constraint is limited to
      * 0.1, following Zaehle et al. 2010 (supp), eqn 18.
      */
-    if (c->pcycle == TRUE) {
-      current_limitation = MAX(0.1, MIN(nlim, MIN(plim, s->wtfac_root)));
-    } else {
-      current_limitation = MAX(0.1, MIN(nlim,s->wtfac_root));
-    }
+    current_limitation = MAX(0.1, MIN(nlim,s->wtfac_root));
 
-    //fprintf(stderr, "nlim %f\n", nlim);
-    //fprintf(stderr, "plim %f\n", plim);
-    //fprintf(stderr, "current %f\n", current_limitation);
+    if(c->pcycle == TRUE) {
+        /* P limitation based on leaf PC ratio */
+        if (s->shootpc < p->pf_min) {
+            plim = 0.0;
+        } else if (s->shootpc < pc_opt && s->shootpc > p->pf_min) {
+            plim = 1.0 - ((pc_opt - s->shootpc) / (pc_opt - p->pf_min));
+        } else {
+            plim = 1.0;
+        }
+        nutrient_lim = MIN(nlim, plim)
+        current_limitation = MAX(0.1, MIN(nutrient_lim, s->wtfac_root));
+    }
 
     return (current_limitation);
 }
