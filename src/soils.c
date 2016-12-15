@@ -1367,59 +1367,59 @@ void p_inputs_from_plant_litter(fluxes *f, params *p, double *psurf,
 
 void partition_plant_litter_p(control *c, fluxes *f, params *p, double psurf,
                               double psoil) {
-  /* Partition litter P from the plant (surface) and roots into metabolic
-  and structural pools
+    /* Partition litter P from the plant (surface) and roots into metabolic
+    and structural pools
 
-  Parameters:
-  -----------
-  psurf : float
-  P input from surface pool
-  psoil : float
-  P input from soil pool
-  */
+    Parameters:
+    -----------
+    psurf : float
+    P input from surface pool
+    psoil : float
+    P input from soil pool
+    */
 
-  double c_surf_struct_litter, c_soil_struct_litter;
+    double c_surf_struct_litter, c_soil_struct_litter;
 
-  /* constant structural input p:c as per century */
-  if (c->strpfloat == 1) {
-    /* structural input p:c is a fraction of metabolic */
-    c_surf_struct_litter = (f->surf_struct_litter * p->structratp +
-    f->surf_metab_litter);
+    /* constant structural input p:c as per century */
+    if (c->strpfloat == 1) {
+        /* structural input p:c is a fraction of metabolic */
+        c_surf_struct_litter = (f->surf_struct_litter * p->structratp +
+                                f->surf_metab_litter);
 
-    if (float_eq(c_surf_struct_litter, 0.0))
-      f->p_surf_struct_litter = 0.0;
-    else
-      f->p_surf_struct_litter = (psurf * f->surf_struct_litter *
+        if (float_eq(c_surf_struct_litter, 0.0))
+            f->p_surf_struct_litter = 0.0;
+        else
+            f->p_surf_struct_litter = (psurf * f->surf_struct_litter *
         p->structratp / c_surf_struct_litter);
 
-      c_soil_struct_litter = (f->soil_struct_litter * p->structratp +
-        f->soil_metab_litter);
+        c_soil_struct_litter = (f->soil_struct_litter * p->structratp +
+                                f->soil_metab_litter);
 
-    if (float_eq(c_soil_struct_litter, 0.0))
-      f->p_soil_struct_litter = 0.0;
-    else
-      f->p_soil_struct_litter = (psurf * f->soil_struct_litter *
+        if (float_eq(c_soil_struct_litter, 0.0))
+            f->p_soil_struct_litter = 0.0;
+        else
+            f->p_soil_struct_litter = (psurf * f->soil_struct_litter *
         p->structratp / c_soil_struct_litter);
-  } else {
+    } else {
 
-    /* p flux -> surface structural pool */
-    f->p_surf_struct_litter = f->surf_struct_litter / p->structcp;
+        /* p flux -> surface structural pool */
+        f->p_surf_struct_litter = f->surf_struct_litter / p->structcp;
 
-    /* p flux -> soil structural pool */
-    f->p_soil_struct_litter = f->soil_struct_litter / p->structcp;
+        /* p flux -> soil structural pool */
+        f->p_soil_struct_litter = f->soil_struct_litter / p->structcp;
 
-    /* if not enough P for structural, all available P goes to structural */
-    if (f->p_surf_struct_litter > psurf)
-      f->p_surf_struct_litter = psurf;
-    if (f->p_soil_struct_litter > psoil)
-      f->p_soil_struct_litter = psoil;
-  }
+        /* if not enough P for structural, all available P goes to structural */
+        if (f->p_surf_struct_litter > psurf)
+            f->p_surf_struct_litter = psurf;
+        if (f->p_soil_struct_litter > psoil)
+            f->p_soil_struct_litter = psoil;
+    }
 
-  /* remaining P goes to metabolic pools */
-  f->p_surf_metab_litter = psurf - f->p_surf_struct_litter;
-  f->p_soil_metab_litter = psoil - f->p_soil_struct_litter;
+    /* remaining P goes to metabolic pools */
+    f->p_surf_metab_litter = psurf - f->p_surf_struct_litter;
+    f->p_soil_metab_litter = psoil - f->p_soil_struct_litter;
 
-  return;
+    return;
 }
 
 void pfluxes_from_structural_pools(fluxes *f, params *p, state *s) {
