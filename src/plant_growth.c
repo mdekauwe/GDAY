@@ -823,7 +823,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     double min_stem_alloc = 0.01;
 
     if (c->alloc_model == FIXED){
-        f->alleaf = (p->c_alloc_fmax + npitfac *   //should c_alloc_fmax be c_alloc_fmin?
+        f->alleaf = (p->c_alloc_fmax + npitfac *
                      (p->c_alloc_fmax - p->c_alloc_fmin));
 
         f->alroot = (p->c_alloc_rmax + npitfac *
@@ -1210,14 +1210,14 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
         pcmaxr = pcmaxf * p->pcrfac;
         extrarp = 0.0;
         if (s->rootp > (s->root * pcmaxr)) {
-          extrarp = s->rootp - s->root * pcmaxr;
+            extrarp = s->rootp - s->root * pcmaxr;
 
-          /* Ensure P uptake cannot be reduced below zero. */
-          if ((extrasp + extrarp) > f->puptake)
-            extrarp = f->puptake - extrasp;
+            /* Ensure P uptake cannot be reduced below zero. */
+            if ((extrasp + extrarp) > f->puptake)
+                extrarp = f->puptake - extrasp;
 
-          s->rootp -= extrarp;
-          f->puptake -= (extrarp + extrasp);
+            s->rootp -= extrarp;
+            f->puptake -= (extrarp + extrasp);
         }
     }
 
@@ -1511,58 +1511,59 @@ double nitrogen_retrans(control *c, fluxes *f, params *p, state *s,
 }
 
 double phosphorus_retrans(control *c, fluxes *f, params *p, state *s,
-                        double fdecay, double rdecay, int doy) {
-  /* Phosphorus retranslocated from senesced plant matter.
-   Constant rate of p translocated from mobile pool
+                          double fdecay, double rdecay, int doy) {
+    /*
+        Phosphorus retranslocated from senesced plant matter.
+        Constant rate of p translocated from mobile pool
 
-   Parameters:
-   -----------
-   fdecay : float
-   foliage decay rate
-   rdecay : float
-   fine root decay rate
+        Parameters:
+        -----------
+        fdecay : float
+        foliage decay rate
+        rdecay : float
+        fine root decay rate
 
-   Returns:
-   --------
-   P retrans : float
-   P retranslocated plant matter
+        Returns:
+        --------
+        P retrans : float
+        P retranslocated plant matter
+    */
+    double leafretransp, rootretransp, crootretransp, branchretransp,
+            stemretransp;
 
-   */
-  double leafretransp, rootretransp, crootretransp, branchretransp,
-  stemretransp;
+    if (c->deciduous_model) {
+        leafretransp = p->fretransp * f->lprate * s->remaining_days[doy];
+    } else {
+        leafretransp = p->fretransp * fdecay * s->shootp;
+    }
 
-  if (c->deciduous_model) {
-    leafretransp = p->fretransp * f->lprate * s->remaining_days[doy];
-  } else {
-    leafretransp = p->fretransp * fdecay * s->shootp;
-  }
+    rootretransp = p->rretrans * rdecay * s->rootp;
+    crootretransp = p->cretrans * p->crdecay * s->crootp;
+    branchretransp = p->bretrans * p->bdecay * s->branchp;
+    stemretransp = (p->wretrans * p->wdecay * s->stempmob + p->retransmob *
+                    s->stempmob);
 
-  rootretransp = p->rretrans * rdecay * s->rootp;
-  crootretransp = p->cretrans * p->crdecay * s->crootp;
-  branchretransp = p->bretrans * p->bdecay * s->branchp;
-  stemretransp = (p->wretrans * p->wdecay * s->stempmob + p->retransmob *
-    s->stempmob);
+    /* store for NCEAS output */
+    f->leafretransp = leafretransp;
 
-  /* store for NCEAS output */
-  f->leafretransp = leafretransp;
-
-  return (leafretransp + rootretransp + crootretransp + branchretransp +
-          stemretransp);
+    return (leafretransp + rootretransp + crootretransp + branchretransp +
+            stemretransp);
 }
 
 double calculate_nuptake(control *c, params *p, state *s) {
-    /* N uptake depends on the rate at which soil mineral N is made
-    available to the plants.
+    /*
+        N uptake depends on the rate at which soil mineral N is made
+        available to the plants.
 
-    Returns:
-    --------
-    nuptake : float
-        N uptake
+        Returns:
+        --------
+        nuptake : float
+            N uptake
 
-    References:
-    -----------
-    * Dewar and McMurtrie, 1996, Tree Physiology, 16, 161-171.
-    * Raich et al. 1991, Ecological Applications, 1, 399-429.
+        References:
+        -----------
+        * Dewar and McMurtrie, 1996, Tree Physiology, 16, 161-171.
+        * Raich et al. 1991, Ecological Applications, 1, 399-429.
 
     */
     double nuptake, U0, Kr;
@@ -1601,46 +1602,44 @@ double calculate_nuptake(control *c, params *p, state *s) {
 
 
 double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
-  /* P uptake depends on the rate at which soil mineral P is made
-  available to the plants.
+    /*
+        P uptake depends on the rate at which soil mineral P is made
+        available to the plants.
 
-  Returns:
-  --------
-  puptake : float
-  P uptake
+        Returns:
+        --------
+        puptake : float
+        P uptake
+    */
+    double puptake, U0, Kr;
 
-  */
-  double puptake, U0, Kr;
+    if (c->puptake_model == 0) {
+        /* Constant P uptake */
+        puptake = p->puptakez;
+    } else if (c->puptake_model == 1) {
+        // evaluate puptake : proportional to lab P pool that is
+        // available to plant uptake
+        puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    } else if (c->puptake_model == 2) {
+        /* P uptake is a saturating function on root biomass, as N */
 
-  if (c->puptake_model == 0) {
-    /* Constant P uptake */
-    puptake = p->puptakez;
+        /* supply rate of available mineral P */
+        if (s->inorgsorbp > 0.0) {
+            U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+        } else {
+            U0 = MIN((f->p_par_to_min + f->pmineralisation +
+                     f->purine + f->p_slow_biochemical),
+                     (p->prateuptake * s->inorglabp * p->p_lab_avail));
+        }
 
-  } else if (c->puptake_model == 1) {
-    /* evaluate puptake : proportional to lab P pool that is available to plant uptake */
-      puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
-
-  } else if (c->puptake_model == 2) {
-    /* P uptake is a saturating function on root biomass, as N */
-
-    /* supply rate of available mineral P */
-    if (s->inorgsorbp > 0.0) {
-      U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+        Kr = p->krp;
+        puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
     } else {
-      U0 = MIN((f->p_par_to_min + f->pmineralisation +
-               f->purine + f->p_slow_biochemical),
-               (p->prateuptake * s->inorglabp * p->p_lab_avail));
+        fprintf(stderr, "Unknown P uptake option\n");
+        exit(EXIT_FAILURE);
     }
-
-    Kr = p->krp;
-    puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
-
-  } else {
-    fprintf(stderr, "Unknown P uptake option\n");
-    exit(EXIT_FAILURE);
-  }
-
-  return (puptake);
+    
+    return (puptake);
 }
 
 
