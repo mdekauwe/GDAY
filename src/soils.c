@@ -1807,204 +1807,204 @@ void calculate_p_ssorb_to_sorb(state *s, fluxes *f, params *p, control *c) {
         flux rate of p strongly sorbed pool to p sorbed pool;
 
     */
+    double phtextint;
+    double dely, delx, xslope, yint;
+    int    cntrl_text_p = c->text_effect_p;
 
-  double phtextint;
-  double dely, delx, xslope, yint;
-  int cntrl_text_p = c->text_effect_p;
+    if (cntrl_text_p == 1) {
 
-  if (cntrl_text_p == 1) {
+        dely = p->phtextmax - p->phtextmin;
+        delx = p->phmax - p->phmin;
 
-    dely = p->phtextmax - p->phtextmin;
-    delx = p->phmax - p->phmin;
+        xslope = dely/delx;
+        yint = p->phtextmin - xslope * p->phmin;
 
-    xslope = dely/delx;
-    yint = p->phtextmin - xslope * p->phmin;
+        if (p->soilph < p->phmin) {
+            phtextint = p->phtextmin;
+        } else if (p->soilph > p->phmax) {
+            phtextint = p->phtextmax;
+        } else {
+            phtextint = xslope * p->soilph + yint;
+        }
 
-    if (p->soilph < p->phmin) {
-      phtextint = p->phtextmin;
-    } else if (p->soilph > p->phmax) {
-      phtextint = p->phtextmax;
+        f->p_ssorb_to_min = MAX(0.0, (phtextint + p->phtextslope *
+                                     (1.0 - p->finesoil)) * s->inorgssorbp);
+
     } else {
-      phtextint = xslope * p->soilph + yint;
+        if (s->inorgssorbp > 0.0) {
+            f->p_ssorb_to_min = p->psecmnp * s->inorgssorbp;
+        } else {
+            f->p_ssorb_to_min = 0.0;
+        }
+
     }
-
-    f->p_ssorb_to_min = MAX(0.0, (phtextint + p->phtextslope * (1.0 - p->finesoil)) *
-                         s->inorgssorbp);
-
-  } else {
-    if (s->inorgssorbp > 0.0) {
-      f->p_ssorb_to_min = p->psecmnp * s->inorgssorbp;
-    } else {
-      f->p_ssorb_to_min = 0.0;
-    }
-
-  }
-
-  return;
+    return;
 }
 
 void calculate_p_sorb_to_ssorb(state *s, fluxes *f, params *p) {
 
-  /* P flux from sorbed pool to strongly sorbed P pool */
-  if (s->inorgsorbp > 0.0) {
-  f->p_min_to_ssorb = p->rate_sorb_ssorb * s->inorgsorbp;
-  } else {
-    f->p_min_to_ssorb = 0.0;
-  }
+    /* P flux from sorbed pool to strongly sorbed P pool */
+    if (s->inorgsorbp > 0.0) {
+        f->p_min_to_ssorb = p->rate_sorb_ssorb * s->inorgsorbp;
+    } else {
+        f->p_min_to_ssorb = 0.0;
+    }
 
-  return;
+    return;
 }
 
 void calculate_p_ssorb_to_occ(state *s, fluxes *f, params *p) {
 
-  /* P flux from strongly sorbed pool to occluded P pool */
-  if (s->inorgssorbp > 0.0) {
-  f->p_ssorb_to_occ = p->rate_ssorb_occ * s->inorgssorbp;
-  } else {
-    f->p_ssorb_to_occ = 0.0;
-  }
+    /* P flux from strongly sorbed pool to occluded P pool */
+    if (s->inorgssorbp > 0.0) {
+        f->p_ssorb_to_occ = p->rate_ssorb_occ * s->inorgssorbp;
+    } else {
+        f->p_ssorb_to_occ = 0.0;
+    }
 
-  return;
+    return;
 }
 
 
 void calculate_ppools(control *c, fluxes *f, params *p, state *s,
                       double active_pc_slope, double slow_pc_slope,
                       double passive_pc_slope) {
-  /*
-  Update P pools in the soil
+    /*
+        Update P pools in the soil
 
-  Parameters
-  ----------
-  active_pc_slope : float
-  active PC slope
-  slow_pc_slope: float
-  slow PC slope
-  passive_pc_slope : float
-  passive PC slope
+        Parameters
+        ----------
+        active_pc_slope : float
+        active PC slope
+        slow_pc_slope: float
+        slow PC slope
+        passive_pc_slope : float
+        passive PC slope
 
-  */
+    */
 
-  double p_into_active, p_out_of_active, p_into_slow, p_out_of_slow,
-  p_into_passive, p_out_of_passive, arg, active_pc, fixp, slow_pc,
-  pass_pc;
+    double p_into_active, p_out_of_active, p_into_slow, p_out_of_slow,
+           p_into_passive, p_out_of_passive, arg, active_pc, fixp, slow_pc,
+           pass_pc;
 
-  double net_parent;
+    double net_parent;
 
-  /*
-  net P release implied by separation of litter into structural
-  & metabolic. The following pools only fix or release P at their
-  limiting p:c values.
-  */
+    /*
+        net P release implied by separation of litter into structural
+        & metabolic. The following pools only fix or release P at their
+        limiting p:c values.
+    */
 
-  /* P released or fixed from the P inorganic labile pool is incremented with
-  each call to pc_limit and stored in f->plittrelease */
-  f->plittrelease = 0.0;
+    /* P released or fixed from the P inorganic labile pool is incremented with
+    each call to pc_limit and stored in f->plittrelease */
+    f->plittrelease = 0.0;
 
-  s->structsurfp += (f->p_surf_struct_litter -
-    (f->p_surf_struct_to_slow +
-    f->p_surf_struct_to_active));
+    s->structsurfp += (f->p_surf_struct_litter -
+                      (f->p_surf_struct_to_slow +
+                       f->p_surf_struct_to_active));
 
-  s->structsoilp += (f->p_soil_struct_litter -
-    (f->p_soil_struct_to_slow + f->p_soil_struct_to_active));
+    s->structsoilp += (f->p_soil_struct_litter -
+                      (f->p_soil_struct_to_slow +
+                       f->p_soil_struct_to_active));
 
-  if (c->strpfloat == 0) {
-    s->structsurfp += pc_limit(f, s->structsurf, s->structsurfp,
+    if (c->strpfloat == 0) {
+        s->structsurfp += pc_limit(f, s->structsurf, s->structsurfp,
                                1.0/p->structcp, 1.0/p->structcp);
-    s->structsoilp += pc_limit(f, s->structsoil, s->structsoilp,
+        s->structsoilp += pc_limit(f, s->structsoil, s->structsoilp,
                                1.0/p->structcp, 1.0/p->structcp);
-  }
+    }
 
-  s->metabsurfp += f->p_surf_metab_litter - f->p_surf_metab_to_active;
-  s->metabsurfp += pc_limit(f, s->metabsurf, s->metabsurfp,
-                            1.0/150.0, 1.0/80.0);                                  /* pcmin & pcmax from Parton 1989 fig 2 */
+    /* pcmin & pcmax from Parton 1989 fig 2 */
+    s->metabsurfp += f->p_surf_metab_litter - f->p_surf_metab_to_active;
+    s->metabsurfp += pc_limit(f, s->metabsurf, s->metabsurfp,
+                              1.0/150.0, 1.0/80.0);
 
-  s->metabsoilp += (f->p_soil_metab_litter - f->p_soil_metab_to_active);
-  s->metabsoilp += pc_limit(f, s->metabsoil, s->metabsoilp,
-                            1.0/150.0, 1.0/80.0);                                  /* pcmin & pcmax from Parton 1989 fig 2 */
-
-
-  /* When nothing is being added to the metabolic pools, there is the
-  potential scenario with the way the model works for tiny bits to be
-  removed with each timestep. Effectively with time this value which is
-  zero can end up becoming zero but to a silly decimal place */
-  precision_control_soil_p(f, s);
-
-  /* Update SOM pools */
-  p_into_active = (f->p_surf_struct_to_active + f->p_soil_struct_to_active +
-  f->p_surf_metab_to_active + f->p_soil_metab_to_active +
-  f->p_slow_to_active + f->p_passive_to_active);
-
-  p_out_of_active = f->p_active_to_slow + f->p_active_to_passive;
-
-  p_into_slow = (f->p_surf_struct_to_slow + f->p_soil_struct_to_slow +
-    f->p_active_to_slow);
-
-  p_out_of_slow = f->p_slow_to_active + f->p_slow_to_passive + f->p_slow_biochemical;
-  p_into_passive = f->p_active_to_passive + f->p_slow_to_passive;
-  p_out_of_passive = f->p_passive_to_active;
-
-  /* P:C of the SOM pools increases linearly btw prescribed min and max
-  values as the Pconc of the soil increases. */
-  arg = s->inorglabp - p->pmin0 / M2_AS_HA * G_AS_TONNES;
-
-  /* active */
-  active_pc = p->actpcmin + active_pc_slope * arg;
-  if (active_pc > p->actpcmax)
-    active_pc = p->actpcmax;
-
-  /* release P to Inorganic labile pool or fix P from the Inorganic pool in order
-  to normalise the P:C ratio of a net flux */
-  fixp = pc_flux(f->c_into_active, p_into_active, active_pc);
-  s->activesoilp += p_into_active + fixp - p_out_of_active;
-
-  /* slow */
-  slow_pc = p->slowpcmin + slow_pc_slope * arg;
-  if (slow_pc > p->slowpcmax)
-    slow_pc = p->slowpcmax;
-
-  /* release P to Inorganic pool or fix P from the Inorganic pool in order
-  to normalise the P:C ratio of a net flux */
-  fixp = pc_flux(f->c_into_slow, p_into_slow, slow_pc);
-  s->slowsoilp += p_into_slow + fixp - p_out_of_slow;
-
-  /* passive, update passive pool only if passiveconst=0 */
-  pass_pc = p->passpcmin + passive_pc_slope * arg;
-  if (pass_pc > p->passpcmax)
-    pass_pc = p->passpcmax;
-
-  /* release P to Inorganic pool or fix P from the Inorganic pool in order
-  to normalise the P:C ratio of a net flux */
-  fixp = pc_flux(f->c_into_passive, p_into_passive, pass_pc);
-  s->passivesoilp += p_into_passive + fixp - p_out_of_passive;
-
-  //fprintf(stderr, "inorglabp 1 %f\n", s->inorglabp);
-
-  /* Daily increment of soil inorganic labile and sorbed P pool */
-  s->inorglabp += f->p_lab_in - f->p_lab_out;
-  s->inorgsorbp += f->p_sorb_in - f->p_sorb_out;
-
-  //fprintf(stderr, "psorb calc %f\n", (9 * s->inorglabp)/(0.0012+s->inorglabp));
-
-  //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
-  //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
-
-  /* Daily increment of soil inorganic available P pool (lab + sorb) */
-  s->inorgavlp = s->inorglabp + s->inorgsorbp;
-
-  /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
-  s->inorgssorbp += f->p_min_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_min;
+    /* pcmin & pcmax from Parton 1989 fig 2 */
+    s->metabsoilp += (f->p_soil_metab_litter - f->p_soil_metab_to_active);
+    s->metabsoilp += pc_limit(f, s->metabsoil, s->metabsoilp,
+                              1.0/150.0, 1.0/80.0);
 
 
-  /* Daily increment of soil inorganic occluded P pool */
-  s->inorgoccp += f->p_ssorb_to_occ;
+    /* When nothing is being added to the metabolic pools, there is the
+    potential scenario with the way the model works for tiny bits to be
+    removed with each timestep. Effectively with time this value which is
+    zero can end up becoming zero but to a silly decimal place */
+    precision_control_soil_p(f, s);
 
-  /* Daily increment of soil inorganic parent P pool */
-  s->inorgparp += f->p_atm_dep - f->p_par_to_min;
+    /* Update SOM pools */
+    p_into_active = (f->p_surf_struct_to_active + f->p_soil_struct_to_active +
+    f->p_surf_metab_to_active + f->p_soil_metab_to_active +
+    f->p_slow_to_active + f->p_passive_to_active);
 
-  //fprintf(stderr, "flag 6 ppools \n");
+    p_out_of_active = f->p_active_to_slow + f->p_active_to_passive;
 
-  return;
+    p_into_slow = (f->p_surf_struct_to_slow + f->p_soil_struct_to_slow +
+                   f->p_active_to_slow);
+
+    p_out_of_slow = f->p_slow_to_active + f->p_slow_to_passive + f->p_slow_biochemical;
+    p_into_passive = f->p_active_to_passive + f->p_slow_to_passive;
+    p_out_of_passive = f->p_passive_to_active;
+
+    // P:C of the SOM pools increases linearly btw prescribed min and max
+    // values as the Pconc of the soil increases.
+    arg = s->inorglabp - p->pmin0 / M2_AS_HA * G_AS_TONNES;
+
+    /* active */
+    active_pc = p->actpcmin + active_pc_slope * arg;
+    if (active_pc > p->actpcmax)
+        active_pc = p->actpcmax;
+
+    // release P to Inorganic labile pool or fix P from the Inorganic pool in order
+    // to normalise the P:C ratio of a net flux
+    fixp = pc_flux(f->c_into_active, p_into_active, active_pc);
+    s->activesoilp += p_into_active + fixp - p_out_of_active;
+
+    /* slow */
+    slow_pc = p->slowpcmin + slow_pc_slope * arg;
+    if (slow_pc > p->slowpcmax)
+        slow_pc = p->slowpcmax;
+
+    /* release P to Inorganic pool or fix P from the Inorganic pool in order
+    to normalise the P:C ratio of a net flux */
+    fixp = pc_flux(f->c_into_slow, p_into_slow, slow_pc);
+    s->slowsoilp += p_into_slow + fixp - p_out_of_slow;
+
+    /* passive, update passive pool only if passiveconst=0 */
+    pass_pc = p->passpcmin + passive_pc_slope * arg;
+    if (pass_pc > p->passpcmax)
+        pass_pc = p->passpcmax;
+
+    /* release P to Inorganic pool or fix P from the Inorganic pool in order
+    to normalise the P:C ratio of a net flux */
+    fixp = pc_flux(f->c_into_passive, p_into_passive, pass_pc);
+    s->passivesoilp += p_into_passive + fixp - p_out_of_passive;
+
+    //fprintf(stderr, "inorglabp 1 %f\n", s->inorglabp);
+
+    /* Daily increment of soil inorganic labile and sorbed P pool */
+    s->inorglabp += f->p_lab_in - f->p_lab_out;
+    s->inorgsorbp += f->p_sorb_in - f->p_sorb_out;
+
+    //fprintf(stderr, "psorb calc %f\n", (9 * s->inorglabp)/(0.0012+s->inorglabp));
+
+    //fprintf(stderr, "inorglabp %f\n", s->inorglabp);
+    //fprintf(stderr, "inorgsorbp %f\n", s->inorgsorbp);
+
+    /* Daily increment of soil inorganic available P pool (lab + sorb) */
+    s->inorgavlp = s->inorglabp + s->inorgsorbp;
+
+    /* Daily increment of soil inorganic secondary P pool (strongly sorbed) */
+    s->inorgssorbp += f->p_min_to_ssorb - f->p_ssorb_to_occ - f->p_ssorb_to_min;
+
+    /* Daily increment of soil inorganic occluded P pool */
+    s->inorgoccp += f->p_ssorb_to_occ;
+
+    /* Daily increment of soil inorganic parent P pool */
+    s->inorgparp += f->p_atm_dep - f->p_par_to_min;
+
+    //fprintf(stderr, "flag 6 ppools \n");
+
+    return;
 }
 
 
