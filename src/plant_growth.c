@@ -561,7 +561,14 @@ int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
             - cut back C prodn */
         arg1 = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
-        if (arg1 > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
+        /* If we have allocated more P than we have available
+            - cut back C prodn */
+        arg2 = f->ppstemimm + f->ppstemmob + f->ppbranch + f->ppcroot;
+
+        if ((arg1 > ntot && c->fixleafnc == FALSE &&
+             c->fixed_lai && c->ncycle) ||
+            (arg2 > ptot && c->fixleafpc == FALSE &&
+             c->fixed_lai && c->pcycle)) {
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
@@ -633,87 +640,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
                                (p->sla * M2_AS_HA / \
                                (KG_AS_TONNES * p->cfracts)) -
                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-                }
-            }
-        }
-
-        /* If we have allocated more P than we have available
-            - cut back C prodn */
-        arg2 = f->ppstemimm + f->ppstemmob + f->ppbranch + f->ppcroot;
-
-        if (arg2 > ptot && c->fixleafpc == FALSE && c->fixed_lai && c->pcycle) {
-            /*
-                Need to readjust the LAI for the reduced growth as this will
-                have already been increased. First we need to figure out how
-                much we have increased LAI by, important it is done here
-                before cpleaf is reduced!
-            */
-            if (float_eq(s->shoot, 0.0)) {
-                lai_inc = 0.0;
-            } else {
-                lai_inc = (f->cpleaf *
-                          (p->sla * M2_AS_HA / (KG_AS_TONNES * p->cfracts)) -
-                          (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-            }
-
-            f->npp *= ptot / (f->ppstemimm + f->ppstemmob + \
-                      f->ppbranch + f->ppcroot);
-
-            /* need to adjust growth values accordingly as well */
-            f->cpleaf = f->npp * f->alleaf;
-            f->cproot = f->npp * f->alroot;
-            f->cpcroot = f->npp * f->alcroot;
-            f->cpbranch = f->npp * f->albranch;
-            f->cpstem = f->npp * f->alstem;
-
-            f->npbranch = f->npp * f->albranch * ncbnew;
-            f->npstemimm = f->npp * f->alstem * ncwimm;
-            f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
-            f->npcroot = f->npp * f->alcroot * nccnew;
-
-            f->ppbranch = f->npp * f->albranch * pcbnew;
-            f->ppstemimm = f->npp * f->alstem * pcwimm;
-            f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
-            f->ppcroot = f->npp * f->alcroot * pccnew;
-
-            /* Save WUE before cut back */
-            f->wue = f->gpp_gCm2 / f->transpiration;
-
-            /* Also need to recalculate GPP and thus Ra and return a flag
-            so that we know to recalculate the water balance. */
-            f->gpp = f->npp / p->cue;
-            conv = G_AS_TONNES / M2_AS_HA;
-            f->gpp_gCm2 = f->gpp / conv;
-            f->gpp_am = f->gpp_gCm2 / 2.0;
-            f->gpp_pm = f->gpp_gCm2 / 2.0;
-
-            /* New respiration flux */
-            f->auto_resp =  f->gpp - f->npp;
-            recalc_wb = TRUE;
-
-            /* Now reduce LAI for down-regulated growth. */
-            if (c->deciduous_model) {
-                if (float_eq(s->shoot, 0.0)) {
-                    s->lai = 0.0;
-                } else if (s->leaf_out_days[doy] > 0.0) {
-                    s->lai -= lai_inc;
-                    s->lai += (f->cpleaf *
-                                (p->sla * M2_AS_HA / \
-                                (KG_AS_TONNES * p->cfracts)) -
-                                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-                } else {
-                    s->lai = 0.0;
-                }
-            } else {
-                /* update leaf area [m2 m-2] */
-                if (float_eq(s->shoot, 0.0)) {
-                    s->lai = 0.0;
-                } else {
-                    s->lai -= lai_inc;
-                    s->lai += (f->cpleaf *
-                              (p->sla * M2_AS_HA / \
-                              (KG_AS_TONNES * p->cfracts)) -
-                              (f->deadleaves + f->ceaten) * s->lai / s->shoot);
                 }
             }
         }
