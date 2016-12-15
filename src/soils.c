@@ -2065,22 +2065,22 @@ double pc_flux(double cflux, double pflux, double pc_ratio) {
 
 
 void precision_control_soil_p(fluxes *f, state *s) {
-  /* Detect very low values in state variables and force to zero to
-  avoid rounding and overflow errors */
+    /* Detect very low values in state variables and force to zero to
+    avoid rounding and overflow errors */
 
-  double tolerance = 1E-08, excess;
+    double tolerance = 1E-08, excess;
 
-  if (s->metabsurfp < tolerance) {
-    excess = s->metabsurfp;
-    f->p_surf_metab_to_active = excess;
-    s->metabsurfp = 0.0;
-  }
+    if (s->metabsurfp < tolerance) {
+        excess = s->metabsurfp;
+        f->p_surf_metab_to_active = excess;
+        s->metabsurfp = 0.0;
+    }
 
-  if (s->metabsoilp < tolerance) {
-    excess = s->metabsoilp;
-    f->p_soil_metab_to_active = excess;
-    s->metabsoilp = 0.0;
-  }
+    if (s->metabsoilp < tolerance) {
+        excess = s->metabsoilp;
+        f->p_soil_metab_to_active = excess;
+        s->metabsoilp = 0.0;
+    }
 
-  return;
+    return;
 }
