@@ -91,7 +91,7 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "deadleaves,deadbranch,deadstems,deadroots,deadcroots,");
     fprintf(*fp, "deadleafn,deadbranchn,deadstemn,deadrootn,deadcrootn,");
     fprintf(*fp, "deadleafp,deadbranchp,deadstemp,deadrootp,deadcrootp,");
-    
+
 
     /* C fluxes */
     fprintf(*fp, "nep,gpp,npp,hetero_resp,auto_resp,apar,");
@@ -100,11 +100,11 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "cpleaf,cpbranch,cpstem,cproot,cpcroot,");
     fprintf(*fp, "npleaf,npbranch,npstemimm,npstemmob,nproot,npcroot,");
     fprintf(*fp, "ppleaf,ppbranch,ppstemimm,ppstemmob,pproot,ppcroot,");
-    
+
 
     /* N stuff */
     fprintf(*fp, "nuptake,ngross,nmineralisation,nloss,");
-    
+
     /* P stuff */
     fprintf(*fp, "puptake,pgross,pmineralisation,ploss,");
 
@@ -123,14 +123,13 @@ void write_output_header(control *c, FILE **fp) {
     /* extra priming stuff */
     fprintf(*fp, "root_exc,");
     fprintf(*fp, "root_exn,");
-    fprintf(*fp, "root_exp,");
     fprintf(*fp, "co2_released_exud,");
     fprintf(*fp, "factive,");
     fprintf(*fp, "rtslow,");
     fprintf(*fp, "rexc_cue,");
 
     /* Misc */
-    fprintf(*fp, "leafretransn,"); 
+    fprintf(*fp, "leafretransn,");
     fprintf(*fp, "leafretransp\n");
     fprintf(*fp, "predawn_swp,");
     fprintf(*fp, "midday_lwp,");
@@ -187,33 +186,33 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     /* plant */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->shoot,s->lai,s->branch,s->stem,s->root,s->croot);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->shootn,s->branchn,s->stemn,s->rootn,s->crootn);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->shootp,s->branchp,s->stemp,s->rootp,s->crootp);
-    
-    fprintf(c->ofp, "%.10f,%.10f,%.10f,",   
+
+    fprintf(c->ofp, "%.10f,%.10f,%.10f,",
                     s->cstore,s->nstore,s->pstore);
 
     /* belowground */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
                     s->soilc,s->soiln,s->soilp,s->inorgn);
-                    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->inorgp,s->inorgavlp,s->inorglabp,s->inorgsorbp,s->inorgssorbp,
                     s->inorgoccp,s->inorgparp);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->litterc,s->littercag,s->littercbg,s->litternag,s->litternbg);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,",
                     s->litterpag,s->litterpbg);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,",
                     s->activesoil,s->slowsoil,s->passivesoil);
-    
+
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,",
                     s->activesoiln,s->slowsoiln,s->passivesoiln,
                     s->activesoilp,s->slowsoilp,s->passivesoilp);
@@ -256,7 +255,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     /* N stuff */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
                     f->nuptake,f->ngross,f->nmineralisation,f->nloss);
-    
+
     /* P stuff */
     fprintf(c->ofp, "%.10f,%.10f,%.10f,%.10f,",
                     f->puptake,f->pgross,f->pmineralisation,f->ploss);
@@ -280,7 +279,6 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     /* extra priming stuff */
     fprintf(c->ofp, "%.10f,", f->root_exc);
     fprintf(c->ofp, "%.10f,", f->root_exn);
-    fprintf(c->ofp, "%.10f,", f->root_exp);
     fprintf(c->ofp, "%.10f,", f->co2_released_exud);
     fprintf(c->ofp, "%.10f,", f->factive);
     fprintf(c->ofp, "%.10f,", f->rtslow);

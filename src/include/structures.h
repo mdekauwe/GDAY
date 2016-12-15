@@ -778,7 +778,6 @@ typedef struct {
     /* priming/exudation */
     double root_exc;
     double root_exn;
-    double root_exp;
     double co2_released_exud;
     double factive;
     double rtslow;
