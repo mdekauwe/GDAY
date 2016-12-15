@@ -2026,41 +2026,41 @@ double pc_limit(fluxes *f, double cpool, double ppool, double pcmin,
     //fprintf(stderr, "pmax %f\n", pmax*100000);
     //fprintf(stderr, "pmin %f\n", pmin*100000);
 
-  if (ppool > pmax) {
-    /* release */
-    rel = ppool - pmax;
-    f->plittrelease += rel;
-    return (-rel);
-  } else if (ppool < pmin) {
-    /* fix */
-    fix = pmin - ppool;
-    f->plittrelease -= fix;
-    return (fix);
-  } else {
-    return (0.0);
-  }
+    if (ppool > pmax) {
+        /* release */
+        rel = ppool - pmax;
+        f->plittrelease += rel;
+        return (-rel);
+    } else if (ppool < pmin) {
+        /* fix */
+        fix = pmin - ppool;
+        f->plittrelease -= fix;
+        return (fix);
+    } else {
+        return (0.0);
+    }
 }
 
 double pc_flux(double cflux, double pflux, double pc_ratio) {
-  /*
-  Release P to Inorganic pool or fix P from the Inorganic pool in order
-  to normalise the P:C ratio of a net flux
+    /*
+        Release P to Inorganic pool or fix P from the Inorganic pool in order
+        to normalise the P:C ratio of a net flux
 
-  Parameters:
-  -----------
-  cflux : float
-  C flux into SOM pool
-  pflux : float
-  P flux into SOM pool
-  pc_ratio : float
-  preferred P:C ratio
+        Parameters:
+        -----------
+        cflux : float
+            C flux into SOM pool
+        pflux : float
+            P flux into SOM pool
+        pc_ratio : float
+            preferred P:C ratio
 
-  Returns:
-  fix : float
-  Returns the amount of P required to be fixed
-  */
+        Returns:
+            fix : float
+            Returns the amount of P required to be fixed
+    */
 
-  return (cflux * pc_ratio) - pflux;
+    return (cflux * pc_ratio) - pflux;
 }
 
 
