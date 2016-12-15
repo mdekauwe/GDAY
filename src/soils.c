@@ -1546,64 +1546,64 @@ void calculate_p_mineralisation(fluxes *f) {
 void calculate_p_immobilisation(fluxes *f, params *p, state *s, double *pimmob,
                                 double *active_pc_slope, double *slow_pc_slope,
                                 double *passive_pc_slope) {
-  /* P immobilised in new soil organic matter, the reverse of
-  mineralisation. Micro-organisms in the soil compete with plants for P.
-  Immobilisation occurs when plant available P forms are consumed by microbes, turning
-  the P into organic P forms that are not available to plants.
+    /* P immobilised in new soil organic matter, the reverse of
+    mineralisation. Micro-organisms in the soil compete with plants for P.
+    Immobilisation occurs when plant available P forms are consumed by microbes, turning
+    the P into organic P forms that are not available to plants.
 
-  When C:P ratio is high the microorganisms need more P from
-  the soil to decompose the carbon in organic materials. This P will be
-  immobilised until these microorganisms die and the P is
-  released.
+    When C:P ratio is high the microorganisms need more P from
+    the soil to decompose the carbon in organic materials. This P will be
+    immobilised until these microorganisms die and the P is
+    released.
 
-  General equation for new soil P:C ratio vs Pmin, expressed as linear
-  equation passing through point Pmin0, actpcmin (etc). Values can be
-  Pmin0=0, Actpc0=Actpcmin
+    General equation for new soil P:C ratio vs Pmin, expressed as linear
+    equation passing through point Pmin0, actpcmin (etc). Values can be
+    Pmin0=0, Actpc0=Actpcmin
 
-  if Pmin < Pmincrit:
-  New soil P:C = soil P:C (when Pmin=0) + slope * Pmin
+    if Pmin < Pmincrit:
+    New soil P:C = soil P:C (when Pmin=0) + slope * Pmin
 
-  if Pmin > Pmincrit
-  New soil P:C = max soil P:C
+    if Pmin > Pmincrit
+    New soil P:C = max soil P:C
 
-  NB P:C ratio of new passive SOM can change even if assume Passiveconst
+    NB P:C ratio of new passive SOM can change even if assume Passiveconst
 
-  Returns:
-  --------
-  pimob : float
-  P immobilsed
-  */
-  double pmin, arg1, arg2, arg3, numer1, numer2, denom;
+    Returns:
+    --------
+    pimob : float
+    P immobilsed
+    */
+    double pmin, arg1, arg2, arg3, numer1, numer2, denom;
 
-  /* P:C new SOM - active, slow and passive */
-  *active_pc_slope = calculate_pc_slope(p, p->actpcmax, p->actpcmin);
-  *slow_pc_slope = calculate_pc_slope(p, p->slowpcmax, p->slowpcmin);
-  *passive_pc_slope = calculate_pc_slope(p, p->passpcmax, p->passpcmin);
+    /* P:C new SOM - active, slow and passive */
+    *active_pc_slope = calculate_pc_slope(p, p->actpcmax, p->actpcmin);
+    *slow_pc_slope = calculate_pc_slope(p, p->slowpcmax, p->slowpcmin);
+    *passive_pc_slope = calculate_pc_slope(p, p->passpcmax, p->passpcmin);
 
-  /* convert units */
-  pmin = p->pmin0 / M2_AS_HA * G_AS_TONNES;
+    /* convert units */
+    pmin = p->pmin0 / M2_AS_HA * G_AS_TONNES;
 
-  arg1 = (p->passpcmin - *passive_pc_slope * pmin) * f->c_into_passive;
-  arg2 = (p->slowpcmin - *slow_pc_slope * pmin) * f->c_into_slow;
-  arg3 = f->c_into_active * (p->actpcmin - *active_pc_slope * pmin);
-  numer1 = arg1 + arg2 + arg3;
+    arg1 = (p->passpcmin - *passive_pc_slope * pmin) * f->c_into_passive;
+    arg2 = (p->slowpcmin - *slow_pc_slope * pmin) * f->c_into_slow;
+    arg3 = f->c_into_active * (p->actpcmin - *active_pc_slope * pmin);
+    numer1 = arg1 + arg2 + arg3;
 
-  arg1 = f->c_into_passive * p->passpcmax;
-  arg2 = f->c_into_slow * p->slowpcmax;
-  arg3 = f->c_into_active * p->actpcmax;
-  numer2 = arg1 + arg2 + arg3;
+    arg1 = f->c_into_passive * p->passpcmax;
+    arg2 = f->c_into_slow * p->slowpcmax;
+    arg3 = f->c_into_active * p->actpcmax;
+    numer2 = arg1 + arg2 + arg3;
 
-  arg1 = f->c_into_passive * *passive_pc_slope;
-  arg2 = f->c_into_slow * *slow_pc_slope;
-  arg3 = f->c_into_active * *active_pc_slope;
-  denom = arg1 + arg2 + arg3;
+    arg1 = f->c_into_passive * *passive_pc_slope;
+    arg2 = f->c_into_slow * *slow_pc_slope;
+    arg3 = f->c_into_active * *active_pc_slope;
+    denom = arg1 + arg2 + arg3;
 
-  /* evaluate P immobilisation in new SOM */
-  *pimmob = numer1 + denom * s->inorglabp;
-  if (*pimmob > numer2)
-    *pimmob = numer2;
+    /* evaluate P immobilisation in new SOM */
+    *pimmob = numer1 + denom * s->inorglabp;
+    if (*pimmob > numer2)
+        *pimmob = numer2;
 
-  return;
+    return;
 }
 
 
