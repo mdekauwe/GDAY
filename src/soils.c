@@ -1344,25 +1344,25 @@ void grazer_inputs_p(control *c, fluxes *f, params *p) {
 }
 
 void p_inputs_from_plant_litter(fluxes *f, params *p, double *psurf,
-                              double *psoil) {
-  /* inputs from plant litter.
+                                double *psoil) {
+    /* inputs from plant litter.
 
-  surface and soil pools are independent. Structural input flux p:c can
-  be either constant or a fixed fraction of metabolic input flux.
+    surface and soil pools are independent. Structural input flux p:c can
+    be either constant or a fixed fraction of metabolic input flux.
 
-  Returns:
-  --------
-  psurf : float
-  P input from surface pool
-  psoil : float
-  P input from soil pool
-  */
+    Returns:
+    --------
+    psurf : float
+    P input from surface pool
+    psoil : float
+    P input from soil pool
+    */
 
-  /* surface and soil inputs (faeces p goes to abovgrd litter pools) */
-  *psurf = f->deadleafp + f->deadbranchp + f->deadstemp + p->faecesp;
-  *psoil = f->deadrootp + f->deadcrootp;
+    /* surface and soil inputs (faeces p goes to abovgrd litter pools) */
+    *psurf = f->deadleafp + f->deadbranchp + f->deadstemp + p->faecesp;
+    *psoil = f->deadrootp + f->deadcrootp;
 
-  return;
+    return;
 }
 
 void partition_plant_litter_p(control *c, fluxes *f, params *p, double psurf,
