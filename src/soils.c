@@ -1256,73 +1256,74 @@ void soil_soprtion_parameters(char *soil_order, params *p) {
 
 void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
                            int doy) {
+    /*
+        need to store grazing flag. Allows us to switch on the annual
+        grazing event, but turn it off for every other day of the year.
+    */
+    int cntrl_grazing = c->grazing;
+    if (c->grazing == 2 && p->disturbance_doy == doy+1) {
+        c->grazing = TRUE;
+    }
 
-  /* need to store grazing flag. Allows us to switch on the annual
-  grazing event, but turn it off for every other day of the year.  */
-  int cntrl_grazing = c->grazing;
-  if (c->grazing == 2 && p->disturbance_doy == doy+1) {
-    c->grazing = TRUE;
-  }
+    /* Fraction of C lost due to microbial respiration */
+    double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+    double psurf, psoil, active_pc_slope, slow_pc_slope, passive_pc_slope;
 
-  /* Fraction of C lost due to microbial respiration */
-  double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
-  double psurf, psoil, active_pc_slope, slow_pc_slope, passive_pc_slope;
+    grazer_inputs_p(c, f, p);
+    p_inputs_from_plant_litter(f, p, &psurf, &psoil);
+    partition_plant_litter_p(c, f, p, psurf, psoil);
 
-  grazer_inputs_p(c, f, p);
-  p_inputs_from_plant_litter(f, p, &psurf, &psoil);
-  partition_plant_litter_p(c, f, p, psurf, psoil);
+    /* SOM phosphorus effluxes.  These are assumed to have the source p:c
+    ratio prior to the increase of P:C due to co2 evolution. */
+    pfluxes_from_structural_pools(f, p, s);
+    pfluxes_from_metabolic_pool(f, p, s);
+    pfluxes_from_active_pool(f, p, s, frac_microb_resp);
+    pfluxes_from_slow_pool(f, p, s);
+    pfluxes_from_passive_pool(f, p, s);
 
-  /* SOM phosphorus effluxes.  These are assumed to have the source p:c
-  ratio prior to the increase of P:C due to co2 evolution. */
-  pfluxes_from_structural_pools(f, p, s);
-  pfluxes_from_metabolic_pool(f, p, s);
-  pfluxes_from_active_pool(f, p, s, frac_microb_resp);
-  pfluxes_from_slow_pool(f, p, s);
-  pfluxes_from_passive_pool(f, p, s);
+    /* calculate P parent influxe to mineral P */
+    calculate_p_parent_fluxes(f, p, s);
 
-  /* calculate P parent influxe to mineral P */
-  calculate_p_parent_fluxes(f, p, s);
+    /* gross P mineralisation */
+    calculate_p_mineralisation(f);
 
-  /* gross P mineralisation */
-  calculate_p_mineralisation(f);
-
-  /* calculate P immobilisation */
-  calculate_p_immobilisation(f, p, s, &(f->pimmob), &active_pc_slope,
+    /* calculate P immobilisation */
+    calculate_p_immobilisation(f, p, s, &(f->pimmob), &active_pc_slope,
                              &slow_pc_slope, &passive_pc_slope);
 
-  /* calculate P net mineralisation, excluding biochemical mineralisation */
-  calc_p_net_mineralisation(f);
+    /* calculate P net mineralisation, excluding biochemical mineralisation */
+    calc_p_net_mineralisation(f);
 
-  /* calculate P biochemical mineralisation */
-  calculate_p_biochemical_mineralisation(f, p, s);
+    /* calculate P biochemical mineralisation */
+    calculate_p_biochemical_mineralisation(f, p, s);
 
-  /* SIM phosphorus dynamics */
-  calculate_p_ssorb_to_sorb(s, f, p, c);
-  calculate_p_ssorb_to_occ(s, f, p);
-  calculate_p_sorb_to_ssorb(s, f, p);
+    /* SIM phosphorus dynamics */
+    calculate_p_ssorb_to_sorb(s, f, p, c);
+    calculate_p_ssorb_to_occ(s, f, p);
+    calculate_p_sorb_to_ssorb(s, f, p);
 
-  /* calculate P lab and sorb fluxes from gross P flux */
-  calculate_p_min_fluxes(f, p, s);
+    /* calculate P lab and sorb fluxes from gross P flux */
+    calculate_p_min_fluxes(f, p, s);
 
-  if (c->exudation && c->alloc_model != GRASSES) {
-    calc_root_exudation_uptake_of_P(f, s);
-  }
+    if (c->exudation && c->alloc_model != GRASSES) {
+        calc_root_exudation_uptake_of_P(f, s);
+    }
 
-  if (c->adjust_rtslow) {
-    adjust_residence_time_of_slow_pool(f, p);
-  } else {
-    /* Need to correct units of rate constant */
-    f->rtslow = 1.0 / (p->kdec6 * NDAYS_IN_YR);
-  }
+    if (c->adjust_rtslow) {
+        adjust_residence_time_of_slow_pool(f, p);
+    } else {
+        /* Need to correct units of rate constant */
+        f->rtslow = 1.0 / (p->kdec6 * NDAYS_IN_YR);
+    }
 
-  /* Update model soil P pools */
-  calculate_ppools(c, f, p, s, active_pc_slope, slow_pc_slope,
-                   passive_pc_slope);
+    /* Update model soil P pools */
+    calculate_ppools(c, f, p, s, active_pc_slope, slow_pc_slope,
+                     passive_pc_slope);
 
-  /* switch off grazing if this was just activated as an annual event */
-  c->grazing = cntrl_grazing;
+    /* switch off grazing if this was just activated as an annual event */
+    c->grazing = cntrl_grazing;
 
-  return;
+    return;
 }
 
 void calc_root_exudation_uptake_of_P(fluxes *f, state *s) {
