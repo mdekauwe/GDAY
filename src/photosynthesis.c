@@ -354,20 +354,20 @@ void calculate_jmaxt_vcmaxt_with_p(control *c, canopy_wk *cw, params *p,
                                    state *s, double tleaf, double *jmax,
                                    double *vcmax) {
     /*
-    Calculate the potential electron transport rate (Jmax) and the
-    maximum Rubisco activity (Vcmax) at the leaf temperature.
+        Calculate the potential electron transport rate (Jmax) and the
+        maximum Rubisco activity (Vcmax) at the leaf temperature.
 
-    For Jmax -> peaked arrhenius is well behaved for tleaf < 0.0
+        For Jmax -> peaked arrhenius is well behaved for tleaf < 0.0
 
-    Parameters:
-    ----------
-    tleaf : float
-    air temperature (deg C)
-    jmax : float
-    the potential electron transport rate at the leaf temperature
-    (umol m-2 s-1)
-    vcmax : float
-    the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
+        Parameters:
+        ----------
+        tleaf : float
+            air temperature (deg C)
+        jmax : float
+            the potential electron transport rate at the leaf temperature
+            (umol m-2 s-1)
+        vcmax : float
+            the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
     double jmax25, vcmax25;
     double jmax25p, jmax25n;
