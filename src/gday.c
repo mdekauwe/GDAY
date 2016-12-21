@@ -120,10 +120,8 @@ int main(int argc, char **argv)
         fill_up_solar_arrays(cw, c, ma, p);
     } else {
         if (c->input_ascii) {
-            printf("HERE\n");
             read_daily_met_data(argv, c, ma);
         } else {
-            printf("NO HERE\n");
             read_daily_met_data_binary(argv, c, ma);
         }
     }
@@ -658,7 +656,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
             /* Have we reached a steady state? */
             //fprintf(stderr,
-            //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
     }
     write_final_state(c, p, s);
