@@ -52,16 +52,14 @@ void write_output_header(control *c, FILE **fp) {
     int ncols = c->ovars; /* this is hardwired, but obv should match below! */
     int nrows = c->total_num_days;
 
-
     /* Git version */
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
     /* time stuff */
-    fprintf(*fp, "year,doy,");
+    fprintf(*fp, "YEAR,DOY,");
 
-    /*
-    ** STATE
-    */
+    /* plant */
+    fprintf(*fp, "CF,LAI,CB,CW,CR,");
 
     /* water*/
     fprintf(*fp, "BETA,SWC,ET,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
@@ -73,6 +71,7 @@ void write_output_header(control *c, FILE **fp) {
         fprintf(*fp, "nrows=%d\n", nrows);
         fprintf(*fp, "ncols=%d\n", ncols);
     }
+
     return;
 }
 
@@ -147,7 +146,10 @@ void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     odata[ocnt+13] = f->runoff;
     odata[ocnt+14] = f->npp;
     odata[ocnt+15] = f->nep;
-=======
+
+    return;
+}
+
 void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
                                 int doy) {
     /*
@@ -182,7 +184,6 @@ void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
 
     /* C fluxes */
     fwrite(&(f->npp), sizeof(double), 1, c->ofp);
->>>>>>> origin/master
 
     return;
 }
@@ -271,8 +272,7 @@ int write_final_state(control *c, params *p, state *s)
 
 
 int ohandler(char *section, char *name, char *value, control *c, params *p,
-             state *s, int *match)
-{
+             state *s, int *match) {
     /*
     Search for matches of the git and state values and where found write the
     current state values to the output parameter file.

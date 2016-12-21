@@ -141,9 +141,7 @@ int main(int argc, char **argv)
         fill_up_solar_arrays(cw, c, ma, p);
     } else {
         read_daily_met_data(argv, c, ma);
->>>>>>> origin/master
     }
-
 
     if (c->spin_up) {
         spin_up_pools(cw, c, f, ma, m, p, s, nr);
@@ -221,7 +219,6 @@ int main(int argc, char **argv)
             free_dvector(nr->yerr, 1, nr->N);
         }
 
->>>>>>> origin/master
     } else {
         free(ma->prjday);
         free(ma->tam);
@@ -693,7 +690,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /*
             fprintf(stderr,
               "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
-             */              
+             */
         }
     }
     write_final_state(c, p, s);
