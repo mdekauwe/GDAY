@@ -1,6 +1,10 @@
 # GDAY model
 
-GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b). The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESTRA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993). The water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone.
+GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b).
+
+The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESPA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a [SPA](http://www.geos.ed.ac.uk/homes/mwilliam/spa.html)-style representation of hydraulics. GDAY-SPA resolves multiple soil layers, soil and leaf water potential and limits gas exchange following the Emax approach (see [MAESPA](http://maespa.github.io/manual.html) for more details).
+
+GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993).
 
 <p style="text-align:center"><img src="doc/outline.png" width="500"/></p>
 
@@ -71,7 +75,7 @@ out_fname = outputs/D1GDAYDUKEAMB.csv
 out_param_fname = params/NCEAS_DUKE_model_simulation_amb.cfg
 ```
 
-As all the model parameters are accessible via this file, these files can be quite long. Clearly it isn't necessary to list every parameter. The recommended approach is to use the [base file](example/params/base_start.cfg) and then customise whichever parameters are required via a shell script, e.g. see the python [wrapper script](example/example.py). This file just lists the parameters which needs to be changed and calls [adjust_gday_param_file.py](scripts/adjust_gday_param_file.py) to swap the parameters (listed as a python dictionary) with the default parameter. Clearly it would be trivial to write an alternative version in another language. I should highlight that I wouldn't necessarily trust the default values :).
+As all the model parameters are accessible via this file, these files can be quite long. Clearly it isn't necessary to list every parameter. The recommended approach is to use the [base file](example/params/base_start.cfg) and then customise whichever parameters are required via a shell script, e.g. see the python [wrapper script](example/example.py). This file just lists the parameters which needs to be changed and calls [adjust_gday_param_file.py](scripts/adjust_gday_param_file.py) to swap the parameters (listed as a python dictionary) with the default parameter. I have also written an equivalent version in R [adjust_gday_param_file.R](scripts/adjust_gday_param_file.R). I should highlight that I wouldn't necessarily trust the default values :).
 
 Finally, the options to print different the state and flux variables on the fly is a nice hangover from the python implementation. Sadly, this functionality doesn't actually exist in the C code, instead all the state and flux variables used in the FACE intercomparisons are dumped as standard.
 
@@ -100,7 +104,8 @@ tsoil | soil temperature | deg C
 vpd | vapour pressure deficit | kPa
 co2 | CO<sub>2</sub> concentration | ppm
 ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
-wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
+nfix | biological nitrogen fixation | t ha<sup>-1</sup> 30 min<sup>-1</sup>
+wind | wind speed | m s<sup>-1</sup>
 press | atmospheric pressure | kPa
 
 
@@ -111,7 +116,7 @@ Variable | Description | Units
 year | |
 doy  | day of year  | [0-365/6]
 tair | (daylight) air temperature | deg C
-rain | rainfall | mm 30 min<sup>-1</sup>
+rain | rainfall | mm day<sup>-1</sup>
 tsoil | soil temperature | deg C
 tam | morning air temperature | deg C
 tpm | afternoon air temperature | deg C
@@ -121,13 +126,32 @@ tday | day average air temperature (24 hrs) | deg C
 vpd_am | morning vapour pressure deficit | kPa
 vpd_pm | afternoon vapour pressure deficit | kPa
 co2 | CO<sub>2</sub> concentration | ppm
-ndep | nitrogen deposition | t ha<sup>-1</sup> 30 min<sup>-1</sup>
-wind | wind speed | m<sup>-2</sup> s<sup>-1</sup>
+ndep | nitrogen deposition | t ha<sup>-1</sup> day<sup>-1</sup>
+nfix | biological nitrogen fixation | t ha<sup>-1</sup> day<sup>-1</sup>
+wind | wind speed | m s<sup>-1</sup>
 press | atmospheric pressure | kPa
-wind_am | morning wind speed | m<sup>-2</sup> s<sup>-1</sup>
-wind_pm | afternoon wind speed | m<sup>-2</sup> s<sup>-1</sup>
-par_am | morning photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
-par_am | afternoon photosynthetically active radiation | umol m<sup>-2</sup> s<sup>-1</sup>
+wind_am | morning wind speed | m s<sup>-1</sup>
+wind_pm | afternoon wind speed | m s<sup>-1</sup>
+par_am | morning photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
+par_am | afternoon photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
+
+## Nitrogen inputs
+Nitrogen (N) entering the system via biological N fixation (BNF; tonnes ha<sup>-1</sup> yr<sup>-1</sup>) and N deposition (tonnes ha<sup>-1</sup> yr<sup>-1</sup>) are prescribed and passed via the met file. If information isn't available from the experiment GDAY is being applied to, BNF can be calculated as a function of evapotranspiration (ET) based on Cleveland et al. 1999.
+
+Following Smith et al. (2014), Biogeosciences and Wieder et al. (2015), ERL,
+we also suggest the conservation BNF equation (Fig. 1). For estimates of ET you can either use values by PFT based on Table 1 in Cleveland or use the sum of canopy evaporation and transpiration. Wieder et al (pg 3) argued that using total ET leads to a high bias in BNF estimates in arid regions.
+
+BNF (kg N ha-1 yr-1) is then calculated as a function of ET:
+
+```python
+BNF = 0.102 * (ET * mm_2_cm) + 0.524
+```
+
+## Hydraulics
+From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage between layers. We also implement the soil-to-leaf hydraulics from SPA, which includes weighting soil water potential. We limit gas exchange following the Emax approach (Duursma et al. 2008). This approach therefore assumes isohydric behaviour, i.e. the plant maintains a leaf water potential above a critical minimum value.
+
+We do not currently implement the thermal calculations which would allow you to estimate soil temperature.
+
 
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.
@@ -154,6 +178,9 @@ of photosynthesis from leaves to canopies without the errors of big-leaf models.
 8. Wang, Y-P. and Leuning R. (1998) A two-leaf model for canopy conductance, photosynthesis and portioning of available energy I: Model description and comparison with a multi-layered model. *Agricultural and Forest Meteorology*, 91, 89–111.
 9. Parton, W.J., Schimel, D.S., Cole, C.V., and Ojima, D.S. (1987) Analysis of factors controlling soil organic matter levels in Great Plains grasslands. Soil Sc. Soc. Am. J. 51: 1173–1179.
 10. Parton, W.J., Scurlock, J.M.O., Ojima, D.S., Gilmanov, T.G., Scholes, R.J., Schimel, D.S., Kirchner, T., Menaut, J.-C., Seastedt, T., Garcia Moya, E. Kamnalrut, A., and Kinyamario, J.I. (1993) Observations and modeling of biomass and soil or- ganic matter dynamics for the grassland biome worldwide. Global Biogeochem. Cycles, 7: 785–809.
+11. Duursma, RA and Kolari, P and Perämäki, M and Nikinmaa, E and Hari, P and Delzon, S and Loustau, D and Ilvesniemi, H and Pumpanen, J and Mäkelä, A. (2008) Predicting the decline in daily maximum transpiration rate of two pine stands during drought based on constant minimum leaf water potential and plant hydraulic conductance. Tree physiology, 28, 265-276.
+12. Duusma, R. A. and Medlyn, B. E. (2012) MAESPA: a model to study interactions between water limitation, environmental drivers and vegetation function at tree and stand levels, with an example application to [CO2] x drought interactions. Geoscientific Model Development, 5, 919-940.
+
 
 ## Contacts
 * [Martin De Kauwe](http://mdekauwe.github.io/).

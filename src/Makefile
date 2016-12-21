@@ -1,8 +1,13 @@
 ##############################################################################
 USER    := $(shell whoami)
 HOME     = /Users/$(USER)
-#CFLAGS   = -g -Wall -Wformat -fsanitize=bounds -fsanitize-undefined-trap-on-error -O0#-Wextra
-CFLAGS   = -O3
+#CFLAGS   = -g
+#CFLAGS   = -g -Wall -Wextra -Wpedantic \
+           -Wformat=2 -Wno-unused-parameter -Wshadow \
+           -Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
+           -Wredundant-decls -Wnested-externs -Wmissing-include-dirs \
+		   -fsanitize=bounds -fsanitize-undefined-trap-on-error
+CFLAGS   = -g #-O3
 ARCH     =  x86_64
 INCLS    = -I./include #-I/opt/local/include
 LIBS     = -lm #-L/opt/local/lib -lgsl -lgslcblas
@@ -13,8 +18,9 @@ PROGRAM  =  gday
 SOURCES  =  \
 $(PROGRAM).c version.c read_param_file.c read_met_file.c litter_production.c \
 utilities.c plant_growth.c photosynthesis.c water_balance.c \
-simple_moving_average.c soils.c optimal_root_model.c initialise_model.c \
-write_output_file.c phenology.c disturbance.c canopy.c radiation.c
+water_balance_sub_daily.c simple_moving_average.c soils.c optimal_root_model.c \
+initialise_model.c write_output_file.c phenology.c disturbance.c canopy.c \
+radiation.c zbrent.c odeint.c nrutil.c rkqs.c rkck.c
 
 OBJECTS = $(SOURCES:.c=.o)
 RM       =  rm -f

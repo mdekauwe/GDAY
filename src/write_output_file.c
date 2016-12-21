@@ -22,6 +22,25 @@ void open_output_file(control *c, char *fname, FILE **fp) {
         prog_error("Error opening output file for write on line", __LINE__);
 }
 
+void write_output_subdaily_header(control *c, FILE **fp) {
+    /*
+        Write 30 min fluxes headers to an output CSV file. This is very basic
+        for now...
+    */
+
+    /* Git version */
+    fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
+
+    /* time stuff */
+    fprintf(*fp, "year,doy,hod,");
+
+    /*
+    ** Canopy stuff...
+    */
+    fprintf(*fp, "an_canopy,rd_canopy,gsc_canopy,");
+    fprintf(*fp, "apar_canopy,trans_canopy,tleaf\n");
+    return;
+}
 
 void write_output_header(control *c, FILE **fp) {
     /*
@@ -33,14 +52,16 @@ void write_output_header(control *c, FILE **fp) {
     int ncols = c->ovars; /* this is hardwired, but obv should match below! */
     int nrows = c->total_num_days;
 
+
     /* Git version */
     fprintf(*fp, "#Git_revision_code:%s\n", c->git_code_ver);
 
     /* time stuff */
-    fprintf(*fp, "YEAR,DOY,");
+    fprintf(*fp, "year,doy,");
 
-    /* plant */
-    fprintf(*fp, "CF,LAI,CB,CW,CR,");
+    /*
+    ** STATE
+    */
 
     /* water*/
     fprintf(*fp, "BETA,SWC,ET,TRANS,SOIL_EVAP,CAN_EVAP,RUNOFF,");
@@ -52,6 +73,23 @@ void write_output_header(control *c, FILE **fp) {
         fprintf(*fp, "nrows=%d\n", nrows);
         fprintf(*fp, "ncols=%d\n", ncols);
     }
+    return;
+}
+
+void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
+                                  double doy, int hod) {
+    /*
+        Write sub-daily canopy fluxes - very basic for now
+    */
+
+    /* time stuff */
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,", year, doy, (double)hod);
+
+    /* Canopy stuff */
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,",
+                       cw->an_canopy, cw->rd_canopy, cw->gsc_canopy);
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f\n",
+                       cw->apar_canopy, cw->trans_canopy, cw->tleaf_new);
 
     return;
 }
@@ -89,7 +127,6 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     return;
 }
 
-
 void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
                                 int doy, double *odata, long ocnt) {
 
@@ -110,6 +147,42 @@ void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     odata[ocnt+13] = f->runoff;
     odata[ocnt+14] = f->npp;
     odata[ocnt+15] = f->nep;
+=======
+void write_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
+                                int doy) {
+    /*
+        Write daily state and fluxes headers to an output CSV file. Note we
+        are not writing anything useful like units as there is a wrapper
+        script to translate the outputs to a nice CSV file with input met
+        data, units and nice header information.
+    */
+    double temp;
+
+    /* time stuff */
+    temp = (double)year;
+    fwrite(&temp, sizeof(double), 1, c->ofp);
+    temp = (double)doy;
+    fwrite(&temp, sizeof(double), 1, c->ofp);
+
+
+    /* plant */
+    fwrite(&(s->shoot), sizeof(double), 1, c->ofp);
+    fwrite(&(s->lai), sizeof(double), 1, c->ofp);
+    fwrite(&(s->branch), sizeof(double), 1, c->ofp);
+    fwrite(&(s->stem), sizeof(double), 1, c->ofp);
+    fwrite(&(s->root), sizeof(double), 1, c->ofp);
+
+    /* water */
+    fwrite(&(s->wtfac_root), sizeof(double), 1, c->ofp);
+    fwrite(&(s->pawater_root), sizeof(double), 1, c->ofp);
+    fwrite(&(f->transpiration), sizeof(double), 1, c->ofp);
+    fwrite(&(f->soil_evap), sizeof(double), 1, c->ofp);
+    fwrite(&(f->canopy_evap), sizeof(double), 1, c->ofp);
+    fwrite(&(f->runoff), sizeof(double), 1, c->ofp);
+
+    /* C fluxes */
+    fwrite(&(f->npp), sizeof(double), 1, c->ofp);
+>>>>>>> origin/master
 
     return;
 }

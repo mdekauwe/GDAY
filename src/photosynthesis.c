@@ -30,8 +30,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     */
 
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
-    double A, B, C, arg1, arg2, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
-    double Rd0 = 0.92; /* Dark respiration rate make a paramater! */
+    double A, B, C, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
+    /*double Rd0 = 0.92;  Dark respiration rate make a paramater! */
     int    idx, qudratic_error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
@@ -74,7 +74,14 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         if (dleaf_kpa < 0.05) {
             dleaf_kpa = 0.05;
         }
-        gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
+
+        // This is calculated by SPA hydraulics so we don't need to account for
+        // water stress on gs.
+        if (c->water_balance == HYDRAULICS) {
+            gs_over_a = (1.0 + p->g1 / sqrt(dleaf_kpa)) / Cs;
+        } else {
+            gs_over_a = (1.0 + (p->g1 * s->wtfac_root) / sqrt(dleaf_kpa)) / Cs;
+        }
         g0 = g0_zero;
 
         /* Solution when Rubisco activity is limiting */
@@ -122,6 +129,81 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         cw->gsc_leaf[idx] = MAX(g0, g0 + gs_over_a * cw->an_leaf[idx]);
 
     }
+
+    // Pack calculated values into a temporary array as we may need to
+    // recalculate A if water is limiting, i.e. the Emax case below
+    if (c->water_balance == HYDRAULICS) {
+        cw->ts_Cs = Cs;
+        cw->ts_vcmax = vcmax;
+        cw->ts_km = km;
+        cw->ts_gamma_star = gamma_star;
+        cw->ts_rd = rd;
+        cw->ts_Vj = Vj;
+    }
+
+    return;
+}
+
+void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
+                            state *s) {
+    /*
+        Calculate photosynthesis as above but for here we are resolving Ci and
+        A for a given gs (Jarvis style) to get the Emax solution.
+
+        This follows MAESPA code.
+    */
+
+    double gamma_star, km, jmax, vcmax, rd, Vj, gs;
+    double A, B, C, Ac, Aj, Cs;
+    double g0_zero = 1E-09; /* numerical issues, don't use zero */
+    int    idx, qudratic_error = FALSE, large_root;
+
+    // Unpack calculated properties from first photosynthesis solution
+    idx = cw->ileaf;
+    Cs = cw->ts_Cs;
+    vcmax = cw->ts_vcmax;
+    km = cw->ts_km;
+    gamma_star = cw->ts_gamma_star;
+    rd = cw->ts_rd;
+    Vj = cw->ts_Vj;
+
+    // A very low minimum; for numerical stability.
+    if (cw->gsc_leaf[idx] < g0_zero) {
+        cw->gsc_leaf[idx] = g0_zero;
+    }
+    gs = cw->gsc_leaf[idx];
+
+    /* Solution when Rubisco rate is limiting */
+    //A = 1.0 / gs;
+    //B = (0.0 - vcmax) / gs - Cs - km;
+    //C = vcmax * (Cs - gamma_star);
+
+    // From MAESTRA, not sure of the reason for the difference.
+    A = 1.0 / gs;
+    B = (rd - vcmax) / gs - Cs - km;
+    C = vcmax * (Cs - gamma_star) - rd * (Cs + km);
+
+    qudratic_error = FALSE;
+    large_root = FALSE;
+    Ac = quad(A, B, C, large_root, &qudratic_error);
+    if (qudratic_error) {
+        Ac = 0.0;
+    }
+
+    /* Solution when electron transport rate is limiting */
+    A = 1.0 / gs;
+    B = (rd - Vj) / gs - Cs - 2.0 * gamma_star;
+    C = Vj * (Cs - gamma_star) - rd * (Cs + 2.0 * gamma_star);
+
+    qudratic_error = FALSE;
+    large_root = FALSE;
+    Aj = quad(A, B, C, large_root, &qudratic_error);
+    if (qudratic_error) {
+        Aj = 0.0;
+    }
+
+    cw->an_leaf[idx] = MIN(Ac, Aj);
+
     return;
 }
 
@@ -202,14 +284,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         vcmax : float
             the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     */
-    double jmax25, vcmax25, lai_leaf;
+    double jmax25, vcmax25;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
-    double jmaxna = p->jmaxna;
-    double jmaxnb = p->jmaxnb;
-    double vcmaxna = p->vcmaxna;
-    double vcmaxnb = p->vcmaxnb;
     double cscalar = cw->cscalar[cw->ileaf];
 
     if (c->modeljm == 0) {
@@ -252,8 +330,10 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     }
 
     /* reduce photosynthetic capacity with moisture stress */
-    *jmax *= s->wtfac_root;
-    *vcmax *= s->wtfac_root;
+    if (c->water_balance == BUCKET) {
+        *jmax *= s->wtfac_root;
+        *vcmax *= s->wtfac_root;
+    } // Should add non-stomal limitation here
 
     /* Jmax/Vcmax forced linearly to zero at low T */
     if (tleaf < lower_bound) {
@@ -301,9 +381,6 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
     /* exponential coefficient of the temperature response of foliage
        respiration */
     double q10f = 0.067;
-
-    /* Temperature sensitivity of Rd. */
-    double Q10 = 2.0;
 
     if (tleaf >= tbelow)
         Rd = Rd0 * day_resp * exp(q10f * (tleaf - rtemp));
@@ -515,9 +592,13 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
 
-    /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, alpha_am);
-    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm);
+    /* Covert PAR units (umol PAR MJ-1) */
+    conv = MJ_TO_J * J_2_UMOL;
+    m->par *= conv;
+
+    /* LUE (umol C umol-1 PAR) ; note conversion in epsilon */
+    lue_am = epsilon(p, asat_am, m->par, alpha_am, daylen);
+    lue_pm = epsilon(p, asat_pm, m->par, alpha_pm, daylen);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -528,8 +609,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     else
         f->apar = m->par * s->fipar;
 
-    /* convert umol m-2 s-1 -> gC m-2 d-1 */
-    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
+    /* convert umol m-2 d-1 -> gC m-2 d-1 */
+    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
@@ -540,7 +621,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
-    f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
+    f->apar *= UMOL_2_JOL * J_TO_MJ;
 
     return;
 }
@@ -885,7 +966,8 @@ double assim(double ci, double gamma_star, double a1, double a2) {
 
 }
 
-double epsilon(params *p, double asat, double par, double alpha) {
+double epsilon(params *p, double asat, double par, double alpha,
+               double daylen) {
     /*
     Canopy scale LUE using method from Sands 1995, 1996.
 
@@ -921,11 +1003,10 @@ double epsilon(params *p, double asat, double par, double alpha) {
 
     Notes:
     ------
-    NB. I've removed some of the unit conversions as they are unnecessary.
-    Sands had gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
+    NB. I've removed solar irradiance to PAR conversion. Sands had
+    gamma = 2000000 to convert from SW radiation in MJ m-2 day-1 to
     umol PAR on the basis that 1 MJ m-2 = 2.08 mol m-2 & mol to umol = 1E6.
-    He then has a divide by h (where h is in seconds) to go from day to seconds
-    of PAR. But if we just pass PAR in umol m-2 s-1 we don't need all of this
+    We are passing PAR in umol m-2 d-1, thus avoiding the above.
 
     References:
     -----------
@@ -934,15 +1015,18 @@ double epsilon(params *p, double asat, double par, double alpha) {
       22, 601-14.
 
     */
-    double delta, q, integral_g, sinx, arg1, arg2, arg3, lue;
+    double delta, q, integral_g, sinx, arg1, arg2, arg3, lue, h;
     int i;
 
     /* subintervals scalar, i.e. 6 intervals */
     delta = 0.16666666667;
 
+    /* number of seconds of daylight */
+    h = daylen * SECS_IN_HOUR;
+
     if (asat > 0.0) {
         /* normalised daily irradiance */
-        q = M_PI * p->kext * alpha * par / (2.0 * asat);
+        q = M_PI * p->kext * alpha * par / (2.0 * h * asat);
         integral_g = 0.0;
         for (i = 1; i < 13; i+=2) {
             sinx = sin(M_PI * i / 24.);
@@ -999,7 +1083,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     double N0, vcmax_am, vcmax_pm,
            ci_am, ci_pm, asat_am, asat_pm, lue_am, lue_pm, lue_avg,
            vcmax25_am, vcmax25_pm, par_per_sec, M_am, M_pm, A_am, A_pm,
-           Rd_am, Rd_pm, apar_half_day, SEC_2_HALF_DAY, conv;
+           Rd_am, Rd_pm, conv;
 
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
@@ -1025,8 +1109,12 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     calculate_vcmax_parameter(p, s, m->Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
     calculate_vcmax_parameter(p, s, m->Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
 
-    /* Rubisco and light-limited capacity (Appendix, 2B) */
+    /* Covert solar irradiance to PAR (umol PAR MJ-1) */
+    conv = MJ_TO_J * J_2_UMOL;
+    m->par *= conv;
     par_per_sec = m->par / (60.0 * 60.0 * daylen);
+
+    /* Rubisco and light-limited capacity (Appendix, 2B) */
     M_am = quadratic(beta1, -(vcmax_am + p->alpha_c4 * par_per_sec),
                     (vcmax_am * p->alpha_c4 * par_per_sec));
     M_pm = quadratic(beta1, -(vcmax_pm + p->alpha_c4 * par_per_sec),
@@ -1048,8 +1136,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     asat_pm = A_pm - Rd_pm;
 
     /* LUE (umol C umol-1 PAR) */
-    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4);
-    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4);
+    lue_am = epsilon(p, asat_am, m->par, p->alpha_c4, daylen);
+    lue_pm = epsilon(p, asat_pm, m->par, p->alpha_c4, daylen);
 
     /* use average to simulate canopy photosynthesis */
     lue_avg = (lue_am + lue_pm) / 2.0;
@@ -1060,8 +1148,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     else
         f->apar = m->par * s->fipar;
 
-    /* convert umol m-2 s-1 -> gC m-2 d-1 */
-    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C * (60.0 * 60.0 * daylen);
+    /* convert umol m-2 d-1 -> gC m-2 d-1 */
+    conv = UMOL_TO_MOL * MOL_C_TO_GRAMS_C;
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
@@ -1072,7 +1160,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
-    f->apar *= UMOL_2_JOL * J_TO_MJ * 60.0 * 60.0 * daylen;
+    f->apar *= UMOL_2_JOL * J_TO_MJ;
 
     return;
 }

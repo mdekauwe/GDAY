@@ -1,4 +1,66 @@
 #include "water_balance.h"
+#include "zbrent.h"
+#include "nrutil.h"
+#include "odeint.h"
+#include "rkck.h"
+#include "rkqs.h"
+
+void initialise_soils_day(control *c, fluxes *f, params *p, state *s) {
+    /* Initialise soil water state & parameters  */
+
+    double *fsoil_top = NULL, *fsoil_root = NULL;
+    int     i;
+
+    /* site params not known, so derive them based on Cosby et al */
+
+    if (c->calc_sw_params) {
+        fsoil_top = get_soil_fracs(p->topsoil_type);
+        fsoil_root = get_soil_fracs(p->rootsoil_type);
+
+        /* top soil */
+        calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,
+                         &p->theta_sp_topsoil, &p->b_topsoil,
+                         &p->psi_sat_topsoil);
+
+        /* Plant available water in top soil (mm) */
+        p->wcapac_topsoil = p->topsoil_depth  *\
+                            (p->theta_fc_topsoil - p->theta_wp_topsoil);
+        /* Root zone */
+        calc_soil_params(fsoil_root, &p->theta_fc_root, &p->theta_wp_root,
+                         &p->theta_sp_root, &p->b_root, &p->psi_sat_root);
+
+        /* Plant available water in rooting zone (mm) */
+        p->wcapac_root = p->rooting_depth * \
+                            (p->theta_fc_root - p->theta_wp_root);
+    }
+
+
+    /* calculate Landsberg and Waring SW modifier parameters if not
+       specified by the user based on a site calibration */
+    if (p->ctheta_topsoil < -900.0 && p->ntheta_topsoil  < -900.0 &&
+        p->ctheta_root < -900.0 && p->ntheta_root < -900.0) {
+        get_soil_params(p->topsoil_type, &p->ctheta_topsoil, &p->ntheta_topsoil);
+        get_soil_params(p->rootsoil_type, &p->ctheta_root, &p->ntheta_root);
+    }
+    /*
+    printf("%f\n", p->wcapac_topsoil);
+    printf("%f\n\n", p->wcapac_root);
+
+    printf("%f\n", p->ctheta_topsoil);
+    printf("%f\n", p->ntheta_topsoil);
+    printf("%f\n", p->ctheta_root);
+    printf("%f\n", p->ntheta_root);
+    printf("%f\n", p->rooting_depth);
+
+    exit(1); */
+
+
+
+    free(fsoil_top);
+    free(fsoil_root);
+
+    return;
+}
 
 
 void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
@@ -33,69 +95,43 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     double soil_evap, et, interception, runoff, conv,
            transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
-           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, trans_am,
-           omega_am, gs_mol_m2_hfday_am, ga_mol_m2_hfday_am, gpp_am,
-           gpp_pm, trans_pm, omega_pm, gs_mol_m2_hfday_pm, ga_mol_m2_hfday_pm,
-           throughfall, canopy_evap;
+           LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
+           gpp_am, gpp_pm, omega_pm, throughfall,
+           canopy_evap;
 
     SEC_2_DAY = 60.0 * 60.0 * daylen;
     DAY_2_SEC = 1.0 / SEC_2_DAY;
 
-    if (c->sub_daily) {
-        /* calculate potential canopy evap rate, this may be reduced later
-           depending on canopy water storage */
-        canopy_evap = calc_canopy_evaporation(m, p, s, rnet_leaf);
+    /* don't need to work out the canopy evap */
+    calc_interception(c, m, p, f, s, &throughfall, &interception,
+                      &canopy_evap);
 
-        /* mol m-2 s-1 to mm/day */
-        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-        canopy_evap *= conv;
-        calc_interception(c, m, p, f, s, &throughfall, &interception,
-                          &canopy_evap);
-    } else {
-        /* don't need to work out the canopy evap */
-        calc_interception(c, m, p, f, s, &throughfall, &interception,
-                          &canopy_evap);
+    net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
+    net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
+    soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
 
-    }
+    /* gC m-2 day-1 -> umol m-2 s-1 */
+    conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
+    gpp_am = f->gpp_am * conv;
+    gpp_pm = f->gpp_pm * conv;
 
-    net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-    soil_evap = calc_soil_evaporation(m, p, s, net_rad);
-    if (c->sub_daily) {
-        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-    } else {
-        net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
-        net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
-        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
-    }
+    penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
+                          net_rad_am, m->Ca, gpp_am, &ga_am, &gs_am,
+                          &transpiration_am, &LE_am, &omega_am);
+    penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
+                          net_rad_pm, m->Ca, gpp_pm, &ga_pm, &gs_pm,
+                          &transpiration_pm, &LE_pm, &omega_pm);
 
-    if (c->sub_daily) {
-        /* mol m-2 s-1 to mm/30 min */
-        transpiration = trans_leaf * MOLE_WATER_2_G_WATER * G_TO_KG * \
-                        SEC_2_HLFHR;
+    /* mol m-2 s-1 to mm/day */
+    conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
+    transpiration = (transpiration_am + transpiration_pm) * conv;
 
-    } else {
-        /* gC m-2 day-1 -> umol m-2 s-1 */
-        conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
-        gpp_am = f->gpp_am * conv;
-        gpp_pm = f->gpp_pm * conv;
+    f->omega = (omega_am + omega_pm) / 2.0;
 
-        penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
-                              net_rad_am, m->Ca, gpp_am, &ga_am, &gs_am,
-                              &transpiration_am, &LE_am, &omega_am);
-        penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
-                              net_rad_pm, m->Ca, gpp_pm, &ga_pm, &gs_pm,
-                              &transpiration_pm, &LE_pm, &omega_pm);
+    /* output in mol H20 m-2 s-1 */
+    f->gs_mol_m2_sec = gs_am + gs_pm;
+    f->ga_mol_m2_sec = ga_am + ga_pm;
 
-        /* mol m-2 s-1 to mm/day */
-        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
-        transpiration = (transpiration_am + transpiration_pm) * conv;
-
-        f->omega = (omega_am + omega_pm) / 2.0;
-
-        /* output in mol H20 m-2 s-1 */
-        f->gs_mol_m2_sec = gs_am + gs_pm;
-        f->ga_mol_m2_sec = ga_am + ga_pm;
-    }
 
     /*
     ** NB. et, transpiration & soil evap may all be adjusted in
@@ -106,13 +142,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     update_water_storage(c, f, p, s, throughfall, interception, canopy_evap,
                          &transpiration, &soil_evap, &et, &runoff);
 
-    if (c->sub_daily) {
-        sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
-                                throughfall, canopy_evap, runoff, omega_leaf);
-    } else {
-        update_daily_water_struct(f, soil_evap, transpiration, et, interception,
-                                  throughfall, canopy_evap, runoff);
-    }
+    update_daily_water_struct(f, soil_evap, transpiration, et, interception,
+                              throughfall, canopy_evap, runoff);
 
     return;
 }
@@ -123,65 +154,91 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
                           double *soil_evap, double *et, double *runoff) {
     /*
         Calculate top soil, root zone plant available water & runoff.
-
         NB. et, transpiration & soil evap may all be adjusted in
         if we don't have sufficient water
-
     */
-    double trans_frac, transpiration_topsoil, transpiration_root, previous,
+    double transpiration_topsoil, transpiration_root, previous,
            delta_topsoil, topsoil_loss;
 
-    /* reduce trans frac extracted from the topsoil if the layer is dry */
-    trans_frac = p->fractup_soil * s->wtfac_topsoil;
-    transpiration_topsoil = trans_frac * *transpiration;
+    /* This is used to account for transpiration losses from the top layer. */
+    transpiration_topsoil = s->wtfac_topsoil * p->fractup_soil * *transpiration;
 
     /* Top soil layer */
     previous = s->pawater_topsoil;
     topsoil_loss = transpiration_topsoil + *soil_evap;
     s->pawater_topsoil += throughfall - topsoil_loss;
 
+    /* We have attempted to evap more water than we have */
     if (s->pawater_topsoil < 0.0) {
+
+        /* make the layer completely dry */
         s->pawater_topsoil = 0.0;
 
-        /* use any available water to meet soil evap demands first */
-        if (*soil_evap > previous) {
-            *soil_evap = previous;
-            transpiration_topsoil = 0.0;
+        /*
+        ** if there was any water in the layer before we over-evaporated
+        ** then use this to do some of the evaporation required
+        */
+        if (isgreater(previous, 0.0)) {
+            *soil_evap = previous / 2.0;
+            transpiration_topsoil = previous / 2.0;
+            /**soil_evap = previous;
+            transpiration_topsoil = previous - *soil_evap;*/
         } else {
-            *soil_evap = previous;
-            transpiration_topsoil = previous - *soil_evap;
+            *soil_evap = 0.0;
+            transpiration_topsoil = 0.0;
         }
+
+    /*
+    ** We have more water than the layer can hold, so set the layer to the
+    ** maximum
+    */
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
-    delta_topsoil = MAX(0.0, s->pawater_topsoil + topsoil_loss - previous);
 
-    /* Account for water lost from the topsoil from throughfall to rootzone */
-    throughfall -= delta_topsoil;
-    throughfall = MAX(0.0, throughfall);
+    /*
+    ** Root zone
+    ** - this is the layer we are actually taking all the water out of.
+    **   it really encompasses the topsoil so as well, so we need to have
+    **   the soil evpaoration here as well, although we aren't adjusting
+    **   that if water isn't available as we've already calculated that
+    **   above based on the top soil layer. Ditto the transpiration taken
+    **   from the top soil layer.
+    */
 
-    /* Account for transpiration already extracted from the topsoil */
-    transpiration_root = *transpiration - transpiration_topsoil;
-
-    /* Root zone */
     previous = s->pawater_root;
-    s->pawater_root += throughfall - transpiration_root;
+    transpiration_root = *transpiration - transpiration_topsoil;
+    s->pawater_root += throughfall - transpiration_root - *soil_evap;
 
-    /* calculate runoff and remove any excess from rootzone */
-    if (s->pawater_root > p->wcapac_root) {
-        *runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= *runoff;
-    } else if (s->pawater_root < 0.0) {
+    /* Default is we have no runoff */
+    *runoff = 0.0;
+
+    /* We attempted to extract more water than the rootzone holds */
+    if (s->pawater_root < 0.0) {
+
+        /* make the layer completely dry */
         s->pawater_root = 0.0;
-        transpiration_root = previous;
-        *runoff = 0.0;
-    } else {
-        *runoff = 0.0;
+
+        /*
+        ** if there was any water in the layer before we over-evaporated
+        ** then use this to do some of the evaporation required
+        */
+        if (isgreater(previous, 0.0)) {
+            transpiration_root = previous;
+        } else {
+            transpiration_root = 0.0;
+        }
+
+    /* We have more water than the rootzone can hold -> runoff */
+    } else if (s->pawater_root > p->wcapac_root) {
+        *runoff = s->pawater_root - p->wcapac_root;
+        s->pawater_root = p->wcapac_root;
     }
 
     /* Update transpiration & et accounting for the actual available water */
     *transpiration = transpiration_topsoil + transpiration_root;
     *et = *transpiration + *soil_evap + canopy_evap;
+
     s->delta_sw_store = s->pawater_root - previous;
 
     /* calculated at the end of the day for sub_daily */
@@ -200,68 +257,99 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
     return;
 }
 
-
 void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
                                   met *m) {
     /* Calculate root and top soil plant available water and runoff.
-
     Soil drainage is estimated using a "leaky-bucket" approach with two
     soil layers. In reality this is a combined drainage and runoff
     calculation, i.e. "outflow". There is no drainage out of the "bucket"
     soil.
-
     Returns:
     --------
     outflow : float
         outflow [mm d-1]
     */
-    double transpiration_topsil, transpiration_root, previous, delta_topsoil;
+    double transpiration_topsoil, transpiration_root, previous,
+           delta_topsoil, topsoil_loss;
 
-    /* reduce transpiration from the top soil if it is dry */
-    transpiration_topsil = p->fractup_soil * s->wtfac_topsoil * f->transpiration;
+    /* This is used to account for transpiration losses from the top layer. */
+    transpiration_topsoil = (s->wtfac_topsoil * p->fractup_soil * \
+                             f->transpiration);
 
-    /* Total soil layer */
+    /* Top soil layer */
     previous = s->pawater_topsoil;
-    s->pawater_topsoil += f->throughfall - transpiration_topsil - f->soil_evap;
+    topsoil_loss = transpiration_topsoil + f->soil_evap;
+    s->pawater_topsoil += f->throughfall - topsoil_loss;
 
+    /* We have attempted to evap more water than we have */
     if (s->pawater_topsoil < 0.0) {
+
+        /* make the layer completely dry */
         s->pawater_topsoil = 0.0;
 
-        /* use any available water to meet soil evap demands first */
-        if (f->soil_evap > previous) {
-            f->soil_evap = previous;
-            transpiration_topsil = 0.0;
+        /*
+        ** if there was any water in the layer before we over-evaporated
+        ** then use this to do some of the evaporation required
+        */
+        if (isgreater(previous, 0.0)) {
+            f->soil_evap = previous / 2.0;
+            transpiration_topsoil = previous / 2.0;
+            /**soil_evap = previous;
+            transpiration_topsoil = previous - *soil_evap;*/
         } else {
-            f->soil_evap = previous;
-            transpiration_topsil = previous - f->soil_evap;
+            f->soil_evap = 0.0;
+            transpiration_topsoil = 0.0;
         }
+
+    /*
+    ** We have more water than the layer can hold, so set the layer to the
+    ** maximum
+    */
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
     }
 
-    delta_topsoil = MAX(0.0, previous - s->pawater_topsoil);
+    /*
+    ** Root zone
+    ** - this is the layer we are actually taking all the water out of.
+    **   it really encompasses the topsoil so as well, so we need to have
+    **   the soil evpaoration here as well, although we aren't adjusting
+    **   that if water isn't available as we've already calculated that
+    **   above based on the top soil layer. Ditto the transpiration taken
+    **   from the top soil layer.
+    */
 
-
-    /* Total root zone */
     previous = s->pawater_root;
-    transpiration_root = f->transpiration - transpiration_topsil;
-    s->pawater_root += (f->throughfall - delta_topsoil) - transpiration_root;
+    transpiration_root = f->transpiration - transpiration_topsoil;
+    s->pawater_root += f->throughfall - transpiration_root - f->soil_evap;
 
-    /* calculate runoff and remove any excess from rootzone */
-    if (s->pawater_root > p->wcapac_root) {
+    /* Default is we have no runoff */
+    f->runoff = 0.0;
+
+    /* We attempted to extract more water than the rootzone holds */
+    if (s->pawater_root < 0.0) {
+
+        /* make the layer completely dry */
+        s->pawater_root = 0.0;
+
+        /*
+        ** if there was any water in the layer before we over-evaporated
+        ** then use this to do some of the evaporation required
+        */
+        if (isgreater(previous, 0.0)) {
+            transpiration_root = previous;
+        } else {
+            transpiration_root = 0.0;
+        }
+
+    /* We have more water than the rootzone can hold -> runoff */
+    } else if (s->pawater_root > p->wcapac_root) {
         f->runoff = s->pawater_root - p->wcapac_root;
-        s->pawater_root -= f->runoff;
-    } else {
-        f->runoff = 0.0;
+        s->pawater_root = p->wcapac_root;
     }
 
-    if (s->pawater_root < 0.0) {
-        s->pawater_root = 0.0;
-        transpiration_root = previous;
-    } else if (s->pawater_root > p->wcapac_root)
-        s->pawater_root = p->wcapac_root;
-
-    f->transpiration = transpiration_topsil + transpiration_root;
+    /* Update transpiration & et accounting for the actual available water */
+    f->transpiration = transpiration_topsoil + transpiration_root;
     f->et = f->transpiration + f->soil_evap + f->canopy_evap;
 
     s->delta_sw_store = s->pawater_root - previous;
@@ -417,7 +505,7 @@ double calc_soil_evaporation(met *m, params *p, state *s, double net_rad) {
         soil evaporation [mm d-1]
 
     */
-    double lambda, gamma, slope, arg1, arg2, soil_evap;
+    double lambda, gamma, slope, soil_evap;
 
     lambda = calc_latent_heat_of_vapourisation(m->tair);
     gamma = calc_pyschrometric_constant(m->press, lambda);
@@ -541,7 +629,7 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
 
 
     */
-    double gb, gv, gsc, epsilon, arg1, arg2, slope, gamma, lambda;
+    double gv, gsc, epsilon, slope, gamma, lambda;
 
     /* stomtal conductance to CO2 */
     gsc = calc_stomatal_conductance(p, s, vpd, ca, gpp);
@@ -591,8 +679,7 @@ void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
 
 
     */
-    double slope, epsilon, lambda, arg1, arg2, gradn, gbhu, gbhf, gbh,
-           gbv, gsv, gamma, Tdiff, sensible_heat, ema, Tk;
+    double slope, epsilon, lambda, gradn, gbhu, gbhf, gbh, gbv, gsv, gamma;
 
     /* Radiation conductance (mol m-2 s-1) */
     gradn = calc_radiation_conductance(m->tair);
@@ -669,7 +756,7 @@ void penman_monteith(double press, double vpd, double rnet, double slope,
         ------------
         * Medlyn et al. (2007), Tree Physiology, 27, 1687-1699.
     */
-    double arg1, arg2, epsilon;
+    double arg1, arg2;
 
     if (*gv > 0.0) {
         arg1 = slope * rnet + vpd * *gh * CP * MASS_AIR;
@@ -855,7 +942,6 @@ double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,
         See Leuning et al (1995) PC&E 18:1183-1200 Eqns E3 & E4
     */
     double cmolar, Tk, gbh, grashof, leaf_width_cubed;
-    double tolerance = 1E-08;
 
     Tk = tair + DEG_TO_KELVIN;
     cmolar = press / (RGAS * Tk);
@@ -941,6 +1027,7 @@ double calc_sat_water_vapour_press(double tac) {
     return (613.75 * exp(17.502 * tac / (240.97 + tac)));
 }
 
+<<<<<<< HEAD
 void initialise_soil_moisture_parameters(control *c, params *p) {
     /*
       initialise parameters, if these are not known for the site use
@@ -1000,6 +1087,8 @@ void initialise_soil_moisture_parameters(control *c, params *p) {
 
     return;
 }
+=======
+>>>>>>> origin/master
 
 
 double *get_soil_fracs(char *soil_type) {
@@ -1211,9 +1300,15 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         water availability factor for the root zone [0,1]
     */
 
-    double moisture_ratio_topsoil, moisture_ratio_root, psi_swp_topsoil, theta;
+    double moisture_ratio_topsoil, moisture_ratio_root;
+    double b, sf, psi_f;
+    /*double psi_swp_topsoil;*/
 
-    if (c->sw_stress_model == 0) {
+    //if (c->water_balance == HYDRAULICS) {
+    //    continue;
+    //    // should put non-stomatal limitation stuff in here.
+
+    if (c->water_balance == BUCKET && c->sw_stress_model == 0) {
         /* JULES type model, see Egea et al. (2011) */
         s->wtfac_topsoil = calc_beta(s->pawater_topsoil, p->topsoil_depth,
                                      p->theta_fc_topsoil, p->theta_wp_topsoil,
@@ -1223,7 +1318,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
                                      p->theta_fc_root, p->theta_wp_root,
                                      p->qs);
 
-    } else if (c->sw_stress_model == 1) {
+    } else if (c->water_balance == BUCKET && c->sw_stress_model == 1) {
         /* Landsberg and Waring, (1997) */
         moisture_ratio_topsoil = s->pawater_topsoil / p->wcapac_topsoil;
         moisture_ratio_root = s->pawater_root / p->wcapac_root;
@@ -1234,14 +1329,29 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         s->wtfac_root = calc_sw_modifier(moisture_ratio_root, p->ctheta_root,
                                          p->ntheta_root);
 
-    } else if (c->sw_stress_model == 2) {
+    } else if (c->water_balance == BUCKET && c->sw_stress_model == 2) {
         /*
             Zhou et al.(2013) Agricultural & Forest Met. 182–183, 204–214
             Assuming that overnight 􏰀pre-dawn leaf water potential =
             pre-dawn soil water potential.
         */
-        fprintf(stderr, "Zhou model not implemented\n");
-        exit(EXIT_FAILURE);
+        //fprintf(stderr, "Zhou model not implemented\n");
+        //exit(EXIT_FAILURE);
+
+        // Hardwiring this for testing. Values taken from Table, 1 in
+        // De Kauwe et al. 2015, Biogeosciences
+        b = 0.82;
+        sf = 1.9;
+        psi_f = -1.85;
+
+        s->wtfac_topsoil = exp(b * s->predawn_swp);
+        s->wtfac_root = exp(b * s->predawn_swp);
+
+        //s->wtfac_topsoil_ns = (1.0 + exp(sf * psi_f)) / \
+        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
+        //s->wtfac_root_ns = (1.0 + exp(sf * psi_f)) / \
+        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
+
         /*
         s->wtfac_topsoil = exp(p->g1_b * s->psi_s_topsoil);
         s->wtfac_root = exp(p->g1_b * s->psi_s_root);
@@ -1301,7 +1411,7 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
 }
 
 
-void calc_soil_water_potential(control *c, params *p, state *s) {
+void _calc_soil_water_potential(control *c, params *p, state *s) {
     /*
         Estimate pre-dawn soil water potential from soil water content
     */
@@ -1322,25 +1432,6 @@ void calc_soil_water_potential(control *c, params *p, state *s) {
 }
 
 
-void sum_hourly_water_fluxes(fluxes *f, double soil_evap_hlf_hr,
-                             double transpiration_hlf_hr, double et_hlf_hr,
-                             double interception_hlf_hr,
-                             double thoughfall_hlf_hr,
-                             double canopy_evap_hlf_hr,
-                             double runoff_hlf_hr, double omega_hlf_hr) {
-
-    /* add half hour fluxes to day total store */
-    f->soil_evap += soil_evap_hlf_hr;
-    f->transpiration += transpiration_hlf_hr;
-    f->et += et_hlf_hr;
-    f->interception += interception_hlf_hr;
-    f->throughfall += thoughfall_hlf_hr;
-    f->canopy_evap += canopy_evap_hlf_hr;
-    f->runoff += runoff_hlf_hr;
-    f->omega += omega_hlf_hr; /* average at the end of hour loop */
-
-    return;
-}
 
 void update_daily_water_struct(fluxes *f, double day_soil_evap,
                                double day_transpiration, double day_et,
@@ -1370,6 +1461,7 @@ void zero_water_day_fluxes(fluxes *f) {
     f->throughfall = 0.0;
     f->runoff = 0.0;
     f->gs_mol_m2_sec = 0.0;
+    f->day_ppt = 0.0;
 
     return;
 }

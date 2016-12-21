@@ -17,15 +17,19 @@
 * =========================================================================== */
 #include "plant_growth.h"
 #include "water_balance.h"
-
+#include "zbrent.h"
 
 
 
 void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
-                     met *m, params *p, state *s, double day_length, int doy,
-                     double fdecay, double rdecay)
+                     met *m, nrutil *nr, params *p, state *s, double day_length,
+                     int doy, double fdecay, double rdecay)
 {
+<<<<<<< HEAD
     double previous_topsoil_store, dummy=-999.9,
+=======
+    double previous_topsoil_store, dummy=0.0,
+>>>>>>> origin/master
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
@@ -35,7 +39,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     if (c->sub_daily) {
         /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
-        canopy(cw, c, f, ma, m, p, s);
+        canopy(cw, c, f, ma, m, nr, p, s);
     } else {
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, day_length);
@@ -80,8 +84,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     recalc_wb = nitrogen_allocation(c, f, p, s, ncbnew, nccnew, ncwimm, ncwnew,
                                     fdecay, rdecay, doy);
 
-    if (c->exudation) {
-        calc_root_exudation_release(f, s);
+    if (c->exudation && c->alloc_model != GRASSES) {
+        calc_root_exudation(c, f, p, s);
     }
 
     /* If we didn't have enough N available to satisfy wood demand, NPP
@@ -107,39 +111,60 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
 
     }
     update_plant_state(c, f, p, s, fdecay, rdecay, doy);
+
     precision_control(f, s);
 
     return;
 }
 
-void calc_root_exudation_release(fluxes *f, state *s) {
-    /* Root exudation modelled to occur: with (1) fine root growth or (2)
-       as a result of excess C. A fraction of fine root growth is allocated
-       to stimulate exudation. This fraction increases with N stress. */
-    double leaf_CN, frac_to_rexc, presc_leaf_CN, fine_root_NC;
+void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
+    /*
+        Rhizodeposition (f->root_exc) is assumed to be a fraction of the
+        current root growth rate (f->cproot), which increases with increasing
+        N stress of the plant.
+    */
+    double CN_leaf, frac_to_rexc, CN_ref, arg;
 
     if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
         /* nothing happens during leaf off period */
-        leaf_CN = 0.0;
+        CN_leaf = 0.0;
         frac_to_rexc = 0.0;
     } else {
-        leaf_CN = 1.0 / s->shootnc;
-        presc_leaf_CN = 30.0; /* make a parameter */
 
-        /* fraction varies between 0 and 50 % as a function of leaf CN */
-        frac_to_rexc = MAX(0.0, MIN(0.5, (leaf_CN / presc_leaf_CN) - 1.0));
+        if (c->deciduous_model) {
+            /* broadleaf */
+            CN_ref = 25.0;
+        } else {
+            /* conifer */
+            CN_ref = 42.0;
+        }
+
+        /*
+        ** The fraction of growth allocated to rhizodeposition, constrained
+        ** to solutions lower than 0.5
+        */
+        CN_leaf = 1.0 / s->shootnc;
+        arg = MAX(0.0, (CN_leaf - CN_ref) / CN_ref);
+        frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg);
     }
-    /*printf("%f %f\n", s->shootnc, 1./30.);*/
+
+    /* Rhizodeposition */
     f->root_exc = frac_to_rexc * f->cproot;
     if (float_eq(f->cproot, 0.0)) {
         f->root_exn = 0.0;
     } else {
-        fine_root_NC = f->nproot / f->cproot;
-        f->root_exn = f->root_exc * fine_root_NC;
+        /*
+        ** N flux associated with rhizodeposition is based on the assumption
+        ** that the CN ratio of rhizodeposition is equal to that of fine root
+        ** growth
+        */
+        f->root_exn = f->root_exc * (f->nproot / f->cproot);
     }
 
-    /* Need to exudation C & N fluxes from fine root growth fluxes so that
-       things balance. */
+    /*
+    ** Need to remove exudation C & N fluxes from fine root growth fluxes so
+    ** that things balance.
+    */
     f->cproot -= f->root_exc;
     f->nproot -= f->root_exn;
 
@@ -481,32 +506,31 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
 
 
 double calculate_growth_stress_limitation(params *p, state *s) {
-    /* Calculate level of stress due to nitrogen or water availability """
-       calculate the N limitation based on available canopy N
-       this logic appears counter intuitive, but it works out when
-       applied with the perhaps backwards logic below */
+    /* Calculate level of stress due to nitrogen or water availability */
     double nlim, current_limitation;
+    double nc_opt = 0.04;
 
-    /* case - completely limited by N availability */
+    /* N limitation based on leaf NC ratio */
     if (s->shootnc < p->nf_min) {
         nlim = 0.0;
-    } else if (s->shootnc < p->nf_crit) {
-        nlim = (s->shootnc - p->nf_min) / (p->nf_crit - p->nf_min);
-    /* case - no N limitation */
+    } else if (s->shootnc < nc_opt && s->shootnc > p->nf_min) {
+        nlim = 1.0 - ((nc_opt - s->shootnc) / (nc_opt - p->nf_min));
     } else {
         nlim = 1.0;
     }
 
-    /* Limitation by nitrogen and water. Water constraint is implicit,
-       in that, water stress results in an increase of root mass,
-       which are assumed to spread horizontally within the rooting zone.
-       So in effect, building additional root mass doesnt alleviate the
-       water limitation within the model. However, it does more
-       accurately reflect an increase in root C production at a water
-       limited site. This implementation is also consistent with other
-       approaches, e.g. LPJ. In fact I dont see much evidence for models
-       that have a flexible bucket depth. Minimum constraint is limited to
-       0.1, following Zaehle et al. 2010 (supp), eqn 18. */
+    /*
+     * Limitation by nitrogen and water. Water constraint is implicit,
+     * in that, water stress results in an increase of root mass,
+     * which are assumed to spread horizontally within the rooting zone.
+     * So in effect, building additional root mass doesnt alleviate the
+     * water limitation within the model. However, it does more
+     * accurately reflect an increase in root C production at a water
+     * limited site. This implementation is also consistent with other
+     * approaches, e.g. LPJ. In fact I dont see much evidence for models
+     * that have a flexible bucket depth. Minimum constraint is limited to
+     * 0.1, following Zaehle et al. 2010 (supp), eqn 18.
+     */
     current_limitation = MAX(0.1, MIN(nlim, s->wtfac_root));
     return (current_limitation);
 }
@@ -571,30 +595,30 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alleaf = 1.0 - f->alroot;
 
         /* Now adjust root & leaf allocation to maintain balance, accounting
-           for stress e.g. -> Sitch et al. 2003, GCB. */
+           for stress e.g. -> Sitch et al. 2003, GCB.
 
-        /* leaf-to-root ratio under non-stressed conditons */
-        lr_max = 0.8,
+         leaf-to-root ratio under non-stressed conditons
+        lr_max = 0.8;
 
-        /* Calculate adjustment on lr_max, based on current "stress"
-           calculated from running mean of N and water stress */
+         Calculate adjustment on lr_max, based on current "stress"
+           calculated from running mean of N and water stress
         stress = lr_max * s->prev_sma;
 
-        /* calculate new allocation fractions based on imbalance in *biomass* */
+        calculate new allocation fractions based on imbalance in *biomass*
         mis_match = s->shoot / (s->root * stress);
 
 
         if (mis_match > 1.0) {
-            /* reduce leaf allocation fraction */
+            reduce leaf allocation fraction
             adj = f->alleaf / mis_match;
             f->alleaf = MAX(p->c_alloc_fmin, MIN(p->c_alloc_fmax, adj));
             f->alroot = 1.0 - f->alleaf;
         } else {
-            /* reduce root allocation */
+             reduce root allocation
             adj = f->alroot * mis_match;
             f->alroot = MAX(p->c_alloc_rmin, MIN(p->c_alloc_rmax, adj));
             f->alleaf = 1.0 - f->alroot;
-        }
+        }*/
         f->alstem = 0.0;
         f->albranch = 0.0;
         f->alcroot = 0.0;
@@ -645,8 +669,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
         f->alcroot = alloc_goal_seek(s->croot, coarse_root_target,
                                       p->c_alloc_cmax, p->targ_sens);
 
-
-
         /* figure out root allocation given available water & nutrients
            hyperbola shape to allocation, this is adjusted below as we aim
            to maintain a functional balance */
@@ -655,64 +677,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
                      (p->c_alloc_rmin + (p->c_alloc_rmax - p->c_alloc_rmin) *
                       s->prev_sma));
 
-        /* Now adjust root & leaf allocation to maintain balance, accounting
-           for stress e.g. -> Sitch et al. 2003, GCB. */
-
-        /* leaf-to-root ratio under non-stressed conditons */
-        lr_max = 1.0;
-
-        /* Calculate adjustment on lr_max, based on current "stress"
-           calculated from running mean of N and water stress */
-        stress = lr_max * s->prev_sma;
-
-        /* calculate imbalance, based on *biomass* */
-        if (c->deciduous_model) {
-            mis_match = s->shoot / (s->root * stress);
-        } else {
-            /* Catch for floating point reset of root C mass */
-            if (float_eq(s->root, 0.0))
-                mis_match = 1.9;
-            else
-                mis_match = s->shoot / (s->root * stress);
-        }
-
-
-        if (mis_match > 1.0) {
-            /* Root=Leaf biomass in out of balance, borrow from the stem to try
-               and alleviate this difference and move towards a functional
-               balance. */
-            spare = 1.0 - f->alleaf - f->albranch - f->alcroot - min_stem_alloc;
-            adj = f->alroot * mis_match;
-            f->alroot += MAX(p->c_alloc_rmin, MIN(spare, adj));
-            f->alroot = MIN(p->c_alloc_rmax, f->alroot);
-
-        } else if (mis_match < 1.0) {
-            /* Root=Leaf biomass in out of balance, borrow from the root to try
-               and alleviate this difference and move towards a functional
-               balance */
-            /* reduce root allocation */
-            orig_ar = f->alroot;
-            adj = f->alroot * mis_match;
-            f->alroot = MAX(p->c_alloc_rmin, MIN(p->c_alloc_rmax, adj));
-            reduction = MAX(0.0, orig_ar - f->alroot);
-            f->alleaf += MAX(p->c_alloc_fmax, reduction);
-        }
-
-
-        /* Ensure we don't end up with alloc fractions that make no
-           physical sense. */
-        left_over = 1.0 - f->alroot - f->alleaf;
-        if (f->albranch + f->alcroot > left_over) {
-            if (float_eq(s->croot, 0.0)) {
-                f->alcroot = 0.0;
-                f->alstem = 0.5 * left_over;
-                f->albranch = 0.5 * left_over;
-            } else {
-                f->alcroot = 0.3 * left_over;
-                f->alstem = 0.4 * left_over;
-                f->albranch = 0.3 * left_over;
-            }
-        }
         f->alstem = 1.0 - f->alroot - f->albranch - f->alleaf - f->alcroot;
 
         /* minimum allocation to leaves - without it tree would die, as this
@@ -931,7 +895,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     }
     /* Update deciduous storage pools */
     if (c->deciduous_model)
-        calculate_cn_store(f, s);
+        calculate_cn_store(c, f, s);
 
     return;
 }
@@ -999,17 +963,47 @@ void precision_control(fluxes *f, state *s) {
 }
 
 
-void calculate_cn_store(fluxes *f, state *s) {
+void calculate_cn_store(control *c, fluxes *f, state *s) {
     /*
-    Deciduous trees store carbohydrate during the winter which they then
-    use in the following year to build new leaves (buds & budburst are
-    implied)
+    Calculate labile C & N stores from which growth is allocated in the
+    following year.
     */
 
-    /* Total C & N storage to allocate annually. */
+
     s->cstore += f->npp;
     s->nstore += f->nuptake + f->retrans;
     s->anpp += f->npp;
+
+    /*
+    double nstore_max, excess, k;
+    double leaf_nc_max = 0.04;
+    double CN_max = 100.0;
+
+
+    if (c->alloc_model == GRASSES) {
+        k = 0.3;
+        nstore_max = MAX(1E-04, k * s->root * leaf_nc_max);
+    } else {
+        k = 0.15;
+        nstore_max = MAX(1E-04, k * s->sapwood * leaf_nc_max);
+    }
+
+    s->nstore += f->nuptake + f->retrans;
+    if (s->nstore > nstore_max) {
+        s->nstore = nstore_max;
+        f->nuptake = 0.0;
+        f->retrans = 0.0;
+    }
+
+    s->cstore += f->npp;
+    */
+    /*
+    if (s->cstore/nstore_max > CN_max) {
+        excess = s->cstore - (nstore_max * CN_max);
+        s->cstore = nstore_max * CN_max;
+        f->auto_resp += excess;
+    }*/
+
 
     return;
 }
@@ -1185,4 +1179,161 @@ double calculate_nuptake(control *c, params *p, state *s) {
     }
 
     return (nuptake);
+}
+
+
+void initialise_roots(fluxes *f, params *p, state *s) {
+    /* Set up all the rooting arrays for use with the hydraulics assumptions */
+    int    i;
+    double thick;
+
+    // Using CABLE depths, but spread over 2 m.
+    double cable_thickness[7] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248, 2.0};
+
+    s->thickness = malloc(p->n_layers * sizeof(double));
+    if (s->thickness == NULL) {
+        fprintf(stderr, "malloc failed allocating thickness\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* root mass is g biomass, i.e. ~twice the C content */
+    s->root_mass = malloc(p->n_layers * sizeof(double));
+    if (s->root_mass == NULL) {
+        fprintf(stderr, "malloc failed allocating root_mass\n");
+        exit(EXIT_FAILURE);
+    }
+
+    s->root_length = malloc(p->n_layers * sizeof(double));
+    if (s->root_length == NULL) {
+        fprintf(stderr, "malloc failed allocating root_length\n");
+        exit(EXIT_FAILURE);
+    }
+
+    s->layer_depth = malloc(p->n_layers * sizeof(double));
+    if (s->layer_depth == NULL) {
+        fprintf(stderr, "malloc failed allocating layer_depth\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // force a thin top layer = 0.1
+    thick = 0.1;
+    s->layer_depth[0] = thick;
+    s->thickness[0] = thick;
+    //printf("%d %f %f\n", 0, s->thickness[0], s->layer_depth[0]);
+    for (i = 1; i < p->n_layers; i++) {
+        thick += p->layer_thickness;
+        s->layer_depth[i] = thick;
+        s->thickness[i] = p->layer_thickness;
+
+        //printf("%d %f %f\n", i, s->thickness[i], s->layer_depth[i]);
+
+        /* made up initalisation, following SPA, get replaced second timestep */
+        s->root_mass[i] = 0.1;
+        s->root_length[i] = 0.1;
+        s->rooted_layers = p->n_layers;
+    }
+
+
+    return;
+}
+
+void update_roots(control *c, params *p, state *s) {
+    /*
+        Given the amount of roots grown by GDAY predict the assoicated rooting
+        distribution accross soil layers
+        - These assumptions come from Mat's SPA model.
+
+        TODO: implement CABLE version.
+    */
+    int    i;
+    double soil_layers[p->n_layers];
+    double C_2_BIOMASS = 2.0;
+    double min_biomass = 10.0; /* To exend at least a layer; g C m-2 */
+    double root_biomass, root_cross_sec_area, root_depth, root_reach, mult;
+    double surf_biomass, prev, curr, slope, cumulative_depth;
+    double x1 = 0.1;        /* lower bound for brent search */
+    double x2 = 10.0;       /* upper bound for brent search */
+    double tol = 0.0001;    /* tolerance for brent search */
+    double fine_root, fine_root_min;
+
+    // Enforcing a minimum fine root mass, otherwise during spinup this can go
+    // wrong.
+    fine_root_min = 50.0;
+    if (s->root < fine_root_min) {
+        fine_root = fine_root_min;
+    } else {
+        fine_root = s->root;
+    }
+
+    root_biomass = MAX(min_biomass, fine_root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
+
+    root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
+    root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
+
+    s->rooted_layers = 0;
+    for (i = 0; i < p->n_layers; i++) {
+        if (s->layer_depth[i] > root_depth) {
+            s->rooted_layers = i;
+            break;
+        }
+    }
+    
+    /* how for into the soil do the reach extend? */
+    root_reach = s->layer_depth[s->rooted_layers];
+
+    /* Enforce 50 % of root mass in the top 1/4 of the rooted layers. */
+    mult = MIN(1.0 / s->thickness[0], \
+               MAX(2.0, 11.0 * exp(-0.006 * root_biomass)));
+
+    /*
+    ** assume surface root density is related to total root biomass by a
+    ** scalar dependent on root biomass
+    */
+    surf_biomass = root_biomass * mult;
+
+    if (s->rooted_layers > 1) {
+        /*
+        ** determine slope of root distribution given rooting depth
+        ** and ratio of root mass to surface root density
+        */
+        slope = zbrent(&calc_root_dist, x1, x2, tol, root_biomass,
+                       surf_biomass, s->rooted_layers, s->thickness[0],
+                       root_reach);
+
+        prev = 1.0 / slope;
+        cumulative_depth = 0.0;
+        for (i = 0; i <= s->rooted_layers; i++) {
+            cumulative_depth += s->thickness[i];
+            curr = 1.0 / slope * exp(-slope * cumulative_depth);
+            s->root_mass[i] = (prev - curr) * surf_biomass;
+
+            /* (m m-3 soil) */
+            s->root_length[i] = s->root_mass[i] / (p->root_density * \
+                                                   root_cross_sec_area);
+            prev = curr;
+        }
+    } else {
+        s->root_mass[0] = root_biomass;
+    }
+
+    return;
+}
+
+
+double calc_root_dist(double slope, double root_biomass, double surf_biomass,
+                      double rooted_layers, double top_lyr_thickness,
+                      double root_reach) {
+    /*
+        This function is used in the in the zbrent numerical algorithm to
+        figure out the slope of the rooting distribution for a given depth
+    */
+    double one, two, arg1, arg2;
+
+    one = (1.0 - exp(-slope * rooted_layers * top_lyr_thickness)) / slope;
+    two = root_biomass / surf_biomass;
+    arg1 = (1.0 - exp(-slope * root_reach)) / slope;
+    arg2 = root_biomass / surf_biomass;
+
+    return (arg1 - arg2);
 }

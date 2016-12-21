@@ -8,7 +8,7 @@
 
 void figure_out_years_with_disturbances(control *, met_arrays *, params *, int **,
                                         int *);
-int  time_till_next_disturbance();
+int  time_till_next_disturbance(void); /* takes no arguments */
 int  check_for_fire(control *, fluxes *f, params *, state *, int, int *, int);
 void fire(control *, fluxes *f, params *, state *);
 void hurricane(fluxes *, params *, state *);

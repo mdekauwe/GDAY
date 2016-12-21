@@ -12,5 +12,8 @@
 
 src/gday
 src/version.c
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/master
 src/gday.dSYM*

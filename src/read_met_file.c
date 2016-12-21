@@ -6,12 +6,12 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
     char   line[STRING_LENGTH];
     int    file_len = 0;
     int    i = 0;
-    int    nvars = 20;
+    int    nvars = 21;
     int    skipped_lines = 0;
-    double current_yr;
+    double current_yr = -999.9;
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
-		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
+		fprintf(stderr, "Error: couldn't open daily Met file %s for read\n",
                 c->met_fname);
 		exit(EXIT_FAILURE);
 	 }
@@ -98,6 +98,11 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
+    if ((ma->nfix = (double *)calloc(file_len, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for nfix array\n");
+		exit(EXIT_FAILURE);
+    }
+
     if ((ma->wind = (double *)calloc(file_len, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind array\n");
 		exit(EXIT_FAILURE);
@@ -145,15 +150,16 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
-                          %lf,%lf,%lf", \
+                          %lf,%lf,\
+                          %lf,%lf",\
                           &(ma->year[i]), &(ma->prjday[i]), \
                           &(ma->tair[i]), &(ma->rain[i]), &(ma->tsoil[i]), \
                           &(ma->tam[i]), &(ma->tpm[i]), &(ma->tmin[i]), \
                           &(ma->tmax[i]), &(ma->tday[i]), &(ma->vpd_am[i]), \
                           &(ma->vpd_pm[i]), &(ma->co2[i]), &(ma->ndep[i]), \
-                          &(ma->wind[i]), &(ma->press[i]), &(ma->wind_am[i]), \
-                          &(ma->wind_pm[i]), &(ma->par_am[i]), \
-                          &(ma->par_pm[i])) != nvars) {
+                          &(ma->nfix[i]),  &(ma->wind[i]), &(ma->press[i]), \
+                          &(ma->wind_am[i]), &(ma->wind_pm[i]), \
+                          &(ma->par_am[i]), &(ma->par_pm[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
@@ -175,14 +181,17 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     FILE  *fp;
     char   line[STRING_LENGTH];
     int    i = 0;
-    int    nvars = 12;
+    int    nvars = 13;
     int    skipped_lines = 0;
     double current_yr;
     long   file_len;
+<<<<<<< HEAD
     double hod_dummy = -999.9;
+=======
+>>>>>>> origin/master
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
-		fprintf(stderr, "Error: couldn't open Met file %s for read\n",
+		fprintf(stderr, "Error: couldn't open sub-daily Met file %s for read\n",
                 c->met_fname);
 		exit(EXIT_FAILURE);
 	 }
@@ -196,6 +205,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         file_len++;
     }
     rewind(fp);
+
     /* output is daily, so correct for n_timesteps */
     c->total_num_days = file_len / 48;
 
@@ -245,6 +255,11 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
+    if ((ma->nfix = (double *)calloc(file_len, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for nfix array\n");
+		exit(EXIT_FAILURE);
+    }
+
     if ((ma->wind = (double *)calloc(file_len, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind array\n");
 		exit(EXIT_FAILURE);
@@ -271,11 +286,17 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         if (sscanf(line, "%lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
+<<<<<<< HEAD
                           %lf,%lf,%lf", \
                           &(ma->year[i]), &(ma->doy[i]), &hod_dummy, \
+=======
+                          %lf,%lf,%lf,\
+                          %lf", \
+                          &(ma->year[i]), &(ma->doy[i]), &temp_HOD, \
+>>>>>>> origin/master
                           &(ma->rain[i]), &(ma->par[i]), &(ma->tair[i]), \
                           &(ma->tsoil[i]), &(ma->vpd[i]), &(ma->co2[i]), \
-                          &(ma->ndep[i]), &(ma->wind[i]), \
+                          &(ma->ndep[i]), &(ma->nfix[i]), &(ma->wind[i]), \
                           &(ma->press[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);

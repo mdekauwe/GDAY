@@ -15,6 +15,7 @@ void initialise_control(control *c) {
     strcpy(c->cfg_fname, "*NOT SET*");
     strcpy(c->met_fname, "*NOT SET*");
     strcpy(c->out_fname, "*NOT SET*");
+    strcpy(c->out_subdaily_fname, "*NOT SET*");
     strcpy(c->out_fname_hdr, "*NOT SET*");
     strcpy(c->lai_fname, "*NOT SET*");
     strcpy(c->out_param_fname, "*NOT SET*");
@@ -44,6 +45,7 @@ void initialise_control(control *c) {
     c->sw_stress_model = 1;         /* JULES type linear stress func, or Landsberg and Waring non-linear func */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
+    c->water_balance = 0;            /* Water calculations: 0=simple 2 layered bucket; 1=SPA-style hydraulics */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->ovars = 16;                  /* Number of vars in output binary file */
 
@@ -55,6 +57,7 @@ void initialise_control(control *c) {
 
     c->sub_daily = FALSE;           /* Run at daily or 30 minute timestep */
     c->num_hlf_hrs = 48;
+    c->pdebug = FALSE;              /* Use to debug a specific day */
     return;
 }
 
@@ -63,6 +66,8 @@ void initialise_params(params *p) {
     *** Default values for params structure.
     */
     int i;
+    p->a0rhizo = 0.05;
+    p->a1rhizo = 0.6;
     p->actncmax = 0.333333;
     p->actncmin = 0.066667;
     p->ageold = 10000.0;
@@ -116,7 +121,7 @@ void initialise_params(params *p) {
     p->fracfaeces = 0.3;
     p->fracteaten = 0.5;
     p->fractosoil = 0.85;
-    p->fractup_soil = 0.2;
+    p->fractup_soil = 0.5;
     p->fretrans = 0.5;
     p->g1 = 2.74;
     p->gamstar25 = 42.75;
@@ -238,6 +243,30 @@ void initialise_params(params *p) {
     }
     /* absorptance of solar radiation (0-1), typically 0.4-0.6 */
     p->leaf_abs = 0.5;
+
+    /* hydraulics */
+    p->layer_thickness = 0.1; /* soil layer thickness (m) */
+    p->n_layers = 20;         /* number of soil layers */
+    //p->layer_thickness = 0.4; /* soil layer thickness (m) */
+    //p->n_layers = 6;         /* number of soil layers */
+    p->root_k = 100.0;
+    p->root_radius = 0.0005;
+    p->root_density = 0.5e6;
+    p->max_depth = 2.0;
+    p->root_resist = 20; /* Evergreen value: fine root hydraulic resistivity (MPa s g mmol-1 H2O) */
+    p->min_lwp = -2.0;        /* minimum leaf water potential (MPa) */
+
+    /* Hydraulics stuff - private */
+    p->potA = NULL;
+    p->potB = NULL;
+    p->cond1 = NULL;
+    p->cond2 = NULL;
+    p->cond3 = NULL;
+    p->porosity = NULL;
+    p->field_capacity = NULL;
+    p->wetting = 10;
+
+
 }
 
 
@@ -280,6 +309,9 @@ void initialise_fluxes(fluxes *f) {
     f->gs_mol_m2_sec = 0.0;
     f->ga_mol_m2_sec = 0.0;
     f->omega = 0.0;
+    f->day_ppt = 0.0;
+    f->day_wbal = 0.0;
+    f->total_soil_resist = 0.0;
 
     /* daily C production */
     f->cpleaf = 0.0;
@@ -382,7 +414,7 @@ void initialise_fluxes(fluxes *f) {
     f->alstem = 0.0;
 
     /* Misc stuff */
-    f-> cica_avg = 0.0; /* used in water balance, only when running mate model */
+    f->cica_avg = 0.0; /* used in water balance, only when running mate model */
 
     f->rabove = 0.0;
     f->tfac_soil_decomp = 0.0;
@@ -393,6 +425,17 @@ void initialise_fluxes(fluxes *f) {
     f->co2_rel_from_active_pool = 0.0;
     f->co2_rel_from_slow_pool = 0.0;
     f->co2_rel_from_passive_pool = 0.0;
+
+    /* Hydraulics stuff */
+    f->soil_conduct = NULL;
+    f->swp = NULL;
+    f->soilR = NULL;
+    f->fraction_uptake = NULL;
+    f->ppt_gain = NULL;
+    f->water_loss = NULL;
+    f->water_gain = NULL;
+    f->est_evap = NULL;
+
 
     return;
 }
@@ -450,5 +493,40 @@ void initialise_state(state *s) {
     s->canopy_store = 0.0;
 
     s->wtfac_root = 1.0;
+
+    /* Hydraulics stuff */
+    s->thickness = NULL;
+    s->root_mass = NULL;
+    s->root_length = NULL;
+    s->layer_depth = NULL;
+    s->water_frac = NULL;
+    s->initial_water = 0.0;
+    s->dry_thick = 0.1;
+    s->rooted_layers = 0;
+    s->predawn_swp = 0.0;
+    s->midday_lwp = 0.0;
+
+    return;
+}
+
+void initialise_nrutil(nrutil *nr) {
+
+    nr->kmax = 100;
+    nr->N = 1;
+    nr->xp = NULL;
+	nr->yp = NULL;
+	nr->yscal = NULL;
+	nr->y = NULL;
+	nr->dydx = NULL;
+    nr->ystart = NULL;
+
+    nr->ak2 = NULL;
+    nr->ak3 = NULL;
+    nr->ak4 = NULL;
+    nr->ak5 = NULL;
+    nr->ak6 = NULL;
+    nr->ytemp = NULL;
+    nr->yerr = NULL;
+
     return;
 }

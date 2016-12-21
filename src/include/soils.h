@@ -5,12 +5,13 @@
 #include "utilities.h"
 #include "constants.h"
 
-void   soil_temp_factor(fluxes *, double);
+double calc_soil_temp_factor(double);
 void   calculate_csoil_flows(control *, fluxes *, params *, state *,
                              double, int);
 void   calculate_decay_rates(fluxes *, params *, state *);
 void   flux_from_grazers(control *c, fluxes *, params *);
-void   ligin_nratio(control *c, fluxes *f, params *, double *, double *);
+double calc_ligin_nratio_leaves(control *c, fluxes *f, params *);
+double calc_ligin_nratio_fine_roots(control *c, fluxes *f, params *);
 double ratio_of_litternc_to_live_rootnc(control *, fluxes *, params *);
 double metafract(double);
 void   partition_plant_litter(fluxes *, params *);
@@ -27,7 +28,7 @@ void   precision_control_soil_c(fluxes *, state *);
 
 
 /* N stuff */
-void   calculate_nsoil_flows(control *, fluxes *, params *, state *, double, int);
+void   calculate_nsoil_flows(control *, fluxes *, params *, state *, int);
 void   grazer_inputs(control *, fluxes *, params *);
 void   inputs_from_plant_litter(fluxes *, params *, double *, double *);
 void   partition_plant_litter_n(control *, fluxes *, params *, double, double);
@@ -42,7 +43,7 @@ void   calculate_n_immobilisation(fluxes *, params *, state *, double *,
 void   calc_net_mineralisation(fluxes *);
 double calculate_nc_slope(params *, double, double);
 void   calculate_npools(control *c, fluxes *, params *, state *, double,
-                        double, double, double);
+                        double, double);
 double nc_limit(fluxes *, double, double, double, double);
 double nc_flux(double, double, double);
 void   precision_control_soil_n(fluxes *, state *);

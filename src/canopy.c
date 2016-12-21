@@ -21,7 +21,7 @@
 #include "canopy.h"
 
 void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
-            params *p, state *s) {
+            nrutil *nr, params *p, state *s) {
     /*
         Canopy module consists of two parts:
         (1) a radiation sub-model to calculate apar of sunlit/shaded leaves
@@ -40,21 +40,30 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
+<<<<<<< HEAD
     int    hod, iter = 0, itermax = 100, dummy=-999, sunlight_hrs;
     double doy;
+=======
+    int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
+    int    debug = TRUE, stressed = FALSE;
+    double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
+    double previous_cs, current_cs;
+>>>>>>> origin/master
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
+    previous_sw = s->pawater_topsoil + s->pawater_root;
+    previous_cs = s->canopy_store;
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
+    year = ma->year[c->hour_idx];
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
-        unpack_met_data(c, ma, m, hod);
+        unpack_met_data(c, f, ma, m, hod, dummy2);
 
         /* calculates diffuse frac from half-hourly incident radiation */
-        calculate_solar_geometry(cw, p, doy, hod);
-        get_diffuse_frac(cw, doy, m->sw_rad);
+        unpack_solar_geometry(cw, c);
 
         /* Is the sun up? */
         if (cw->elevation > 0.0 && m->par > 20.0) {
@@ -80,10 +89,17 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     }
 
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
-                        /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, cw, f, m, p, s);
 
+                        if (c->water_balance == HYDRAULICS) {
+                            // Ensure transpiration does not exceed Emax, if it
+                            // does we recalculate gs and An
+                            stressed = calculate_emax(c, cw, f, m, p, s);
+                        }
 
+                        if (stressed == FALSE) {
+                            /* Calculate new Cs, dleaf, Tleaf */
+                            solve_leaf_energy_balance(c, cw, f, m, p, s);
+                        }
                     } else {
                         break;
                     }
@@ -108,20 +124,29 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             cw->tleaf[SHADED] = m->tair;
 
             /*
-             * pre-dawn soil water potential, clearly one should link this
-             * the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
-             */
-            if (hod == 10) {
-                calc_soil_water_potential(c, p, s);
-                /*printf("%lf %.10lf\n", s->wtfac_root, s->psi_s_root );*/
+            ** pre-dawn soil water potential (MPa), clearly one should link this
+            ** the actual sun-rise :). Here 10 = 5 am, 10 is num_half_hr
+            **/
+            if (c->water_balance == HYDRAULICS && hod == 10) {
+                s->predawn_swp = s->weighted_swp;
+                /*_calc_soil_water_potential(c, p, s);*/
+
             }
 
         }
-        scale_leaf_to_canopy(cw);
+        scale_leaf_to_canopy(c, cw, s);
+        if (c->water_balance == HYDRAULICS && hod == 24) {
+            s->midday_lwp = cw->lwp_canopy;
+        }
         sum_hourly_carbon_fluxes(cw, f, p);
-        calculate_water_balance(c, f, m, p, s, dummy, cw->trans_canopy,
-                                cw->omega_canopy, cw->rnet_canopy);
 
+        calculate_water_balance_sub_daily(c, f, m, nr, p, s, dummy,
+                                          cw->trans_canopy, cw->omega_canopy,
+                                          cw->rnet_canopy);
+
+        if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
+            write_subdaily_outputs_ascii(c, cw, year, doy, hod);
+        }
         c->hour_idx++;
         sunlight_hrs++;
     } /* end of hour loop */
@@ -129,24 +154,35 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* work out average omega for the day over sunlight hours */
     f->omega /= sunlight_hrs;
 
-    /* work out average omega for the day, including the night */
-    m->tsoil /= c->num_hlf_hrs;
-
     if (c->water_stress) {
-        /* Calculate the soil moisture availability factors [0,1] in the
-           topsoil and the entire root zone */
+        // Calculate the soil moisture availability factors [0,1] in the
+        // topsoil and the entire root zone
         calculate_soil_water_fac(c, p, s);
+
+        //printf("%lf %.10lf\n", s->wtfac_root, s->saved_swp);
     } else {
-        /* really this should only be a debugging option! */
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
     }
 
+    current_sw = s->pawater_topsoil + s->pawater_root;
+    current_cs = s->canopy_store;
+    check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
+                        current_cs, year, doy);
+
+    //if (debug) {
+    //    current_sw = s->pawater_topsoil + s->pawater_root;
+    //    check_water_balance(c, f, previous_sw, current_sw);
+    //}
+
+    //if (c->pdebug) {
+    //    exit(1);
+    //}
     return;
 }
 
 void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
-                              params *p, state *s) {
+                               params *p, state *s) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -275,7 +311,9 @@ void zero_hourly_fluxes(canopy_wk *cw) {
     return;
 }
 
-void scale_leaf_to_canopy(canopy_wk *cw) {
+void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
+
+    double beta;
 
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
     cw->rd_canopy = cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED];
@@ -284,6 +322,15 @@ void scale_leaf_to_canopy(canopy_wk *cw) {
     cw->trans_canopy = cw->trans_leaf[SUNLIT] + cw->trans_leaf[SHADED];
     cw->omega_canopy = (cw->omega_leaf[SUNLIT] + cw->omega_leaf[SHADED]) / 2.0;
     cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
+
+    if (c->water_balance == HYDRAULICS) {
+        cw->lwp_canopy = (cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED]) / 2.0;
+
+        beta = (cw->fwsoil_leaf[SUNLIT] + cw->fwsoil_leaf[SHADED]) / 2.0;
+        s->wtfac_topsoil = beta;
+        s->wtfac_root = beta;
+    }
+
 
     return;
 }
@@ -346,6 +393,127 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
 
     cw->cscalar[SUNLIT] = (1.0 - exp(-(cw->kb + kn) * lai_sun)) / (cw->kb + kn);
     cw->cscalar[SHADED] = (1.0 - exp(-kn * lai_sha)) / kn - cw->cscalar[SUNLIT];
+
+    return;
+}
+
+void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
+                         double current_sw, double previous_cs,
+                         double current_cs, double year, int doy) {
+
+    double delta_sw, delta_cs;
+
+    delta_sw = current_sw - previous_sw;
+    delta_cs = current_cs - previous_cs;
+    f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_cs + delta_sw);
+
+    printf("%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+           (int)year, doy,
+           f->day_ppt, f->runoff, \
+           f->et, delta_sw, delta_cs, previous_sw, current_sw,
+           s->predawn_swp, s->midday_lwp, f->day_wbal);
+
+
+    return;
+}
+
+int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
+                    state *s) {
+
+    // Assumption that during the day transpiration cannot exceed a maximum
+    // value, Emax. At this point we've reached a leaf water potential minimum.
+    // Once this point is reached transpiration, gs and A are reclulated
+    //
+    // Reference:
+    // * Duursma et al. 2008, Tree Physiology 28, 265–276
+    //
+
+    // plant component of the leaf-specific hydraulic conductance
+    // (mmol m–2 s–1 MPa–1)
+    double kp = 2.0;
+    double ktot, emax_leaf, etest, gsv, frac;
+    int    idx = cw->ileaf;
+    int    stressed = FALSE;
+
+    // Need to work out the direct/diffuse weighting to adjust the
+    // stressed gs/transpiration calculation.
+    //if (cw->ileaf == 0) {
+    //    frac = 1.0 - cw->diffuse_frac;
+    //} else {
+    //    frac = cw->diffuse_frac;
+    //}
+
+    // Hydraulic conductance of the entire soil-to-leaf pathway
+    ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
+
+    // Maximum transpiration rate (mmol m-2 s-1)
+    emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
+
+    // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
+    etest = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
+
+    // leaf water potential (MPa)
+    cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, etest);
+
+    if (etest > emax_leaf) {
+        stressed = TRUE;
+
+        // Calculate gs (mol m-2 s-1) given emax_leaf
+        gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
+        cw->gsc_leaf[idx] = gsv / GSVGSC;
+
+
+        // Need to make sure transpiration solution is consistent, force
+        // Tleaf to Tair as we aren't solving this
+        cw->trans_leaf[idx] = emax_leaf * MMOL_2_MOL;
+
+        cw->tleaf[idx] = m->tair;
+        cw->tleaf_new = m->tair;
+        cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd,
+                                               cw->apar_leaf[idx] * PAR_2_SW);
+
+        // Minimum leaf water potential reached so recalculate LWP (MPa)
+        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
+
+        // Re-solve An for the new gs
+        photosynthesis_C3_emax(c, cw, m, p, s);
+
+        // Need to calculate an effective beta to use in soil decomposition
+        //cw->fwsoil_leaf[idx] = emax_leaf / etest;
+        cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
+    } else {
+        cw->fwsoil_leaf[idx] = 1.0;
+
+    }
+
+
+
+    return (stressed);
+}
+
+double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
+
+    double lwp;
+
+    lwp = s->weighted_swp - (transpiration / kl);
+    if (lwp < -20.0) {
+        lwp = -20.0;
+    }
+
+    return (lwp);
+}
+
+void unpack_solar_geometry(canopy_wk *cw, control *c) {
+
+    // This geometry calculations are suprisingly intensive which is a waste
+    // during spinup, so we are now doing this once and then we are just
+    // accessing the 30-min value from the array position
+
+    //calculate_solar_geometry(cw, p, doy, hod);
+    //get_diffuse_frac(cw, doy, m->sw_rad);
+    cw->cos_zenith = cw->cz_store[c->hour_idx];
+    cw->elevation = cw->ele_store[c->hour_idx];
+    cw->diffuse_frac = cw->df_store[c->hour_idx];
 
     return;
 }

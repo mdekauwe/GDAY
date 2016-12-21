@@ -119,6 +119,8 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(c->met_fname, temp);
     } else if (MATCH("files", "out_fname")) {
         strcpy(c->out_fname, temp);
+    } else if (MATCH("files", "out_subdaily_fname")) {
+        strcpy(c->out_subdaily_fname, temp);
     } else if (MATCH("files", "out_fname_hdr")) {
         strcpy(c->out_fname_hdr, temp);
     } else if (MATCH("files", "lai_fname")) {
@@ -147,8 +149,7 @@ int handler(char *section, char *name, char *value, control *c,
         if (strcmp(temp, "FIXED") == 0||
             strcmp(temp, "fixed") == 0)
             c->alloc_model = FIXED;
-        else if (strcmp(temp, "GRASSES") == 0||
-                 strcmp(temp, "grasses") == 0)
+        else if (strcmp(temp, "GRASSES") == 0 || strcmp(temp, "grasses") == 0)
             c->alloc_model = GRASSES;
         else if (strcmp(temp, "ALLOMETRIC") == 0 ||
                  strcmp(temp, "allometric") == 0)
@@ -345,7 +346,11 @@ int handler(char *section, char *name, char *value, control *c,
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "print_options")) {
-        if (strcmp(temp, "Daily") == 0 ||
+        if (strcmp(temp, "Subdaily") == 0 ||
+            strcmp(temp, "SUBDAILY") == 0 ||
+            strcmp(temp, "subdaily") == 0)
+            c->print_options = SUBDAILY;
+        else if (strcmp(temp, "Daily") == 0 ||
             strcmp(temp, "DAILY") == 0 ||
             strcmp(temp, "daily") == 0)
             c->print_options = DAILY;
@@ -414,6 +419,13 @@ int handler(char *section, char *name, char *value, control *c,
         c->sw_stress_model = atoi(value);
     } else if (MATCH("control", "use_eff_nc")) {
         c->use_eff_nc = atoi(value);
+    } else if (MATCH("control", "water_balance")) {
+        if (strcmp(temp, "hydraulics") == 0||
+            strcmp(temp, "HYDRAULICS") == 0)
+            c->water_balance = HYDRAULICS;
+        else {
+            c->water_balance = BUCKET;
+        }
     } else if (MATCH("control", "water_stress")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -528,6 +540,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->actncmax = atof(value);
     } else if (MATCH("params", "actncmin")) {
         p->actncmin = atof(value);
+    } else if (MATCH("params", "a0rhizo")) {
+        p->a0rhizo = atof(value);
+    } else if (MATCH("params", "a1rhizo")) {
+        p->a1rhizo = atof(value);
     } else if (MATCH("params", "adapt")) {
         p->adapt = atof(value);
     } else if (MATCH("params", "ageold")) {
@@ -692,6 +708,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->lai_closed = atof(value);
     } else if (MATCH("params", "latitude")) {
         p->latitude = atof(value);
+    } else if (MATCH("params", "layer_thickness")) {
+        p->layer_thickness = atof(value);
     } else if (MATCH("params", "leafsap0")) {
         p->leafsap0 = atof(value);
     } else if (MATCH("params", "leafsap1")) {
@@ -706,10 +724,14 @@ int handler(char *section, char *name, char *value, control *c,
         p->liteffnc = atof(value);
     } else if (MATCH("params", "longitude")) {
         p->longitude = atof(value);
+    } else if (MATCH("params", "max_depth")) {
+        p->max_depth = atof(value);
     } else if (MATCH("params", "max_intercep_lai")) {
         p->max_intercep_lai = atof(value);
     } else if (MATCH("params", "measurement_temp")) {
         p->measurement_temp = atof(value);
+    } else if (MATCH("params", "min_lwp")) {
+        p->min_lwp = atof(value);
     } else if (MATCH("params", "ncbnew")) {
         p->ncbnew = atof(value);
     } else if (MATCH("params", "ncbnewz")) {
@@ -738,6 +760,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->nf_crit = atof(value);
     } else if (MATCH("params", "nf_min")) {
         p->nf_min = atof(value);
+    } else if (MATCH("params", "n_layers")) {
+        p->n_layers = atof(value);
     } else if (MATCH("params", "nmax")) {
         p->nmax = atof(value);
     } else if (MATCH("params", "nmin")) {
@@ -792,10 +816,18 @@ int handler(char *section, char *name, char *value, control *c,
         p->rfmult = atof(value);
     } else if (MATCH("params", "rooting_depth")) {
         p->rooting_depth = atof(value);
+    } else if (MATCH("params", "root_resist")) {
+        p->root_resist = atof(value);
     } else if (MATCH("params", "rootsoil_type")) {
         strcpy(p->rootsoil_type, value);
     } else if (MATCH("params", "root_exu_CUE")) {
         p->root_exu_CUE = atof(value);
+    } else if (MATCH("params", "root_k")) {
+        p->root_k = atof(value);
+    } else if (MATCH("params", "root_density")) {
+        p->root_density = atof(value);
+    } else if (MATCH("params", "root_radius")) {
+        p->root_radius = atof(value);
     } else if (MATCH("params", "rretrans")) {
         p->rretrans = atof(value);
     } else if (MATCH("params", "sapturnover")) {

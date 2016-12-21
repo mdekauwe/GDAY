@@ -12,6 +12,7 @@
 #define EPSILON 1E-08
 #define DEG2RAD(DEG) (DEG * M_PI / 180.0)
 #define RAD2DEG(RAD) (180.0 * RAD / M_PI)
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #ifndef TRUE
 #define TRUE 1
@@ -49,14 +50,18 @@
 #define C4 1
 
 /* output time step, where end = the final state */
-#define DAILY 0
-#define END 1
+#define SUBDAILY 0
+#define DAILY 1
+#define END 2
 
 /* Texture identifiers */
 #define SILT 0
 #define SAND 1
 #define CLAY 2
 
+/* water balance identifiers */
+#define BUCKET 0
+#define HYDRAULICS 1
 
 #include "structures.h"
 #include "initialise_model.h"
@@ -70,19 +75,23 @@
 #include "phenology.h"
 #include "soils.h"
 #include "version.h"
+#include "rkck.h"
+#include "rkqs.h"
 
 
 void   clparser(int, char **, control *);
 void   usage(char **);
 
 void   run_sim(canopy_wk *, control *, fluxes *, met_arrays *, met *,
-               params *p, state *);
+               params *p, state *, nrutil *);
 void   spin_up_pools(canopy_wk *, control *, fluxes *, met_arrays *, met *,
-                     params *p, state *);
+                     params *p, state *, nrutil *);
 void   correct_rate_constants(params *, int output);
 void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   zero_stuff(control *, state *);
 void   day_end_calculations(control *, params *, state *, int, int);
-void   unpack_met_data(control *, met_arrays *, met *, int);
+void   unpack_met_data(control *, fluxes *f, met_arrays *, met *, int, double);
+void   allocate_numerical_libs_stuff(nrutil *);
+void   fill_up_solar_arrays(canopy_wk *, control *, met_arrays *, params *);
 
 #endif /* GDAY_H */

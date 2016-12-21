@@ -7,6 +7,8 @@
 
 /* Sub-daily funcs */
 void   photosynthesis_C3(control *, canopy_wk *, met *m, params *, state *);
+void   photosynthesis_C3_emax(control *, canopy_wk *, met *m, params *,
+                              state *);
 double calc_co2_compensation_point(params *, double);
 double calculate_michaelis_menten(params *, double);
 void   calculate_jmaxt_vcmaxt(control *, canopy_wk *, params *, state *,
@@ -32,7 +34,7 @@ void    adj_for_low_temp(double *, double);
 double  calculate_ci(control *, params *, state *, double, double);
 double  calculate_quantum_efficiency(params *, double ci, double);
 double  assim(double, double, double, double);
-double  epsilon(params *, double, double, double);
+double  epsilon(params *, double, double, double, double);
 
 
 /* C4 additional prototypes */
