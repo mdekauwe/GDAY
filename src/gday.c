@@ -144,7 +144,7 @@ int main(int argc, char **argv)
     } else {
         run_sim(cw, c, f, ma, m, p, s, nr);
     }
-
+    printf("Fine to here\n");
     /* clean up */
     fclose(c->ofp);
     if (c->print_options == SUBDAILY ) {
