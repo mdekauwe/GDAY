@@ -166,6 +166,7 @@ int main(int argc, char **argv)
     free(ma->wind);
     free(ma->press);
     free(ma->par);
+    printf("Fine to here\n");
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
@@ -600,7 +601,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 	        exit(EXIT_FAILURE);
         }
     }
-    printf("Fine to here\n");
+
     if (odata != NULL) {
         free(odata);
     }
