@@ -123,6 +123,7 @@ int main(int argc, char **argv)
         } else {
             read_daily_met_data_binary(argv, c, ma);
         }
+    }
 
     /* House keeping! */
     if (c->water_balance == HYDRAULICS && c->sub_daily == FALSE) {
@@ -169,11 +170,10 @@ int main(int argc, char **argv)
     free(ma->ndep);
     free(ma->wind);
     free(ma->press);
-
+    free(ma->par);
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
-        free(ma->par);
         free(cw->cz_store);
         free(cw->ele_store);
         free(cw->df_store);
@@ -202,7 +202,6 @@ int main(int argc, char **argv)
             free(s->root_mass);
             free(s->root_length);
             free(s->layer_depth);
-
 
             free_dvector(nr->y, 1, nr->N);
             free_dvector(nr->ystart, 1, nr->N);
@@ -391,8 +390,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     		exit(EXIT_FAILURE);
         }
 
-
-
         if ((lai_data = (double *)calloc(366*2, sizeof(double))) == NULL) {
     		fprintf(stderr,"Error allocating lai data for read\n");
     		exit(EXIT_FAILURE);
@@ -456,11 +453,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         ** =================== */
         lai_offset = 0;
         for (doy = 0; doy < c->num_days; doy++) {
-
-            //if (year == 2001 && doy+1 == 230) {
-            //    c->pdebug = TRUE;
-            //}
-
 
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, s->day_length[doy]);
@@ -556,30 +548,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             } else if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
-                } else {
+                else
                     save_daily_outputs_binary(c, f, s, year, doy+1, *(&odata),
                                                ocnt);
-                }
             }
+
             c->day_idx++;
             ocnt += c->ovars;
-
-
-            //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
-            //printf("%d %d %f", (int)year, doy, s->water_frac[0]);
-            //for (i = 1; i < p->n_layers; i++) {
-            //
-            //    //printf(" %f", s->water_frac[i] * s->thickness[i] * M_TO_MM);
-            //    printf(" %f", s->water_frac[i]);
-            //
-            //}
-            //printf("\n");
-            //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
-
-            //printf("%d %d %lf %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root, s->saved_swp);
-            //printf("%d %d %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root);
-
-
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
@@ -643,10 +618,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                    params *p, state *s, nrutil *nr){
     /* Spin up model plant & soil pools to equilibrium.
-
     - Examine sequences of 50 years and check if C pools are changing
       by more than 0.005 units per 1000 yrs.
-
     References:
     ----------
     Adapted from...
@@ -672,7 +645,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         c->disturbance = cntrl_flag;
     }
 
-    /*fprintf(stderr, "Spinning up the model...\n");*/
+    fprintf(stderr, "Spinning up the model...\n");
     while (TRUE) {
         if (fabs(prev_plantc - s->plantc) < tol &&
             fabs(prev_soilc - s->soilc) < tol) {
@@ -687,10 +660,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
             /* Have we reached a steady state? */
-            /*
-            fprintf(stderr,
-              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
-             */
+            //fprintf(stderr,
+            //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
     }
     write_final_state(c, p, s);
