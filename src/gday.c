@@ -157,7 +157,6 @@ int main(int argc, char **argv)
         fclose(c->ofp_hdr);
     }
 
-
     free(cw);
     free(c);
     free(ma->year);
@@ -235,8 +234,6 @@ int main(int argc, char **argv)
     free(p);
     free(s);
     free(f);
-
-
 
     exit(EXIT_SUCCESS);
 }
