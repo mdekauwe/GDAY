@@ -146,27 +146,20 @@ int main(int argc, char **argv)
     }
 
     /* clean up */
-    printf("0 - Fine to here\n");
     fclose(c->ofp);
-    printf("0a - Fine to here\n");
     fclose(c->ifp);
-    printf("0b - Fine to here\n");
 
     if (c->print_options == SUBDAILY ) {
         fclose(c->ofp_sd);
     }
-    printf("0c - Fine to here\n");
-    printf("0d - %d\n", c->output_ascii);
 
     if (c->output_ascii == FALSE && c->print_options == DAILY) {
         fclose(c->ofp_hdr);
     }
-    printf("1 - Fine to here\n");
 
 
     free(cw);
     free(c);
-    printf("2 - Fine to here\n");
     free(ma->year);
     free(ma->tair);
     free(ma->rain);
@@ -175,10 +168,7 @@ int main(int argc, char **argv)
     free(ma->ndep);
     free(ma->wind);
     free(ma->press);
-    printf("3 - Fine to here\n");
     free(ma->par);
-    printf("4 - Fine to here\n");
-    printf("Fine to here\n");
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
