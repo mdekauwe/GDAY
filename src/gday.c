@@ -158,7 +158,7 @@ int main(int argc, char **argv)
     printf("0c - Fine to here\n");
     printf("0d - %d\n", c->output_ascii);
 
-    if (c->output_ascii == FALSE) {
+    if (c->output_ascii == FALSE && c->print_options == DAILY) {
         fclose(c->ofp_hdr);
     }
     printf("1 - Fine to here\n");
