@@ -40,15 +40,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
-<<<<<<< HEAD
-    int    hod, iter = 0, itermax = 100, dummy=-999, sunlight_hrs;
-    double doy;
-=======
+
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
     double previous_cs, current_cs;
->>>>>>> origin/master
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);

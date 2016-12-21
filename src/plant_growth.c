@@ -25,11 +25,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
                      met *m, nrutil *nr, params *p, state *s, double day_length,
                      int doy, double fdecay, double rdecay)
 {
-<<<<<<< HEAD
-    double previous_topsoil_store, dummy=-999.9,
-=======
+
     double previous_topsoil_store, dummy=0.0,
->>>>>>> origin/master
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
     int    recalc_wb;
 
@@ -1278,7 +1275,7 @@ void update_roots(control *c, params *p, state *s) {
             break;
         }
     }
-    
+
     /* how for into the soil do the reach extend? */
     root_reach = s->layer_depth[s->rooted_layers];
 

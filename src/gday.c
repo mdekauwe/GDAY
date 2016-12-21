@@ -111,7 +111,6 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-<<<<<<< HEAD
     if (c->sub_daily) {
         if (c->input_ascii) {
             read_subdaily_met_data(argv, c, ma);
@@ -125,8 +124,6 @@ int main(int argc, char **argv)
             read_daily_met_data_binary(argv, c, ma);
         }
 
-
-=======
     /* House keeping! */
     if (c->water_balance == HYDRAULICS && c->sub_daily == FALSE) {
         fprintf(stderr, "You can't run the hydraulics model with daily flag\n");
@@ -178,9 +175,7 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         free(ma->vpd);
         free(ma->doy);
-<<<<<<< HEAD
         free(ma->par);
-=======
         free(cw->cz_store);
         free(cw->ele_store);
         free(cw->df_store);
@@ -255,11 +250,8 @@ int main(int argc, char **argv)
 void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
              params *p, state *s, nrutil *nr){
 
-<<<<<<< HEAD
-    int    nyr, doy, window_size, i, dummy=-999;
-=======
+
     int    nyr, doy, window_size, i, dummy = 0;
->>>>>>> origin/master
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
     int   *disturbance_yrs = NULL;
@@ -269,18 +261,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double *lai_data = NULL;
     FILE   *lai_fp;
 
-<<<<<<< HEAD
-    /* potentially allocating 1 extra spot, but will be fine as we always
-       index by num_days */
-    double *day_length;
-    if ((day_length = (double *)calloc(366, sizeof(double))) == NULL) {
-        fprintf(stderr,"Error allocating space for day_length\n");
-		exit(EXIT_FAILURE);
-    }
-
-
-=======
->>>>>>> origin/master
     if (c->deciduous_model) {
         /* Are we reading in last years average growing season? */
         if (float_eq(s->avg_alleaf, 0.0) &&
@@ -301,11 +281,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         allocate_stored_c_and_n(f, p, s);
     }
 
-<<<<<<< HEAD
 
-
-=======
->>>>>>> origin/master
     /* Setup output file */
     if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
         /* open the 30 min outputs file and the daily output files */
@@ -448,13 +424,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     ** ====================== */
     c->day_idx = 0;
     c->hour_idx = 0;
-<<<<<<< HEAD
     ocnt = 0;
-=======
 
-
-
->>>>>>> origin/master
     for (nyr = 0; nyr < c->num_years; nyr++) {
         if (c->sub_daily) {
             year = ma->year[c->hour_idx];
@@ -542,16 +513,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 hurricane(f, p, s);
             }
 
-
-<<<<<<< HEAD
-            /*if (c->spin_up == FALSE)
-                printf("%lf %lf %lf\n", (double)year, (double)doy, f->gpp*100);*/
-=======
             calc_day_growth(cw, c, f, ma, m, nr, p, s, s->day_length[doy],
                             doy, fdecay, rdecay);
 
             //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
->>>>>>> origin/master
             calculate_csoil_flows(c, f, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
 
@@ -589,15 +554,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* calculate C:N ratios and increment annual flux sum */
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
-<<<<<<< HEAD
-            if (c->print_options == DAILY && c->spin_up == FALSE) {
-                if(c->output_ascii) {
-=======
             if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
                 write_daily_outputs_ascii(c, f, s, year, doy+1);
             } else if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
->>>>>>> origin/master
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 } else {
                     save_daily_outputs_binary(c, f, s, year, doy+1, *(&odata),
@@ -605,9 +565,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 }
             }
             c->day_idx++;
-<<<<<<< HEAD
             ocnt += c->ovars;
-=======
 
 
             //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
@@ -625,12 +583,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             //printf("%d %d %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root);
 
 
->>>>>>> origin/master
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-        
+
 
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
@@ -656,17 +613,12 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     sma(SMA_FREE, hw);
-<<<<<<< HEAD
-    free(day_length);
-
 
     if (c->fixed_lai == 2) {
         free(lai_data);
         fclose(lai_fp);
     }
 
-=======
->>>>>>> origin/master
     if (c->disturbance) {
         free(disturbance_yrs);
     }
@@ -740,13 +692,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* Have we reached a steady state? */
             /*
             fprintf(stderr,
-<<<<<<< HEAD
-              "Spinup: Plant C - %f, Soil C - %f, Plant N - %f, Soil N - %f\n",
-               s->plantc, s->soilc, s->plantn, s->soiln);
-             */
-=======
               "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
->>>>>>> origin/master
+             */              
         }
     }
     write_final_state(c, p, s);

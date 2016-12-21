@@ -185,10 +185,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
     int    skipped_lines = 0;
     double current_yr;
     long   file_len;
-<<<<<<< HEAD
     double hod_dummy = -999.9;
-=======
->>>>>>> origin/master
 
     if ((fp = fopen(c->met_fname, "r")) == NULL) {
 		fprintf(stderr, "Error: couldn't open sub-daily Met file %s for read\n",
@@ -286,14 +283,8 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
         if (sscanf(line, "%lf,%lf,%lf,\
                           %lf,%lf,%lf,\
                           %lf,%lf,%lf,\
-<<<<<<< HEAD
                           %lf,%lf,%lf", \
                           &(ma->year[i]), &(ma->doy[i]), &hod_dummy, \
-=======
-                          %lf,%lf,%lf,\
-                          %lf", \
-                          &(ma->year[i]), &(ma->doy[i]), &temp_HOD, \
->>>>>>> origin/master
                           &(ma->rain[i]), &(ma->par[i]), &(ma->tair[i]), \
                           &(ma->tsoil[i]), &(ma->vpd[i]), &(ma->co2[i]), \
                           &(ma->ndep[i]), &(ma->nfix[i]), &(ma->wind[i]), \
@@ -482,7 +473,7 @@ void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
     /* tidy up */
     free(data);
     fclose(fp);
-    
+
     return;
 }
 
