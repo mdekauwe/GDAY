@@ -120,8 +120,10 @@ int main(int argc, char **argv)
         fill_up_solar_arrays(cw, c, ma, p);
     } else {
         if (c->input_ascii) {
+            printf("HERE\n");
             read_daily_met_data(argv, c, ma);
         } else {
+            printf("NO HERE\n");
             read_daily_met_data_binary(argv, c, ma);
         }
     }
@@ -137,6 +139,7 @@ int main(int argc, char **argv)
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
     }
+
 
     if (c->spin_up) {
         spin_up_pools(cw, c, f, ma, m, p, s, nr);
