@@ -657,8 +657,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
             /* Have we reached a steady state? */
-            fprintf(stderr,
-              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+            //fprintf(stderr,
+            //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
     }
     write_final_state(c, p, s);

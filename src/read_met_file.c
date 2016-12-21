@@ -404,6 +404,11 @@ void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
+    if ((ma->nfix = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for nfix array\n");
+		exit(EXIT_FAILURE);
+    }
+
     if ((ma->wind = (double *)calloc(c->nrows, sizeof(double))) == NULL) {
         fprintf(stderr,"Error allocating space for wind array\n");
 		exit(EXIT_FAILURE);
@@ -455,12 +460,13 @@ void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
         ma->vpd_pm[cnt] = data[i+11];
         ma->co2[cnt] = data[i+12];
         ma->ndep[cnt] = data[i+13];
-        ma->wind[cnt] = data[i+14];
-        ma->press[cnt] = data[i+15];
-        ma->wind_am[cnt] = data[i+16];
-        ma->wind_pm[cnt] = data[i+17];
-        ma->par_am[cnt] = data[i+18];
-        ma->par_pm[cnt] = data[i+19];
+        ma->nfix[cnt] = data[i+14];
+        ma->wind[cnt] = data[i+15];
+        ma->press[cnt] = data[i+16];
+        ma->wind_am[cnt] = data[i+17];
+        ma->wind_pm[cnt] = data[i+18];
+        ma->par_am[cnt] = data[i+19];
+        ma->par_pm[cnt] = data[i+20];
 
 
         /* Build an array of the unique years as we loop over the input file */
