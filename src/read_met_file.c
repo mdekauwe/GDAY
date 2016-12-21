@@ -443,7 +443,6 @@ void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
     cnt = 0;
     c->num_years = 1;
     current_yr = data[0];
-    printf("%d %d\n", c->nrows , c->ncols);
     for (i = 0; i < c->nrows * c->ncols; i += c->ncols) {
 
         ma->year[cnt] = data[i];
