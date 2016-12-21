@@ -119,8 +119,10 @@ int main(int argc, char **argv)
         }
     } else {
         if (c->input_ascii) {
+            printf("HERE\n");
             read_daily_met_data(argv, c, ma);
         } else {
+            printf("NO HERE\n");
             read_daily_met_data_binary(argv, c, ma);
         }
     }
