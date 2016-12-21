@@ -155,6 +155,8 @@ int main(int argc, char **argv)
     if (c->print_options == SUBDAILY ) {
         fclose(c->ofp_sd);
     }
+    printf("0c - Fine to here\n");
+    printf("0d - %d\n", c->output_ascii);
 
     if (c->output_ascii == FALSE) {
         fclose(c->ofp_hdr);
