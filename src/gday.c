@@ -146,8 +146,11 @@ int main(int argc, char **argv)
     }
 
     /* clean up */
+    printf("0 - Fine to here\n");
     fclose(c->ofp);
+    printf("0a - Fine to here\n");
     fclose(c->ifp);
+    printf("0b - Fine to here\n");
 
     if (c->print_options == SUBDAILY ) {
         fclose(c->ofp_sd);
