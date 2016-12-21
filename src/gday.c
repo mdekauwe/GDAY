@@ -144,19 +144,24 @@ int main(int argc, char **argv)
     } else {
         run_sim(cw, c, f, ma, m, p, s, nr);
     }
-    printf("Fine to here\n");
+
     /* clean up */
     fclose(c->ofp);
+    fclose(c->ifp);
+
     if (c->print_options == SUBDAILY ) {
         fclose(c->ofp_sd);
     }
-    fclose(c->ifp);
+
     if (c->output_ascii == FALSE) {
         fclose(c->ofp_hdr);
     }
+    printf("1 - Fine to here\n");
+
 
     free(cw);
     free(c);
+    printf("2 - Fine to here\n");
     free(ma->year);
     free(ma->tair);
     free(ma->rain);
@@ -165,7 +170,9 @@ int main(int argc, char **argv)
     free(ma->ndep);
     free(ma->wind);
     free(ma->press);
+    printf("3 - Fine to here\n");
     free(ma->par);
+    printf("4 - Fine to here\n");
     printf("Fine to here\n");
     if (c->sub_daily) {
         free(ma->vpd);
