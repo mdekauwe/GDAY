@@ -468,6 +468,7 @@ void read_daily_met_data_binary(char **argv, control *c, met_arrays *ma)
         ma->par_am[cnt] = data[i+19];
         ma->par_pm[cnt] = data[i+20];
 
+        printf("%d %lf\n", i, ma->tair[cnt]);
 
         /* Build an array of the unique years as we loop over the input file */
         if (current_yr != ma->year[cnt]) {
