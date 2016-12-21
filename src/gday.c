@@ -117,12 +117,11 @@ int main(int argc, char **argv)
         } else {
             read_subdaily_met_data_binary(argv, c, ma);
         }
+        fill_up_solar_arrays(cw, c, ma, p);
     } else {
         if (c->input_ascii) {
-            printf("HERE\n");
             read_daily_met_data(argv, c, ma);
         } else {
-            printf("NO HERE\n");
             read_daily_met_data_binary(argv, c, ma);
         }
     }
@@ -137,13 +136,6 @@ int main(int argc, char **argv)
         allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
-    }
-
-    if (c->sub_daily) {
-        read_subdaily_met_data(argv, c, ma);
-        fill_up_solar_arrays(cw, c, ma, p);
-    } else {
-        read_daily_met_data(argv, c, ma);
     }
 
     if (c->spin_up) {
