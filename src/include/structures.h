@@ -486,9 +486,8 @@ typedef struct {
     double *tsoil;
     double *co2;
     double *ndep;
-    double *pdep;
     double *nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
-    double *pfix;       /* P inputs from biological fixation (t/ha/timestep (d/30min)) */
+    double *pdep;
     double *wind;
     double *press;
 
@@ -527,9 +526,8 @@ typedef struct {
     double par;
     double Ca;
     double ndep;
-    double pdep;
     double nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
-    double Pfix;       /* P inputs from biological fixation (t/ha/timestep (d/30min)) */
+    double pdep;
     double tsoil;
 
     /* daily */
