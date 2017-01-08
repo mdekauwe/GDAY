@@ -584,6 +584,9 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double prev_plantp = 99999.9;
     double prev_soilp = 99999.9;
     int i, cntrl_flag;
+    
+    /* check for convergences in units of kg/m2 */
+    double conv = TONNES_HA_2_KG_M2;
 
     /* Final state + param file */
     open_output_file(c, c->out_param_fname, &(c->ofp));
