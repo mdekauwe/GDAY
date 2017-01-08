@@ -409,6 +409,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             //if (year == 2001 && doy+1 == 230) {
             //    c->pdebug = TRUE;
             //}
+
+
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, s->day_length[doy]);
             }
@@ -525,6 +527,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
+        
 
         /* Allocate stored C,N and P for the following year */
         if (c->deciduous_model) {
@@ -540,8 +543,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             update_roots(c, p, s);
         }
     }
-
-   
     /* ========================= **
     **   E N D   O F   Y E A R   **
     ** ========================= */
