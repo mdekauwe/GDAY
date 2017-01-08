@@ -519,8 +519,7 @@ void initialise_fluxes(fluxes *f) {
     f->p_ssorb_to_min = 0.0;
     f->p_ssorb_to_occ = 0.0;
     f->p_par_to_min = 0.0;
-    f->p_atm_dep = 0.0;
-    
+
     /* CO2 flows to the air */
     /* C flows to the air */
     for (i = 0; i < 7; i++) {

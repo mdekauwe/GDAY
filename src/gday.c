@@ -155,6 +155,7 @@ int main(int argc, char **argv)
     free(ma->tsoil);
     free(ma->co2);
     free(ma->ndep);
+    free(ma->pdep);
     free(ma->wind);
     free(ma->press);
     free(ma->par);
@@ -914,8 +915,6 @@ void reset_all_p_pools_and_fluxes(fluxes *f, state *s) {
   f->p_ssorb_to_min = 0.0;
   f->p_ssorb_to_occ = 0.0;
   f->p_par_to_min = 0.0;
-  f->p_atm_dep = 0.0;
-  
   
   return;
 }
@@ -1045,9 +1044,11 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
         if (hod == 0) {
             m->ndep = ma->ndep[c->hour_idx];
             m->nfix = ma->nfix[c->hour_idx];
+            m->pdep = ma->pdep[c->hour_idx];
         } else {
             m->ndep += ma->ndep[c->hour_idx];
             m->nfix += ma->nfix[c->hour_idx];
+            m->pdep += ma->pdep[c->hour_idx];
         }
     } else {
         m->Ca = ma->co2[c->day_idx];
@@ -1070,6 +1071,7 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
         m->press = ma->press[c->day_idx] * KPA_2_PA;
         m->ndep = ma->ndep[c->day_idx];
         m->nfix = ma->nfix[c->day_idx];
+        m->pdep = ma->pdep[c->day_idx];
         m->tsoil = ma->tsoil[c->day_idx];
         m->Tk_am = ma->tam[c->day_idx] + DEG_TO_KELVIN;
         m->Tk_pm = ma->tpm[c->day_idx] + DEG_TO_KELVIN;
@@ -1085,6 +1087,9 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
 
     /* N deposition + biological N fixation */
     f->ninflow = m->ndep + m->nfix;
+    
+    /* P deposition to fluxes */
+    f->p_atm_dep = m->pdep;
 
     return;
 }
