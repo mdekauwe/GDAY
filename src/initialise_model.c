@@ -205,7 +205,7 @@ void initialise_params(params *p) {
     p->ntheta_topsoil = 5.0;
     p->nuptakez = 0.0;
     p->oi = 210000.0;                 /* oxygen partial pressure (umol mol-1) */
-    p->p_atm_deposition = 0.001;    /* value according to Newman 1995 = 0.00055 */
+    // p->p_atm_deposition = 0.001;    /* value according to Newman 1995 = 0.00055 */
     p->p_rate_par_weather = 0.001;
     p->passivesoilnz = 1.0;
     p->passivesoilpz = 1.0;
@@ -519,8 +519,7 @@ void initialise_fluxes(fluxes *f) {
     f->p_ssorb_to_min = 0.0;
     f->p_ssorb_to_occ = 0.0;
     f->p_par_to_min = 0.0;
-    f->p_atm_dep = 0.0;
-    
+
     /* CO2 flows to the air */
     /* C flows to the air */
     for (i = 0; i < 7; i++) {

@@ -345,7 +345,7 @@ typedef struct {
     double ntheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
     double nuptakez;                        /* constant N uptake per year (1/yr) */
     double oi;                              /* intercellular concentration of O2 [umol mol-1] */
-    double p_atm_deposition;                /* atmospheric P deposition rate [t/ha/yr] Newman 1995, Journal of Ecology Table 5 (Tennessee) */
+//    double p_atm_deposition;                /* atmospheric P deposition rate [t/ha/yr] Newman 1995, Journal of Ecology Table 5 (Tennessee) */
     double p_rate_par_weather;              /* parent P material weathering rate [yr-1] */
     double passivesoilnz;
     double passivesoilpz;
@@ -486,9 +486,8 @@ typedef struct {
     double *tsoil;
     double *co2;
     double *ndep;
-    double *pdep;
     double *nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
-    double *pfix;       /* P inputs from biological fixation (t/ha/timestep (d/30min)) */
+    double *pdep;
     double *wind;
     double *press;
 
@@ -527,9 +526,8 @@ typedef struct {
     double par;
     double Ca;
     double ndep;
-    double pdep;
     double nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
-    double Pfix;       /* P inputs from biological fixation (t/ha/timestep (d/30min)) */
+    double pdep;
     double tsoil;
 
     /* daily */

@@ -921,8 +921,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->pmincrit = atof(value);
     } else if (MATCH("params", "puptakez")) {
       p->puptakez = atof(value);
-    }   else if (MATCH("params", "p_atm_deposition")) {
-        p->p_atm_deposition = atof(value);
     } else if (MATCH("params", "p_rate_par_weather")) {
         p->p_rate_par_weather = atof(value);
     } else if (MATCH("params", "oi")) {
