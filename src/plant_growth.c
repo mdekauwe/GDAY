@@ -595,8 +595,8 @@ int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
 
 
 int cut_back_production(control *c, fluxes *f, params *p, state *s,
-                        double tot, double ncbnew, double nccnew,
-                        double ncwimm, double ncwnew, int doy) {
+                        double tot, double xcbnew, double xccnew,
+                        double xcwimm, double xcwnew, int doy) {
 
     double lai_inc, conv;
     double pcbnew, pccnew, pcwimm, pcwnew;
@@ -630,22 +630,15 @@ int cut_back_production(control *c, fluxes *f, params *p, state *s,
 
 
     if (c->pcycle) {
-
-        // These are being passed as dummy args, so to be clearer:
-        pcbnew = ncbnew;
-        pccnew = nccnew;
-        pcwimm = ncwimm;
-        pcwnew = ncwnew;
-
-        f->ppbranch = f->npp * f->albranch * pcbnew;
-        f->ppstemimm = f->npp * f->alstem * pcwimm;
-        f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
-        f->ppcroot = f->npp * f->alcroot * pccnew;
+        f->ppbranch = f->npp * f->albranch * xcbnew;
+        f->ppstemimm = f->npp * f->alstem * xcwimm;
+        f->ppstemmob = f->npp * f->alstem * (xcwnew - xcwimm);
+        f->ppcroot = f->npp * f->alcroot * xccnew;
     } else {
-        f->npbranch = f->npp * f->albranch * ncbnew;
-        f->npstemimm = f->npp * f->alstem * ncwimm;
-        f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
-        f->npcroot = f->npp * f->alcroot * nccnew;
+        f->npbranch = f->npp * f->albranch * xcbnew;
+        f->npstemimm = f->npp * f->alstem * xcwimm;
+        f->npstemmob = f->npp * f->alstem * (xcwnew - xcwimm);
+        f->npcroot = f->npp * f->alcroot * xccnew;
     }
 
     /* Save WUE before cut back */
