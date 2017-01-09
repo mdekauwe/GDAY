@@ -53,6 +53,9 @@ double calculate_puptake(control *, params *, state *, fluxes *);
 double phosphorus_retrans(control *, fluxes *, params *, state *,
                           double, double, int);
 
+int cut_back_production(control *, fluxes *, params *, state *, double,
+                        double, double, double, double, int);
+
 /* Priming/Exudation stuff */
 void   calc_root_exudation(control *c, fluxes *, params *p, state *);
 

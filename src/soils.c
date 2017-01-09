@@ -1503,16 +1503,13 @@ void pfluxes_from_passive_pool(fluxes *f, params *p, state *s) {
     return;
 }
 
-void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) 
+void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
     /*
-      Calculate weathering of parent P materials, i.e.
-      the fluxes enterring into mineral P pool;
+        Calculate weathering of parent P materials, i.e.
+        the fluxes enterring into mineral P pool;
 
-      Fluxes in = out so that parent P pool is a constant pool;
+        Fluxes in = out so that parent P pool is a constant pool;
     */
-
-    /* atmospheric P deposition rate */
-    f->p_atm_dep = p->p_atm_deposition;
 
     /* parent material weathering */
     f->p_par_to_min = p->p_rate_par_weather * s->inorgparp;
