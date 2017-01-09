@@ -464,7 +464,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
     */
 
     int    recalc_wb;
-    double nsupply, psupply, rtot, ntot, ptot, arg, lai_inc = 0.0, conv;
+    double nsupply, psupply, rtot, ntot, ptot, arg;
     double depth_guess = 1.0;
 
     /* default is we don't need to recalculate the water balance,
