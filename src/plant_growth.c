@@ -42,21 +42,16 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
         calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy, dummy);
     }
 
-    /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
-       foliage in young stand, and leaf P:C as a fraction of Pcmaxyoung;
-    */
+    // leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
+    //foliage in young stand, and leaf P:C as a fraction of Pcmaxyoung
     nitfac = MIN(1.0, s->shootnc / p->ncmaxfyoung);
     pitfac = MIN(1.0, s->shootpc / p->pcmaxfyoung);
-    
-    //fprintf(stderr, "nitfac %f\n", nitfac);
-    //fprintf(stderr, "pitfac %f\n", pitfac);
-    //fprintf(stderr, "shootpc %f\n", s->shootpc);
-   
-    /* checking for pcycle control parameter */ 
-    if(c->pcycle == TRUE) {
-       npitfac = MIN(nitfac, pitfac);
+
+    /* checking for pcycle control parameter */
+    if (c->pcycle == TRUE) {
+        npitfac = MIN(nitfac, pitfac);
     } else {
-       npitfac = nitfac;
+        npitfac = nitfac;
     }
 
     /* figure out the C allocation fractions */
@@ -85,9 +80,9 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
     }
 
     /* Distribute new C, N and P through the system */
-    carbon_allocation(c, f, p, s, npitfac, doy);   
+    carbon_allocation(c, f, p, s, npitfac, doy);
 
-    calculate_cnp_wood_ratios(c, p, s, npitfac, nitfac, pitfac, 
+    calculate_cnp_wood_ratios(c, p, s, npitfac, nitfac, pitfac,
                               &ncbnew, &nccnew, &ncwimm,
                               &ncwnew, &pcbnew, &pccnew, &pcwimm,
                               &pcwnew);
@@ -133,27 +128,22 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
     /*
         Rhizodeposition (f->root_exc) is assumed to be a fraction of the
         current root growth rate (f->cproot), which increases with increasing
-        N and P stress of the plant.
+        N stress of the plant.
     */
-    double CN_leaf, CN_ref, arg1;
-    double CP_leaf, CP_ref, arg2;
-    double frac_to_rexc;
+    double CN_leaf, frac_to_rexc, CN_ref, arg;
 
-    if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0 || float_eq(s->shootp, 0.0))) {
+    if (float_eq(s->shoot, 0.0) || float_eq(s->shootn, 0.0)) {
         /* nothing happens during leaf off period */
         CN_leaf = 0.0;
-        CP_leaf = 0.0;
         frac_to_rexc = 0.0;
     } else {
 
         if (c->deciduous_model) {
             /* broadleaf */
             CN_ref = 25.0;
-            CP_ref = 600;   /* Needs to get empirical evidence for this number */
         } else {
             /* conifer */
             CN_ref = 42.0;
-            CP_ref = 2500;  /* Needs to get empirical evidence for this number */
         }
 
         /*
@@ -161,27 +151,14 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
         ** to solutions lower than 0.5
         */
         CN_leaf = 1.0 / s->shootnc;
-        arg1 = MAX(0.0, (CN_leaf - CN_ref) / CN_ref);
-        
-        CP_leaf = 1.0 / s->shootpc;
-        arg2 = MAX(0.0, (CP_leaf - CP_ref) / CP_ref);
-        
-        //fprintf(stderr, "arg1 %f\n", arg1);
-        //fprintf(stderr, "arg2 %f\n", arg2);
-        
-        if(c->pcycle == TRUE) {
-          frac_to_rexc = MIN(0.5, MIN(p->a0rhizo + p->a1rhizo * arg1, p->a0rhizo + p->a1rhizo * arg2));
-        } else {
-          frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg1);
-        }
-
+        arg = MAX(0.0, (CN_leaf - CN_ref) / CN_ref);
+        frac_to_rexc = MIN(0.5, p->a0rhizo + p->a1rhizo * arg);
     }
 
     /* Rhizodeposition */
     f->root_exc = frac_to_rexc * f->cproot;
     if (float_eq(f->cproot, 0.0)) {
         f->root_exn = 0.0;
-        f->root_exp = 0.0;
     } else {
         /*
         ** N flux associated with rhizodeposition is based on the assumption
@@ -189,7 +166,6 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
         ** growth
         */
         f->root_exn = f->root_exc * (f->nproot / f->cproot);
-        f->root_exp = f->root_exc * (f->pproot / f->cproot);
     }
 
     /*
@@ -198,7 +174,6 @@ void calc_root_exudation(control *c, fluxes *f, params *p, state *s) {
     */
     f->cproot -= f->root_exc;
     f->nproot -= f->root_exn;
-    f->pproot -= f->root_exp;
 
     return;
 }
@@ -217,7 +192,7 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
     * Jackson, J. E. and Palmer, J. W. (1981) Annals of Botany, 47, 561-565.
     */
     double leafn, leafp, fc, ncontent, pcontent;
-  
+
     //fprintf(stderr, "flag 1 carbon production \n");
 
     if (s->lai > 0.0) {
@@ -225,19 +200,19 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         leafn = (s->shootnc * p->cfracts / p->sla * KG_AS_G);
         /* average leaf phosphorus content (g P m-2 leaf) */
         leafp = (s->shootpc * p->cfracts / p->sla * KG_AS_G);
-        
+
         //fprintf(stderr, "shootpc %f\n", s->shootpc);
-      
+
         /* total nitrogen content of the canopy */
         ncontent = leafn * s->lai;
         /* total phosphorus content of the canopy */
         pcontent = leafp * s->lai;
-        
+
     } else {
         ncontent = 0.0;
         pcontent = 0.0;
     }
-    
+
     //fprintf(stderr, "leafp %f\n", leafp);
     //fprintf(stderr, "ncontent %f\n", ncontent);
     //fprintf(stderr, "pcontent %f\n", pcontent);
@@ -298,16 +273,16 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
     /* Calculate NPP */
     f->npp_gCm2 = f->gpp_gCm2 * p->cue;
     f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
-    
+
     return;
 }
 
 void calculate_cnp_wood_ratios(control *c, params *p, state *s,
-                             double npitfac, double nitfac, double pitfac, 
-                             double *ncbnew, double *nccnew, 
-                             double *ncwimm, double *ncwnew,
-                             double *pcbnew, double *pccnew,
-                             double *pcwimm, double *pcwnew) {
+                               double npitfac, double nitfac, double pitfac,
+                               double *ncbnew, double *nccnew,
+                               double *ncwimm, double *ncwnew,
+                               double *pcbnew, double *pccnew,
+                               double *pcwimm, double *pcwnew) {
     /* Estimate the N:C and P:C ratio in the branch and stem. Option to vary
     the N:C and P:C ratio of the stem following Jeffreys (1999) or keep it a fixed
     fraction
@@ -339,7 +314,7 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
         P:C ratio of immobile stem
     pcwnew : float
         P:C ratio of mobile stem
-     
+
     References:
     ----------
     * Jeffreys, M. P. (1999) Dynamics of stemwood nitrogen in Pinus radiata
@@ -349,141 +324,143 @@ void calculate_cnp_wood_ratios(control *c, params *p, state *s,
 
     /* calculate N:C ratios */
     if (nitfac < npitfac) {
-      /* n:c ratio of new branch wood*/
-      *ncbnew = p->ncbnew + nitfac * (p->ncbnew - p->ncbnewz);
-      
-      /* n:c ratio of coarse root */
-      *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
-      
-      /* fixed N:C in the stemwood */
-      if (c->fixed_stem_nc) {
-        /* n:c ratio of stemwood - immobile pool and new ring */
-        *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
-        
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = p->ncwnew + nitfac * (p->ncwnew - p->ncwnewz);
-        
-        /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
-        Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
-        modelled here based on evidence as a linear function. */
-      } else {
-        *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
-        
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
-      }
+        /* n:c ratio of new branch wood*/
+        *ncbnew = p->ncbnew + nitfac * (p->ncbnew - p->ncbnewz);
+
+        /* n:c ratio of coarse root */
+        *nccnew = p->nccnew + nitfac * (p->nccnew - p->nccnewz);
+
+        /* fixed N:C in the stemwood */
+        if (c->fixed_stem_nc) {
+            /* n:c ratio of stemwood - immobile pool and new ring */
+            *ncwimm = p->ncwimm + nitfac * (p->ncwimm - p->ncwimmz);
+
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = p->ncwnew + nitfac * (p->ncwnew - p->ncwnewz);
+
+        // vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
+        // Jeffreys 1999 showed that N:C ratio of new wood increases with
+        // foliar N:C ratio,modelled here based on evidence as a linear
+        // function.
+        } else {
+            *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
+
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
+        }
     } else {
-      /* n:c ratio of new branch wood*/
-      *ncbnew = p->ncbnew + npitfac * (p->ncbnew - p->ncbnewz);
-      
-      /* n:c ratio of coarse root */
-      *nccnew = p->nccnew + npitfac * (p->nccnew - p->nccnewz);
-      
-      /* fixed N:C in the stemwood */
-      if (c->fixed_stem_nc) {
-        /* n:c ratio of stemwood - immobile pool and new ring */
-        *ncwimm = p->ncwimm + npitfac * (p->ncwimm - p->ncwimmz);
-        
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = p->ncwnew + npitfac * (p->ncwnew - p->ncwnewz);
-        
-        /* vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
-        Jeffreys 1999 showed that N:C ratio of new wood increases with foliar N:C ratio,
-        modelled here based on evidence as a linear function. */
-      } else {
-        *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
-        
-        /* New stem ring N:C at critical leaf N:C (mobile) */
-        *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
-      }
+        /* n:c ratio of new branch wood*/
+        *ncbnew = p->ncbnew + npitfac * (p->ncbnew - p->ncbnewz);
+
+        /* n:c ratio of coarse root */
+        *nccnew = p->nccnew + npitfac * (p->nccnew - p->nccnewz);
+
+        /* fixed N:C in the stemwood */
+        if (c->fixed_stem_nc) {
+            /* n:c ratio of stemwood - immobile pool and new ring */
+            *ncwimm = p->ncwimm + npitfac * (p->ncwimm - p->ncwimmz);
+
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = p->ncwnew + npitfac * (p->ncwnew - p->ncwnewz);
+
+        // vary stem N:C based on reln with foliage, see Jeffreys PhD thesis.
+        // Jeffreys 1999 showed that N:C ratio of new wood increases with
+        // foliar N:C ratio,modelled here based on evidence as a linear
+        // function.
+        } else {
+            *ncwimm = MAX(0.0, (0.0282 * s->shootnc + 0.000234) * p->fhw);
+
+            /* New stem ring N:C at critical leaf N:C (mobile) */
+            *ncwnew = MAX(0.0, 0.162 * s->shootnc - 0.00143);
+        }
     }
 
-      
     /* calculate P:C ratios */
     if (pitfac < npitfac) {
-      /* p:c ratio of new branch wood*/
-      *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
-      
-      /* p:c ratio of coarse root */
-      *pccnew = p->pccnew + pitfac * (p->pccnew - p->pccnewz);
-      
-      /* fixed P:C in the stemwood */
-      if (c->fixed_stem_pc) {
-        /* p:c ratio of stemwood - immobile pool and new ring */
-        *pcwimm = p->pcwimm + pitfac * (p->pcwimm - p->pcwimmz);
-        
-        /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = p->pcwnew + pitfac * (p->pcwnew - p->pcwnewz);
-        
-        /* vary stem P:C based on reln with foliage, 
-         equation based on data from Attiwill 1978 - 1980 paper series. */
-      } else {
-        *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
-        
-        /* New stem ring P:C at critical leaf P:C (mobile),
-        equation based on data from Attiwill 1978 - 1980 paper series */
-        *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);  
-      }
+        /* p:c ratio of new branch wood*/
+        *pcbnew = p->pcbnew + pitfac * (p->pcbnew - p->pcbnewz);
+
+        /* p:c ratio of coarse root */
+        *pccnew = p->pccnew + pitfac * (p->pccnew - p->pccnewz);
+
+        /* fixed P:C in the stemwood */
+        if (c->fixed_stem_pc) {
+            /* p:c ratio of stemwood - immobile pool and new ring */
+            *pcwimm = p->pcwimm + pitfac * (p->pcwimm - p->pcwimmz);
+
+            /* New stem ring P:C at critical leaf P:C (mobile) */
+            *pcwnew = p->pcwnew + pitfac * (p->pcwnew - p->pcwnewz);
+
+            /* vary stem P:C based on reln with foliage,
+            equation based on data from Attiwill 1978 - 1980 paper series. */
+        } else {
+            *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
+
+            // New stem ring P:C at critical leaf P:C (mobile),
+            // equation based on data from Attiwill 1978 - 1980 paper series
+            *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);
+        }
     } else {
-      /* p:c ratio of new branch wood*/
-      *pcbnew = p->pcbnew + npitfac * (p->pcbnew - p->pcbnewz);
-      
-      /* p:c ratio of coarse root */
-      *pccnew = p->pccnew + npitfac * (p->pccnew - p->pccnewz);
-      
-      /* fixed P:C in the stemwood */
-      if (c->fixed_stem_pc) {
-        /* p:c ratio of stemwood - immobile pool and new ring */
-        *pcwimm = p->pcwimm + npitfac * (p->pcwimm - p->pcwimmz);
-        
-        /* New stem ring P:C at critical leaf P:C (mobile) */
-        *pcwnew = p->pcwnew + npitfac * (p->pcwnew - p->pcwnewz);
-        
-        /* vary stem P:C based on reln with foliage, 
+        /* p:c ratio of new branch wood*/
+        *pcbnew = p->pcbnew + npitfac * (p->pcbnew - p->pcbnewz);
+
+        /* p:c ratio of coarse root */
+        *pccnew = p->pccnew + npitfac * (p->pccnew - p->pccnewz);
+
+        /* fixed P:C in the stemwood */
+        if (c->fixed_stem_pc) {
+            /* p:c ratio of stemwood - immobile pool and new ring */
+            *pcwimm = p->pcwimm + npitfac * (p->pcwimm - p->pcwimmz);
+
+            /* New stem ring P:C at critical leaf P:C (mobile) */
+            *pcwnew = p->pcwnew + npitfac * (p->pcwnew - p->pcwnewz);
+
+        /* vary stem P:C based on reln with foliage,
         equation based on data from Attiwill 1978 - 1980 paper series. */
-      } else {
-        *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
-        
-        /* New stem ring P:C at critical leaf P:C (mobile),
-        equation based on data from Attiwill 1978 - 1980 paper series */
-        *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);  
-      }
+        } else {
+            *pcwimm = MAX(0.0, -0.0016 * s->shootpc + 0.000003);
+
+            /* New stem ring P:C at critical leaf P:C (mobile),
+            equation based on data from Attiwill 1978 - 1980 paper series */
+            *pcwnew = MAX(0.0, -0.0022 * s->shootpc + 0.000009);
+        }
     }
-    
+
     return;
 }
 
-int np_allocation(control *c, fluxes *f, params *p, state *s,
-                        double ncbnew, double nccnew, double ncwimm,
-                        double ncwnew, 
-                        double pcbnew, double pccnew, double pcwimm,
-                        double pcwnew,double fdecay, double rdecay, int doy) {
-    /* Nitrogen and phosphorus distribution - allocate available N and P (mineral) through system.
-    N and P is first allocated to the woody component, surplus N and P is then allocated
-    to the shoot and roots with flexible ratios.
+int np_allocation(control *c, fluxes *f, params *p, state *s, double ncbnew,
+                  double nccnew, double ncwimm, double ncwnew, double pcbnew,
+                  double pccnew, double pcwimm, double pcwnew,double fdecay,
+                  double rdecay, int doy) {
+    /*
+        Nitrogen and phosphorus distribution - allocate available N and
+        P (mineral) through system. N and P is first allocated to the woody
+        component, surplus N and P is then allocated to the shoot and roots
+        with flexible ratios.
 
-    References:
-    -----------
-    McMurtrie, R. E. et al (2000) Plant and Soil, 224, 135-152.
+        References:
+        -----------
+        McMurtrie, R. E. et al (2000) Plant and Soil, 224, 135-152.
 
-    Parameters:
-    -----------
-    ncbnew : float
-        N:C ratio of branch
-    ncwimm : float
-        N:C ratio of immobile stem
-    ncwnew : float
-        N:C ratio of mobile stem
-    pcbnew : float
-        P:C ratio of branch
-    pcwimm : float
-        P:C ratio of immobile stem
-    pcwnew : float
-        P:C ratio of mobile stem
-    fdecay : float
-        foliage decay rate
-    rdecay : float
-        fine root decay rate
+        Parameters:
+        -----------
+        ncbnew : float
+            N:C ratio of branch
+        ncwimm : float
+            N:C ratio of immobile stem
+        ncwnew : float
+            N:C ratio of mobile stem
+        pcbnew : float
+            P:C ratio of branch
+        pcwimm : float
+            P:C ratio of immobile stem
+        pcwnew : float
+            P:C ratio of mobile stem
+        fdecay : float
+            foliage decay rate
+        rdecay : float
+            fine root decay rate
     */
 
     int    recalc_wb;
@@ -501,55 +478,45 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
     f->retransp = phosphorus_retrans(c, f, p, s, fdecay, rdecay, doy);
     f->nuptake = calculate_nuptake(c, p, s);
     f->puptake = calculate_puptake(c, p, s, f);
-    
-    //fprintf(stderr, "flag 3 after puptake \n");
-     
+
     /*  Ross's Root Model. */
     if (c->model_optroot) {
 
         /* convert t ha-1 day-1 to gN m-2 year-1 */
         nsupply = (calculate_nuptake(c, p, s) *
                    TONNES_HA_2_G_M2 * DAYS_IN_YRS);
-      
-        psupply = (calculate_puptake(c, p, s, f) *
-                  TONNES_HA_2_G_M2 * DAYS_IN_YRS);
 
         /* covnert t ha-1 to kg DM m-2 */
         rtot = s->root * TONNES_HA_2_KG_M2 / p->cfracts;
         /*f->nuptake_old = f->nuptake; */
 
         calc_opt_root_depth(p->d0x, p->r0, p->topsoil_depth * MM_TO_M,
-                            rtot, nsupply, psupply, depth_guess, &s->root_depth,
-                            &f->nuptake, &f->puptake, &f->rabove);
-
-        /*umax = self.rm.calc_umax(f->nuptake) */
+                            rtot, nsupply, depth_guess, &s->root_depth,
+                            &f->nuptake, &f->rabove);
 
         /* covert nuptake from gN m-2 year-1  to t ha-1 day-1 */
         f->nuptake = f->nuptake * G_M2_2_TONNES_HA * YRS_IN_DAYS;
-        f->puptake = f->puptake * G_M2_2_TONNES_HA * YRS_IN_DAYS;
-        
 
         /* covert from kg DM N m-2 to t ha-1 */
         f->deadroots = p->rdecay * f->rabove * p->cfracts * KG_M2_2_TONNES_HA;
         f->deadrootn = s->rootnc * (1.0 - p->rretrans) * f->deadroots;
-        f->deadrootp = s->rootpc * (1.0 - p->rretrans) * f->deadroots;
-        
+
     }
 
     /* Mineralised nitrogen lost from the system by volatilisation/leaching */
     f->nloss = p->rateloss * s->inorgn;
-    
+
     /* Mineralised P lost from the system by leaching */
     if (s->inorgsorbp > 0.0) {
-      f->ploss = p->prateloss * s->inorglabp;
+        f->ploss = p->prateloss * s->inorglabp;
     } else {
-      f->ploss = 0.0;
+        f->ploss = 0.0;
     }
 
     /* total nitrogen/phosphorus to allocate */
     ntot = MAX(0.0, f->nuptake + f->retrans);
     ptot = MAX(0.0, f->puptake + f->retransp);
-    
+
     if (c->deciduous_model) {
         /* allocate N to pools with fixed N:C ratios */
 
@@ -563,7 +530,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->npcroot = f->cnrate * s->growing_days[doy];
         f->npleaf = f->lnrate * s->growing_days[doy];
         f->npbranch = f->bnrate * s->growing_days[doy];
-        
+
         /* allocate P to pools with fixed P:C ratios */
         f->ppstemimm = f->wpimrate * s->growing_days[doy];
         f->ppstemmob = f->wpmobrate * s->growing_days[doy];
@@ -571,7 +538,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         f->ppcroot = f->cprate * s->growing_days[doy];
         f->ppleaf = f->lprate * s->growing_days[doy];
         f->ppbranch = f->bprate * s->growing_days[doy];
-        
+
     } else {
         /* allocate N to pools with fixed N:C ratios */
 
@@ -595,10 +562,13 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         arg1 = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
         /* If we have allocated more P than we have available
-         - cut back C prodn */
+            - cut back C prodn */
         arg2 = f->ppstemimm + f->ppstemmob + f->ppbranch + f->ppcroot;
 
-        if (arg1 > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
+        if ((arg1 > ntot && c->fixleafnc == FALSE &&
+             c->fixed_lai && c->ncycle) ||
+            (arg2 > ptot && c->fixleafpc == FALSE &&
+             c->fixed_lai && c->pcycle)) {
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
@@ -626,7 +596,7 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
             f->npstemimm = f->npp * f->alstem * ncwimm;
             f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
             f->npcroot = f->npp * f->alcroot * nccnew;
-            
+
             f->ppbranch = f->npp * f->albranch * pcbnew;
             f->ppstemimm = f->npp * f->alstem * pcwimm;
             f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
@@ -673,83 +643,6 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
                 }
             }
         }
-        
-        if (arg2 > ptot && c->fixleafpc == FALSE && c->fixed_lai && c->pcycle) {
-          
-          /* Need to readjust the LAI for the reduced growth as this will
-          have already been increased. First we need to figure out how
-          much we have increased LAI by, important it is done here
-          before cpleaf is reduced! */
-          if (float_eq(s->shoot, 0.0)) {
-            lai_inc = 0.0;
-          } else {
-            lai_inc = (f->cpleaf *
-              (p->sla * M2_AS_HA / (KG_AS_TONNES * p->cfracts)) -
-              (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-          }
-          
-          f->npp *= ptot / (f->ppstemimm + f->ppstemmob + \
-            f->ppbranch + f->ppcroot);
-          
-          /* need to adjust growth values accordingly as well */
-          f->cpleaf = f->npp * f->alleaf;
-          f->cproot = f->npp * f->alroot;
-          f->cpcroot = f->npp * f->alcroot;
-          f->cpbranch = f->npp * f->albranch;
-          f->cpstem = f->npp * f->alstem;
-          
-          f->npbranch = f->npp * f->albranch * ncbnew;
-          f->npstemimm = f->npp * f->alstem * ncwimm;
-          f->npstemmob = f->npp * f->alstem * (ncwnew - ncwimm);
-          f->npcroot = f->npp * f->alcroot * nccnew;
-          
-          f->ppbranch = f->npp * f->albranch * pcbnew;
-          f->ppstemimm = f->npp * f->alstem * pcwimm;
-          f->ppstemmob = f->npp * f->alstem * (pcwnew - pcwimm);
-          f->ppcroot = f->npp * f->alcroot * pccnew;
-          
-          /* Save WUE before cut back */
-          f->wue = f->gpp_gCm2 / f->transpiration;
-          
-          /* Also need to recalculate GPP and thus Ra and return a flag
-          so that we know to recalculate the water balance. */
-          f->gpp = f->npp / p->cue;
-          conv = G_AS_TONNES / M2_AS_HA;
-          f->gpp_gCm2 = f->gpp / conv;
-          f->gpp_am = f->gpp_gCm2 / 2.0;
-          f->gpp_pm = f->gpp_gCm2 / 2.0;
-          
-          
-          /* New respiration flux */
-          f->auto_resp =  f->gpp - f->npp;
-          recalc_wb = TRUE;
-          
-          /* Now reduce LAI for down-regulated growth. */
-          if (c->deciduous_model) {
-            if (float_eq(s->shoot, 0.0)) {
-              s->lai = 0.0;
-            } else if (s->leaf_out_days[doy] > 0.0) {
-              s->lai -= lai_inc;
-              s->lai += (f->cpleaf *
-                (p->sla * M2_AS_HA / \
-                (KG_AS_TONNES * p->cfracts)) -
-                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-            } else {
-              s->lai = 0.0;
-            }
-          } else {
-            /* update leaf area [m2 m-2] */
-            if (float_eq(s->shoot, 0.0)) {
-              s->lai = 0.0;
-            } else {
-              s->lai -= lai_inc;
-              s->lai += (f->cpleaf *
-                (p->sla * M2_AS_HA / \
-                (KG_AS_TONNES * p->cfracts)) -
-                (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-            }
-          }
-        }
 
         /* Nitrogen reallocation to flexible-ratio pools */
         ntot -= f->npbranch + f->npstemimm + f->npstemmob + f->npcroot;
@@ -758,24 +651,26 @@ int np_allocation(control *c, fluxes *f, params *p, state *s,
         /* allocate remaining N to flexible-ratio pools */
         f->npleaf = ntot * f->alleaf / (f->alleaf + f->alroot * p->ncrfac);
         f->nproot = ntot - f->npleaf;
-        
+
         /* Phosphorus reallocation to flexible-ratio pools */
         ptot -= f->ppbranch + f->ppstemimm + f->ppstemmob + f->ppcroot;
         ptot = MAX(0.0, ptot);
-        
+
         /* allocate remaining P to flexible-ratio pools */
         f->ppleaf = ptot * f->alleaf / (f->alleaf + f->alroot * p->pcrfac);
         f->pproot = ptot - f->ppleaf;
-        
     }
-    
+
     return (recalc_wb);
 }
 
 
 double calculate_growth_stress_limitation(params *p, state *s, control *c) {
-    /* Calculate level of stress due to nitrogen, phosphorus or water availability */
-    double nlim, plim, current_limitation;
+    //
+    // Calculate level of stress due to nitrogen, phosphorus or water
+    // availability
+    //
+    double nlim, plim, current_limitation, nutrient_lim;
     double nc_opt = 0.04;
     double pc_opt = 0.004;
 
@@ -787,23 +682,10 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
     } else {
         nlim = 1.0;
     }
-    
-    //fprintf(stderr, "shootpc %f\n", s->shootpc);
-    
-    if(c->pcycle == TRUE) {
-      /* P limitation based on leaf PC ratio */
-      if (s->shootpc < p->pf_min) {
-        plim = 0.0;
-      } else if (s->shootpc < pc_opt && s->shootpc > p->pf_min) {
-        plim = 1.0 - ((pc_opt - s->shootpc) / (pc_opt - p->pf_min));
-      } else {
-        plim = 1.0;
-      }
-    } 
 
     /*
-     * Limitation by nitrogen, water and phosphorus. Water constraint is implicit,
-     * in that, water stress results in an increase of root mass,
+     * Limitation by nutrients or water. Water constraint is
+     * implicit, in that, water stress results in an increase of root mass,
      * which are assumed to spread horizontally within the rooting zone.
      * So in effect, building additional root mass doesnt alleviate the
      * water limitation within the model. However, it does more
@@ -813,16 +695,21 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
      * that have a flexible bucket depth. Minimum constraint is limited to
      * 0.1, following Zaehle et al. 2010 (supp), eqn 18.
      */
-    if (c->pcycle == TRUE) {
-      current_limitation = MAX(0.1, MIN(nlim, MIN(plim, s->wtfac_root)));
-    } else {
-      current_limitation = MAX(0.1, MIN(nlim,s->wtfac_root));
+    current_limitation = MAX(0.1, MIN(nlim,s->wtfac_root));
+
+    if(c->pcycle == TRUE) {
+        /* P limitation based on leaf PC ratio */
+        if (s->shootpc < p->pf_min) {
+            plim = 0.0;
+        } else if (s->shootpc < pc_opt && s->shootpc > p->pf_min) {
+            plim = 1.0 - ((pc_opt - s->shootpc) / (pc_opt - p->pf_min));
+        } else {
+            plim = 1.0;
+        }
+        nutrient_lim = MIN(nlim, plim);
+        current_limitation = MAX(0.1, MIN(nutrient_lim, s->wtfac_root));
     }
-    
-    //fprintf(stderr, "nlim %f\n", nlim);
-    //fprintf(stderr, "plim %f\n", plim);
-    //fprintf(stderr, "current %f\n", current_limitation);
-    
+
     return (current_limitation);
 }
 
@@ -862,7 +749,7 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     double min_stem_alloc = 0.01;
 
     if (c->alloc_model == FIXED){
-        f->alleaf = (p->c_alloc_fmax + npitfac *   //should c_alloc_fmax be c_alloc_fmin?
+        f->alleaf = (p->c_alloc_fmax + npitfac *
                      (p->c_alloc_fmax - p->c_alloc_fmin));
 
         f->alroot = (p->c_alloc_rmax + npitfac *
@@ -1020,7 +907,7 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
     Parameters:
     -----------
     npitfac : float
-        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0) 
+        leaf N:C as a fraction of 'Ncmaxfyoung' (max 1.0)
     */
     double days_left;
     if (c->deciduous_model) {
@@ -1037,13 +924,13 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
         f->cpbranch = f->npp * f->albranch;
         f->cpstem = f->npp * f->alstem;
     }
-    
+
     /* evaluate SLA of new foliage accounting for variation in SLA
        with tree and leaf age (Sands and Landsberg, 2002). Assume
        SLA of new foliage is linearly related to leaf N:C ratio
        via nitfac. Based on date from two E.globulus stands in SW Aus, see
        Corbeels et al (2005) Ecological Modelling, 187, 449-474.
-       (m2 onesided/kg DW) 
+       (m2 onesided/kg DW)
      This needs to be updated to consider P effect
     */
     p->sla = p->slazero + npitfac * (p->slamax - p->slazero);
@@ -1072,9 +959,9 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
     if (c->fixed_lai) {
         s->lai = p->fix_lai;
     }
-    
+
     //fprintf(stderr, "lai %f\n", s->lai);
-    
+
     return;
 }
 
@@ -1106,7 +993,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     s->croot += f->cpcroot - f->deadcroots;
     s->branch += f->cpbranch - f->deadbranch;
     s->stem += f->cpstem - f->deadstems;
-    
+
     //fprintf(stderr, "cproot %f\n", f->cproot);
     //fprintf(stderr, "deadroots %f\n", f->deadroots);
 
@@ -1144,11 +1031,11 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
     s->stemnmob += (f->npstemmob - p->wdecay * s->stemnmob - p->retransmob *
                     s->stemnmob);
     s->stemn = s->stemnimm + s->stemnmob;
-    
+
     s->branchp += f->ppbranch - p->bdecay * s->branchp;
-    
+
     s->rootp += f->pproot - rdecay * s->rootp;
-    
+
     //fprintf(stderr, "nuptake %f\n", f->nuptake*100000);
     //fprintf(stderr, "puptake %f\n", f->puptake*100000);
     //fprintf(stderr, "nproot %f\n", f->nproot);
@@ -1161,7 +1048,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
 
     s->crootp += f->ppcroot - p->crdecay * s->crootp;
     s->stempimm += f->ppstemimm - p->wdecay * s->stempimm;
-    
+
     s->stempmob += (f->ppstemmob - p->wdecay * s->stempmob - p->retransmob *
                     s->stempmob);
 
@@ -1179,7 +1066,7 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
            Similarly, of foliage or root P/C exceeds max, then P uptake is cut back */
 
         /* maximum leaf n:c and p:c ratios is function of stand age
-            - switch off age effect by setting ncmaxfyoung = ncmaxfold 
+            - switch off age effect by setting ncmaxfyoung = ncmaxfold
             - switch off age effect by setting pcmaxfyoung = pcmaxfold*/
         age_effect = (s->age - p->ageyoung) / (p->ageold - p->ageyoung);
         ncmaxf = p->ncmaxfyoung - (p->ncmaxfyoung - p->ncmaxfold) * age_effect;
@@ -1190,10 +1077,10 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
 
         if (ncmaxf > p->ncmaxfyoung)
             ncmaxf = p->ncmaxfyoung;
-        
+
         if (pcmaxf < p->pcmaxfold)
             pcmaxf = p->pcmaxfold;
-        
+
         if (pcmaxf > p->pcmaxfyoung)
             pcmaxf = p->pcmaxfyoung;
 
@@ -1211,17 +1098,17 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
                 //f->nuptake -= extrasn;
             }
         }
-        
+
         extrasp = 0.0;
         if (s->lai > 0.0) {
-          
+
           if (s->shootp > (s->shoot * pcmaxf)) {
             extrasp = s->shootp - s->shoot * pcmaxf;
-            
+
             /* Ensure P uptake cannot be reduced below zero. */
             if (extrasp >  f->puptake)
               extrasp = f->puptake;
-            
+
             s->shootp -= extrasp;
             //f->puptake -= extrasp;
           }
@@ -1244,22 +1131,22 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
             s->rootn -= extrarn;
             f->nuptake -= (extrarn+extrasn);
         }
-        
+
         /* max root p:c */
         pcmaxr = pcmaxf * p->pcrfac;
         extrarp = 0.0;
         if (s->rootp > (s->root * pcmaxr)) {
-          extrarp = s->rootp - s->root * pcmaxr;
-          
-          /* Ensure P uptake cannot be reduced below zero. */
-          if ((extrasp + extrarp) > f->puptake)
-            extrarp = f->puptake - extrasp;
+            extrarp = s->rootp - s->root * pcmaxr;
 
-          s->rootp -= extrarp;
-          f->puptake -= (extrarp + extrasp);
+            /* Ensure P uptake cannot be reduced below zero. */
+            if ((extrasp + extrarp) > f->puptake)
+                extrarp = f->puptake - extrasp;
+
+            s->rootp -= extrarp;
+            f->puptake -= (extrarp + extrasp);
         }
     }
-    
+
     /* Update deciduous storage pools */
     if (c->deciduous_model)
         calculate_cnp_store(c, f, s);
@@ -1279,7 +1166,7 @@ void precision_control(fluxes *f, state *s) {
         f->deadleafn += s->shootn;
         f->deadleafp += s->shootp;
         s->shoot = 0.0;
-        s->shootn = 0.0;   
+        s->shootn = 0.0;
         s->shootp = 0.0;
     }
 
@@ -1325,7 +1212,7 @@ void precision_control(fluxes *f, state *s) {
         s->stempimm = 0.000003;
         s->stempmob = 0.0;
     }
-    
+
     /* need separate one as this will become very small if there is no
        mobile stem N/P */
     if (s->stemnmob < tolerance) {
@@ -1337,7 +1224,7 @@ void precision_control(fluxes *f, state *s) {
         f->deadstemn += s->stemnimm;
         s->stemnimm = 0.00004;
     }
-    
+
     if (s->stempmob < tolerance) {
       f->deadstemp += s->stempmob;
       s->stempmob = 0.0;
@@ -1346,9 +1233,9 @@ void precision_control(fluxes *f, state *s) {
     if (s->stempimm < tolerance) {
       f->deadstemp += s->stempimm;
       s->stempimm = 0.000003;
-      
+
     }
-    
+
     return;
 }
 
@@ -1481,30 +1368,30 @@ void allocate_stored_cnp(fluxes *f, params *p, state *s) {
         s->inorgn += extrar
         s->n_to_alloc_root -= extrar
     */
-    
+
     /* =========================================================
     Phosphorus - Fixed ratios P allocation to woody components.
     ========================================================= */
-    
+
     /* P flux into new ring (immobile component -> structrual components) */
     s->p_to_alloc_stemimm = s->cstore * f->alstem * p->pcwimm;
-    
+
     /* P flux into new ring (mobile component -> can be retrans for new
     woody tissue) */
     s->p_to_alloc_stemmob = s->cstore * f->alstem * (p->pcwnew - p->pcwimm);
     s->p_to_alloc_branch = s->cstore * f->albranch * p->pcbnew;
     s->p_to_alloc_croot = s->cstore * f->alcroot * p->pccnew;
-    
+
     /* Calculate remaining P left to allocate to leaves and roots */
     ptot = MAX(0.0, (s->pstore - s->p_to_alloc_stemimm - s->p_to_alloc_stemmob -
     s->p_to_alloc_branch));
-    
+
     /* allocate remaining P to flexible-ratio pools */
     s->p_to_alloc_shoot = (ptot * f->alleaf /
                              (f->alleaf + f->alroot * p->pcrfac));
     s->p_to_alloc_root = ptot - s->p_to_alloc_shoot;
-    
-    
+
+
     return;
 }
 
@@ -1550,58 +1437,59 @@ double nitrogen_retrans(control *c, fluxes *f, params *p, state *s,
 }
 
 double phosphorus_retrans(control *c, fluxes *f, params *p, state *s,
-                        double fdecay, double rdecay, int doy) {
-  /* Phosphorus retranslocated from senesced plant matter.
-   Constant rate of p translocated from mobile pool
-   
-   Parameters:
-   -----------
-   fdecay : float
-   foliage decay rate
-   rdecay : float
-   fine root decay rate
-   
-   Returns:
-   --------
-   P retrans : float
-   P retranslocated plant matter
-   
-   */
-  double leafretransp, rootretransp, crootretransp, branchretransp,
-  stemretransp;
-  
-  if (c->deciduous_model) {
-    leafretransp = p->fretransp * f->lprate * s->remaining_days[doy];
-  } else {
-    leafretransp = p->fretransp * fdecay * s->shootp;
-  }
-  
-  rootretransp = p->rretrans * rdecay * s->rootp;
-  crootretransp = p->cretrans * p->crdecay * s->crootp;
-  branchretransp = p->bretrans * p->bdecay * s->branchp;
-  stemretransp = (p->wretrans * p->wdecay * s->stempmob + p->retransmob *
-    s->stempmob);
-  
-  /* store for NCEAS output */
-  f->leafretransp = leafretransp;
-  
-  return (leafretransp + rootretransp + crootretransp + branchretransp +
-          stemretransp);
+                          double fdecay, double rdecay, int doy) {
+    /*
+        Phosphorus retranslocated from senesced plant matter.
+        Constant rate of p translocated from mobile pool
+
+        Parameters:
+        -----------
+        fdecay : float
+        foliage decay rate
+        rdecay : float
+        fine root decay rate
+
+        Returns:
+        --------
+        P retrans : float
+        P retranslocated plant matter
+    */
+    double leafretransp, rootretransp, crootretransp, branchretransp,
+            stemretransp;
+
+    if (c->deciduous_model) {
+        leafretransp = p->fretransp * f->lprate * s->remaining_days[doy];
+    } else {
+        leafretransp = p->fretransp * fdecay * s->shootp;
+    }
+
+    rootretransp = p->rretrans * rdecay * s->rootp;
+    crootretransp = p->cretrans * p->crdecay * s->crootp;
+    branchretransp = p->bretrans * p->bdecay * s->branchp;
+    stemretransp = (p->wretrans * p->wdecay * s->stempmob + p->retransmob *
+                    s->stempmob);
+
+    /* store for NCEAS output */
+    f->leafretransp = leafretransp;
+
+    return (leafretransp + rootretransp + crootretransp + branchretransp +
+            stemretransp);
 }
 
 double calculate_nuptake(control *c, params *p, state *s) {
-    /* N uptake depends on the rate at which soil mineral N is made
-    available to the plants.
+    /*
+        N uptake depends on the rate at which soil mineral N is made
+        available to the plants.
 
-    Returns:
-    --------
-    nuptake : float
-        N uptake
+        Returns:
+        --------
+        nuptake : float
+            N uptake
 
-    References:
-    -----------
-    * Dewar and McMurtrie, 1996, Tree Physiology, 16, 161-171.
-    * Raich et al. 1991, Ecological Applications, 1, 399-429.
+        References:
+        -----------
+        * Dewar and McMurtrie, 1996, Tree Physiology, 16, 161-171.
+        * Raich et al. 1991, Ecological Applications, 1, 399-429.
 
     */
     double nuptake, U0, Kr;
@@ -1620,7 +1508,7 @@ double calculate_nuptake(control *c, params *p, state *s) {
         U0 = p->rateuptake * s->inorgn;
         Kr = p->kr;
         nuptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
-        
+
         //fprintf(stderr, "inorgn %f\n", s->inorgn);
         //fprintf(stderr, "nuptake %f\n", nuptake);
 
@@ -1640,46 +1528,44 @@ double calculate_nuptake(control *c, params *p, state *s) {
 
 
 double calculate_puptake(control *c, params *p, state *s, fluxes *f) {
-  /* P uptake depends on the rate at which soil mineral P is made
-  available to the plants.
-  
-  Returns:
-  --------
-  puptake : float
-  P uptake
+    /*
+        P uptake depends on the rate at which soil mineral P is made
+        available to the plants.
 
-  */
-  double puptake, U0, Kr;
-  
-  if (c->puptake_model == 0) {
-    /* Constant P uptake */
-    puptake = p->puptakez;
-    
-  } else if (c->puptake_model == 1) {
-    /* evaluate puptake : proportional to lab P pool that is available to plant uptake */
-      puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
-    
-  } else if (c->puptake_model == 2) {
-    /* P uptake is a saturating function on root biomass, as N */
-    
-    /* supply rate of available mineral P */
-    if (s->inorgsorbp > 0.0) {
-      U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+        Returns:
+        --------
+        puptake : float
+        P uptake
+    */
+    double puptake, U0, Kr;
+
+    if (c->puptake_model == 0) {
+        /* Constant P uptake */
+        puptake = p->puptakez;
+    } else if (c->puptake_model == 1) {
+        // evaluate puptake : proportional to lab P pool that is
+        // available to plant uptake
+        puptake = p->prateuptake * s->inorglabp * p->p_lab_avail;
+    } else if (c->puptake_model == 2) {
+        /* P uptake is a saturating function on root biomass, as N */
+
+        /* supply rate of available mineral P */
+        if (s->inorgsorbp > 0.0) {
+            U0 = p->prateuptake * s->inorglabp * p->p_lab_avail;
+        } else {
+            U0 = MIN((f->p_par_to_min + f->pmineralisation +
+                     f->purine + f->p_slow_biochemical),
+                     (p->prateuptake * s->inorglabp * p->p_lab_avail));
+        }
+
+        Kr = p->krp;
+        puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
     } else {
-      U0 = MIN((f->p_par_to_min + f->pmineralisation +
-               f->purine + f->p_slow_biochemical), 
-               (p->prateuptake * s->inorglabp * p->p_lab_avail));
+        fprintf(stderr, "Unknown P uptake option\n");
+        exit(EXIT_FAILURE);
     }
-    
-    Kr = p->krp;
-    puptake = MAX(U0 * s->root / (s->root + Kr), 0.0);
 
-  } else {
-    fprintf(stderr, "Unknown P uptake option\n");
-    exit(EXIT_FAILURE);
-  }
-  
-  return (puptake);
+    return (puptake);
 }
 
 
@@ -1779,7 +1665,7 @@ void update_roots(control *c, params *p, state *s) {
             break;
         }
     }
-    
+
     /* how for into the soil do the reach extend? */
     root_reach = s->layer_depth[s->rooted_layers];
 

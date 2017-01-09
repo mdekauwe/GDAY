@@ -66,7 +66,7 @@ void   calculate_p_immobilisation(fluxes *, params *, state *, double *,
                                   double *, double *, double *);
 void   calculate_p_ssorb_to_sorb(state *, fluxes *, params *, control *);
 void   calculate_p_sorb_to_ssorb(state *, fluxes *, params *);
-void   calculate_p_ssorb_to_occ(state *, fluxes *, params *); 
+void   calculate_p_ssorb_to_occ(state *, fluxes *, params *);
 void   calc_p_net_mineralisation(fluxes *);
 double calculate_pc_slope(params *, double, double);
 void   calculate_p_biochemical_mineralisation(fluxes *, params *,state *);
@@ -80,7 +80,6 @@ void   soil_soprtion_parameters(char *, params *);
 /* priming/exudation */
 void calc_root_exudation_uptake_of_C(fluxes *, params *, state *);
 void calc_root_exudation_uptake_of_N(fluxes *, state *);
-void calc_root_exudation_uptake_of_P(fluxes *, state *);
 void adjust_residence_time_of_slow_pool(fluxes *, params *);
 
 #endif /* SOILS_H */

@@ -58,9 +58,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         unpack_met_data(c, f, ma, m, hod, dummy2);
 
         /* calculates diffuse frac from half-hourly incident radiation */
-        calculate_solar_geometry(cw, p, doy, hod);
-        get_diffuse_frac(cw, doy, m->sw_rad);
-        
         unpack_solar_geometry(cw, c);
 
         /* Is the sun up? */
@@ -69,7 +66,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calculate_top_of_canopy_leafn(cw, p, s);
             calculate_top_of_canopy_leafp(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p);
-            
+
             /* sunlit / shaded loop */
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
 
@@ -249,6 +246,30 @@ double calc_leaf_net_rad(params *p, state *s, double tair, double vpd,
     return (rnet);
 }
 
+void calculate_top_of_canopy_leafp(canopy_wk *cw, params *p, state *s) {
+    //
+    // Calculate the P at the top of the canopy (g P m-2), P0, based on
+    // calculate_top_of_canopy_leafp relationship;
+    //
+    double Ptot;
+
+    // leaf mass per area (g C m-2 leaf)
+    double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
+
+    if (s->lai > 0.0) {
+        // the total amount of phosphorus in the canopy
+        Ptot = s->shootpc * LMA * s->lai;
+
+        // top of canopy leaf N (gN m-2)
+        cw->P0 = Ptot * p->kp / (1.0 - exp(-p->kp * s->lai));
+    } else {
+        cw->P0 = 0.0;
+    }
+
+    return;
+}
+
+
 void zero_carbon_day_fluxes(fluxes *f) {
 
     f->gpp_gCm2 = 0.0;
@@ -260,6 +281,8 @@ void zero_carbon_day_fluxes(fluxes *f) {
 
     return;
 }
+
+
 
 
 void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
@@ -276,7 +299,7 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
 
     /* leaf mass per area (g C m-2 leaf) */
     double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
-    
+
     if (s->lai > 0.0) {
         /* the total amount of nitrogen in the canopy */
         Ntot = s->shootnc * LMA * s->lai;
@@ -288,31 +311,6 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
     }
 
     return;
-}
-
-void calculate_top_of_canopy_leafp(canopy_wk *cw, params *p, state *s) {
-  
-  /*
-   Calculate the P at the top of the canopy (g P m-2), P0, based on
-   calculate_top_of_canopy_leafp relationship;
-   
-   */
-  double Ptot;
-  
-  /* leaf mass per area (g C m-2 leaf) */
-  double LMA = 1.0 / p->sla * p->cfracts * KG_AS_G;
-  
-  if (s->lai > 0.0) {
-    /* the total amount of phosphorus in the canopy */
-    Ptot = s->shootpc * LMA * s->lai;
-    
-    /* top of canopy leaf N (gN m-2) */
-    cw->P0 = Ptot * p->kp / (1.0 - exp(-p->kp * s->lai));
-  } else {
-    cw->P0 = 0.0;
-  }
-  
-  return;
 }
 
 void zero_hourly_fluxes(canopy_wk *cw) {

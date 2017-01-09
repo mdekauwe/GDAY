@@ -1027,56 +1027,6 @@ double calc_sat_water_vapour_press(double tac) {
     return (613.75 * exp(17.502 * tac / (240.97 + tac)));
 }
 
-void initialise_soil_moisture_parameters(control *c, params *p) {
-    /*
-      initialise parameters, if these are not known for the site use
-      values derived from Cosby et al to calculate the amount of plant
-      available water.
-     */
-
-    double *fsoil_top = NULL, *fsoil_root = NULL;
-    double sand_top, sand_root;
-
-    if (c->calc_sw_params) {
-        fsoil_top = get_soil_fracs(p->topsoil_type);
-        sand_top = fsoil_top[1];
-        
-        fsoil_root = get_soil_fracs(p->rootsoil_type);
-        sand_root = fsoil_root[1];
-        
-        //p->sand_frac = (sand_top + sand_root ) / 2;
-
-        /* top soil */
-        calc_soil_params(fsoil_top, &p->theta_fc_topsoil, &p->theta_wp_topsoil,
-                         &p->theta_sp_topsoil, &p->b_topsoil,
-                         &p->psi_sat_topsoil);
-
-        /* Plant available water in top soil (mm) */
-        p->wcapac_topsoil = p->topsoil_depth  *\
-                            (p->theta_fc_topsoil - p->theta_wp_topsoil);
-        /* Root zone */
-        calc_soil_params(fsoil_root, &p->theta_fc_root, &p->theta_wp_root,
-                         &p->theta_sp_root, &p->b_root, &p->psi_sat_root);
-
-        /* Plant available water in rooting zone (mm) */
-        p->wcapac_root = p->rooting_depth * \
-                            (p->theta_fc_root - p->theta_wp_root);
-    }
-
-
-    /* calculate Landsberg and Waring SW modifier parameters if not
-       specified by the user based on a site calibration */
-    if (p->ctheta_topsoil < -900.0 && p->ntheta_topsoil  < -900.0 &&
-        p->ctheta_root < -900.0 && p->ntheta_root < -900.0) {
-        get_soil_params(p->topsoil_type, &p->ctheta_topsoil, &p->ntheta_topsoil);
-        get_soil_params(p->rootsoil_type, &p->ctheta_root, &p->ntheta_root);
-    }
-
-    free(fsoil_top);
-    free(fsoil_root);
-
-    return;
-}
 
 
 double *get_soil_fracs(char *soil_type) {

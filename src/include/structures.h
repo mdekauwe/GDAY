@@ -103,7 +103,7 @@ typedef struct {
     double nstore;                      /* N store for deciduous model (t/ha) */
     double pstore;                      /* P store for deciduous model (t/ha) */
     double passivesoil;                 /* passive C som pool (t/ha) */
-    double passivesoiln;                /* passive N som pool (t/ha) */   
+    double passivesoiln;                /* passive N som pool (t/ha) */
     double passivesoilp;                /* passive P som pool (t/ha) */
     double pawater_root;                /* plant available water - root zone (mm) */
     double pawater_topsoil;             /* plant available water - top soil(mm) */
@@ -301,9 +301,9 @@ typedef struct {
     double kdec5;                           /* active pool decay rate (1/yr) */
     double kdec6;                           /* slow pool decay rate (1/yr) */
     double kdec7;                           /* passive pool decay rate (1/yr) */
-    double kext;                            /* extinction coefficient for function calculate_top_of_canopy_n/p in photosynthesis.c */
-    double kn;                              /* extinction coefficient of nitrogen in the canopy, assumed to be 0.3 by defaul which comes half from Belinda's head and is supported by fig 10 in Lloyd et al. Biogeosciences, 7, 1833–1859, 2010 */
-    double kp;                              /* extinction coefficient of phosphorus in the canopy for function calculate_top_of_canopy_leafp in canopy.c */
+    double kext;                            /* extinction coefficient for light  */
+    double kn;                              /* extinction coefficient of nitrogen in the canopy, assumed to be 0.3 by default which comes half from Belinda's head and is supported by fig 10 in Lloyd et al. Biogeosciences, 7, 1833–1859, 2010 */
+    double kp;                              /* extinction coefficient of phosphorus in the canopy */
     double knl;
     double ko25;                            /* Base rate for oxygenation by Rubisco at 25degC [umol mol-1]. Note value in Bernacchie 2001 is in mmol!! */
     double kq10;                            /* exponential coefficient for Rm vs T */
@@ -403,7 +403,7 @@ typedef struct {
     char   rootsoil_type[STRING_LENGTH];
     char   soil_order[STRING_LENGTH];       /* soil order */
     double rretrans;                        /* root n retranslocation fraction */
-    //double sand_frac;                       /* fraction of sand in soil (top + root averaged) */ 
+    //double sand_frac;                       /* fraction of sand in soil (top + root averaged) */
     double sapturnover;                     /* Sapwood turnover rate: conversion of sapwood to heartwood (1/yr) */
     double sla;                             /* specific leaf area (m2 one-sided/kg DW) */
     double slamax;                          /* (if equal slazero=no effect) specific leaf area new fol at max leaf N/C (m2 one-sided/kg DW) */
@@ -569,7 +569,7 @@ typedef struct {
     double nlittrelease;    /* N rel litter = struct + metab */
     double activelossf;     /* frac of active C -> CO2 */
     double nmineralisation;
-    
+
     /* p */
     double puptake;         /* P plant uptake rate */
     double ploss;           /* P loss by leaching */
@@ -578,7 +578,7 @@ typedef struct {
     double pimmob;          /* P immobilisation in SOM */
     double plittrelease;    /* P rel litter = struct + metab */
     double pmineralisation; /* P net mineralised */
-    
+
 
     /* water fluxes */
     double wue;
@@ -610,7 +610,7 @@ typedef struct {
     double npstemimm;
     double npstemmob;
     double nrootexudate;
-    
+
     /* daily P production */
     double ppleaf;
     double pproot;
@@ -642,16 +642,16 @@ typedef struct {
     double ceaten;          /* C consumed by grazers (t C/ha/y) */
     double neaten;          /* N consumed by grazers (t N/ha/y) */
     double peaten;          /* P consumed by grazers (t P/ha/y) */
-    
+
     double faecesc;         /* Flux determined by faeces C:N */
     double nurine;          /* Rate of N input to soil in urine (t/ha/y) */
     double purine;          /* Rate of P input to soil in urine (t/ha/y) */
-    
+
     double leafretransn;    /* N retranslocation leaf */
     double leafretransp;    /* P version of leafretransn */
-    
 
-    /* C, N  & P Surface litter */
+
+    /* C, N & P Surface litter */
     double surf_struct_litter;
     double surf_metab_litter;
     double n_surf_struct_litter;
@@ -666,7 +666,7 @@ typedef struct {
     double n_soil_metab_litter;
     double p_soil_struct_litter;
     double p_soil_metab_litter;
-    
+
 
     /* C, N & P litter fluxes to slow pool */
     double surf_struct_to_slow;
@@ -675,7 +675,7 @@ typedef struct {
     double n_soil_struct_to_slow;
     double p_surf_struct_to_slow;
     double p_soil_struct_to_slow;
-    
+
     /* C, N & P litter fluxes to active pool */
     double surf_struct_to_active;
     double soil_struct_to_active;
@@ -718,7 +718,7 @@ typedef struct {
     double c_into_active;
     double c_into_slow;
     double c_into_passive;
-    
+
     /* inorganic P flux exchanges */
     double p_lab_in;
     double p_lab_out;
@@ -729,7 +729,7 @@ typedef struct {
     double p_ssorb_to_occ;
     double p_par_to_min;
     double p_atm_dep;
-    
+
 
     /* CO2 flows to the air */
     double co2_to_air[7];
@@ -772,11 +772,10 @@ typedef struct {
     double wpimrate;            /* immobilised */
     double wpmobrate;           /* mobilised */
     double cprate;              /* coarse root */
-    
+
     /* priming/exudation */
     double root_exc;
     double root_exn;
-    double root_exp;
     double co2_released_exud;
     double factive;
     double rtslow;
