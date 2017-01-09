@@ -167,7 +167,7 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
                           &(ma->tam[i]), &(ma->tpm[i]), &(ma->tmin[i]), \
                           &(ma->tmax[i]), &(ma->tday[i]), &(ma->vpd_am[i]), \
                           &(ma->vpd_pm[i]), &(ma->co2[i]), &(ma->ndep[i]), \
-                          &(ma->nfix[i]),  &(ma->nfix[i]), &(ma->wind[i]), \
+                          &(ma->nfix[i]),  &(ma->pdep[i]), &(ma->wind[i]), \
                           &(ma->press[i]), &(ma->wind_am[i]), &(ma->wind_pm[i]), \
                           &(ma->par_am[i]), &(ma->par_pm[i])) != nvars) {
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \

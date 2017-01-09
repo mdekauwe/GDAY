@@ -719,7 +719,7 @@ void correct_rate_constants(params *p, int output) {
         p->puptakez *= NDAYS_IN_YR;
         p->nmax *= NDAYS_IN_YR;
         p->pmax *= NDAYS_IN_YR;
-        p->p_atm_deposition *= NDAYS_IN_YR;
+//        p->p_atm_deposition *= NDAYS_IN_YR;
         p->p_rate_par_weather *= NDAYS_IN_YR;
         p->max_p_biochemical *= NDAYS_IN_YR;
         p->rate_sorb_ssorb *= NDAYS_IN_YR;
@@ -749,7 +749,7 @@ void correct_rate_constants(params *p, int output) {
         p->puptakez /= NDAYS_IN_YR;
         p->nmax /= NDAYS_IN_YR;
         p->pmax /= NDAYS_IN_YR;
-        p->p_atm_deposition /= NDAYS_IN_YR;
+//        p->p_atm_deposition /= NDAYS_IN_YR;
         p->p_rate_par_weather /= NDAYS_IN_YR;
         p->max_p_biochemical /= NDAYS_IN_YR;
         p->rate_sorb_ssorb /= NDAYS_IN_YR;
@@ -1090,7 +1090,7 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
     
     /* P deposition to fluxes */
     f->p_atm_dep = m->pdep;
-
+    
     return;
 }
 

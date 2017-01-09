@@ -1588,12 +1588,12 @@ void calculate_p_parent_fluxes(fluxes *f, params *p, state *s) {
    p_par_to_min: parent to mineral P pool
   */
   
-  fprintf(stderr, "p_atm_deposition %f\n", f->p_atm_dep);
+  //fprintf(stderr, "p_atm_deposition %f\n", f->p_atm_dep*1000000000);
   
   /* parent material weathering */
   f->p_par_to_min = p->p_rate_par_weather * s->inorgparp;
   
-  fprintf(stderr, "p_par_to_min %f\n", f->p_par_to_min);
+  //fprintf(stderr, "p_par_to_min %f\n", f->p_par_to_min);
   
   return;
   
