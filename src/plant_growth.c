@@ -1257,7 +1257,7 @@ void update_roots(control *c, params *p, state *s) {
     } else {
         fine_root = s->root;
     }
-    
+
     root_biomass = MAX(min_biomass, fine_root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
     //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
@@ -1271,7 +1271,7 @@ void update_roots(control *c, params *p, state *s) {
             break;
         }
     }
-
+    
     /* how for into the soil do the reach extend? */
     root_reach = s->layer_depth[s->rooted_layers];
 
