@@ -897,12 +897,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             s->slowsoil += slowsoilX;
             s->passivesoil += passivesoilX;
 
-            s->soilc = s->activesoil + s->slowsoil + s->passivesoil;
-            s->plantc = s->root + s->croot + s->shoot + s->stem + s->branch;
-
             // Solve N pools
-
-
             s->shootn = s->shoot * fs->shoot_nc;
             s->rootn = s->root * fs->root_nc;
             s->crootn = s->croot * fs->croot_nc;
@@ -957,18 +952,20 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     s->plantc = s->root + s->croot + s->shoot + s->stem + s->branch;
     s->totalc = s->soilc + s->litterc + s->plantc;
 
+    /* total plant, soil & litter nitrogen */
+    s->soiln = s->inorgn + s->activesoiln + s->slowsoiln + s->passivesoiln;
+    s->litternag = s->structsurfn + s->metabsurfn;
+    s->litternbg = s->structsoiln + s->metabsoiln;
+    s->littern = s->litternag + s->litternbg;
+    s->plantn = s->shootn + s->rootn + s->crootn + s->branchn + s->stemn;
+    s->totaln = s->plantn + s->littern + s->soiln;
+
     printf("PLANT %f : %f %f %f\n", s->plantc, s->shoot, s->stem + s->branch + s->root, s->root);
     printf("SOIL %f : %f %f %f\n", s->soilc, s->activesoil, s->slowsoil, s->passivesoil);
     printf("LITTER %f : %f %f\n", s->litterc, s->littercag, s->littercbg);
 
 
-    /* total plant, soil & litter nitrogen */
-    //s->soiln = s->inorgn + s->activesoiln + s->slowsoiln + s->passivesoiln;
-    //s->litternag = s->structsurfn + s->metabsurfn;
-    //s->litternbg = s->structsoiln + s->metabsoiln;
-    //s->littern = s->litternag + s->litternbg;
-    //s->plantn = s->shootn + s->rootn + s->crootn + s->branchn + s->stemn;
-    //s->totaln = s->plantn + s->littern + s->soiln;
+
 
 
     exit(1);
