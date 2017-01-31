@@ -113,5 +113,6 @@ void   unpack_met_data(control *, fluxes *f, met_arrays *, met *, int, double);
 void   allocate_numerical_libs_stuff(nrutil *);
 void   fill_up_solar_arrays(canopy_wk *, control *, met_arrays *, params *);
 void   zero_fast_spinup_stuff(fast_spinup *);
-
+void   sas_spinup(canopy_wk *, control *, fluxes *, fast_spinup *,
+                     met_arrays *, met *, params *p, state *, nrutil *);
 #endif /* GDAY_H */
