@@ -907,7 +907,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             s->rootn = s->root * fs->root_nc;
             s->crootn = s->croot * fs->croot_nc;
             s->branchn = s->branch * fs->branch_nc;
-            s->stemnmob = 0.0;
             s->stemn = s->stem * fs->stem_nc;
             s->stemnimm = s->stem * fs->stemnimm_ratio;
             s->stemnmob = s->stem * fs->stemnmob_ratio;
