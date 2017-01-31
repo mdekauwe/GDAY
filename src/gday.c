@@ -676,8 +676,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 }
 
                 /* Have we reached a steady state? */
-                fprintf(stderr,
-                  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+                //fprintf(stderr,
+                //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
 
             /* total plant, soil, litter and system carbon */
@@ -688,10 +688,16 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             s->plantc = s->root + s->croot + s->shoot + s->stem + s->branch;
             s->totalc = s->soilc + s->litterc + s->plantc;
 
-            printf("PLANT %f : %f %f %f\n", s->plantc, s->shoot, s->stem + s->branch + s->root, s->root);
-            printf("SOIL %f : %f %f %f\n", s->soilc, s->activesoil, s->slowsoil, s->passivesoil);
-            printf("LITTER %f : %f %f\n", s->litterc, s->littercag, s->littercbg);
         }
+
+        printf("PLANT %f : %f %f %f\n", s->plantc, s->shoot, s->stem + s->branch + s->root, s->root);
+        printf("SOIL %f : %f %f %f\n", s->soilc, s->activesoil, s->slowsoil, s->passivesoil);
+        printf("LITTER %f : %f %f\n", s->litterc, s->littercag, s->littercbg);
+
+        /* Have we reached a steady state? */
+        fprintf(stderr,
+          "Spunup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+
     } else if (c->spinup_method == SAS) {
         //
         // Semi-analytical solution (SAS) to accelerate model spin-up of
