@@ -741,10 +741,10 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         }
     }
 
-    // Step 3: Analytically solve the steady state pools, NB step 2 is
-    //         done inside the run_sim func (i.e. the storing of time
-    //         varying vars).
+    // Step 2: store the time varying vars is done internal in the rest of the
+    //         code.
 
+    // Step 3: Analytically solve the steady state pools
 
     // Calculate the mean time-varying variables
     total_days = (double)fs->ndays;
@@ -786,6 +786,7 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     // Steady-state NPP
     NPP = fs->npp_ss / total_days;
 
+    // Solve the C pools
     leafgrowth = (NPP * mu_af);
     deadleaves = (s->shoot * mu_lf);
     shootX = leafgrowth - deadleaves;
@@ -881,7 +882,7 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     passivesoilX = c_into_passive - \
                     (passive_to_active + co2_to_air6);
 
-
+    // Update the state
     s->shoot += shootX;
     s->root += rootX;
     s->croot += crootX;
@@ -896,7 +897,7 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     s->slowsoil += slowsoilX;
     s->passivesoil += passivesoilX;
 
-    // Solve N pools
+    // Now solve the N pools using the average NC ratio
     s->shootn = s->shoot * fs->shoot_nc;
     s->rootn = s->root * fs->root_nc;
     s->crootn = s->croot * fs->croot_nc;
@@ -904,7 +905,6 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     s->stemn = s->stem * fs->stem_nc;
     s->stemnimm = s->stem * fs->stemnimm_ratio;
     s->stemnmob = s->stem * fs->stemnmob_ratio;
-
     s->metabsoiln = s->metabsoil * fs->metablsoil_nc;
     s->metabsurfn = s->metabsurf * fs->metabsurf_nc;
     s->structsoiln = s->structsoil * fs->structsoil_nc;
@@ -913,23 +913,20 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     s->slowsoiln = s->slowsoil * fs->slowsoil_nc;
     s->passivesoiln = s->passivesoil * fs->passivesoil_nc;
 
-    // Step 4:  Setting a steady-state criterion for the slowest C pool for
-    //          the final spin-up
+    // Step 4:  Keep spinning until the slowest C pool (passive) hit equilibrium
     while (TRUE) {
         if (fabs(s->passivesoil - prev_passivec) < 0.05) {
             break;
         } else {
             prev_passivec = s->passivesoil;
-            run_sim(cw, c, f, fs, ma, m, p, s, nr); /* run GDAY */
+            run_sim(cw, c, f, fs, ma, m, p, s, nr);
         }
-
     }
 
     fprintf(stderr,
       "Spunup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
 
     return;
-
 }
 
 void clparser(int argc, char **argv, control *c) {
