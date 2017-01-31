@@ -655,8 +655,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 }
 
                 /* Have we reached a steady state? */
-                //fprintf(stderr,
-                //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+                fprintf(stderr,
+                  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
 
             /* total plant, soil, litter and system carbon */
@@ -668,14 +668,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             s->totalc = s->soilc + s->litterc + s->plantc;
 
         }
-
-        printf("PLANT %f : %f %f %f\n", s->plantc, s->shoot, s->stem + s->branch + s->root, s->root);
-        printf("SOIL %f : %f %f %f\n", s->soilc, s->activesoil, s->slowsoil, s->passivesoil);
-        printf("LITTER %f : %f %f\n", s->litterc, s->littercag, s->littercbg);
-
-        /* Have we reached a steady state? */
-        fprintf(stderr,
-          "Spunup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
 
     } else if (c->spinup_method == SAS) {
         //
@@ -935,29 +927,6 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
     fprintf(stderr,
       "Spunup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
-
-
-
-    /* total plant, soil, litter and system carbon */
-    s->soilc = s->activesoil + s->slowsoil + s->passivesoil;
-    s->littercag = s->structsurf + s->metabsurf;
-    s->littercbg = s->structsoil + s->metabsoil;
-    s->litterc = s->littercag + s->littercbg;
-    s->plantc = s->root + s->croot + s->shoot + s->stem + s->branch;
-    s->totalc = s->soilc + s->litterc + s->plantc;
-
-    /* total plant, soil & litter nitrogen */
-    s->soiln = s->inorgn + s->activesoiln + s->slowsoiln + s->passivesoiln;
-    s->litternag = s->structsurfn + s->metabsurfn;
-    s->litternbg = s->structsoiln + s->metabsoiln;
-    s->littern = s->litternag + s->litternbg;
-    s->plantn = s->shootn + s->rootn + s->crootn + s->branchn + s->stemn;
-    s->totaln = s->plantn + s->littern + s->soiln;
-
-    printf("PLANT %f : %f %f %f\n", s->plantc, s->shoot, s->stem + s->branch + s->root, s->root);
-    printf("SOIL %f : %f %f %f\n", s->soilc, s->activesoil, s->slowsoil, s->passivesoil);
-    printf("LITTER %f : %f %f\n", s->litterc, s->littercag, s->littercbg);
-
 
     return;
 
