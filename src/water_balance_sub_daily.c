@@ -802,7 +802,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
     //
 
     int     i;
-    double  unsat, drain_layer, liquid, new_water_frac, change;
+    double  unsat, drain_layer, liquid, new_water_frac, change, drainage;
 
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
@@ -818,11 +818,24 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
         // Assumption that ~5% of the water in the layer will drain, this is
         // taken from running the standard SPA model and averaging the change
         // for 10000 timesteps. I got ~7% for the site in question, tumba, so
-        // I've assumed a universal 5%, this number could do with more
+        // I've assumed a universal 10%, this number could do with more
         // testing :)
 
         // waterloss from this layer
-        new_water_frac = liquid * 0.05;
+        drainage = liquid * 0.1;
+
+        // gravitational drainage above field_capacity
+        if (drainage <= drain_layer) {
+            drainage = 0.0;
+        }
+
+        // layer below cannot accept more water than unsat
+        if (drainage > unsat) {
+            drainage = unsat;
+        }
+
+        // waterloss from this layer
+        new_water_frac = s->water_frac[soil_layer] - drainage;
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
