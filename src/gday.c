@@ -515,7 +515,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **   E N D   O F   D A Y   **
             ** ======================= */
         }
-        
+
 
         /* Allocate stored C&N for the following year */
         if (c->deciduous_model) {
