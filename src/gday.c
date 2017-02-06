@@ -640,15 +640,6 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     fprintf(stderr, "Spinning up the model...\n");
 
     if (c->spinup_method == BRUTE) {
-        printf("HERE %d\n", c->spinup_method);
-    } else {
-        printf("NO HERE\n");
-    }
-
-    exit(1);
-
-
-    if (c->spinup_method == BRUTE) {
 
         while (TRUE) {
             if (fabs(prev_plantc - s->plantc) < tol &&
