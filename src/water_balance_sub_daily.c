@@ -805,7 +805,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
     /* value affecting the max time interval at which variables should b calc */
     double  soilpor = p->porosity[soil_layer];
     double  unsat, drain_layer, liquid, new_water_frac, change;
-    
+
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
                       s->water_frac[soil_layer+1]) *\
@@ -819,7 +819,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
 
         // Assumption that ~7% of the water in the layer will drain, this is
         // taken from running the standard SPA model and averaging the change
-        // for 10000 timesteps. This number could do with more testing!
+        // for 10000 timesteps. This number could do with more testing :)
 
         // waterloss from this layer
         new_water_frac = liquid * 0.07;
