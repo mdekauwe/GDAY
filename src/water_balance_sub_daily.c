@@ -802,7 +802,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
     //
 
     int     i;
-    double  unsat, drain_layer, liquid, new_water_frac, change, needed;
+    double  unsat, drain_layer, liquid, new_water_frac, change;
 
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
@@ -822,13 +822,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
         // testing :)
 
         // waterloss from this layer
-        needed = liquid * 0.05;
-
-        // Don't over-extract
-        if (needed > liquid) {
-            needed = liquid;
-        }
-        new_water_frac = needed;
+        new_water_frac = liquid * 0.05;
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
@@ -897,10 +891,6 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
 
         /* ystart is a vector 1..N, so need to index from 1 */
         new_water_frac = nr->ystart[1];
-
-        //double chg;
-        //chg = (new_water_frac - s->water_frac[soil_layer]) /  s->water_frac[soil_layer] * 100.;
-        //printf("%f\n", chg);
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
