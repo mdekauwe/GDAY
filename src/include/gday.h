@@ -63,6 +63,10 @@
 #define BUCKET 0
 #define HYDRAULICS 1
 
+/* Drainage options for SPA */
+#define GRAVITY 0
+#define CASCADING 1
+
 /* Spinup method */
 #define BRUTE 0
 #define SAS 1

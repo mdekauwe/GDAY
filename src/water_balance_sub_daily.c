@@ -192,7 +192,14 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         // down the profile
         //
         for (i = 0; i < p->n_layers; i++) {
-            calc_soil_balance(f, nr, p, s, i, &water_lost);
+            if (c->soil_drainage == GRAVITY) {
+                calc_soil_balance(f, nr, p, s, i, &water_lost);
+            } else if (c->soil_drainage == CASCADING) {
+                // Redistribute soil water following a cascading or
+                // 'tipping bucket' approach, much simpler and computational
+                // effective.
+                calc_soil_balance_cascading(f, nr, p, s, i, &water_lost);
+            }
         }
 
         //
@@ -784,6 +791,55 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
     return (runoff);
 }
 
+void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
+                                 int soil_layer, double *water_lost) {
+    //
+    // Much simpler solution to soil water drainge: assumes that water can move
+    // (downwards) through the soil profile, filling up the layers until
+    // field capacity is reached, with the fraction of water exceeding this
+    // threshold moving to the deeper layer
+    //
+
+    int    i, N = 1;
+
+    /* value affecting the max time interval at which variables should b calc */
+    double  soilpor = p->porosity[soil_layer];
+    double  unsat, drain_layer, liquid, new_water_frac, change;
+    
+    /* unsaturated volume of layer below (m3 m-2) */
+    unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
+                      s->water_frac[soil_layer+1]) *\
+                      s->thickness[soil_layer+1] / s->thickness[soil_layer]);
+
+    /* soil water capacity of the current layer */
+    drain_layer = p->field_capacity[soil_layer];
+    liquid = s->water_frac[soil_layer];
+
+    if (liquid > 0.0 && liquid > drain_layer) {
+
+        // Assumption that ~7% of the water in the layer will drain, this is
+        // taken from running the standard SPA model and averaging the change
+        // for 10000 timesteps. This number could do with more testing!
+
+        // waterloss from this layer
+        new_water_frac = liquid * 0.07;
+
+        /* convert from water fraction to absolute amount (m) */
+        change = (s->water_frac[soil_layer] - new_water_frac) * \
+                  s->thickness[soil_layer];
+
+        // update soil layer below with drained liquid
+        if (soil_layer+1 < p->n_layers) {
+            f->water_gain[soil_layer+1] += change;
+        } else {
+            // We are draining through the bottom soil layer, add to runoff
+            *water_lost += change;
+        }
+        f->water_loss[soil_layer] += change;
+    }
+
+    return;
+}
 
 void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
                        int soil_layer, double *water_lost) {
@@ -835,6 +891,10 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
 
         /* ystart is a vector 1..N, so need to index from 1 */
         new_water_frac = nr->ystart[1];
+
+        //double chg;
+        //chg = (new_water_frac - s->water_frac[soil_layer]) /  s->water_frac[soil_layer] * 100.;
+        //printf("%f\n", chg);
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \

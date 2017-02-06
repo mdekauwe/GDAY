@@ -53,6 +53,7 @@ void initialise_control(control *c) {
     c->sub_daily = FALSE;           /* Run at daily or 30 minute timestep */
     c->num_hlf_hrs = 48;
     c->pdebug = FALSE;              /* Use to debug a specific day */
+    c->soil_drainage = GRAVITY;
     return;
 }
 

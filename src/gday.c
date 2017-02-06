@@ -676,7 +676,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         //
         sas_spinup(cw, c, f, fs, ma, m, p, s, nr);
     }
-    
+
     write_final_state(c, p, s);
 
     return;
@@ -919,6 +919,8 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         } else {
             prev_passivec = s->passivesoil;
             run_sim(cw, c, f, fs, ma, m, p, s, nr);
+            fprintf(stderr,
+              "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
     }
 
