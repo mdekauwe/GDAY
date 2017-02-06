@@ -197,7 +197,8 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
             } else if (c->soil_drainage == CASCADING) {
                 // Redistribute soil water following a cascading or
                 // 'tipping bucket' approach, much simpler and computational
-                // effective.
+                // effective. We have made an assumption about the drainage
+                // rate to make this work
                 calc_soil_balance_cascading(f, nr, p, s, i, &water_lost);
             }
         }
@@ -800,11 +801,8 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
     // threshold moving to the deeper layer
     //
 
-    int    i, N = 1;
-
-    /* value affecting the max time interval at which variables should b calc */
-    double  soilpor = p->porosity[soil_layer];
-    double  unsat, drain_layer, liquid, new_water_frac, change;
+    int     i;
+    double  unsat, drain_layer, liquid, new_water_frac, change, needed;
 
     /* unsaturated volume of layer below (m3 m-2) */
     unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
@@ -817,12 +815,20 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
 
     if (liquid > 0.0 && liquid > drain_layer) {
 
-        // Assumption that ~7% of the water in the layer will drain, this is
+        // Assumption that ~5% of the water in the layer will drain, this is
         // taken from running the standard SPA model and averaging the change
-        // for 10000 timesteps. This number could do with more testing :)
+        // for 10000 timesteps. I got ~7% for the site in question, tumba, so
+        // I've assumed a universal 5%, this number could do with more
+        // testing :)
 
         // waterloss from this layer
-        new_water_frac = liquid * 0.07;
+        needed = liquid * 0.05;
+
+        // Don't over-extract
+        if (needed > liquid) {
+            needed = liquid;
+        }
+        new_water_frac = needed;
 
         /* convert from water fraction to absolute amount (m) */
         change = (s->water_frac[soil_layer] - new_water_frac) * \
