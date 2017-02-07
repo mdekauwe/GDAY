@@ -241,10 +241,10 @@ void initialise_params(params *p) {
     p->leaf_abs = 0.5;
 
     /* hydraulics */
-    p->layer_thickness = 0.1; /* soil layer thickness (m) */
-    p->n_layers = 20;         /* number of soil layers */
-    //p->layer_thickness = 0.4; /* soil layer thickness (m) */
-    //p->n_layers = 6;         /* number of soil layers */
+    //p->layer_thickness = 0.1; /* soil layer thickness (m) */
+    //p->n_layers = 20;         /* number of soil layers */
+    p->layer_thickness = 0.4; /* soil layer thickness (m) */
+    p->n_layers = 6;         /* number of soil layers */
     p->root_k = 100.0;
     p->root_radius = 0.0005;
     p->root_density = 0.5e6;

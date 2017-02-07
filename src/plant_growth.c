@@ -1259,7 +1259,7 @@ void update_roots(control *c, params *p, state *s) {
 
     // Enforcing a minimum fine root mass, otherwise during spinup this can go
     // wrong.
-    fine_root_min = 50.0;
+    fine_root_min = 0.5;
     if (s->root < fine_root_min) {
         fine_root = fine_root_min;
     } else {
@@ -1302,6 +1302,7 @@ void update_roots(control *c, params *p, state *s) {
                        surf_biomass, s->rooted_layers, s->thickness[0],
                        root_reach);
 
+        //printf("%f %f %f\n", slope, fine_root, s->root);
         prev = 1.0 / slope;
         cumulative_depth = 0.0;
         for (i = 0; i <= s->rooted_layers; i++) {
