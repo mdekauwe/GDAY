@@ -1259,7 +1259,7 @@ void update_roots(control *c, params *p, state *s) {
 
     // Enforcing a minimum fine root mass, otherwise during spinup this can go
     // wrong.
-    fine_root_min = 50.0;
+    fine_root_min = 50.0 / TONNES_HA_2_G_M2;
     if (s->root < fine_root_min) {
         fine_root = fine_root_min;
     } else {
