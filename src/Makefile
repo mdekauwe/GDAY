@@ -7,7 +7,7 @@ HOME     = /Users/$(USER)
            -Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
            -Wredundant-decls -Wnested-externs -Wmissing-include-dirs \
 		   -fsanitize=bounds -fsanitize-undefined-trap-on-error
-CFLAGS   = -g #-O3
+CFLAGS   = -O3 #-g
 ARCH     =  x86_64
 INCLS    = -I./include #-I/opt/local/include
 LIBS     = -lm #-L/opt/local/lib -lgsl -lgslcblas
