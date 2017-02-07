@@ -676,8 +676,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         //
         sas_spinup(cw, c, f, fs, ma, m, p, s, nr);
     }
-    exit(1);
-
+    
     write_final_state(c, p, s);
 
     return;
