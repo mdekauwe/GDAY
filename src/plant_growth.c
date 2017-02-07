@@ -21,9 +21,9 @@
 
 
 
-void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
-                     met *m, nrutil *nr, params *p, state *s, double day_length,
-                     int doy, double fdecay, double rdecay)
+void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
+                     met_arrays *ma, met *m, nrutil *nr, params *p, state *s,
+                     double day_length, int doy, double fdecay, double rdecay)
 {
     double previous_topsoil_store, dummy=0.0,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
@@ -55,7 +55,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
            calc for grasses here too. */
         if (s->leaf_out_days[doy] > 0.0) {
 
-            calc_carbon_allocation_fracs(c, f, p, s, nitfac);
+            calc_carbon_allocation_fracs(c, f, fs, p, s, nitfac);
 
             /* store the days allocation fraction, we average these at the
                end of the year (for the growing season) */
@@ -68,7 +68,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
         }
     } else {
         /* daily allocation...*/
-        calc_carbon_allocation_fracs(c, f, p, s, nitfac);
+        calc_carbon_allocation_fracs(c, f, fs, p, s, nitfac);
     }
 
     /* Distribute new C and N through the system */
@@ -529,8 +529,8 @@ double calculate_growth_stress_limitation(params *p, state *s) {
 }
 
 
-void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
-                                  double nitfac) {
+void calc_carbon_allocation_fracs(control *c, fluxes *f, fast_spinup *fs,
+                                  params *p, state *s, double nitfac) {
     /* Carbon allocation fractions to move photosynthate through the plant.
 
     Parameters:
@@ -696,6 +696,14 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     if (total_alloc > 1.0+EPSILON) {
         fprintf(stderr, "Allocation fracs > 1: %.13f\n", total_alloc);
         exit(EXIT_FAILURE);
+    }
+
+    if (c->spinup_method == SAS) {
+        fs->alloc[AF] += f->alleaf;
+        fs->alloc[AR] += f->alroot;
+        fs->alloc[ACR] += f->alcroot;
+        fs->alloc[AB] += f->albranch;
+        fs->alloc[AW] += f->alstem;
     }
 
     return;
