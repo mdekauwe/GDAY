@@ -403,7 +403,7 @@ void calc_ini_grass_pheno_stuff(control *c, met_arrays *ma, int project_day,
         *grass_temp_threshold = 0.0;
 
     /* warm */
-    else if (Trange <= 20.0 || tmin_ann >= 5.0)
+    else if (Trange <= 20.0 && tmin_ann >= 5.0)
         *grass_temp_threshold = 5.0;
     else {
         fprintf(stderr, "Problem grass thresholds\n");

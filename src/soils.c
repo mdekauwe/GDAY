@@ -20,8 +20,8 @@
 * =========================================================================== */
 #include "soils.h"
 
-void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
-                           double tsoil, int doy) {
+void calculate_csoil_flows(control *c, fluxes *f, fast_spinup *fs, params *p,
+                           state *s, double tsoil, int doy) {
     double lnleaf, lnroot;
     /* Fraction of C lost due to microbial respiration */
     double frac_microb_resp = 0.85 - (0.68 * p->finesoil);
@@ -36,7 +36,7 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     f->tfac_soil_decomp = calc_soil_temp_factor(tsoil);
 
     /* calculate model decay rates */
-    calculate_decay_rates(f, p, s);
+    calculate_decay_rates(c, f, fs, p, s);
 
     /*
      * plant litter inputs to the metabolic and structural pools determined
@@ -46,6 +46,13 @@ void calculate_csoil_flows(control *c, fluxes *f, params *p, state *s,
     lnroot = calc_ligin_nratio_fine_roots(c, f, p);
     p->fmleaf = metafract(lnleaf);
     p->fmroot = metafract(lnroot);
+
+    if (c->spinup_method == SAS) {
+        fs->alloc[S1] = p->fmleaf;
+        fs->alloc[S2] = p->fmroot;
+
+    }
+
 
     /* input from faeces */
     flux_from_grazers(c, f, p);
@@ -128,7 +135,9 @@ void calc_root_exudation_uptake_of_C(fluxes *f, params *p, state *s) {
     return;
 }
 
-void calculate_decay_rates(fluxes *f, params *p, state *s) {
+void calculate_decay_rates(control *c, fluxes *f, fast_spinup *fs, params *p,
+                           state *s) {
+
     /* Model decay rates - decomposition rates have a strong temperature
     and moisture dependency. Note same temperature is assumed for all 3
     SOM pools, found by Knorr et al (2005) to be untrue. N mineralisation
@@ -173,6 +182,16 @@ void calculate_decay_rates(fluxes *f, params *p, state *s) {
 
     /* decay rate of passive pool */
     p->decayrate[6] = p->kdec7 * adfac;
+
+    if (c->spinup_method == SAS) {
+        fs->dr[0] += p->decayrate[0];
+        fs->dr[1] += p->decayrate[1];
+        fs->dr[2] += p->decayrate[2];
+        fs->dr[3] += p->decayrate[3];
+        fs->dr[4] += p->decayrate[4];
+        fs->dr[5] += p->decayrate[5];
+        fs->dr[6] += p->decayrate[6];
+    }
 
     return;
 }

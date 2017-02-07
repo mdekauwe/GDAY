@@ -433,6 +433,15 @@ int handler(char *section, char *name, char *value, control *c,
              fprintf(stderr, "Unknown respiration model: %s\n", temp);
              exit(EXIT_FAILURE);
          }
+    } else if (MATCH("control", "spinup_method")) {
+        if (strcmp(temp, "BRUTE") == 0 || strcmp(temp, "brute") == 0)
+            c->spinup_method = BRUTE;
+        else if (strcmp(temp, "SAS") == 0 || strcmp(temp, "sas") == 0)
+            c->spinup_method = SAS;
+        else {
+            fprintf(stderr, "Unknown spinup method: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "sub_daily")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||

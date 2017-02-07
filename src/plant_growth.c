@@ -19,9 +19,9 @@
 #include "water_balance.h"
 #include "zbrent.h"
 
-void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
-                     met *m, nrutil *nr, params *p, state *s, double day_length,
-                     int doy, double fdecay, double rdecay)
+void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
+                     met_arrays *ma, met *m, nrutil *nr, params *p, state *s,
+                     double day_length, int doy, double fdecay, double rdecay)
 {
    double previous_topsoil_store, dummy=0.0, previous_rootzone_store;
    double nitfac, pitfac, npitfac;
@@ -63,7 +63,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
            calc for grasses here too. */
         if (s->leaf_out_days[doy] > 0.0) {
 
-            calc_carbon_allocation_fracs(c, f, p, s, npitfac);
+            calc_carbon_allocation_fracs(c, f, fs, p, s, nitfac);
 
             /* store the days allocation fraction, we average these at the
                end of the year (for the growing season) */
@@ -76,7 +76,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma,
         }
     } else {
         /* daily allocation...*/
-        calc_carbon_allocation_fracs(c, f, p, s, npitfac);
+        calc_carbon_allocation_fracs(c, f, fs, p, s, nitfac);
+
     }
 
     /* Distribute new C, N and P through the system */
@@ -733,9 +734,9 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
     return (current_limitation);
 }
 
+void calc_carbon_allocation_fracs(control *c, fluxes *f, fast_spinup *fs,
+                                  params *p, state *s, double nitfac) {
 
-void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
-                                  double npitfac) {
     /* Carbon allocation fractions to move photosynthate through the plant.
 
     Parameters:
@@ -902,6 +903,14 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, params *p, state *s,
     if (total_alloc > 1.0+EPSILON) {
         fprintf(stderr, "Allocation fracs > 1: %.13f\n", total_alloc);
         exit(EXIT_FAILURE);
+    }
+
+    if (c->spinup_method == SAS) {
+        fs->alloc[AF] += f->alleaf;
+        fs->alloc[AR] += f->alroot;
+        fs->alloc[ACR] += f->alcroot;
+        fs->alloc[AB] += f->albranch;
+        fs->alloc[AW] += f->alstem;
     }
 
     return;
@@ -1665,7 +1674,7 @@ void update_roots(control *c, params *p, state *s) {
 
     // Enforcing a minimum fine root mass, otherwise during spinup this can go
     // wrong.
-    fine_root_min = 50.0;
+    fine_root_min = 50.0 / TONNES_HA_2_G_M2;
     if (s->root < fine_root_min) {
         fine_root = fine_root_min;
     } else {

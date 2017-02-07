@@ -48,7 +48,6 @@ $ gday -p param_file.cfg
 
 When the model is run it expects to find its "model state" (i.e. from a previous spin-up) in the parameter file. This state is automatically written the parameter file after the initial spin-up when the "print_options" flag has been set to "end", rather than "daily".
 
-
 ## Parameter file
 
 GDAY expects a parameter file to be supplied as an argument (-p filename) on the command line. Parameter files follow the standard [.INI](https://en.wikipedia.org/wiki/INI_file) format, although only a simple INI parser has been coded into GDAY.
@@ -161,6 +160,12 @@ From SPA we borrow the multi-layer soil scheme, which considers infiltration and
 
 We do not currently implement the thermal calculations which would allow you to estimate soil temperature.
 
+## Model spinup
+
+There are now two options to spin the model up: (i) brute force, i.e. continusly recycling the met data and re-running GDAY (Flag - spinup_method = brute); and (ii) an implementation of the Semi-Analytical Solution (SAS) for steady-state approximation (Flag - spinup_method = sas). The SAS approach is about 60% faster than the slow spinup so I'd suggest using it.
+
+The SAS method is after:
+* Xia, J., Y. Luo, Y.-P. Wang, and O. Hararuk. 2013. Traceable components of terrestrial carbon storage capacity in biogeochemical models. Global Change Biology 19:2104-2116
 
 ## Example run
 The [example](example) directory has two python scripts which provide an example of how one might set about running the model. [example.py](example.py) simulates the DUKE FACE experiment and [run_experiment.py](run_experiment.py) is just nice a wrapper script around this which produces a plot at the end comparing the data to the observations.

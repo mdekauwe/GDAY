@@ -63,6 +63,25 @@
 #define BUCKET 0
 #define HYDRAULICS 1
 
+/* Spinup method */
+#define BRUTE 0
+#define SAS 1
+
+/* Spinup array index */
+#define AF 0
+#define AR 1
+#define ACR 2
+#define AB 3
+#define AW 4
+#define S1 5
+#define S2 6
+
+#define LF 0
+#define LR 1
+#define LCR 2
+#define LB 3
+#define LW 4
+
 #include "structures.h"
 #include "initialise_model.h"
 #include "simple_moving_average.h"
@@ -82,10 +101,10 @@
 void   clparser(int, char **, control *);
 void   usage(char **);
 
-void   run_sim(canopy_wk *, control *, fluxes *, met_arrays *, met *,
-               params *p, state *, nrutil *);
-void   spin_up_pools(canopy_wk *, control *, fluxes *, met_arrays *, met *,
-                     params *p, state *, nrutil *);
+void   run_sim(canopy_wk *, control *, fluxes *, fast_spinup *, met_arrays *,
+               met *, params *p, state *, nrutil *);
+void   spin_up_pools(canopy_wk *, control *, fluxes *, fast_spinup *,
+                     met_arrays *, met *, params *p, state *, nrutil *);
 void   correct_rate_constants(params *, int output);
 void   reset_all_n_pools_and_fluxes(fluxes *, state *);
 void   reset_all_p_pools_and_fluxes(fluxes *, state *);
@@ -94,5 +113,7 @@ void   day_end_calculations(control *, params *, state *, int, int);
 void   unpack_met_data(control *, fluxes *f, met_arrays *, met *, int, double);
 void   allocate_numerical_libs_stuff(nrutil *);
 void   fill_up_solar_arrays(canopy_wk *, control *, met_arrays *, params *);
-
+void   zero_fast_spinup_stuff(fast_spinup *);
+void   sas_spinup(canopy_wk *, control *, fluxes *, fast_spinup *,
+                     met_arrays *, met *, params *p, state *, nrutil *);
 #endif /* GDAY_H */

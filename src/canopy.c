@@ -161,10 +161,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_root = 1.0;
     }
 
-    current_sw = s->pawater_topsoil + s->pawater_root;
-    current_cs = s->canopy_store;
-    check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
-                        current_cs, year, doy);
+    //current_sw = s->pawater_topsoil + s->pawater_root;
+    //current_cs = s->canopy_store;
+    //check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
+    //                    current_cs, year, doy);
 
     //if (debug) {
     //    current_sw = s->pawater_topsoil + s->pawater_root;

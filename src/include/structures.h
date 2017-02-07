@@ -60,7 +60,7 @@ typedef struct {
     long  hour_idx;
     long  day_idx;
     int   pdebug;
-
+    int   spinup_method;
 } control;
 
 
@@ -864,5 +864,27 @@ typedef struct {
 
 
 } nrutil;
+
+typedef struct {
+    long   ndays;
+    double npp_ss;
+    double alloc[7];
+    double loss[5];
+    double dr[7];
+    double shoot_nc;
+    double root_nc;
+    double branch_nc;
+    double croot_nc;
+    double stem_nc;
+    double stemnmob_ratio;
+    double stemnimm_ratio;
+    double metablsoil_nc;
+    double metabsurf_nc;
+    double structsoil_nc;
+    double structsurf_nc;
+    double activesoil_nc;
+    double slowsoil_nc;
+    double passivesoil_nc;
+} fast_spinup;
 
 #endif

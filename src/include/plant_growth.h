@@ -15,12 +15,14 @@
 #include "canopy.h"
 
 /* C stuff */
-void    calc_day_growth(canopy_wk *, control *, fluxes *, met_arrays *ma, met *,
-                        nrutil *, params *, state *, double, int, double,
-                        double);
-void    carbon_allocation(control *, fluxes *, params *, state *, double, int);
-void    calc_carbon_allocation_fracs(control *c, fluxes *, params *, state *,
-                                     double);
+void    calc_day_growth(canopy_wk *, control *, fluxes *, fast_spinup *,
+                        met_arrays *ma, met *, nrutil *, params *, state *,
+                        double, int, double, double);
+void    carbon_allocation(control *, fluxes *, params *, state *,
+                                                     double, int);
+void    calc_carbon_allocation_fracs(control *c, fluxes *, fast_spinup *,
+                                     params *, state *, double);
+
 double  alloc_goal_seek(double, double, double, double);
 void    update_plant_state(control *, fluxes *, params *, state *,
                            double, double, int);
