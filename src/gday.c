@@ -256,9 +256,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             float_eq(s->avg_alleaf, 0.0) &&
             float_eq(s->avg_alroot, 0.0) &&
             float_eq(s->avg_alcroot, 0.0)) {
-
-            nitfac = 0.0;
-            calc_carbon_allocation_fracs(c, f, fs, p, s, nitfac);
+            npitfac = 0.0;
+            calc_carbon_allocation_fracs(c, f, fs, p, s, npitfac);
 
         } else {
             f->alleaf = s->avg_alleaf;

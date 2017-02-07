@@ -735,7 +735,7 @@ double calculate_growth_stress_limitation(params *p, state *s, control *c) {
 }
 
 void calc_carbon_allocation_fracs(control *c, fluxes *f, fast_spinup *fs,
-                                  params *p, state *s, double nitfac) {
+                                  params *p, state *s, double npitfac) {
 
     /* Carbon allocation fractions to move photosynthate through the plant.
 
