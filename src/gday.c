@@ -914,13 +914,11 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
     // Step 4:  Keep spinning until the slowest C pool (passive) hit equilibrium
     while (TRUE) {
-        if (fabs(s->passivesoil - prev_passivec) < 0.5) {
+        if (fabs(s->passivesoil - prev_passivec) < 0.05) {
             break;
         } else {
             prev_passivec = s->passivesoil;
             run_sim(cw, c, f, fs, ma, m, p, s, nr);
-            //fprintf(stderr,
-            //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
         }
     }
 
