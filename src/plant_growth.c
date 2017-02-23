@@ -853,39 +853,40 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
         if (ncmaxf > p->ncmaxfyoung)
             ncmaxf = p->ncmaxfyoung;
 
+        // if shoot N:C ratio exceeds its max, then nitrogen uptake is cut back
         extras = 0.0;
         if (s->lai > 0.0) {
-
             if (s->shootn > (s->shoot * ncmaxf)) {
                 extras = s->shootn - s->shoot * ncmaxf;
 
                 /* Ensure N uptake cannot be reduced below zero. */
-                if (extras >  f->nuptake)
+                if (extras >  f->nuptake) {
                     extras = f->nuptake;
+                }
 
                 s->shootn -= extras;
                 f->nuptake -= extras;
             }
         }
 
-        /* if root N:C ratio exceeds its max, then nitrogen uptake is cut
-           back. n.b. new ring n/c max is already set because it is related
-           to leaf n:c */
+        // if root N:C ratio exceeds its max, then nitrogen uptake is cut back
 
-        /* max root n:c */
+        // max root n:c
         ncmaxr = ncmaxf * p->ncrfac;
         extrar = 0.0;
         if (s->rootn > (s->root * ncmaxr)) {
             extrar = s->rootn - s->root * ncmaxr;
 
             /* Ensure N uptake cannot be reduced below zero. */
-            if ((extras + extrar) > f->nuptake)
-                extrar = f->nuptake - extras;
+            if (extrar > f->nuptake) {
+                extrar = f->nuptake;
+            }
 
             s->rootn -= extrar;
             f->nuptake -= extrar;
         }
     }
+
     /* Update deciduous storage pools */
     if (c->deciduous_model)
         calculate_cn_store(c, f, s);
@@ -1271,7 +1272,7 @@ void update_roots(control *c, params *p, state *s) {
             break;
         }
     }
-    
+
     /* how for into the soil do the reach extend? */
     root_reach = s->layer_depth[s->rooted_layers];
 
