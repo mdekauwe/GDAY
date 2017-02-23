@@ -153,9 +153,9 @@ We do not currently implement the thermal calculations which would allow you to 
 
 ## Model spinup
 
-The model is spunup to a steady steady using a brute force method. In the SAS_spin branch, there is an implementation of the "Semi-Analytical Solution (SAS) for steady-state approximation", to achieve a faster spinup. It seems to be working fine and looks like it speeds the code up by ~60%.
+There are now two options to spin the model up: (i) brute force, i.e. continusly recycling the met data and re-running GDAY (Flag - spinup_method = brute); and (ii) an implementation of the Semi-Analytical Solution (SAS) for steady-state approximation (Flag - spinup_method = sas). The SAS approach is about 60% faster than the slow spinup so I'd suggest using it.
 
-This method is after:
+The SAS method is after:
 * Xia, J., Y. Luo, Y.-P. Wang, and O. Hararuk. 2013. Traceable components of terrestrial carbon storage capacity in biogeochemical models. Global Change Biology 19:2104-2116
 
 ## Example run
