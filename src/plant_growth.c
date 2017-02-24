@@ -1008,11 +1008,8 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
 
     */
 
-    double age_effect;
-    double ncmaxf, ncmaxr;
-    double extrasn, extrarn;   /* extra_s_n and extra_r_n - extra shoot/root n uptake */
+    double age_effect, ncmaxf, ncmaxr, extra;
     double pcmaxf, pcmaxr;
-    double extrasp, extrarp;   /* extra_s_p and extra_r_p - extra shoot/root p uptake */
 
     /*
     ** Carbon pools
@@ -1113,66 +1110,68 @@ void update_plant_state(control *c, fluxes *f, params *p, state *s,
         if (pcmaxf > p->pcmaxfyoung)
             pcmaxf = p->pcmaxfyoung;
 
-        extrasn = 0.0;
+        // if shoot N:C ratio exceeds its max, then nitrogen uptake is cut back
+        extra = 0.0;
         if (s->lai > 0.0) {
-
             if (s->shootn > (s->shoot * ncmaxf)) {
-                extrasn = s->shootn - s->shoot * ncmaxf;
+                extra = s->shootn - s->shoot * ncmaxf;
 
                 /* Ensure N uptake cannot be reduced below zero. */
-                if (extrasn >  f->nuptake)
-                    extrasn = f->nuptake;
+                if (extra >  f->nuptake) {
+                    extra = f->nuptake;
+                }
 
-                s->shootn -= extrasn;
-                //f->nuptake -= extrasn;
+                s->shootn -= extra;
+                f->nuptake -= extra;
             }
         }
 
-        extrasp = 0.0;
+        // if shoot P:C ratio exceeds its max, phosphorus uptake is cut back
+        extra = 0.0;
         if (s->lai > 0.0) {
+            if (s->shootp > (s->shoot * pcmaxf)) {
+                extra = s->shootp - s->shoot * pcmaxf;
 
-          if (s->shootp > (s->shoot * pcmaxf)) {
-            extrasp = s->shootp - s->shoot * pcmaxf;
+                /* Ensure P uptake cannot be reduced below zero. */
+                if (extra >  f->puptake) {
+                    extra = f->puptake;
+                }
 
-            /* Ensure P uptake cannot be reduced below zero. */
-            if (extrasp >  f->puptake)
-              extrasp = f->puptake;
-
-            s->shootp -= extrasp;
-            //f->puptake -= extrasp;
-          }
+                s->shootp -= extra;
+                f->puptake -= extra;
+            }
         }
 
-        /* if root N:C ratio exceeds its max, then nitrogen uptake is cut
-           back. n.b. new ring n/c max is already set because it is related
-           to leaf n:c */
-
-        /* max root n:c */
+        // if root N:C ratio exceeds its max, then nitrogen uptake is cut back
+        // max root n:c
         ncmaxr = ncmaxf * p->ncrfac;
-        extrarn = 0.0;
+        extra = 0.0;
         if (s->rootn > (s->root * ncmaxr)) {
-            extrarn = s->rootn - s->root * ncmaxr;
+            extra = s->rootn - s->root * ncmaxr;
 
             /* Ensure N uptake cannot be reduced below zero. */
-            if ((extrasn + extrarn) > f->nuptake)
-                extrarn = f->nuptake - extrasn;
+            if (extra > f->nuptake) {
+                extra = f->nuptake;
+            }
 
-            s->rootn -= extrarn;
-            f->nuptake -= (extrarn+extrasn);
+            s->rootn -= extra;
+            f->nuptake -= extra;
         }
 
-        /* max root p:c */
+        // if root P:C ratio exceeds its max, then phosphorus uptake is cut back
+        // max root p:c
         pcmaxr = pcmaxf * p->pcrfac;
-        extrarp = 0.0;
+        extra = 0.0;
         if (s->rootp > (s->root * pcmaxr)) {
-            extrarp = s->rootp - s->root * pcmaxr;
+            extra = s->rootp - s->root * pcmaxr;
 
             /* Ensure P uptake cannot be reduced below zero. */
-            if ((extrasp + extrarp) > f->puptake)
-                extrarp = f->puptake - extrasp;
+            if (extra > f->puptake) {
+                extra = f->puptake;
+            }
 
-            s->rootp -= extrarp;
-            f->puptake -= (extrarp + extrasp);
+            s->rootp -= extra;
+            f->puptake -= extra;
         }
     }
 
