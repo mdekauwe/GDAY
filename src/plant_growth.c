@@ -283,7 +283,9 @@ void calc_autotrophic_respiration(control *c, fluxes *f, met *m, params *p,
 
     // Should be revisited, but it occurs to me that during spinup
     // the tissue initialisation could be greater than the incoming gpp and so
-    // we might never grow if we respire all out C
+    // we might never grow if we respire all out C. Clearly were we using a
+    // storage pool this wouldn't be such a drama. For now bound it...
+    //
     // De Lucia et al. Global Change Biology (2007) 13, 1157–1167:
     // CUE varied from 0.23 to 0.83 from a literature survey
     cue = (f->gpp - f->auto_resp) / f->gpp;
