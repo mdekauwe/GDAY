@@ -536,11 +536,6 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     accounting for diurnal variations in irradiance and temp (am [sunrise-noon],
     pm[noon to sunset]).
 
-    MATE is connected to G'DAY via LAI and leaf N content.
-
-    Plant autotrophic respiration is calculated via carbon-use efficiency
-    (CUE=NPP/GPP).
-
     References:
     -----------
     * Medlyn, B. E. et al (2011) Global Change Biology, 17, 2134-2144.
@@ -611,11 +606,9 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
-    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
 
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
-    f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
     f->apar *= UMOL_2_JOL * J_TO_MJ;
@@ -1052,10 +1045,6 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     accounting for diurnal variations in irradiance and temp (am [sunrise-noon],
     pm[noon to sunset]).
 
-    MATE is connected to G'DAY via LAI and leaf N content.
-
-    Plant autotrophic respiration is calculated via carbon-use efficiency
-    (CUE=NPP/GPP).
 
     References:
     -----------
@@ -1150,11 +1139,9 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
-    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
-
+    
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
-    f->npp = f->npp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
     /* save apar in MJ m-2 d-1 */
     f->apar *= UMOL_2_JOL * J_TO_MJ;
