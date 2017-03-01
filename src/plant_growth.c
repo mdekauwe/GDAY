@@ -232,24 +232,81 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
-
     /* Calculate plant respiration */
     if (c->respiration_model == FIXED) {
         /* Plant respiration assuming carbon-use efficiency. */
         f->auto_resp = f->gpp * p->cue;
-    } else if(c->respiration_model == TEMPERATURE) {
-        fprintf(stderr, "Not implemented yet");
-        exit(EXIT_FAILURE);
-    } else if (c->respiration_model == BIOMASS) {
-        fprintf(stderr, "Not implemented yet");
-        exit(EXIT_FAILURE);
+    } else if (c->respiration_model == VARY) {
+        calc_autotrophic_respiration(c, f, m, p, s);
     }
 
-    /* Calculate NPP */
-    f->npp_gCm2 = f->gpp_gCm2 * p->cue;
-    f->npp = f->npp_gCm2 * GRAM_C_2_TONNES_HA;
+    f->npp = MAX(0.0, f->gpp - f->auto_resp);
+    f->npp_gCm2 = f->npp * TONNES_HA_2_G_M2;
 
     return;
+}
+
+void calc_autotrophic_respiration(control *c, fluxes *f, met *m, params *p,
+                                  state *s) {
+    // Autotrophic respiration is the sum of the growth component (Rg)
+    // and the the temperature-dependent maintenance respiration (Rm) of
+    // leaves (Rml), fine roots (Rmr) and wood (Rmw)
+
+    double Rml, Rmw, Rmr, Rm, Rg, rk, k = 0.0548;
+    double shootn, rootn, stemn, cue;
+
+    // respiration rate (gC gN-1 d-1) on a 10degC base
+    rk = p->resp_coeff * k;
+
+    if (c->ncycle == FALSE) {
+        shootn = (s->shoot * 0.03) * TONNES_HA_2_G_M2;
+        rootn = (s->root * 0.02) * TONNES_HA_2_G_M2;
+        stemn = (s->stem * 0.003) * TONNES_HA_2_G_M2;
+    } else {
+        shootn = s->shootn * TONNES_HA_2_G_M2;
+        rootn = s->rootn * TONNES_HA_2_G_M2;
+        stemn = s->stemn * TONNES_HA_2_G_M2;
+    }
+
+    // Maintenance respiration, the cost of metabolic processes in
+    // living tissues, differs according to tissue N
+    Rml = rk * shootn * lloyd_and_taylor(m->tair);
+    Rmw = rk * stemn * lloyd_and_taylor(m->tair); // should really be sapwood
+    Rmr = rk * rootn * lloyd_and_taylor(m->tsoil);
+    Rm = (Rml + Rmw + Rmr) * GRAM_C_2_TONNES_HA;
+
+    // After maintenance respiration is subtracted from GPP, 25% of the
+    // remainder is taken as growth respiration, the cost of producing new
+    // tissues
+    Rg = MAX(0.0, (f->gpp - Rm) * 0.25);
+    f->auto_resp = Rm + Rg;
+
+    // Should be revisited, but it occurs to me that during spinup
+    // the tissue initialisation could be greater than the incoming gpp and so
+    // we might never grow if we respire all out C
+    // De Lucia et al. Global Change Biology (2007) 13, 1157–1167:
+    // CUE varied from 0.23 to 0.83 from a literature survey
+    cue = (f->gpp - f->auto_resp) / f->gpp;
+    if (cue < 0.2) {
+        f->auto_resp = f->gpp * 0.8;
+    } else if (cue > 0.8) {
+        f->auto_resp = f->gpp * 0.2;
+    }
+
+    return;
+}
+
+double lloyd_and_taylor(double temp) {
+    // Modified Arrhenius equation (Lloyd & Taylor, 1994)
+    // The modification introduced by Lloyd & Taylor (1994) represents a
+    // decline in the parameter for activation energy with temperature.
+    //
+    // Parameters:
+    // -----------
+    // temp : float
+    //      temp deg C
+
+    return (exp(308.56 * ((1.0 / 56.02) - (1.0 / (temp + 46.02)))));
 }
 
 void calculate_ncwood_ratios(control *c, params *p, state *s, double nitfac,

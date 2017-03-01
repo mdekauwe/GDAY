@@ -36,7 +36,7 @@ void initialise_control(control *c) {
     c->passiveconst = FALSE;        /* hold passive pool at passivesoil */
     c->print_options = DAILY;       /* DAILY=every timestep, END=end of run */
     c->ps_pathway = C3;             /* Photosynthetic pathway, c3/c4 */
-    c->respiration_model = FIXED;   /* Plant respiration ... Fixed, TEMPERATURE or BIOMASS */
+    c->respiration_model = FIXED;   /* Plant respiration ... Fixed, vary  */
     c->strfloat = 0;                /* Structural pool input N:C varies=1, fixed=0 */
     c->sw_stress_model = 1;         /* JULES type linear stress func, or Landsberg and Waring non-linear func */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
@@ -191,6 +191,7 @@ void initialise_params(params *p) {
     p->rateuptake = 2.7;
     p->rdecay = 0.33333;
     p->rdecaydry = 0.33333;
+    p->resp_coeff = 1.2;   // Tissue respiration rate at 10degC: temperate broadleaved evergreen tree value from LPJ //
     p->retransmob = 0.0;
     p->rfmult = 1.0;
     p->root_exu_CUE = -999.9;

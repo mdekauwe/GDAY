@@ -300,6 +300,7 @@ typedef struct {
     double rateuptake;                      /* ate of N uptake from mineral N pool (/yr) from here? http://face.ornl.gov/Finzi-PNAS.pdf */
     double rdecay;                          /* root turnover rate (1/yr) */
     double rdecaydry;                       /* root turnover rate - dry soil (1/yr) */
+    double resp_coeff;                      /* Respiration rate: from LPJ ENF, EBF, C3G = 1.2, Trop EBF, C4G = 0.2 */
     double retransmob;                      /* Fraction stem mobile N retranscd (/yr) */
     double rfmult;
     double rooting_depth;                   /* Rooting depth (mm) */

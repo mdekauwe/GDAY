@@ -37,8 +37,7 @@
 
 /* Respiration models */
 #define FIXED 0
-#define TEMPERATURE 1
-#define BIOMASS 2
+#define VARY 1
 
 /* Allocation models */
 #define FIXED 0

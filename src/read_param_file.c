@@ -370,12 +370,9 @@ int handler(char *section, char *name, char *value, control *c,
          if (strcmp(temp, "FIXED") == 0||
              strcmp(temp, "fixed") == 0)
              c->respiration_model = FIXED;
-         else if (strcmp(temp, "TEMPERATURE") == 0||
-             strcmp(temp, "temperature") == 0)
-             c->respiration_model = TEMPERATURE;
-         else if (strcmp(temp, "BIOMASS") == 0||
-             strcmp(temp, "biomass") == 0)
-                 c->respiration_model = BIOMASS;
+         else if (strcmp(temp, "VARY") == 0||
+             strcmp(temp, "vary") == 0)
+             c->respiration_model = VARY;
          else {
              fprintf(stderr, "Unknown respiration model: %s\n", temp);
              exit(EXIT_FAILURE);
@@ -811,6 +808,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->rdecay = atof(value);
     } else if (MATCH("params", "rdecaydry")) {
         p->rdecaydry = atof(value);
+    } else if (MATCH("params", "resp_coeff")) {
+        p->resp_coeff = atof(value);
     } else if (MATCH("params", "retransmob")) {
         p->retransmob = atof(value);
     } else if (MATCH("params", "rfmult")) {

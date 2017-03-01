@@ -34,6 +34,10 @@ void    carbon_daily_production(control *, fluxes *, met *m, params *, state *,
 void    calculate_subdaily_production(control *, fluxes *, met *m, params *,
                                      state *, int, double);
 
+void   calc_autotrophic_respiration(control *, fluxes *, met *, params *,
+                                    state *);
+double lloyd_and_taylor(double);
+
 /* N stuff */
 int    nitrogen_allocation(control *c, fluxes *, params *, state *, double,
                            double, double, double, double, double, int);
