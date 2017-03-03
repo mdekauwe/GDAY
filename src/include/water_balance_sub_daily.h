@@ -35,8 +35,9 @@ void    calc_soil_balance(fluxes *, nrutil *, params *, state *, int, double *);
 void    soil_water_store(double, double [], double [], double, double, double,
                          double, double);
 
-void zero_water_movement(fluxes *, params *);
-void extract_water_from_layers(fluxes *, state *, double, double);
-void update_soil_water_storage(fluxes *, params *, state *, double *, double *);
+void   zero_water_movement(fluxes *, params *);
+void   extract_water_from_layers(fluxes *, state *, double, double);
+void   update_soil_water_storage(fluxes *, params *, state *, double *, double *);
+double calc_xylem_water_potential(double, double);
 
 #endif /* WATER_BALANCE_SUBDAILY_H */

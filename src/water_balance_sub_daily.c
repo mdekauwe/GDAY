@@ -996,3 +996,35 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
 
     return;
 }
+
+
+double calc_xylem_water_potential(double rwc, double capac) {
+    // Calculate the stem xylem water potential (P), based on relative water
+    // content (RWC) and capacitance.
+
+    double psi1, psi2, xylem_psi, arg1, arg2;
+    double break0 = 0.5;    // determines shape of asymptote function
+    double hmshape = 0.99;  // determines shape of hyperbolic minimum
+
+    // safety
+    if (rwc > 1.0) {
+        rwc = 1.0;
+    }
+
+    // linear dependence over most of the range.
+    psi1 = -(1.0 - rwc) / capac;
+
+    // when approaching zero rwc, the water potential has to go to infinity.
+    psi2 = -log(rwc / break0);
+    if (psi2 < 0.0) {
+        psi2 = 0.0;
+    }
+    psi2 = -psi2;
+
+    // hyperbolic minimum
+    arg1 = psi1 + psi2;
+    arg2 = sqrt(((psi1 + psi2) * (psi1 + psi2)) - 4 * hmshape * psi1 * psi2);
+    xylem_psi = (arg1 - arg2) / (2.0 * hmshape);
+
+    return (xylem_psi);
+}
