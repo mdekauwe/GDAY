@@ -348,6 +348,17 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             }
         }
         s->pawater_root = root_zone_total;
+
+        // If we are simulating capcitance
+        if (c->simstore) {
+            // plantwater  (liters) = storecoef * leafarea ** storeexp
+            plantwater = storecoef * foltable1(1, itree) ** storeexp;
+
+            // to calculate rwc, keep track of initial water content.
+            plantwater0 = plantwater;
+            xylempsi = s->weighted_swp;
+        }
+
     } else {
         s->pawater_root = p->wcapac_root;
         s->pawater_topsoil = p->wcapac_topsoil;
@@ -676,7 +687,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         //
         sas_spinup(cw, c, f, fs, ma, m, p, s, nr);
     }
-    
+
     write_final_state(c, p, s);
 
     return;

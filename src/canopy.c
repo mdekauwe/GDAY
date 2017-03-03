@@ -527,33 +527,17 @@ void unpack_solar_geometry(canopy_wk *cw, control *c) {
 
 
 
-if (c->simstore && ihour == 1) {
-
-    // initialize on first day of simulation
-    if (iday == 0) {
-
-        // plantwater  (liters) = storecoef * leafarea ** storeexp
-        plantwater = storecoef * foltable1(1, itree) ** storeexp;
-
-        // to calculate rwc, keep track of initial water content.
-        plantwater0 = plantwater;
-        xylempsi = s->weighted_swp;
-    }
-
-    // assign plant hydraulic conductance from plc curve and stem water potential
+if (c->simstore && hod == 0) {
+    // assign plant hydraulic conductance from plc curve and stem water
+    // potential
     relk = calc_relative_weibull(xylempsi, p50, plcshape);
     plantk_act = relk * p->plantk;
-
 }
 
 // no cavitation when stem water storage not simulated
 if (c->simstore == FALSE) {
     plantk_act = p->plantk;
 }
-
-
-
-
 
 
 // update plant water store
