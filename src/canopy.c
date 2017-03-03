@@ -524,3 +524,93 @@ void unpack_solar_geometry(canopy_wk *cw, control *c) {
 
     return;
 }
+
+
+
+if (c->simstore && ihour == 1) {
+
+    // initialize on first day of simulation
+    if (iday == 0) {
+
+        // plantwater  (liters) = storecoef * leafarea ** storeexp
+        plantwater = storecoef * foltable1(1, itree) ** storeexp;
+
+        // to calculate rwc, keep track of initial water content.
+        plantwater0 = plantwater;
+        xylempsi = s->weighted_swp;
+    }
+
+    // assign plant hydraulic conductance from plc curve and stem water potential
+    relk = calc_relative_weibull(xylempsi, p50, plcshape);
+    plantk_act = relk * p->plantk;
+
+}
+
+// no cavitation when stem water storage not simulated
+if (c->simstore == FALSE) {
+    plantk_act = p->plantk;
+}
+
+
+
+
+
+
+// update plant water store
+if (c->simstore) {
+
+    // under normal circumstances: stem water potential is soilwp - e/(2*k)
+    // should be a percentage of total transpiration
+    if (etcandeficit * sperhr*1e-06*18 < 1e-06) {
+        watflux = fh2o(itar,ihour);
+
+        // should never happen but it does
+        if (watflux < 0.0) {
+            watflux = 0.0;
+        }
+        xylem_psi = s->weighted_swp - 1e-03 * watflux / (2.0 * plantkact * folt(1));
+
+        // based on steady state water potential, calculate stem relative
+        // water content (must equilibrate!)
+        plantwater = plantwater0 * (1.0 + xylem_psi * capac);
+
+    } else {
+
+        // now reduce stem water content even further by amount of
+        // transpiration that is not sustained by soil water uptake
+        plantwater -= etcandeficit(itar,ihour) * sperhr * 1e-06 * 18;
+
+        // if we don't stop simulation when plant is dead
+        // (i.e. xylempsi is very low), plantwater may go to zero, causing
+        // crash.
+
+        // 5 % of full hydration
+        plantw_minval = 0.05 * plantwater0
+        if (plantwater < plantw_minval) {
+            plantwater = plantw_minval
+        }
+
+        // and recalculate corresponding xylem water potential
+        xylem_psi = calc_xylem_water_potential(plantwater / plantwater0, capac);
+    }
+
+    // it might happen (somehow?!) that etcandeficit is positive
+    // (numeric drift?), causing problems..
+    if (plantwater > plantwater0) {
+        plantwater = plantwater0;
+    }
+
+    // calculate relative conductivity of the stem, and actual plant conductance
+    relk = calc_relative_weibull(xylem_psi, p50, plcshape);
+    plantkact = relk * plantk;
+
+    // stem relative conductivity (0-1)
+    stemrelk = calc_relative_weibull(xylem_psi, p50, plcshape);
+
+    // if more than plcdead loss in conductivity, plant is dead.
+    if (stemrelk < (1.0 - plcdead)) {
+        deadalive = 0;
+        fprintf(stderr, "Death - need to do something\n");
+        exit(EXIT_FAILURE);
+    }
+}
