@@ -54,6 +54,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
 
+
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
 
@@ -110,8 +111,18 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     cw->tleaf[cw->ileaf] = cw->tleaf_new;
                     iter++;
                 } /* end of leaf temperature loop */
+
+
             } /* end of sunlit/shaded leaf loop */
+            printf("%d,%d,%d,%lf,%lf,%lf,%lf\n",
+                   (int)year, (int)doy, hod,
+                   cw->trans_leaf[SUNLIT], cw->trans_leaf[SHADED],
+                   cw->lwp_leaf[SUNLIT], cw->lwp_leaf[SHADED]);
+
         } else {
+            printf("%d,%d,%d,%lf,%lf,%lf,%lf\n",
+                   (int)year, (int)doy, hod,
+                   0.0, 0.0, 0.0, 0.0);
             zero_hourly_fluxes(cw);
 
             /* set tleaf to tair during the night */
@@ -129,6 +140,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             }
 
         }
+
         scale_leaf_to_canopy(c, cw, s);
         if (c->water_balance == HYDRAULICS && hod == 24) {
             s->midday_lwp = cw->lwp_canopy;
