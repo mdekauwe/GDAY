@@ -18,7 +18,7 @@ void    calculate_water_balance_sub_daily(control *, fluxes *, met *,
                                           nrutil *, params *, state *, int,
                                           double, double, double, double);
 void    setup_hydraulics_arrays(fluxes *, params *, state *);
-
+void    update_plant_water_store(canopy_wk *, double *, double *, double);
 
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
                                 double, double, double, double, double);

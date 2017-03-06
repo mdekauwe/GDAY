@@ -244,13 +244,15 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
     }
 
+    if (c->water_store) {
+        // Do we need to take any water from the plant store? This function
+        // also checks to for drought-induced mortality
+        update_plant_water_store(cw, &transpiration, &et, et_deficit);
+    }
+
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             surface_water, canopy_evap, runoff, omega_leaf,
                             m->rain);
-
-    if (c->water_store) {
-        update_plant_water_store(cw, et_deficit);
-    }
 
 }
 
@@ -1046,11 +1048,13 @@ double calc_relative_weibull(double p, double p50, double sx) {
     return (relative_weibull);
 }
 
-void update_plant_water_store(canopy_wk *cw, double et_deficit) {
+void update_plant_water_store(canopy_wk *cw, double *transpiration, double *et,
+                              double et_deficit) {
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
     double ratio, relk, arg1, arg2, water_flux;
+    double delta_water_store = 0.0;
 
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
     // they will fill up the stem immediately (even if near empty).
@@ -1068,7 +1072,6 @@ void update_plant_water_store(canopy_wk *cw, double et_deficit) {
         // based on steady state water potential, calculate stem relative
         // water content (must equilibrate!)
         cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
-
     } else {
 
         // now reduce stem water content even further by amount of
@@ -1087,6 +1090,10 @@ void update_plant_water_store(canopy_wk *cw, double et_deficit) {
         cw->xylem_psi = calc_xylem_water_potential(ratio, capac);
     }
 
+    // Need to add water we took from the plant store to transpiration output
+    *transpiration += et_deficit;
+    *et += et_deficit;
+
     // it might happen (somehow?!) that etcandeficit is positive
     // (numeric drift?), causing problems..
     if (cw->plant_water > cw->plant_water0) {
@@ -1099,6 +1106,7 @@ void update_plant_water_store(canopy_wk *cw, double et_deficit) {
 
     // if more than plcdead loss in conductivity, plant is dead.
     if (stem_relk < (1.0 - p->plc_dead)) {
+        // Should call some wrapper function when this happens
         fprintf(stderr, "Death - need to do something\n");
         exit(EXIT_FAILURE);
     }
