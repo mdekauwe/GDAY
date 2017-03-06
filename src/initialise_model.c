@@ -188,6 +188,8 @@ void initialise_params(params *p) {
     p->previous_ncd = 35.0;
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
+    p->p50 = -3.0;
+    p->plc_shape = 30.0;
     p->qs = 1.0; /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
     p->rateloss = 0.5;

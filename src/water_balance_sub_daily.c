@@ -1052,8 +1052,9 @@ void update_plant_water_store(canopy_wk *cw, double et_deficit) {
     double min_value = 0.05 * cw->plant_water0;
     double ratio, relk, arg1, arg2, water_flux;
 
-    // under normal circumstances: stem water potential is soilwp - e/(2*k)
-    // should be a percentage of total transpiration
+    // Under normal circumstances, i.e et_deficit = 0, the assumption is that
+    // they will fill up the stem immediately (even if near empty).
+    // stem water potential is soilwp - e/(2*k)
     if (et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER < 1E-06) {
 
         // Need to get the units right ...

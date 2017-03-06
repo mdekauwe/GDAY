@@ -813,6 +813,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->prime_y = atof(value);
     } else if (MATCH("params", "prime_z")) {
         p->prime_z = atof(value);
+    } else if (MATCH("params", "p50")) {
+        p->p50 = atof(value);
+    } else if (MATCH("params", "plc_shape")) {
+        p->plc_shape = atof(value);
     } else if (MATCH("params", "qs")) {
         p->qs = atof(value);
     } else if (MATCH("params", "r0")) {
