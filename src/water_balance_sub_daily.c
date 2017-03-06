@@ -249,7 +249,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                             m->rain);
 
     if (c->water_store) {
-        update_plant_water_store(et_deficit);
+        update_plant_water_store(cw, et_deficit);
     }
 
 }
@@ -1050,17 +1050,17 @@ void update_plant_water_store(canopy_wk *cw, double et_deficit) {
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
-    double ratio, relk, arg1, arg2;
+    double ratio, relk, arg1, arg2, water_flux;
 
     // under normal circumstances: stem water potential is soilwp - e/(2*k)
     // should be a percentage of total transpiration
     if (et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER < 1E-06) {
 
+        // Need to get the units right ...
+        water_flux = (f->transpiration * KG_AS_G *
+                      G_WATER_2_MOL_WATER * MOL_2_MMOL);
 
-         ! Transpiration in umol tree-1 s-1
-        water_flux = f->transpiration;
-
-        arg1 = s->weighted_swp - 1e-03 * water_flux;
+        arg1 = s->weighted_swp - water_flux; // mmol m-2 s-1 MPa-1
         arg2 = 2.0 * cw->plant_k * s->LAI;
         cw->xylem_psi = arg1 / arg2;
 
