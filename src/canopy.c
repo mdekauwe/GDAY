@@ -456,6 +456,9 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
     // Maximum transpiration rate (mmol m-2 s-1)
     emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
+    if (emax_leaf < 0.0) {
+        emax_leaf = 0.0;
+    }
 
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
     etest = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
@@ -470,6 +473,11 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
         cw->gsc_leaf[idx] = gsv / GSVGSC;
 
+        // Cuticular conductance (mol m-2 s-1)
+        if (cw->gsc_leaf[idx] < p->gs_min) {
+            cw->gsc_leaf[idx] = p->gs_min;
+            gsv = GSVGSC * cw->gsc_leaf[idx];
+        }
 
         // Need to make sure transpiration solution is consistent, force
         // Tleaf to Tair as we aren't solving this
@@ -500,7 +508,7 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     if (deficit < 0.0) {
         deficit = 0.0;
     }
-    // running state across hours of the day
+    // running state of transpiration deficit across hours of the day
     *et_deficit += deficit;
 
     return (stressed);

@@ -656,6 +656,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->growth_efficiency = atof(value);
     } else if (MATCH("params", "gamstar25")) {
         p->gamstar25 = atof(value);
+    } else if (MATCH("params", "gs_min")) {
+        p->gs_min = atof(value);
     } else if (MATCH("params", "height0")) {
         p->height0 = atof(value);
     } else if (MATCH("params", "height1")) {
