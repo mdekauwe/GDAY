@@ -1046,11 +1046,11 @@ double calc_relative_weibull(double p, double p50, double sx) {
     return (relative_weibull);
 }
 
-void update_plant_water_store(double et_deficit) {
+void update_plant_water_store(canopy_wk *cw, double et_deficit) {
 
     // 5 % of full hydration
-    double plantw_minval = 0.05 * cw->plant_water0;
-    double ratio, relk;
+    double min_value = 0.05 * cw->plant_water0;
+    double ratio, relk, arg1, arg2;
 
     // under normal circumstances: stem water potential is soilwp - e/(2*k)
     // should be a percentage of total transpiration
@@ -1077,8 +1077,8 @@ void update_plant_water_store(double et_deficit) {
         // if we don't stop simulation when plant is dead
         // (i.e. xylempsi is very low), plantwater may go to zero, causing
         // crash.
-        if (cw->plant_water < plantw_minval) {
-            cw->plant_water = plantw_minval;
+        if (cw->plant_water < min_value) {
+            cw->plant_water = min_value;
         }
 
         // and recalculate corresponding xylem water potential
@@ -1092,12 +1092,9 @@ void update_plant_water_store(double et_deficit) {
         cw->plant_water = cw->plant_water0;
     }
 
-    // calculate relative conductivity of the stem, and actual plant conductance
-    relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-    cw->plant_k = relk * p->plantk;
-
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
+    cw->plant_k = relk * p->plantk;
 
     // if more than plcdead loss in conductivity, plant is dead.
     if (stem_relk < (1.0 - p->plc_dead)) {
