@@ -445,22 +445,10 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     //
     // Reference:
     // * Duursma et al. 2008, Tree Physiology 28, 265–276
-    //
 
-
-    double ktot, emax_leaf, etest, gsv, frac, deficit;
+    double ktot, emax_leaf, etest, gsv, frac;
     int    idx = cw->ileaf;
     int    stressed = FALSE;
-
-    // Need to work out the direct/diffuse weighting to adjust the
-    // stressed gs/transpiration calculation.
-    //if (cw->ileaf == 0) {
-    //    frac = 1.0 - cw->diffuse_frac;
-    //} else {
-    //    frac = cw->diffuse_frac;
-    //}
-
-
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
@@ -515,22 +503,24 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
     // Transpiration minus supply by soil/plant (emax) must be drawn from
     // plant reserve (mmol m-2 s-1)
-    deficit = (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf;
-    if (deficit < 0.0) {
-        deficit = 0.0;
+    *et_deficit = (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf;
+    if (*et_deficit < 0.0) {
+        *et_deficit = 0.0;
     }
 
-    // running state of transpiration deficit across hours of the day
-    *et_deficit += deficit;
+    // We need to remove the et_deficit which will come from the plant storage
+    // from the water we need to extract from the soil. We will add this back
+    // later to the transpiration output.
+    cw->trans_leaf[idx] -= *et_deficit;
 
     return (stressed);
 }
 
-double calc_lwp(fluxes *f, state *s, double kl, double transpiration) {
+double calc_lwp(fluxes *f, state *s, double ktot, double transpiration) {
 
     double lwp;
 
-    lwp = s->weighted_swp - (transpiration / kl);
+    lwp = s->weighted_swp - (transpiration / ktot);
     if (lwp < -20.0) {
         lwp = -20.0;
     }
