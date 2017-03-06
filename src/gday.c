@@ -350,13 +350,14 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         s->pawater_root = root_zone_total;
 
         // If we are simulating capcitance
-        if (c->simstore) {
-            // plantwater  (liters) = storecoef * leafarea ** storeexp
-            plantwater = storecoef * foltable1(1, itree) ** storeexp;
+        if (c->water_store) {
+            // Assume 80 litres for now: we need some unit conversions
+            cw->plant_water = 80.0;
 
             // to calculate rwc, keep track of initial water content.
-            plantwater0 = plantwater;
-            xylempsi = s->weighted_swp;
+            cw->plant_water0 = cw->plantwater;
+            cw->xylem_psi = s->weighted_swp;
+
         }
 
     } else {

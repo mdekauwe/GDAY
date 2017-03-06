@@ -16,7 +16,7 @@
 void    initialise_soils_sub_daily(control *, fluxes *, params *, state *);
 void    calculate_water_balance_sub_daily(control *, fluxes *, met *,
                                           nrutil *, params *, state *, int,
-                                          double, double, double);
+                                          double, double, double, double);
 void    setup_hydraulics_arrays(fluxes *, params *, state *);
 
 

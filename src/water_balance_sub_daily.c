@@ -96,8 +96,8 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                                        nrutil *nr, params *p, state *s,
                                        int daylen, double trans,
-                                       double omega_leaf,
-                                       double rnet_leaf) {
+                                       double omega_leaf, double rnet_leaf,
+                                       double et_deficit) {
     /*
         Calculate the water balance (including all water fluxes).
         - we are using all the hydraulics instead
@@ -248,6 +248,9 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
                             surface_water, canopy_evap, runoff, omega_leaf,
                             m->rain);
 
+    if (c->water_store) {
+        update_plant_water_store(et_deficit);
+    }
 
 }
 
@@ -1041,4 +1044,66 @@ double calc_relative_weibull(double p, double p50, double sx) {
     relative_weibull = 1.0 - pow(0.5, (pow(p / p50, (p50 * sx) / v)));
 
     return (relative_weibull);
+}
+
+void update_plant_water_store(double et_deficit) {
+
+    // 5 % of full hydration
+    double plantw_minval = 0.05 * cw->plant_water0;
+    double ratio, relk;
+
+    // under normal circumstances: stem water potential is soilwp - e/(2*k)
+    // should be a percentage of total transpiration
+    if (et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER < 1E-06) {
+
+
+         ! Transpiration in umol tree-1 s-1
+        water_flux = f->transpiration;
+
+        arg1 = s->weighted_swp - 1e-03 * water_flux;
+        arg2 = 2.0 * cw->plant_k * s->LAI;
+        cw->xylem_psi = arg1 / arg2;
+
+        // based on steady state water potential, calculate stem relative
+        // water content (must equilibrate!)
+        cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
+
+    } else {
+
+        // now reduce stem water content even further by amount of
+        // transpiration that is not sustained by soil water uptake
+        cw->plant_water -= et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER;
+
+        // if we don't stop simulation when plant is dead
+        // (i.e. xylempsi is very low), plantwater may go to zero, causing
+        // crash.
+        if (cw->plant_water < plantw_minval) {
+            cw->plant_water = plantw_minval;
+        }
+
+        // and recalculate corresponding xylem water potential
+        ratio = cw->plant_water / cw->plant_water0;
+        cw->xylem_psi = calc_xylem_water_potential(ratio, capac);
+    }
+
+    // it might happen (somehow?!) that etcandeficit is positive
+    // (numeric drift?), causing problems..
+    if (cw->plant_water > cw->plant_water0) {
+        cw->plant_water = cw->plant_water0;
+    }
+
+    // calculate relative conductivity of the stem, and actual plant conductance
+    relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
+    cw->plant_k = relk * p->plantk;
+
+    // stem relative conductivity (0-1)
+    stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
+
+    // if more than plcdead loss in conductivity, plant is dead.
+    if (stem_relk < (1.0 - p->plc_dead)) {
+        fprintf(stderr, "Death - need to do something\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return;
 }

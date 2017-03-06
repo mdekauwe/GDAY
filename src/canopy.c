@@ -43,7 +43,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
-    double previous_cs, current_cs, et_deficit;
+    double previous_cs, current_cs, et_deficit, relk;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -54,6 +54,17 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
     et_deficit = 0.0;
+
+    // reset plant water store to yesterday's value
+    if (c->water_store) {
+        // Assign plant hydraulic conductance (mmol m–2 s–1 MPa–1) from PLC
+        // curve and stem water potential
+        relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
+        cw->plant_k = relk * p->plantk;
+    } else {
+        // no cavitation when stem water storage not simulated
+        cw->plant_k = p->plantk;
+    }
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
@@ -150,7 +161,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
         calculate_water_balance_sub_daily(c, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
-                                          cw->rnet_canopy);
+                                          cw->rnet_canopy, et_deficit);
 
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);
@@ -436,10 +447,8 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // * Duursma et al. 2008, Tree Physiology 28, 265–276
     //
 
-    // plant component of the leaf-specific hydraulic conductance
-    // (mmol m–2 s–1 MPa–1)
-    double kp = 2.0, deficit;
-    double ktot, emax_leaf, etest, gsv, frac;
+
+    double ktot, emax_leaf, etest, gsv, frac, deficit;
     int    idx = cw->ileaf;
     int    stressed = FALSE;
 
@@ -451,8 +460,10 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     //    frac = cw->diffuse_frac;
     //}
 
+
+
     // Hydraulic conductance of the entire soil-to-leaf pathway
-    ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
+    ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
 
     // Maximum transpiration rate (mmol m-2 s-1)
     emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
@@ -508,6 +519,7 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     if (deficit < 0.0) {
         deficit = 0.0;
     }
+
     // running state of transpiration deficit across hours of the day
     *et_deficit += deficit;
 
@@ -539,78 +551,4 @@ void unpack_solar_geometry(canopy_wk *cw, control *c) {
     cw->diffuse_frac = cw->df_store[c->hour_idx];
 
     return;
-}
-
-
-
-if (c->simstore && hod == 0) {
-    // assign plant hydraulic conductance from plc curve and stem water
-    // potential
-    relk = calc_relative_weibull(xylempsi, p50, plcshape);
-    plantk_act = relk * p->plantk;
-}
-
-// no cavitation when stem water storage not simulated
-if (c->simstore == FALSE) {
-    plantk_act = p->plantk;
-}
-
-
-// update plant water store
-if (c->simstore) {
-
-    // under normal circumstances: stem water potential is soilwp - e/(2*k)
-    // should be a percentage of total transpiration
-    if (etcandeficit * sperhr*1e-06*18 < 1e-06) {
-        watflux = fh2o(itar,ihour);
-
-        // should never happen but it does
-        if (watflux < 0.0) {
-            watflux = 0.0;
-        }
-        xylem_psi = s->weighted_swp - 1e-03 * watflux / (2.0 * plantkact * folt(1));
-
-        // based on steady state water potential, calculate stem relative
-        // water content (must equilibrate!)
-        plantwater = plantwater0 * (1.0 + xylem_psi * capac);
-
-    } else {
-
-        // now reduce stem water content even further by amount of
-        // transpiration that is not sustained by soil water uptake
-        plantwater -= etcandeficit(itar,ihour) * sperhr * 1e-06 * 18;
-
-        // if we don't stop simulation when plant is dead
-        // (i.e. xylempsi is very low), plantwater may go to zero, causing
-        // crash.
-
-        // 5 % of full hydration
-        plantw_minval = 0.05 * plantwater0
-        if (plantwater < plantw_minval) {
-            plantwater = plantw_minval
-        }
-
-        // and recalculate corresponding xylem water potential
-        xylem_psi = calc_xylem_water_potential(plantwater / plantwater0, capac);
-    }
-
-    // it might happen (somehow?!) that etcandeficit is positive
-    // (numeric drift?), causing problems..
-    if (plantwater > plantwater0) {
-        plantwater = plantwater0;
-    }
-
-    // calculate relative conductivity of the stem, and actual plant conductance
-    relk = calc_relative_weibull(xylem_psi, p50, plcshape);
-    plantkact = relk * plantk;
-
-    // stem relative conductivity (0-1)
-    stemrelk = calc_relative_weibull(xylem_psi, p50, plcshape);
-
-    // if more than plcdead loss in conductivity, plant is dead.
-    if (stemrelk < (1.0 - plcdead)) {
-        deadalive = 0;
-        fprintf(stderr, "Death - need to do something\n");
-        exit(EXIT_FAILURE);
-    }
 }

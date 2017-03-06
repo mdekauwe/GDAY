@@ -424,6 +424,19 @@ int handler(char *section, char *name, char *value, control *c,
         else {
             c->water_balance = BUCKET;
         }
+    } else if (MATCH("control", "water_store")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->water_store = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->water_store = TRUE;
+        else {
+            fprintf(stderr, "Unknown water_store option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "water_stress")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -678,6 +691,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->jv_intercept = atof(value);
     } else if (MATCH("params", "jv_slope")) {
         p->jv_slope = atof(value);
+    } else if (MATCH("params", "kp")) {
+        p->kp = atof(value);
     } else if (MATCH("params", "kc25")) {
         p->kc25 = atof(value);
     } else if (MATCH("params", "kdec1")) {

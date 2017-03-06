@@ -42,6 +42,7 @@ void initialise_control(control *c) {
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
     c->water_balance = 0;            /* Water calculations: 0=simple 2 layered bucket; 1=SPA-style hydraulics */
+    c->water_store = FALSE;         /* Simulate capacitance or not? */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
 
     /* Internal calculated */
@@ -132,6 +133,7 @@ void initialise_params(params *p) {
     p->jmaxnb = 0.0;
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
+    p->kp = 2.0;        //plant component of the leaf-specific hydraulic conductance (mmol m-2 s-1 MPa-1 )
     p->kc25 = 404.9;    /* MM coefft of Rubisco for CO2 (umol mol-1) */
     p->kdec1 = 3.965571;
     p->kdec2 = 14.61;
