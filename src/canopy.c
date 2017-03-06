@@ -473,10 +473,10 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         cw->gsc_leaf[idx] = gsv / GSVGSC;
 
         // Cuticular conductance (mol m-2 s-1)
-        if (cw->gsc_leaf[idx] < p->gs_min) {
-            cw->gsc_leaf[idx] = p->gs_min;
-            gsv = GSVGSC * cw->gsc_leaf[idx];
-        }
+        //if (cw->gsc_leaf[idx] < p->gs_min) {
+        //    cw->gsc_leaf[idx] = p->gs_min;
+        //    gsv = GSVGSC * cw->gsc_leaf[idx];
+        //}
 
         // Need to make sure transpiration solution is consistent, force
         // Tleaf to Tair as we aren't solving this
