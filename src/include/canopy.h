@@ -33,5 +33,6 @@ void    unpack_solar_geometry(canopy_wk *, control *);
 void    check_water_balance(control *, fluxes *, state *s, double, double,
                             double, double, double, int);
 double  calc_lwp(fluxes *, state *, double, double);
-int     calculate_emax(control *, canopy_wk *, fluxes *, met *, params *, state *);
+int     calculate_emax(control *, canopy_wk *, fluxes *, met *, params *,
+                       state *, double *);
 #endif /* CANOPY_H */

@@ -43,7 +43,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
-    double previous_cs, current_cs;
+    double previous_cs, current_cs, et_deficit;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -53,7 +53,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
-
+    et_deficit = 0.0;
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
@@ -89,7 +89,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         if (c->water_balance == HYDRAULICS) {
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
-                            stressed = calculate_emax(c, cw, f, m, p, s);
+                            stressed = calculate_emax(c, cw, f, m, p, s,
+                                                      &et_deficit);
                         }
 
                         if (stressed == FALSE) {
@@ -425,7 +426,7 @@ void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
 }
 
 int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
-                    state *s) {
+                    state *s, double *et_deficit) {
 
     // Assumption that during the day transpiration cannot exceed a maximum
     // value, Emax. At this point we've reached a leaf water potential minimum.
@@ -437,7 +438,7 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
     // plant component of the leaf-specific hydraulic conductance
     // (mmol m–2 s–1 MPa–1)
-    double kp = 2.0;
+    double kp = 2.0, deficit;
     double ktot, emax_leaf, etest, gsv, frac;
     int    idx = cw->ileaf;
     int    stressed = FALSE;
@@ -493,7 +494,14 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
     }
 
-
+    // Transpiration minus supply by soil/plant (emax) must be drawn from
+    // plant reserve (mmol m-2 s-1)
+    deficit = (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf;
+    if (deficit < 0.0) {
+        deficit = 0.0;
+    }
+    // running state across hours of the day
+    *et_deficit += deficit;
 
     return (stressed);
 }
