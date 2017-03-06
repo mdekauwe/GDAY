@@ -93,8 +93,8 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     return;
 }
 
-void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
-                                       nrutil *nr, params *p, state *s,
+void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
+                                       met *m, nrutil *nr, params *p, state *s,
                                        int daylen, double trans,
                                        double omega_leaf, double rnet_leaf,
                                        double et_deficit) {
@@ -247,7 +247,7 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
     if (c->water_store) {
         // Do we need to take any water from the plant store? This function
         // also checks to for drought-induced mortality
-        update_plant_water_store(cw, &transpiration, &et, et_deficit);
+        update_plant_water_store(cw, p, s, &transpiration, &et, et_deficit);
     }
 
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
@@ -1048,12 +1048,13 @@ double calc_relative_weibull(double p, double p50, double sx) {
     return (relative_weibull);
 }
 
-void update_plant_water_store(canopy_wk *cw, double *transpiration, double *et,
+void update_plant_water_store(canopy_wk *cw, params *p, state *s,
+                              double *transpiration, double *et,
                               double et_deficit) {
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
-    double ratio, relk, arg1, arg2, water_flux;
+    double ratio, relk, arg1, arg2, water_flux, stem_relk;
     double delta_water_store = 0.0;
 
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
@@ -1062,11 +1063,11 @@ void update_plant_water_store(canopy_wk *cw, double *transpiration, double *et,
     if (et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER < 1E-06) {
 
         // Need to get the units right ...
-        water_flux = (f->transpiration * KG_AS_G *
-                      G_WATER_2_MOL_WATER * MOL_2_MMOL);
+        water_flux = (*transpiration * KG_AS_G * G_WATER_2_MOL_WATER *
+                      MOL_2_MMOL);
 
         arg1 = s->weighted_swp - water_flux; // mmol m-2 s-1 MPa-1
-        arg2 = 2.0 * cw->plant_k * s->LAI;
+        arg2 = 2.0 * cw->plant_k * s->lai;
         cw->xylem_psi = arg1 / arg2;
 
         // based on steady state water potential, calculate stem relative
@@ -1087,7 +1088,7 @@ void update_plant_water_store(canopy_wk *cw, double *transpiration, double *et,
 
         // and recalculate corresponding xylem water potential
         ratio = cw->plant_water / cw->plant_water0;
-        cw->xylem_psi = calc_xylem_water_potential(ratio, capac);
+        cw->xylem_psi = calc_xylem_water_potential(ratio, p->capac);
     }
 
     // Need to add water we took from the plant store to transpiration output
@@ -1102,7 +1103,7 @@ void update_plant_water_store(canopy_wk *cw, double *transpiration, double *et,
 
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-    cw->plant_k = relk * p->plantk;
+    cw->plant_k = relk * p->kp;
 
     // if more than plcdead loss in conductivity, plant is dead.
     if (stem_relk < (1.0 - p->plc_dead)) {

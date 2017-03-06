@@ -60,10 +60,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         // Assign plant hydraulic conductance (mmol m–2 s–1 MPa–1) from PLC
         // curve and stem water potential
         relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-        cw->plant_k = relk * p->plantk;
+        cw->plant_k = relk * p->kp;
     } else {
         // no cavitation when stem water storage not simulated
-        cw->plant_k = p->plantk;
+        cw->plant_k = p->kp;
     }
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
@@ -159,7 +159,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         }
         sum_hourly_carbon_fluxes(cw, f, p);
 
-        calculate_water_balance_sub_daily(c, f, m, nr, p, s, dummy,
+        calculate_water_balance_sub_daily(c, cw, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy, et_deficit);
 

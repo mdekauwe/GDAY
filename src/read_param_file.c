@@ -577,6 +577,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->branch0 = atof(value);
     } else if (MATCH("params", "branch1")) {
         p->branch1 = atof(value);
+    } else if (MATCH("params", "capac")) {
+        p->capac = atof(value);
     } else if (MATCH("params", "c_alloc_bmax")) {
         p->c_alloc_bmax = atof(value);
     } else if (MATCH("params", "c_alloc_bmin")) {
