@@ -170,6 +170,11 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     }
     gs = cw->gsc_leaf[idx];
 
+    // Cuticular conductance (mol m-2 s-1)
+    if (gs < p->gs_min) {
+        gs = p->gs_min;
+    }
+
     /* Solution when Rubisco rate is limiting */
     //A = 1.0 / gs;
     //B = (0.0 - vcmax) / gs - Cs - km;
@@ -1139,7 +1144,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
-    
+
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
 
