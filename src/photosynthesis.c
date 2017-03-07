@@ -152,7 +152,6 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
 
     double gamma_star, km, jmax, vcmax, rd, Vj, gs;
     double A, B, C, Ac, Aj, Cs;
-    double g0_zero = 1E-09; /* numerical issues, don't use zero */
     int    idx, qudratic_error = FALSE, large_root;
 
     // Unpack calculated properties from first photosynthesis solution
@@ -164,16 +163,12 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     rd = cw->ts_rd;
     Vj = cw->ts_Vj;
 
-    // A very low minimum; for numerical stability.
-    if (cw->gsc_leaf[idx] < g0_zero) {
-        cw->gsc_leaf[idx] = g0_zero;
+    // Cuticular conductance (mol m-2 s-1), if we are ignoring this then
+    // we are setting gs_min to a tiny value for numerical reasons, i.e. 1E-09
+    if (cw->gsc_leaf[idx] < p->gs_min) {
+        cw->gsc_leaf[idx] = p->gs_min;
     }
     gs = cw->gsc_leaf[idx];
-
-    // Cuticular conductance (mol m-2 s-1)
-    if (gs < p->gs_min) {
-        gs = p->gs_min;
-    }
 
     /* Solution when Rubisco rate is limiting */
     //A = 1.0 / gs;

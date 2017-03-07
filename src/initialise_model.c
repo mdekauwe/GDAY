@@ -122,7 +122,7 @@ void initialise_params(params *p) {
     p->fretrans = 0.5;
     p->g1 = 2.74;
     p->gamstar25 = 42.75;
-    p->gs_min = 0.001;           // Cuticular conductance (mol m-2 s-1)
+    p->gs_min = 1E-09;           // Cuticular conductance (mol m-2 s-1), if we are not setting this then set to a tiny value (1e-09 for numerical reasons)
     p->growth_efficiency = 0.7;
     p->height0 = 5.0;
     p->height1 = 30.0;
