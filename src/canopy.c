@@ -518,9 +518,10 @@ double calc_lwp(fluxes *f, state *s, double ktot, double transpiration) {
 
     double lwp;
 
-    lwp = s->weighted_swp - (transpiration / ktot);
-    if (lwp < -20.0) {
-        lwp = -20.0;
+    if (ktot > 0.0) {
+        lwp = s->weighted_swp - (transpiration / ktot);
+    } else {
+        lwp = s->weighted_swp;
     }
 
     return (lwp);
