@@ -155,7 +155,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         soil_evap = calc_soil_evaporation(m, p, s, net_rad);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
-
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
@@ -1056,6 +1055,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     double min_value = 0.05 * cw->plant_water0;
     double ratio, relk, arg1, arg2, water_flux, stem_relk;
     double delta_water_store = 0.0;
+    double conv;
 
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
     // they will fill up the stem immediately (even if near empty).
@@ -1092,8 +1092,11 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     }
 
     // Need to add water we took from the plant store to transpiration output
-    *transpiration += et_deficit;
-    *et += et_deficit;
+
+    // mmol m-2 s-1 to mm/30min
+    conv = MMOL_2_MOL * MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+    *transpiration += (et_deficit * conv);
+    *et += (et_deficit * conv);
 
     // it might happen (somehow?!) that etcandeficit is positive
     // (numeric drift?), causing problems..
