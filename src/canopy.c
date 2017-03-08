@@ -158,6 +158,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             if (cw->trans_canopy < 0.0) {
                 cw->trans_canopy = 0.0;
             }
+
+            
         }
 
         calculate_water_balance_sub_daily(c, cw, f, m, nr, p, s, dummy,
@@ -493,6 +495,8 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // Transpiration minus supply by soil/plant (emax) must be drawn from
     // plant reserve (mmol m-2 s-1)
     *et_deficit = (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf;
+    printf("%f %f %f\n", *et_deficit, emax_leaf, (m->vpd / m->press) * gsv * MOL_2_MMOL);
+    exit(1);
     if (*et_deficit < 0.0) {
         *et_deficit = 0.0;
     }

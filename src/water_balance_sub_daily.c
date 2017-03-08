@@ -1053,7 +1053,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
-    double ratio, relk, arg1, arg2, water_flux, stem_relk;
+    double ratio, arg1, arg2, water_flux, stem_relk;
     double delta_water_store = 0.0;
     double conv;
 
@@ -1073,6 +1073,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         // based on steady state water potential, calculate stem relative
         // water content (must equilibrate!)
         cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
+
     } else {
 
         // now reduce stem water content even further by amount of
@@ -1098,15 +1099,15 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     *transpiration += (et_deficit * conv);
     *et += (et_deficit * conv);
 
-    // it might happen (somehow?!) that etcandeficit is positive
-    // (numeric drift?), causing problems..
-    if (cw->plant_water > cw->plant_water0) {
-        cw->plant_water = cw->plant_water0;
-    }
-
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-    cw->plant_k = relk * p->kp;
+    cw->plant_k = stem_relk * p->kp;
+
+
+
+    printf("%f %f %f\n", stem_relk, cw->plant_k, p->kp);
+    exit(1);
+
 
     // if more than plcdead loss in conductivity, plant is dead.
     if (stem_relk < (1.0 - p->plc_dead)) {

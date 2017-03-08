@@ -356,8 +356,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
             // to calculate rwc, keep track of initial water content.
             cw->plant_water0 = cw->plant_water;
-            cw->xylem_psi = s->weighted_swp;
-
+            cw->xylem_psi = 0.0;
+            //cw->xylem_psi = s->weighted_swp;
         }
 
     } else {
