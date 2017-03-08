@@ -506,6 +506,9 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // from the water we need to extract from the soil. We will add this back
     // later to the transpiration output.
     cw->trans_leaf[idx] -= *et_deficit;
+    if (cw->trans_leaf[idx] < 0.0) {
+        cw->trans_leaf[idx] = 0.0;
+    }
 
     return (stressed);
 }
