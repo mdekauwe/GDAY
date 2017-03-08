@@ -455,7 +455,9 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
     // Maximum transpiration rate (mmol m-2 s-1)
     // Following Darcy's law which relates leaf transpiration to hydraulic
-    // conductance of the soil-to-leaf pathway and leaf & soil water potentials
+    // conductance of the soil-to-leaf pathway and leaf & soil water potentials.
+    // Transpiration is limited in the perfectly isohydric case above the
+    // critical threshold for embolism given by min_lwp.
     emax_leaf = MAX(0.0, ktot * (s->weighted_swp - p->min_lwp));
 
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
