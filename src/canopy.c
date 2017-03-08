@@ -454,10 +454,9 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
 
     // Maximum transpiration rate (mmol m-2 s-1)
-    emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
-    if (emax_leaf < 0.0) {
-        emax_leaf = 0.0;
-    }
+    // Following Darcy's law which relates leaf transpiration to hydraulic
+    // conductance of the soil-to-leaf pathway and leaf & soil water potentials
+    emax_leaf = MAX(0.0, ktot * (s->weighted_swp - p->min_lwp));
 
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
     etest = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
