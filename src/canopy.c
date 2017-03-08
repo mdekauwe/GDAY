@@ -473,6 +473,11 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
         cw->gsc_leaf[idx] = gsv / GSVGSC;
 
+        // gs cannot be lower than minimum (cuticular conductance)
+        if (cw->gsc_leaf[idx] < p->gs_min) {
+            cw->gsc_leaf[idx] = p->gs_min;
+        }
+
         // Need to make sure transpiration solution is consistent, force
         // Tleaf to Tair as we aren't solving this
         cw->trans_leaf[idx] = emax_leaf * MMOL_2_MOL;
@@ -489,8 +494,8 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         photosynthesis_C3_emax(c, cw, m, p, s);
 
         // Need to calculate an effective beta to use in soil decomposition
-        //cw->fwsoil_leaf[idx] = emax_leaf / etest;
-        cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
+        cw->fwsoil_leaf[idx] = emax_leaf / etest;
+        //cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
     } else {
         cw->fwsoil_leaf[idx] = 1.0;
 
