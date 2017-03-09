@@ -696,6 +696,9 @@ typedef struct {
     double xylem_psi;
     double plant_water0;
     double plant_water;
+    double trans_deficit_leaf[2];
+    double trans_deficit_canopy;
+
 } canopy_wk;
 
 

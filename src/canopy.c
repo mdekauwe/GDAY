@@ -43,7 +43,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
-    double previous_cs, current_cs, et_deficit, relk;
+    double previous_cs, current_cs, relk;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -99,7 +99,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         if (c->water_balance == HYDRAULICS) {
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
-                            calculate_emax(c, cw, f, m, p, s, &et_deficit);
+                            calculate_emax(c, cw, f, m, p, s);
                         }
 
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -142,6 +142,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
         }
 
+
         scale_leaf_to_canopy(c, cw, s);
         if (c->water_balance == HYDRAULICS && hod == 24) {
             s->midday_lwp = cw->lwp_canopy;
@@ -153,17 +154,16 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         // We will add this back later to the transpiration output.
         if (c->water_balance == HYDRAULICS && c->water_store) {
             // mmol m-2 s-1 to mol m-2 s-1
-            cw->trans_canopy -= (et_deficit * MMOL_2_MOL);
+            cw->trans_canopy -= (cw->trans_deficit_canopy * MMOL_2_MOL);
             if (cw->trans_canopy < 0.0) {
                 cw->trans_canopy = 0.0;
             }
-
-
         }
 
         calculate_water_balance_sub_daily(c, cw, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
-                                          cw->rnet_canopy, et_deficit);
+                                          cw->rnet_canopy,
+                                          cw->trans_deficit_canopy);
 
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);
@@ -350,6 +350,8 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
         beta = (cw->fwsoil_leaf[SUNLIT] + cw->fwsoil_leaf[SHADED]) / 2.0;
         s->wtfac_topsoil = beta;
         s->wtfac_root = beta;
+        cw->trans_deficit_canopy = (cw->trans_deficit_leaf[SUNLIT] +
+                                    cw->trans_deficit_leaf[SHADED]);
     }
 
 
@@ -439,7 +441,7 @@ void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
 }
 
 void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
-                    state *s, double *et_deficit) {
+                    state *s) {
 
     // Assumption that during the day transpiration cannot exceed a maximum
     // value, Emax. At this point we've reached a leaf water potential minimum.
@@ -476,13 +478,14 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         // gs cannot be lower than minimum (cuticular conductance)
         if (cw->gsc_leaf[idx] < p->gs_min) {
             cw->gsc_leaf[idx] = p->gs_min;
+            gsv = cw->gsc_leaf[idx] * GSVGSC;
         }
-
-        // Minimum leaf water potential reached so recalculate LWP (MPa)
-        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
 
         // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
+
+        // Minimum leaf water potential reached so recalculate LWP (MPa)
+        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
 
         // Need to calculate an effective beta to use in soil decomposition
         cw->fwsoil_leaf[idx] = emax_leaf / etest;
@@ -497,9 +500,9 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
     // Transpiration minus supply by soil/plant (emax) must be drawn from
     // plant reserve (mmol m-2 s-1)
-    *et_deficit = MAX(0.0, (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf);
-
-    printf("%f\n", *et_deficit);
+    cw->trans_deficit_leaf[idx] = MAX(0.0,
+                                      (m->vpd / m->press) * gsv * MOL_2_MMOL -\
+                                       emax_leaf);
 
     return;
 }

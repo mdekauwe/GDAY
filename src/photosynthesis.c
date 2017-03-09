@@ -162,12 +162,6 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     gamma_star = cw->ts_gamma_star;
     rd = cw->ts_rd;
     Vj = cw->ts_Vj;
-
-    // Cuticular conductance (mol m-2 s-1), if we are ignoring this then
-    // we are setting gs_min to a tiny value for numerical reasons, i.e. 1E-09
-    if (cw->gsc_leaf[idx] < p->gs_min) {
-        cw->gsc_leaf[idx] = p->gs_min;
-    }
     gs = cw->gsc_leaf[idx];
 
     /* Solution when Rubisco rate is limiting */
