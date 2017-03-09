@@ -154,7 +154,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         // We will add this back later to the transpiration output.
         if (c->water_balance == HYDRAULICS && c->water_store) {
             // mmol m-2 s-1 to mol m-2 s-1
-            cw->trans_canopy -= (cw->trans_deficit_canopy * MMOL_2_MOL);
+            cw->trans_canopy -= cw->trans_deficit_canopy * MMOL_2_MOL;
             if (cw->trans_canopy < 0.0) {
                 cw->trans_canopy = 0.0;
             }

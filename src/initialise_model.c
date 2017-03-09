@@ -267,6 +267,7 @@ void initialise_params(params *p) {
     p->porosity = NULL;
     p->field_capacity = NULL;
     p->wetting = 10;
+    p->plc_dead = 0.85;
 
 
 }
