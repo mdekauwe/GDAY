@@ -1065,7 +1065,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         // Need to get the units right ...mm/30 min -> mmol m-2 s-1
         water_flux = (*transpiration * KG_AS_G * G_WATER_2_MOL_WATER *
                       MOL_2_MMOL * HLFHR_2_SEC);
-        printf("Eh: %f\n",water_flux );
+
         arg1 = s->weighted_swp - water_flux; // mmol m-2 s-1 MPa-1
         arg2 = 2.0 * cw->plant_k * s->lai;
         cw->xylem_psi = arg1 / arg2;
@@ -1073,13 +1073,13 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         // based on steady state water potential, calculate stem relative
         // water content (must equilibrate!)
         cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
-        printf("1: %f\n", cw->plant_water);
+
     } else {
 
         // now reduce stem water content even further by amount of
         // transpiration that is not sustained by soil water uptake
         cw->plant_water -= et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER;
-        printf("2: %f\n", cw->plant_water);
+        
         // if we don't stop simulation when plant is dead
         // (i.e. xylempsi is very low), plantwater may go to zero, causing
         // crash.
@@ -1103,7 +1103,6 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
     cw->plant_k = stem_relk * p->kp;
 
-    printf("%f %f\n", cw->plant_water, et_deficit * conv);
     // if more than plcdead loss in conductivity, plant is dead.
     if (stem_relk < (1.0 - p->plc_dead)) {
         // Should call some wrapper function when this happens

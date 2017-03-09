@@ -100,7 +100,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
                             calculate_emax(c, cw, f, m, p, s, &et_deficit);
-                            printf("** %f\n", et_deficit);
                         }
 
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -489,15 +488,18 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         cw->fwsoil_leaf[idx] = emax_leaf / etest;
         //cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
 
-        // Transpiration minus supply by soil/plant (emax) must be drawn from
-        // plant reserve (mmol m-2 s-1)
-        *et_deficit = MAX(0.0, (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf);
-
     } else {
 
         cw->fwsoil_leaf[idx] = 1.0;
-        *et_deficit = 0.0;
+        gsv = cw->gsc_leaf[idx] * GSVGSC;
+
     }
+
+    // Transpiration minus supply by soil/plant (emax) must be drawn from
+    // plant reserve (mmol m-2 s-1)
+    *et_deficit = MAX(0.0, (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf);
+
+    printf("%f\n", *et_deficit);
 
     return;
 }
