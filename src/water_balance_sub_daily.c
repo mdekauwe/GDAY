@@ -1073,7 +1073,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         // based on steady state water potential, calculate stem relative
         // water content (must equilibrate!)
         cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
-        printf("%f\n", cw->plant_water);
+
     } else {
 
         // now reduce stem water content even further by amount of
@@ -1093,7 +1093,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         cw->xylem_psi = calc_xylem_water_potential(ratio, p->capac);
     }
 
-
+    printf("%f\n", cw->plant_water);
 
     // Need to add water we took from the plant store to transpiration output
 
