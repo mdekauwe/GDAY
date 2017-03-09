@@ -99,7 +99,10 @@ int main(int argc, char **argv)
     }
 
     initialise_control(c);
+    printf("%f\n", p->plc_dead);
     initialise_params(p);
+    printf("%f\n", p->plc_dead);
+    exit(1);
     initialise_fluxes(f);
     initialise_state(s);
     initialise_nrutil(nr);

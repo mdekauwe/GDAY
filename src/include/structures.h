@@ -366,7 +366,7 @@ typedef struct {
     double p50;
     double plc_shape;
     double capac;
-    int    plc_dead;
+    double plc_dead;
 
     /* not shared via cmd line */
     double *potA;

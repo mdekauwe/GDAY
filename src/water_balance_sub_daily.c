@@ -1105,7 +1105,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
     cw->plant_k = stem_relk * p->kp;
-
+    printf("%f %f\n",p->plc_dead, (1.0 - p->plc_dead));
     // if more than plcdead loss in conductivity, plant is dead.
     if (stem_relk < (1.0 - p->plc_dead)) {
         // Should call some wrapper function when this happens
