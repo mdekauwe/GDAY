@@ -53,7 +53,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
-    et_deficit = 0.0;
 
     // reset plant water store to yesterday's value
     if (c->water_store) {
@@ -101,6 +100,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
                             calculate_emax(c, cw, f, m, p, s, &et_deficit);
+                            printf("** %f\n", et_deficit);
                         }
 
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -159,7 +159,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 cw->trans_canopy = 0.0;
             }
 
-            
+
         }
 
         calculate_water_balance_sub_daily(c, cw, f, m, nr, p, s, dummy,
@@ -488,16 +488,14 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
         // Need to calculate an effective beta to use in soil decomposition
         cw->fwsoil_leaf[idx] = emax_leaf / etest;
         //cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
-    } else {
-        cw->fwsoil_leaf[idx] = 1.0;
-    }
 
-    // Transpiration minus supply by soil/plant (emax) must be drawn from
-    // plant reserve (mmol m-2 s-1)
-    *et_deficit = (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf;
-    printf("%f %f %f\n", *et_deficit, emax_leaf, (m->vpd / m->press) * gsv * MOL_2_MMOL);
-    exit(1);
-    if (*et_deficit < 0.0) {
+        // Transpiration minus supply by soil/plant (emax) must be drawn from
+        // plant reserve (mmol m-2 s-1)
+        *et_deficit = MAX(0.0, (m->vpd / m->press) * gsv * MOL_2_MMOL - emax_leaf);
+
+    } else {
+
+        cw->fwsoil_leaf[idx] = 1.0;
         *et_deficit = 0.0;
     }
 
