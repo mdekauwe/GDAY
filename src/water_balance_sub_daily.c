@@ -1062,23 +1062,23 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     // stem water potential is soilwp - e/(2*k)
     if (et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER * SEC_2_HLFHR < 1E-06) {
 
-        // Need to get the units right ...mm/30 min -> mmol m-2 s-1
-        water_flux = (*transpiration * KG_AS_G * G_WATER_2_MOL_WATER *
-                      MOL_2_MMOL * HLFHR_2_SEC);
+        // mm 30 min-1 -> mmol m-2 s-1
+        conv = KG_AS_G * G_WATER_2_MOL_WATER * MOL_2_MMOL * HLFHR_2_SEC;
+        water_flux = *transpiration * conv;
 
-        arg1 = s->weighted_swp - water_flux; // mmol m-2 s-1 MPa-1
+        arg1 = s->weighted_swp - water_flux;
         arg2 = 2.0 * cw->plant_k * s->lai;
         cw->xylem_psi = arg1 / arg2;
 
         // based on steady state water potential, calculate stem relative
         // water content (must equilibrate!)
         cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
-
+        printf("%f\n", cw->plant_water);
     } else {
 
         // now reduce stem water content even further by amount of
         // transpiration that is not sustained by soil water uptake
-        conv = MMOL_2_MOL * MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+        conv = MMOL_2_MOL * MOLE_WATER_2_G_WATER * SEC_2_HLFHR;
         cw->plant_water -= et_deficit * conv;
 
         // if we don't stop simulation when plant is dead
@@ -1099,6 +1099,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // mmol m-2 s-1 to mm/30min
     conv = MMOL_2_MOL * MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+
     *transpiration += et_deficit * conv;
     *et += et_deficit * conv;
 
@@ -1107,11 +1108,11 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     cw->plant_k = stem_relk * p->kp;
 
     // if more than plcdead loss in conductivity, plant is dead.
-    if (stem_relk < (1.0 - p->plc_dead)) {
-        // Should call some wrapper function when this happens
-        fprintf(stderr, "Death - need to do something\n");
-        exit(EXIT_FAILURE);
-    }
+    //if (stem_relk < (1.0 - p->plc_dead)) {
+    //    // Should call some wrapper function when this happens
+    //    fprintf(stderr, "Death - need to do something\n");
+    //    exit(EXIT_FAILURE);
+    //}
 
     return;
 }

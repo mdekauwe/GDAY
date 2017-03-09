@@ -329,6 +329,13 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         initialise_soils_day(c, f, p, s);
     }
 
+    if (c->fixed_lai) {
+        s->lai = p->fix_lai;
+    } else {
+        s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
+                            p->cfracts * s->shoot));
+    }
+
     if (c->water_balance == HYDRAULICS) {
         double root_zone_total, water_content;
 
@@ -363,13 +370,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     } else {
         s->pawater_root = p->wcapac_root;
         s->pawater_topsoil = p->wcapac_topsoil;
-    }
-
-    if (c->fixed_lai) {
-        s->lai = p->fix_lai;
-    } else {
-        s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
-                            p->cfracts * s->shoot));
     }
 
     if (c->disturbance) {
@@ -431,6 +431,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, s->day_length[doy]);
             }
+
             calculate_litterfall(c, f, fs, p, s, doy, &fdecay, &rdecay);
 
             if (c->disturbance && p->disturbance_doy == doy+1) {
