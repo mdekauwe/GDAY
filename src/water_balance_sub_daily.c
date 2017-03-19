@@ -1067,7 +1067,8 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         water_flux = *transpiration * conv;
 
         arg1 = s->weighted_swp - water_flux;
-        arg2 = 2.0 * cw->plant_k * s->lai;
+        //arg2 = 2.0 * cw->plant_k * s->lai;
+        arg2 = 2.0 * cw->plant_k;
         cw->xylem_psi = arg1 / arg2;
 
         // based on steady state water potential, calculate stem relative
