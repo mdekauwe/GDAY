@@ -114,15 +114,15 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
 
             } /* end of sunlit/shaded leaf loop */
-            printf("%d,%d,%d,%lf,%lf,%lf,%lf\n",
-                   (int)year, (int)doy, hod,
-                   cw->trans_leaf[SUNLIT], cw->trans_leaf[SHADED],
-                   cw->lwp_leaf[SUNLIT], cw->lwp_leaf[SHADED]);
+            //printf("%d,%d,%d,%lf,%lf,%lf,%lf\n",
+            //       (int)year, (int)doy, hod,
+            //       cw->trans_leaf[SUNLIT], cw->trans_leaf[SHADED],
+            //       cw->lwp_leaf[SUNLIT], cw->lwp_leaf[SHADED]);
 
         } else {
-            printf("%d,%d,%d,%lf,%lf,%lf,%lf\n",
-                   (int)year, (int)doy, hod,
-                   0.0, 0.0, 0.0, 0.0);
+            //printf("%d,%d,%d,%lf,%lf,%lf,%lf\n",
+            //       (int)year, (int)doy, hod,
+            //       0.0, 0.0, 0.0, 0.0);
             zero_hourly_fluxes(cw);
 
             /* set tleaf to tair during the night */
@@ -412,6 +412,7 @@ void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
 
     delta_sw = current_sw - previous_sw;
     delta_cs = current_cs - previous_cs;
+
     f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_cs + delta_sw);
 
     printf("%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",

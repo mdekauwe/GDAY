@@ -158,13 +158,14 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
         if we don't have sufficient water
     */
     double transpiration_topsoil, transpiration_root, previous,
-           delta_topsoil, topsoil_loss;
+           delta_topsoil, topsoil_loss, drainage;
 
     /* This is used to account for transpiration losses from the top layer. */
     transpiration_topsoil = s->wtfac_topsoil * p->fractup_soil * *transpiration;
 
     /* Top soil layer */
     previous = s->pawater_topsoil;
+    delta_topsoil = 0.0;
     topsoil_loss = transpiration_topsoil + *soil_evap;
     s->pawater_topsoil += throughfall - topsoil_loss;
 
@@ -179,22 +180,35 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
         ** then use this to do some of the evaporation required
         */
         if (isgreater(previous, 0.0)) {
-            *soil_evap = previous / 2.0;
-            transpiration_topsoil = previous / 2.0;
-            /**soil_evap = previous;
-            transpiration_topsoil = previous - *soil_evap;*/
+            //*soil_evap = previous / 2.0;
+            //transpiration_topsoil = previous / 2.0;
+            //topsoil_loss = transpiration_topsoil + *soil_evap;
+            *soil_evap = previous;
+            transpiration_topsoil = previous - *soil_evap;
+            topsoil_loss = transpiration_topsoil + *soil_evap;
+
         } else {
             *soil_evap = 0.0;
             transpiration_topsoil = 0.0;
+            topsoil_loss = 0.0;
         }
-
+        delta_topsoil = previous - s->pawater_topsoil;
     /*
     ** We have more water than the layer can hold, so set the layer to the
     ** maximum
     */
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
+        delta_topsoil = previous - s->pawater_topsoil;
+
+    /*
+    ** We have enough water to meet demands
+    */
+    } else {
+        delta_topsoil = previous - s->pawater_topsoil;
     }
+
+    drainage = throughfall - topsoil_loss + delta_topsoil;
 
     /*
     ** Root zone
@@ -208,7 +222,7 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
 
     previous = s->pawater_root;
     transpiration_root = *transpiration - transpiration_topsoil;
-    s->pawater_root += throughfall - transpiration_root - *soil_evap;
+    s->pawater_root += drainage - transpiration_root;
 
     /* Default is we have no runoff */
     *runoff = 0.0;
@@ -270,7 +284,7 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
         outflow [mm d-1]
     */
     double transpiration_topsoil, transpiration_root, previous,
-           delta_topsoil, topsoil_loss;
+           delta_topsoil, topsoil_loss, drainage;
 
     /* This is used to account for transpiration losses from the top layer. */
     transpiration_topsoil = (s->wtfac_topsoil * p->fractup_soil * \
@@ -278,6 +292,7 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
 
     /* Top soil layer */
     previous = s->pawater_topsoil;
+    delta_topsoil = 0.0;
     topsoil_loss = transpiration_topsoil + f->soil_evap;
     s->pawater_topsoil += f->throughfall - topsoil_loss;
 
@@ -292,22 +307,33 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
         ** then use this to do some of the evaporation required
         */
         if (isgreater(previous, 0.0)) {
-            f->soil_evap = previous / 2.0;
-            transpiration_topsoil = previous / 2.0;
-            /**soil_evap = previous;
-            transpiration_topsoil = previous - *soil_evap;*/
+            //f->soil_evap = previous / 2.0;
+            //transpiration_topsoil = previous / 2.0;
+            f->soil_evap = previous;
+            transpiration_topsoil = previous - f->soil_evap;
+            topsoil_loss = transpiration_topsoil + f->soil_evap;
         } else {
             f->soil_evap = 0.0;
             transpiration_topsoil = 0.0;
+            topsoil_loss = 0.0;
         }
-
+        delta_topsoil = previous - s->pawater_topsoil;
     /*
     ** We have more water than the layer can hold, so set the layer to the
     ** maximum
     */
     } else if (s->pawater_topsoil > p->wcapac_topsoil) {
         s->pawater_topsoil = p->wcapac_topsoil;
+        delta_topsoil = previous - s->pawater_topsoil;
+
+    /*
+    ** We have enough water to meet demands
+    */
+    } else {
+        delta_topsoil = previous - s->pawater_topsoil;
     }
+
+    drainage = f->throughfall - topsoil_loss + delta_topsoil;
 
     /*
     ** Root zone
@@ -321,7 +347,7 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
 
     previous = s->pawater_root;
     transpiration_root = f->transpiration - transpiration_topsoil;
-    s->pawater_root += f->throughfall - transpiration_root - f->soil_evap;
+    s->pawater_root += drainage - transpiration_root;
 
     /* Default is we have no runoff */
     f->runoff = 0.0;
