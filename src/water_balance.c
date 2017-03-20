@@ -484,6 +484,7 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
             *throughfall = 0.0;
             *interception = 0.0;
         }
+        s->canopy_store = 0.0;
     }
 
     return;
