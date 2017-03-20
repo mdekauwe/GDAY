@@ -1430,3 +1430,24 @@ void zero_water_day_fluxes(fluxes *f) {
 
     return;
 }
+
+void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
+                         double current_sw, double previous_cs,
+                         double current_cs, double year, int doy) {
+
+    double delta_sw, delta_cs;
+
+    delta_sw = current_sw - previous_sw;
+    delta_cs = current_cs - previous_cs;
+
+    f->day_wbal = f->day_ppt - (f->runoff + f->et + delta_cs + delta_sw);
+
+    printf("%d,%d,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf\n",
+           (int)year, doy,
+           f->day_ppt, f->runoff, \
+           f->et, delta_sw, delta_cs, previous_sw, current_sw,
+           s->predawn_swp, s->midday_lwp, f->day_wbal);
+
+
+    return;
+}
