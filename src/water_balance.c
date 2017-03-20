@@ -475,10 +475,8 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
 
             *canopy_evap = (m->rain * p->intercep_frac * \
                             MIN(1.0, s->lai / p->max_intercep_lai));
-            *throughfall = m->rain - f->interception;
+            *throughfall = m->rain - *canopy_evap;
             *interception = 0.0;
-
-
         } else {
             *canopy_evap = 0.0;
             *throughfall = 0.0;
