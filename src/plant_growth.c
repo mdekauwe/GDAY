@@ -27,11 +27,16 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 {
     double previous_topsoil_store, dummy=0.0,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
+    double previous_sw, current_sw, previous_cs, current_cs, year;
     int    recalc_wb;
 
     /* Store the previous days soil water store */
     previous_topsoil_store = s->pawater_topsoil;
     previous_rootzone_store = s->pawater_root;
+
+    previous_sw = s->pawater_topsoil + s->pawater_root;
+    previous_cs = s->canopy_store;
+    year = ma->year[c->day_idx];
 
     if (c->sub_daily) {
         /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
@@ -40,6 +45,11 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, day_length);
         calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy, dummy);
+
+        current_sw = s->pawater_topsoil + s->pawater_root;
+        current_cs = s->canopy_store;
+        check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
+                            current_cs, year, doy);
     }
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of

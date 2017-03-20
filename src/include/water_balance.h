@@ -51,7 +51,8 @@ double  calc_bdn_layer_free_conduct(double, double, double, double);
 
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
 
-
+void    check_water_balance(control *, fluxes *, state *s, double, double,
+                            double, double, double, int);
 
 
 #endif /* WATER_BALANCE */
