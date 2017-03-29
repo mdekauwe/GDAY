@@ -84,7 +84,7 @@ void initialise_params(params *p) {
     p->c_alloc_fmin = 0.15;
     p->c_alloc_rmax = 0.35;
     p->c_alloc_rmin = 0.05;
-    p->capac = 0.04;   // 0.04-0.12 (MPa per unit relative water content)
+    p->capac = 0.12;   // 0.04-0.12 (MPa per unit relative water content)
     p->cfracts = 0.5;
     p->crdecay = 0.0;
     p->cretrans = 0.0;
