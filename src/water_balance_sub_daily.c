@@ -1060,12 +1060,13 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
     // they will fill up the stem immediately (even if near empty).
     // stem water potential is soilwp - transpiration / (2*k)
+
     if (et_deficit * MOLE_WATER_2_G_WATER * SEC_2_HLFHR < 1E-06) {
 
         // mm 30 min-1 -> mmol m-2 s-1
         conv = KG_AS_G * G_WATER_2_MOL_WATER * MOL_2_MMOL * HLFHR_2_SEC;
         water_flux = *transpiration * conv;
-        cw->xylem_psi = s->weighted_swp - water_flux / 2.0 * cw->plant_k;
+        cw->xylem_psi = s->weighted_swp - water_flux / (2.0 * cw->plant_k * s->lai);
 
         // based on steady state water potential, calculate stem relative
         // water content (must equilibrate!). This conversion works out because
@@ -1090,7 +1091,9 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         // and recalculate corresponding xylem water potential
         ratio = cw->plant_water / cw->plant_water0;
         cw->xylem_psi = calc_xylem_water_potential(ratio, p->capac);
+
     }
+
 
     // Need to add water we took from the plant store to transpiration output
     //
@@ -1103,12 +1106,13 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
     cw->plant_k = stem_relk * p->kp;
 
+    printf("%f %f %f %f %f\n", stem_relk, cw->plant_water, cw->plant_water / cw->plant_water0, 1.0 - p->plc_dead, p->plc_dead);
     // if more than plcdead loss in conductivity, plant is dead.
-    //if (stem_relk < (1.0 - p->plc_dead)) {
-    //    // Should call some wrapper function when this happens
-    //    fprintf(stderr, "Death - need to do something\n");
-    //    exit(EXIT_FAILURE);
-    //}
+    if (stem_relk < (1.0 - p->plc_dead)) {
+        // Should call some wrapper function when this happens
+        fprintf(stderr, "Death - need to do something\n");
+        exit(EXIT_FAILURE);
+    }
 
     return;
 }
