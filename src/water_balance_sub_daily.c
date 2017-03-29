@@ -1072,7 +1072,10 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         // water content (must equilibrate!). This conversion works out because
         // it is relative, i.e. plant_water/plant_water0 = relative water
         // content = 1 + xylem_psi * capac
-        cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
+        //cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
+
+        // refill plant water store
+        cw->plant_water = cw->plant_water0;
 
     } else {
 
@@ -1104,7 +1107,9 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-    printf("%f %f %f\n", cw->xylem_psi, p->p50, p->plc_shape);
+    //printf("%f %f %f\n", cw->xylem_psi, p->p50, p->plc_shape);
+
+    //printf("%f %f\n",stem_relk, cw->xylem_psi);
     cw->plant_k = stem_relk * p->kp;
 
     printf("%f %f %f %f %f\n", stem_relk, cw->plant_water, cw->plant_water / cw->plant_water0, 1.0 - p->plc_dead, p->plc_dead);
