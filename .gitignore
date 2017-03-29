@@ -14,4 +14,4 @@ src/gday
 src/version.c
 src/gday.dSYM*
 
- scripts/__pycache__/*
+scripts/__pycache__/*.pyc
