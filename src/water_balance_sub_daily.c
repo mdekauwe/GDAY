@@ -1006,7 +1006,7 @@ double calc_xylem_water_potential(double rwc, double capac) {
     // Calculate the stem xylem water potential (P), based on relative water
     // content (RWC) and capacitance.
 
-    double psi1, psi2, xylem_psi, arg1, arg2;
+    double psi1, psi2, xylem_psi, arg1, arg2, arg3;
     double break0 = 0.5;    // determines shape of asymptote function
     double hmshape = 0.99;  // determines shape of hyperbolic minimum
 
@@ -1027,8 +1027,9 @@ double calc_xylem_water_potential(double rwc, double capac) {
 
     // hyperbolic minimum
     arg1 = psi1 + psi2;
-    arg2 = sqrt(((psi1 + psi2) * (psi1 + psi2)) - 4 * hmshape * psi1 * psi2);
-    xylem_psi = (arg1 - arg2) / (2.0 * hmshape);
+    arg2 = (psi1 + psi2) * (psi1 + psi2);
+    arg3 = 4.0 * hmshape * psi1 * psi2;
+    xylem_psi = (arg1 - sqrt(arg2 - arg3)) / (2.0 * hmshape);
 
     return (xylem_psi);
 }
