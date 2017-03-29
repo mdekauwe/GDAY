@@ -157,8 +157,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         // plant storage from the water we need to extract from the soil.
         // We will add this back later to the transpiration output.
         if (c->water_balance == HYDRAULICS && c->water_store) {
-            // mmol m-2 s-1 to mol m-2 s-1
-            cw->trans_canopy -= cw->trans_deficit_canopy * MMOL_2_MOL;
+            cw->trans_canopy -= cw->trans_deficit_canopy ;
             if (cw->trans_canopy < 0.0) {
                 cw->trans_canopy = 0.0;
             }
@@ -354,8 +353,9 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
         beta = (cw->fwsoil_leaf[SUNLIT] + cw->fwsoil_leaf[SHADED]) / 2.0;
         s->wtfac_topsoil = beta;
         s->wtfac_root = beta;
+        // mmol m-2 s-1 to mol m-2 s-1, for consistency with transpiration
         cw->trans_deficit_canopy = (cw->trans_deficit_leaf[SUNLIT] +
-                                    cw->trans_deficit_leaf[SHADED]);
+                                   cw->trans_deficit_leaf[SHADED]) * MMOL_2_MOL;
     }
 
 
