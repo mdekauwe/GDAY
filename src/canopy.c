@@ -410,8 +410,9 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
                     state *s) {
 
     // Assumption that during the day transpiration cannot exceed a maximum
-    // value, Emax. At this point we've reached a leaf water potential minimum.
-    // Once this point is reached transpiration, gs and A are reclulated
+    // value, Emax (e_supply). At this point we've reached a leaf water
+    // potential minimum. Once this point is reached transpiration, gs and A
+    // are reclulated
     //
     // Reference:
     // * Duursma et al. 2008, Tree Physiology 28, 265–276
@@ -420,41 +421,33 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // plant component of the leaf-specific hydraulic conductance
     // (mmol m–2 s–1 MPa–1)
     double kp = 2.0;
-    double ktot, emax_leaf, etest, gsv, frac;
+
+    double ktot, e_supply, e_demand, gsv, frac;
     int    idx = cw->ileaf;
     int    stressed = FALSE;
-
-    // Need to work out the direct/diffuse weighting to adjust the
-    // stressed gs/transpiration calculation.
-    //if (cw->ileaf == 0) {
-    //    frac = 1.0 - cw->diffuse_frac;
-    //} else {
-    //    frac = cw->diffuse_frac;
-    //}
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     ktot = 1.0 / (f->total_soil_resist + 1.0 / kp);
 
     // Maximum transpiration rate (mmol m-2 s-1)
-    emax_leaf = ktot * (s->weighted_swp - p->min_lwp);
+    e_supply = ktot * (s->weighted_swp - p->min_lwp);
 
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
-    etest = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
+    e_demand = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
 
     // leaf water potential (MPa)
-    cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, etest);
+    cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, e_demand);
 
-    if (etest > emax_leaf) {
+    if (e_demand > e_supply) {
         stressed = TRUE;
 
-        // Calculate gs (mol m-2 s-1) given emax_leaf
-        gsv = MMOL_2_MOL * emax_leaf / (m->vpd / m->press);
+        // Calculate gs (mol m-2 s-1) given e_supply
+        gsv = MMOL_2_MOL * e_supply / (m->vpd / m->press);
         cw->gsc_leaf[idx] = gsv / GSVGSC;
-
 
         // Need to make sure transpiration solution is consistent, force
         // Tleaf to Tair as we aren't solving this
-        cw->trans_leaf[idx] = emax_leaf * MMOL_2_MOL;
+        cw->trans_leaf[idx] = e_supply * MMOL_2_MOL;
 
         cw->tleaf[idx] = m->tair;
         cw->tleaf_new = m->tair;
@@ -462,20 +455,17 @@ int calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
                                                cw->apar_leaf[idx] * PAR_2_SW);
 
         // Minimum leaf water potential reached so recalculate LWP (MPa)
-        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, emax_leaf);
+        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, e_supply);
 
         // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
 
         // Need to calculate an effective beta to use in soil decomposition
-        //cw->fwsoil_leaf[idx] = emax_leaf / etest;
+        //cw->fwsoil_leaf[idx] = e_supply / e_demand;
         cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
     } else {
         cw->fwsoil_leaf[idx] = 1.0;
-
     }
-
-
 
     return (stressed);
 }
