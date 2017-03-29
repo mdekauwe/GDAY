@@ -1042,7 +1042,7 @@ double calc_relative_weibull(double p, double p50, double sx) {
 
     // parameterized as in ogle et al. 2009.
     v = -50.0 * log(0.5);
-    relative_weibull = 1.0 - pow(0.5, (pow(p / p50, (p50 * sx) / v)));
+    relative_weibull = 1.0 - pow(0.5, pow((p / p50) , (p50 * sx)/ v));
 
     return (relative_weibull);
 }
@@ -1104,6 +1104,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
+    printf("%f %f %f\n", cw->xylem_psi, p->p50, p->plc_shape);
     cw->plant_k = stem_relk * p->kp;
 
     printf("%f %f %f %f %f\n", stem_relk, cw->plant_water, cw->plant_water / cw->plant_water0, 1.0 - p->plc_dead, p->plc_dead);
