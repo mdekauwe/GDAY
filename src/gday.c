@@ -358,8 +358,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
         // If we are simulating capcitance
         if (c->water_store) {
-            // Assume 80 litres for now: we need some unit conversions
-            cw->plant_water = 80.0;
+            // Assume 10 mm (kg m-2) for now
+            cw->plant_water = 10.0;
 
             // to calculate rwc, keep track of initial water content.
             cw->plant_water0 = cw->plant_water;

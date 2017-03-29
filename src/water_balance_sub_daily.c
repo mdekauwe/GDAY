@@ -1053,33 +1053,31 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
-    double ratio, arg1, arg2, water_flux, stem_relk;
+    double ratio, water_flux, stem_relk;
     double delta_water_store = 0.0;
     double conv;
 
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
     // they will fill up the stem immediately (even if near empty).
-    // stem water potential is soilwp - e/(2*k)
+    // stem water potential is soilwp - transpiration / (2*k)
     if (et_deficit * MMOL_2_MOL * MOLE_WATER_2_G_WATER * SEC_2_HLFHR < 1E-06) {
 
         // mm 30 min-1 -> mmol m-2 s-1
         conv = KG_AS_G * G_WATER_2_MOL_WATER * MOL_2_MMOL * HLFHR_2_SEC;
         water_flux = *transpiration * conv;
-
-        arg1 = s->weighted_swp - water_flux;
-        //arg2 = 2.0 * cw->plant_k * s->lai;
-        arg2 = 2.0 * cw->plant_k;
-        cw->xylem_psi = arg1 / arg2;
+        cw->xylem_psi = s->weighted_swp - water_flux / 2.0 * cw->plant_k;
 
         // based on steady state water potential, calculate stem relative
-        // water content (must equilibrate!)
+        // water content (must equilibrate!). This conversion works out because
+        // it is relative, i.e. plant_water/plant_water0 = relative water
+        // content = 1 + xylem_psi * capac
         cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
 
     } else {
 
         // now reduce stem water content even further by amount of
         // transpiration that is not sustained by soil water uptake
-        conv = MMOL_2_MOL * MOLE_WATER_2_G_WATER * SEC_2_HLFHR;
+        conv = MMOL_2_MOL * MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         cw->plant_water -= et_deficit * conv;
 
         // if we don't stop simulation when plant is dead
