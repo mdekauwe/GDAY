@@ -512,7 +512,6 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     cw->trans_deficit_leaf[idx] = MAX(0.0,
                                       (m->vpd / m->press) * gsv * MOL_2_MMOL -\
                                        e_supply);
-
     return;
 }
 
