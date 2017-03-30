@@ -1056,26 +1056,22 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
-    double ratio, water_flux, stem_relk;
+    double ratio, water_flux, stem_relk, arg1, arg2;
     double delta_water_store = 0.0;
     double conv;
 
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
     // they will fill up the stem immediately (even if near empty).
     // stem water potential is soilwp - transpiration / (2*k)
-
     if (et_deficit * MOLE_WATER_2_G_WATER * SEC_2_HLFHR < 1E-06) {
 
         // mm 30 min-1 -> mmol m-2 s-1
         conv = KG_AS_G * G_WATER_2_MOL_WATER * MOL_2_MMOL * HLFHR_2_SEC;
         water_flux = *transpiration * conv;
-        cw->xylem_psi = s->weighted_swp - water_flux / (2.0 * cw->plant_k * s->lai);
 
-        // based on steady state water potential, calculate stem relative
-        // water content (must equilibrate!). This conversion works out because
-        // it is relative, i.e. plant_water/plant_water0 = relative water
-        // content = 1 + xylem_psi * capac
-        //cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
+        arg1 = s->weighted_swp;
+        arg2 = water_flux / (2.0 * cw->plant_k * s->lai);
+        cw->xylem_psi = arg1 - arg2;
 
         // refill plant water store
         cw->plant_water = cw->plant_water0;
@@ -1087,9 +1083,8 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         cw->plant_water -= et_deficit * conv;
 
-        // if we don't stop simulation when plant is dead
-        // (i.e. xylempsi is very low), plantwater may go to zero, causing
-        // crash.
+        // To avoid stopping the simulation when we are "dead"
+        // (i.e. xylempsi is very low)
         if (cw->plant_water < min_value) {
             cw->plant_water = min_value;
         }
@@ -1100,7 +1095,6 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     }
 
-
     // Need to add water we took from the plant store to transpiration output
     //
     // mol m-2 s-1 to mm/30min
@@ -1110,7 +1104,6 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // stem relative conductivity (0-1)
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-    cw->plant_k = stem_relk * p->kp;
 
     // is the plant dead? Going to store this information and we can work
     // out how to write it to a file later.
@@ -1119,6 +1112,9 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         cw->death_year = (int)year;
         cw->death_doy = (int)doy+1;
     }
+
+    // Update plant conductance
+    cw->plant_k = stem_relk * p->kp;
 
     return;
 }
