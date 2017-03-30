@@ -1004,6 +1004,7 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
 }
 
 double calc_xylem_water_potential(double rwc, double capac) {
+    //
     // Calculate the stem xylem water potential (P), based on relative water
     // content (RWC) and capacitance.
     //
@@ -1048,6 +1049,7 @@ double calc_xylem_water_potential(double rwc, double capac) {
 }
 
 double calc_relative_weibull(double p, double p50, double sx) {
+    //
     // Calculate the relative conductivity, given xylem water potential (p),
     // the p50, and the shape parameter (sx)
     //
