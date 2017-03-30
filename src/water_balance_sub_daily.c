@@ -1003,11 +1003,22 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
     return;
 }
 
-
 double calc_xylem_water_potential(double rwc, double capac) {
     // Calculate the stem xylem water potential (P), based on relative water
     // content (RWC) and capacitance.
-
+    //
+    // Parameters:
+    // ----------
+    // rwc : double
+    //    relative water content [-]
+    // capac : double
+    //    capacitance (MPa per unit relative water content)
+    //
+    // Returns:
+    // --------
+    // xylem_psi : double
+    //  xylem water potential (MPa)
+    //
     double psi1, psi2, xylem_psi, arg1, arg2, arg3;
     double break0 = 0.5;    // determines shape of asymptote function
     double hmshape = 0.99;  // determines shape of hyperbolic minimum
@@ -1043,7 +1054,7 @@ double calc_relative_weibull(double p, double p50, double sx) {
     // Parameters:
     // ----------
     // p : double
-    //    xyelm water potential
+    //    xylem water potential (MPa)
     // p50 : double
     //    xylem water potential where 50% of the conductivity is lost
     // sx : double
