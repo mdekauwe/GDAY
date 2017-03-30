@@ -93,11 +93,12 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     return;
 }
 
-void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
-                                       nrutil *nr, params *p, state *s,
+void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
+                                       met *m, nrutil *nr, params *p, state *s,
                                        int daylen, double trans,
-                                       double omega_leaf,
-                                       double rnet_leaf) {
+                                       double omega_leaf, double rnet_leaf,
+                                       double et_deficit, double year,
+                                       double doy) {
     /*
         Calculate the water balance (including all water fluxes).
         - we are using all the hydraulics instead
@@ -154,7 +155,6 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
         soil_evap = calc_soil_evaporation(m, p, s, net_rad);
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-
 
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
@@ -244,10 +244,16 @@ void calculate_water_balance_sub_daily(control *c, fluxes *f, met *m,
 
     }
 
+    if (c->water_store) {
+        // Do we need to take any water from the plant store? This function
+        // also checks to for drought-induced mortality
+        update_plant_water_store(cw, p, s, &transpiration, &et, et_deficit,
+                                 year, doy);
+    }
+
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             surface_water, canopy_evap, runoff, omega_leaf,
                             m->rain);
-
 
 }
 
@@ -928,8 +934,9 @@ void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
 
 void update_soil_water_storage(fluxes *f, params *p, state *s,
                                double *soil_evap, double *transpiration) {
+    //
     // Update the soil water storage at the end of the timestep
-
+    //
     double root_zone_total, water_content, needed, taken, prev_soil_evap;
     int    i, rr;
     double soil_evap_overshoot, transpiration_overshoot, prev_trans;
@@ -993,6 +1000,148 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
         }
     }
     s->pawater_root = root_zone_total;
+
+    return;
+}
+
+double calc_xylem_water_potential(double rwc, double capac) {
+    //
+    // Calculate the stem xylem water potential (P), based on relative water
+    // content (RWC) and capacitance.
+    //
+    // Parameters:
+    // ----------
+    // rwc : double
+    //    relative water content [-]
+    // capac : double
+    //    capacitance (MPa per unit relative water content)
+    //
+    // Returns:
+    // --------
+    // xylem_psi : double
+    //  xylem water potential (MPa)
+    //
+    double psi1, psi2, xylem_psi, arg1, arg2, arg3;
+    double break0 = 0.5;    // determines shape of asymptote function
+    double hmshape = 0.99;  // determines shape of hyperbolic minimum
+
+    // safety
+    if (rwc > 1.0) {
+        rwc = 1.0;
+    }
+
+    // linear dependence over most of the range.
+    psi1 = -(1.0 - rwc) / capac;
+
+    // when approaching zero rwc, the water potential has to go to infinity.
+    psi2 = -log(rwc / break0);
+    if (psi2 < 0.0) {
+        psi2 = 0.0;
+    }
+    psi2 = -psi2;
+
+    // hyperbolic minimum
+    arg1 = psi1 + psi2;
+    arg2 = (psi1 + psi2) * (psi1 + psi2);
+    arg3 = 4.0 * hmshape * psi1 * psi2;
+    xylem_psi = (arg1 - sqrt(arg2 - arg3)) / (2.0 * hmshape);
+
+    return (xylem_psi);
+}
+
+double calc_relative_weibull(double p, double p50, double sx) {
+    //
+    // Calculate the relative conductivity, given xylem water potential (p),
+    // the p50, and the shape parameter (sx)
+    //
+    // Parameters:
+    // ----------
+    // p : double
+    //    xylem water potential (MPa)
+    // p50 : double
+    //    xylem water potential where 50% of the conductivity is lost
+    // sx : double
+    //    slope paramater: derivative (% MPa-1) at x (e.g. s50 is the slope
+    //    of the curve at P50). Higher values thus indicate steeper response
+    //    to xylem pressure
+    //
+    // Reference:
+    // ---------
+    // * Ogle et al. (2009) Ecological Applications, 19, 577-581.
+    //
+    double v, relative_weibull;
+
+    v = -50.0 * log(0.5);
+    relative_weibull = 1.0 - pow(0.5, pow((p / p50), (p50 * sx) / v));
+
+    return (relative_weibull);
+}
+
+void update_plant_water_store(canopy_wk *cw, params *p, state *s,
+                              double *transpiration, double *et,
+                              double et_deficit, double year, double doy) {
+
+    // 5 % of full hydration
+    double min_value = 0.05 * cw->plant_water0;
+    double ratio, water_flux, stem_relk, arg1, arg2;
+    double delta_water_store = 0.0;
+    double conv;
+
+    // Under normal circumstances, i.e et_deficit = 0, the assumption is that
+    // they will fill up the stem immediately (even if near empty).
+    // stem water potential is soilwp - transpiration / (2*k)
+    if (et_deficit * MOLE_WATER_2_G_WATER * SEC_2_HLFHR < 1E-06) {
+
+        // mm 30 min-1 -> mmol m-2 s-1
+        conv = KG_AS_G * G_WATER_2_MOL_WATER * MOL_2_MMOL * HLFHR_2_SEC;
+        water_flux = *transpiration * conv;
+
+        arg1 = s->weighted_swp;
+        arg2 = water_flux / (2.0 * cw->plant_k * s->lai);
+        cw->xylem_psi = arg1 - arg2;
+
+        // refill plant water store
+        cw->plant_water = cw->plant_water0;
+
+    } else {
+
+        // now reduce stem water content even further by amount of
+        // transpiration that is not sustained by soil water uptake
+        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+        cw->plant_water -= et_deficit * conv;
+
+        // To avoid stopping the simulation when we are "dead"
+        // (i.e. xylempsi is very low)
+        if (cw->plant_water < min_value) {
+            cw->plant_water = min_value;
+        }
+
+        // and recalculate corresponding xylem water potential
+        ratio = cw->plant_water / cw->plant_water0;
+        cw->xylem_psi = calc_xylem_water_potential(ratio, p->capac);
+
+    }
+
+    // Need to add water we took from the plant store to transpiration output
+    //
+    // mol m-2 s-1 to mm/30min
+    conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+    *transpiration += et_deficit * conv;
+    *et += et_deficit * conv;
+
+    // stem relative conductivity (0-1)
+    stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
+
+    // is the plant dead? Going to store this information and we can work
+    // out how to write it to a file later.
+    if (stem_relk < (1.0 - p->plc_dead) && cw->not_dead) {
+        cw->not_dead = FALSE;
+        cw->death_year = (int)year;
+        cw->death_doy = (int)doy+1;
+    }
+
+    // Update plant conductance
+    cw->plant_k = stem_relk * p->kp;
 
     return;
 }

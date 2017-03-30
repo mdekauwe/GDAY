@@ -59,8 +59,10 @@
 #define MJ_TO_J  1.0 / J_TO_MJ
 #define J_2_UMOL 4.57               /* Conversion from J to umol quanta */
 #define UMOL_2_JOL 1.0 / J_2_UMOL   /* Conversion from umol quanta to J */
-#define SEC_2_HLFHR 1800.;
+#define SEC_2_HLFHR 1800.
+#define HLFHR_2_SEC 1.0 / SEC_2_HLFHR
 #define MOLE_WATER_2_G_WATER 18.02 /* oxygen = 16g/mol, hydrogren = 1.01 g/mol*/
+#define G_WATER_2_MOL_WATER 1.0 / 18.02
 #define SUNLIT 0
 #define SHADED 1
 #define NUM_LEAVES 2

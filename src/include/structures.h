@@ -41,6 +41,7 @@ typedef struct {
     int   use_eff_nc;
     int   water_stress;
     int   water_balance;
+    int   water_store;
     int   num_days;
     int   total_num_days;
     char  git_code_ver[STRING_LENGTH];
@@ -161,7 +162,7 @@ typedef struct {
     double predawn_swp;     /* MPa */
     double midday_lwp;     /* MPa */
     double lwp;
-
+    double midday_xwp;     // MPa
 } state;
 
 typedef struct {
@@ -360,6 +361,12 @@ typedef struct {
     double max_depth;    /* (m) */
     double root_resist;
     double min_lwp;         /* minimum leaf water potential (MPa) */
+    double gs_min;
+    double kp;
+    double p50;
+    double plc_shape;
+    double capac;
+    double plc_dead;
 
     /* not shared via cmd line */
     double *potA;
@@ -370,6 +377,7 @@ typedef struct {
     double *porosity;
     double *field_capacity;
     int     wetting;         /* number of wetting layers */
+
 
 } params;
 
@@ -682,6 +690,17 @@ typedef struct {
     double ts_gamma_star;   // Temporary variable to store gamma_star //
     double ts_rd;           // Temporary variable to store rd //
     double ts_Vj;           // Temporary variable to store Vj //
+
+    // Capacitance stuff
+    double plant_k;
+    double xylem_psi;
+    double plant_water0;
+    double plant_water;
+    double trans_deficit_leaf[2];
+    double trans_deficit_canopy;
+    int    not_dead;
+    int    death_year;
+    int    death_doy;
 
 } canopy_wk;
 

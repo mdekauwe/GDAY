@@ -424,6 +424,19 @@ int handler(char *section, char *name, char *value, control *c,
         else {
             c->water_balance = BUCKET;
         }
+    } else if (MATCH("control", "water_store")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->water_store = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->water_store = TRUE;
+        else {
+            fprintf(stderr, "Unknown water_store option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "water_stress")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -564,6 +577,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->branch0 = atof(value);
     } else if (MATCH("params", "branch1")) {
         p->branch1 = atof(value);
+    } else if (MATCH("params", "capac")) {
+        p->capac = atof(value);
     } else if (MATCH("params", "c_alloc_bmax")) {
         p->c_alloc_bmax = atof(value);
     } else if (MATCH("params", "c_alloc_bmin")) {
@@ -656,6 +671,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->growth_efficiency = atof(value);
     } else if (MATCH("params", "gamstar25")) {
         p->gamstar25 = atof(value);
+    } else if (MATCH("params", "gs_min")) {
+        p->gs_min = atof(value);
     } else if (MATCH("params", "height0")) {
         p->height0 = atof(value);
     } else if (MATCH("params", "height1")) {
@@ -676,6 +693,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->jv_intercept = atof(value);
     } else if (MATCH("params", "jv_slope")) {
         p->jv_slope = atof(value);
+    } else if (MATCH("params", "kp")) {
+        p->kp = atof(value);
     } else if (MATCH("params", "kc25")) {
         p->kc25 = atof(value);
     } else if (MATCH("params", "kdec1")) {
@@ -796,6 +815,10 @@ int handler(char *section, char *name, char *value, control *c,
         p->prime_y = atof(value);
     } else if (MATCH("params", "prime_z")) {
         p->prime_z = atof(value);
+    } else if (MATCH("params", "p50")) {
+        p->p50 = atof(value);
+    } else if (MATCH("params", "plc_shape")) {
+        p->plc_shape = atof(value);
     } else if (MATCH("params", "qs")) {
         p->qs = atof(value);
     } else if (MATCH("params", "r0")) {

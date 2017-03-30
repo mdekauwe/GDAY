@@ -152,7 +152,6 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
 
     double gamma_star, km, jmax, vcmax, rd, Vj, gs;
     double A, B, C, Ac, Aj, Cs;
-    double g0_zero = 1E-09; /* numerical issues, don't use zero */
     int    idx, qudratic_error = FALSE, large_root;
 
     // Unpack calculated properties from first photosynthesis solution
@@ -163,11 +162,6 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     gamma_star = cw->ts_gamma_star;
     rd = cw->ts_rd;
     Vj = cw->ts_Vj;
-
-    // A very low minimum; for numerical stability.
-    if (cw->gsc_leaf[idx] < g0_zero) {
-        cw->gsc_leaf[idx] = g0_zero;
-    }
     gs = cw->gsc_leaf[idx];
 
     /* Solution when Rubisco rate is limiting */
@@ -1139,7 +1133,7 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     f->gpp_gCm2 = f->apar * lue_avg * conv;
     f->gpp_am = (f->apar / 2.0) * lue_am * conv;
     f->gpp_pm = (f->apar / 2.0) * lue_pm * conv;
-    
+
     /* g C m-2 to tonnes hectare-1 day-1 */
     f->gpp = f->gpp_gCm2 * G_AS_TONNES / M2_AS_HA;
 

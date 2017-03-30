@@ -14,11 +14,13 @@
 
 
 void    initialise_soils_sub_daily(control *, fluxes *, params *, state *);
-void    calculate_water_balance_sub_daily(control *, fluxes *, met *,
+void    calculate_water_balance_sub_daily(control *, canopy_wk *, fluxes *, met *,
                                           nrutil *, params *, state *, int,
-                                          double, double, double);
+                                          double, double, double, double,
+                                          double, double);
 void    setup_hydraulics_arrays(fluxes *, params *, state *);
-
+void    update_plant_water_store(canopy_wk *, params *, state *, double *,
+                                 double *, double, double, double);
 
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
                                 double, double, double, double, double);
@@ -35,8 +37,10 @@ void    calc_soil_balance(fluxes *, nrutil *, params *, state *, int, double *);
 void    soil_water_store(double, double [], double [], double, double, double,
                          double, double);
 
-void zero_water_movement(fluxes *, params *);
-void extract_water_from_layers(fluxes *, state *, double, double);
-void update_soil_water_storage(fluxes *, params *, state *, double *, double *);
+void   zero_water_movement(fluxes *, params *);
+void   extract_water_from_layers(fluxes *, state *, double, double);
+void   update_soil_water_storage(fluxes *, params *, state *, double *, double *);
+double calc_xylem_water_potential(double, double);
+double calc_relative_weibull(double, double, double);
 
 #endif /* WATER_BALANCE_SUBDAILY_H */
