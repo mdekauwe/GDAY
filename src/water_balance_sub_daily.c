@@ -1040,12 +1040,16 @@ double calc_xylem_water_potential(double rwc, double capac) {
 double calc_relative_weibull(double p, double p50, double sx) {
     // Calculate the relative conductivity, given xylem water potential (p),
     // the p50, and the shape parameter (sx)
-
+    //
+    // Reference:
+    // ---------
+    // * Ogle et al. (2009) Ecological Applications, 19, 577-581.
+    //
     double v, relative_weibull;
 
-    // parameterized as in ogle et al. 2009.
+    // parameterized as in Ogle et al.
     v = -50.0 * log(0.5);
-    relative_weibull = 1.0 - pow(0.5, pow((p / p50) , (p50 * sx)/ v));
+    relative_weibull = 1.0 - pow(0.5, pow((p / p50) , (p50 * sx) / v));
 
     return (relative_weibull);
 }
