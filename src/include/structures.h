@@ -162,7 +162,7 @@ typedef struct {
     double predawn_swp;     /* MPa */
     double midday_lwp;     /* MPa */
     double lwp;
-
+    double midday_xwp;     // MPa
 } state;
 
 typedef struct {
@@ -700,7 +700,7 @@ typedef struct {
     double trans_deficit_canopy;
     int    not_dead;
     int    death_year;
-    int    death_doy; 
+    int    death_doy;
 
 } canopy_wk;
 

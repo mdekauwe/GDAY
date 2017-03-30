@@ -43,7 +43,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
-    double previous_cs, current_cs, relk;
+    double previous_cs, current_cs, relk, ktot=0.0;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -103,11 +103,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         if (c->water_balance == HYDRAULICS) {
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
-                            calculate_emax(c, cw, f, m, p, s);
+                            ktot = calculate_emax(c, cw, f, m, p, s);
                         }
 
                         /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, cw, f, m, p, s);
+                        solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
 
                     } else {
                         break;
@@ -150,6 +150,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         scale_leaf_to_canopy(c, cw, s);
         if (c->water_balance == HYDRAULICS && hod == 24) {
             s->midday_lwp = cw->lwp_canopy;
+            s->midday_xwp = cw->xylem_psi;
         }
         sum_hourly_carbon_fluxes(cw, f, p);
 
@@ -206,7 +207,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 }
 
 void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
-                               params *p, state *s) {
+                               params *p, state *s, double ktot) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -219,7 +220,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
 
     */
     int    idx;
-    double omega, transpiration, LE, Tdiff, gv, gbc, gh, sw_rad;
+    double omega, transpiration, LE, Tdiff, gv, gbc, gh, sw_rad, trans_mmol;
 
     idx = cw->ileaf;
     sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
@@ -239,6 +240,12 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     cw->tleaf_new = m->tair + Tdiff / 4.0;
     cw->Cs = m->Ca - cw->an_leaf[idx] / gbc;
     cw->dleaf = cw->trans_leaf[idx] * m->press / gv;
+
+    if (c->water_balance == HYDRAULICS) {
+        // leaf water potential (MPa)
+        trans_mmol = cw->trans_leaf[idx] * MOL_2_MMOL;
+        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, trans_mmol);
+    }
 
     return;
 }
@@ -444,8 +451,8 @@ void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
     return;
 }
 
-void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
-                    state *s) {
+double calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
+                      state *s) {
 
     // Assumption that during the day transpiration cannot exceed a maximum
     // value, Emax (e_supply). At this point we've reached a leaf water
@@ -472,9 +479,6 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
     e_demand = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
 
-    // leaf water potential (MPa)
-    cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, e_demand);
-
     if (e_demand > e_supply) {
 
         // Calculate gs (mol m-2 s-1) given supply (Emax)
@@ -489,9 +493,6 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
         // Re-solve An for the new gs
         photosynthesis_C3_emax(c, cw, m, p, s);
-
-        // Minimum leaf water potential reached so recalculate LWP (MPa)
-        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, e_supply);
 
         // Need to calculate an effective beta to use in soil decomposition
         cw->fwsoil_leaf[idx] = e_supply / e_demand;
@@ -512,8 +513,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     cw->trans_deficit_leaf[idx] = MAX(0.0,
                                       (m->vpd / m->press) * gsv * MOL_2_MMOL -\
                                        e_supply);
-
-    return;
+    return (ktot);
 }
 
 double calc_lwp(fluxes *f, state *s, double ktot, double transpiration) {

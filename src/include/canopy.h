@@ -22,7 +22,7 @@ void    update_daily_carbon_fluxes(fluxes *, params *, double, double);
 void    canopy(canopy_wk *, control *, fluxes *, met_arrays *, met *,
                nrutil *nr, params *, state *);
 void    solve_leaf_energy_balance(control *, canopy_wk *, fluxes *, met *,
-                                  params *, state *);
+                                  params *, state *, double);
 void    sum_hourly_carbon_fluxes(canopy_wk *, fluxes *, params *);
 void    scale_leaf_to_canopy(control *c, canopy_wk *, state *);
 double  calc_leaf_net_rad(params *, state *, double, double, double);
@@ -33,6 +33,6 @@ void    unpack_solar_geometry(canopy_wk *, control *);
 void    check_water_balance(control *, fluxes *, state *s, double, double,
                             double, double, double, int);
 double  calc_lwp(fluxes *, state *, double, double);
-void    calculate_emax(control *, canopy_wk *, fluxes *, met *, params *,
+double  calculate_emax(control *, canopy_wk *, fluxes *, met *, params *,
                        state *);
 #endif /* CANOPY_H */

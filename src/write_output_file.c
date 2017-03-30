@@ -121,6 +121,7 @@ void write_output_header(control *c, FILE **fp) {
     /* Misc */
     fprintf(*fp, "predawn_swp,");
     fprintf(*fp, "midday_lwp,");
+    fprintf(*fp, "midday_xwp,");
     fprintf(*fp, "leafretransn\n");
 
 
@@ -247,6 +248,7 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     /* Misc */
     fprintf(c->ofp, "%.10f,", s->predawn_swp);
     fprintf(c->ofp, "%.10f,", s->midday_lwp);
+    fprintf(c->ofp, "%.10f,", s->midday_xwp);
     fprintf(c->ofp, "%.10f\n", f->leafretransn);
 
 
