@@ -190,7 +190,7 @@ void initialise_params(params *p) {
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
     p->p50 = -3.0;        // xylem pressure where 50% of the conductivity is lost
-    p->plc_shape = 30.0;  // derivative (% MPa-1) at x (e.g. s50 is the slope of the curve at P50). Higher values thus indicate steeper response to xylem pressure
+    p->plc_shape = 30.0;  // slope paramater: derivative (% MPa-1) at x (e.g. s50 is the slope of the curve at P50). Higher values thus indicate steeper response to xylem pressure
     p->qs = 1.0; /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
     p->rateloss = 0.5;
