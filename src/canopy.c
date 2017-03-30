@@ -43,7 +43,12 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    debug = TRUE, stressed = FALSE;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
-    double previous_cs, current_cs, relk, ktot=0.0;
+    double previous_cs, current_cs, relk;
+
+    // Hydraulic conductance of the entire soil-to-leaf pathway
+    // - this is only used in hydraulics, so set it to zero.
+    // (mmol m–2 s–1 MPa–1)
+    double ktot = 0.0;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -103,7 +108,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         if (c->water_balance == HYDRAULICS) {
                             // Ensure transpiration does not exceed Emax, if it
                             // does we recalculate gs and An
-                            ktot = calculate_emax(c, cw, f, m, p, s);
+                            calculate_emax(c, cw, f, m, p, s, &ktot);
                         }
 
                         /* Calculate new Cs, dleaf, Tleaf */
@@ -451,8 +456,8 @@ void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
     return;
 }
 
-double calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
-                      state *s) {
+void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
+                    state *s, double *ktot) {
 
     // Assumption that during the day transpiration cannot exceed a maximum
     // value, Emax (e_supply). At this point we've reached a leaf water
@@ -462,19 +467,19 @@ double calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // Reference:
     // * Duursma et al. 2008, Tree Physiology 28, 265–276
 
-    double ktot, e_supply, e_demand, gsv, frac;
+    double e_supply, e_demand, gsv, frac;
     int    idx = cw->ileaf;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // (mmol m–2 s–1 MPa–1)
-    ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
+    *ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
 
     // Maximum transpiration rate (mmol m-2 s-1)
     // Following Darcy's law which relates leaf transpiration to hydraulic
     // conductance of the soil-to-leaf pathway and leaf & soil water potentials.
     // Transpiration is limited in the perfectly isohydric case above the
     // critical threshold for embolism given by min_lwp.
-    e_supply = MAX(0.0, ktot * (s->weighted_swp - p->min_lwp));
+    e_supply = MAX(0.0, *ktot * (s->weighted_swp - p->min_lwp));
 
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
     e_demand = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
@@ -513,7 +518,7 @@ double calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     cw->trans_deficit_leaf[idx] = MAX(0.0,
                                       (m->vpd / m->press) * gsv * MOL_2_MMOL -\
                                        e_supply);
-    return (ktot);
+    return;
 }
 
 double calc_lwp(fluxes *f, state *s, double ktot, double transpiration) {
