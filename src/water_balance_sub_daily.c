@@ -1036,7 +1036,6 @@ double calc_xylem_water_potential(double rwc, double capac) {
     return (xylem_psi);
 }
 
-
 double calc_relative_weibull(double p, double p50, double sx) {
     // Calculate the relative conductivity, given xylem water potential (p),
     // the p50, and the shape parameter (sx)
@@ -1044,9 +1043,9 @@ double calc_relative_weibull(double p, double p50, double sx) {
     // Parameters:
     // ----------
     // p : double
-    //    stem water pressure
+    //    xyelm water potential
     // p50 : double
-    //    xylem pressure where 50% of the conductivity is lost
+    //    xylem water potential where 50% of the conductivity is lost
     // sx : double
     //    slope paramater: derivative (% MPa-1) at x (e.g. s50 is the slope
     //    of the curve at P50). Higher values thus indicate steeper response
