@@ -68,9 +68,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
 
-        //if (year >= 2004.0 && year <=2005.0) {
-        //    m->rain = 0.0;
-        //}
+        if (year >= 2004.0 && year <=2005.0) {
+            m->rain = 0.0;
+        }
 
         /* calculates diffuse frac from half-hourly incident radiation */
         unpack_solar_geometry(cw, c);
@@ -166,7 +166,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         calculate_water_balance_sub_daily(c, cw, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
                                           cw->rnet_canopy,
-                                          cw->trans_deficit_canopy);
+                                          cw->trans_deficit_canopy, year, doy);
 
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);

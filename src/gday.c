@@ -358,6 +358,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
         // If we are simulating capcitance
         if (c->water_store) {
+
+            cw->not_dead = TRUE;
+            cw->death_year = -999;
+            cw->death_doy = -999;
+
             // Assume 10 mm (kg m-2) for now
             cw->plant_water = 10.0;
 

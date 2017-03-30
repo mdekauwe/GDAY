@@ -97,7 +97,8 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                                        met *m, nrutil *nr, params *p, state *s,
                                        int daylen, double trans,
                                        double omega_leaf, double rnet_leaf,
-                                       double et_deficit) {
+                                       double et_deficit, double year,
+                                       double doy) {
     /*
         Calculate the water balance (including all water fluxes).
         - we are using all the hydraulics instead
@@ -246,7 +247,8 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
     if (c->water_store) {
         // Do we need to take any water from the plant store? This function
         // also checks to for drought-induced mortality
-        update_plant_water_store(cw, p, s, &transpiration, &et, et_deficit);
+        update_plant_water_store(cw, p, s, &transpiration, &et, et_deficit,
+                                 year, doy);
     }
 
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
@@ -1050,7 +1052,7 @@ double calc_relative_weibull(double p, double p50, double sx) {
 
 void update_plant_water_store(canopy_wk *cw, params *p, state *s,
                               double *transpiration, double *et,
-                              double et_deficit) {
+                              double et_deficit, double year, double doy) {
 
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
@@ -1110,11 +1112,12 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
     cw->plant_k = stem_relk * p->kp;
 
-    // if more than plcdead loss in conductivity, plant is dead.
-    if (stem_relk < (1.0 - p->plc_dead)) {
-        // Should call some wrapper function when this happens
-        fprintf(stderr, "Death - need to do something\n");
-        //exit(EXIT_FAILURE);
+    // is the plant dead? Going to store this information and we can work
+    // out how to write it to a file later.
+    if (stem_relk < (1.0 - p->plc_dead) && cw->not_dead) {
+        cw->not_dead = FALSE;
+        cw->death_year = (int)year;
+        cw->death_doy = (int)doy+1;
     }
 
     return;

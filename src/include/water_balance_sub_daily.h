@@ -16,10 +16,11 @@
 void    initialise_soils_sub_daily(control *, fluxes *, params *, state *);
 void    calculate_water_balance_sub_daily(control *, canopy_wk *, fluxes *, met *,
                                           nrutil *, params *, state *, int,
-                                          double, double, double, double);
+                                          double, double, double, double,
+                                          double, double);
 void    setup_hydraulics_arrays(fluxes *, params *, state *);
 void    update_plant_water_store(canopy_wk *, params *, state *, double *,
-                                 double *, double);
+                                 double *, double, double, double);
 
 void    sum_hourly_water_fluxes(fluxes *, double, double, double, double,
                                 double, double, double, double, double);

@@ -698,6 +698,9 @@ typedef struct {
     double plant_water;
     double trans_deficit_leaf[2];
     double trans_deficit_canopy;
+    int    not_dead;
+    int    death_year;
+    int    death_doy; 
 
 } canopy_wk;
 
