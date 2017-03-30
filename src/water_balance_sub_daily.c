@@ -1049,7 +1049,7 @@ double calc_relative_weibull(double p, double p50, double sx) {
 
     // parameterized as in Ogle et al.
     v = -50.0 * log(0.5);
-    relative_weibull = 1.0 - pow(0.5, pow((p / p50) , (p50 * sx) / v));
+    relative_weibull = 1.0 - pow(0.5, pow((p / p50), (p50 * sx) / v));
 
     return (relative_weibull);
 }
