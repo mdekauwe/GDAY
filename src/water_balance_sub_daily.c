@@ -934,8 +934,9 @@ void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
 
 void update_soil_water_storage(fluxes *f, params *p, state *s,
                                double *soil_evap, double *transpiration) {
+    //
     // Update the soil water storage at the end of the timestep
-
+    //
     double root_zone_total, water_content, needed, taken, prev_soil_evap;
     int    i, rr;
     double soil_evap_overshoot, transpiration_overshoot, prev_trans;
