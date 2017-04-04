@@ -455,6 +455,8 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
             ma->nfix[i] = -9999.9;
             ma->wind[i] = 3.0;    /* Haverd et al. 2012 */
             ma->press[i] = 100.0;
+
+            printf("%f %f %d %f\n", ma->year[cnt], ma->doy[cnt], hod, ma->tair[i]);
         }
 
         /* Build an array of the unique years as we loop over the input file */
