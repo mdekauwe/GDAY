@@ -67,4 +67,12 @@
 #define SHADED 1
 #define NUM_LEAVES 2
 
+#define NHRS 48
+#define SEC_2_DAYX 86400.0
+#define DAY_2_SECX 1.0 / SEC_2_DAYX
+#define J_TO_UMOL 4.57
+#define UMOL_TO_J 1.0 / J_TO_UMOL
+#define hPa_2_kPa 0.1
+#define SEC_2_HFHR 1800.0
+
 #endif /* CONSTANTS */

@@ -103,12 +103,12 @@ int main(int argc, char **argv)
     initialise_fluxes(f);
     initialise_state(s);
     initialise_nrutil(nr);
-
     clparser(argc, argv, c);
     /*
      * Read .ini parameter file and meterological data
      */
     error = parse_ini_file(c, p, s);
+
     if (error != 0) {
         prog_error("Error reading .INI file on line", __LINE__);
     }
@@ -131,12 +131,20 @@ int main(int argc, char **argv)
     }
 
     if (c->sub_daily) {
-        read_subdaily_met_data(argv, c, ma);
+        if (c->input_ascii) {
+            read_subdaily_met_data(argv, c, ma);
+
+        } else {
+            read_subdaily_met_data_binary(argv, c, ma, p, s);
+        }
         fill_up_solar_arrays(cw, c, ma, p);
     } else {
-        read_daily_met_data(argv, c, ma);
+        if (c->input_ascii) {
+            read_daily_met_data(argv, c, ma);
+        } else {
+            read_daily_met_data_binary(argv, c, ma);
+        }
     }
-
 
     if (c->spin_up) {
         spin_up_pools(cw, c, f, fs, ma, m, p, s, nr);
