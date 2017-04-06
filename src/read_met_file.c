@@ -435,6 +435,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
         estimate_diurnal_temp(tmin, tmax, s->day_length[doy_idx],
                               &(tairx[0]));
 
+        tsoil = 0.0;
         for (hod = 0; hod < NHRS; hod++) {
             tsoil += tairx[hod];
         }
@@ -473,7 +474,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
     /* tidy up */
     free(data);
     fclose(fp);
-    
+
     return;
 }
 
