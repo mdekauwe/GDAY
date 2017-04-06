@@ -133,7 +133,6 @@ int main(int argc, char **argv)
     if (c->sub_daily) {
         if (c->input_ascii) {
             read_subdaily_met_data(argv, c, ma);
-
         } else {
             read_subdaily_met_data_binary(argv, c, ma, p, s);
         }
@@ -439,7 +438,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             //if (year == 2001 && doy+1 == 230) {
             //    c->pdebug = TRUE;
             //}
-
 
             if (! c->sub_daily) {
                 unpack_met_data(c, f, ma, m, dummy, s->day_length[doy]);
@@ -1350,6 +1348,7 @@ void fill_up_solar_arrays(canopy_wk *cw, control *c, met_arrays *ma, params *p) 
     c->hour_idx = 0;
     for (nyr = 0; nyr < c->num_years; nyr++) {
         year = ma->year[c->hour_idx];
+
         if (is_leap_year(year))
             c->num_days = 366;
         else
@@ -1365,6 +1364,7 @@ void fill_up_solar_arrays(canopy_wk *cw, control *c, met_arrays *ma, params *p) 
                 c->hour_idx++;
             }
         }
+
     }
     return;
 

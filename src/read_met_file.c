@@ -416,8 +416,6 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
     current_yr = data[0];
     for (i = 0; i < c->nrows * c->ncols; i += c->ncols) {
 
-        ma->year[cnt] = data[i];
-        ma->doy[cnt] = data[i+1];
         doy_idx = (int)ma->doy[cnt] - 1;
         tmin = data[i+2];
         tmax = data[i+3];
@@ -445,18 +443,21 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
         // Unpacking met data ...
         for (hod = 0; hod < NHRS; hod++) {
 
-            ma->rain[i] = rainx[hod];
-            ma->par[i] = parx[hod];
-            ma->tair[i] = tairx[hod];
-            ma->tsoil[i] = tsoil;
-            ma->vpd[i] = calc_vpd(tairx[hod], vphx[hod]);
-            ma->co2[i] = co2;
-            ma->ndep[i] = -9999.9;
-            ma->nfix[i] = -9999.9;
-            ma->wind[i] = 3.0;    /* Haverd et al. 2012 */
-            ma->press[i] = 100.0;
+            ma->year[cnt] = data[i];
+            ma->doy[cnt] = data[i+1];
+            ma->rain[cnt] = rainx[hod];
+            ma->par[cnt] = parx[hod];
+            ma->tair[cnt] = tairx[hod];
+            ma->tsoil[cnt] = tsoil;
+            ma->vpd[cnt] = calc_vpd(tairx[hod], vphx[hod]);
+            ma->co2[cnt] = co2;
+            ma->ndep[cnt] = -9999.9;
+            ma->nfix[cnt] = -9999.9;
+            ma->wind[cnt] = 3.0;    /* Haverd et al. 2012 */
+            ma->press[cnt] = 100.0;
 
-            printf("%f %f %d %f\n", ma->year[cnt], ma->doy[cnt], hod, ma->tair[i]);
+            cnt++;
+            //printf("%f %f %d %f\n", ma->year[cnt], ma->doy[cnt], hod, ma->tair[i]);
         }
 
         /* Build an array of the unique years as we loop over the input file */
@@ -464,16 +465,15 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
             c->num_years++;
             current_yr = ma->year[cnt];
         }
-        cnt++;
+
 
     }
-    exit(1);
 
 
     /* tidy up */
     free(data);
     fclose(fp);
-
+    
     return;
 }
 
