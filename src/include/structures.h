@@ -34,6 +34,7 @@ typedef struct {
     int   nuptake_model;
     int   nrows;
     int   ncols;
+    int   ovars;
     int   output_ascii;
     int   passiveconst;
     int   print_options;

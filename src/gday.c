@@ -250,7 +250,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     int    nyr, doy, window_size, i, dummy = 0;
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
-
+    long   ocnt;
+    double *odata = NULL; /* for binary output */
     double fdecay, rdecay, current_limitation, nitfac, year;
     int   *disturbance_yrs = NULL;
 
@@ -296,6 +297,17 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         } else {
             open_output_file(c, c->out_fname_hdr, &(c->ofp_hdr));
             write_output_header(c, &(c->ofp_hdr));
+
+            /*
+            ** set a block of memory to save daily binary outputs, we will
+            ** use a single fwrite call at the end, we should set the ncols
+            ** somewhere, but for now copying 14 from write_output_header
+            */
+            if ((odata = (double *)calloc(c->total_num_days*c->ovars,
+                                          sizeof(double))) == NULL) {
+        		fprintf(stderr,"Error allocating space for odata\n");
+        		exit(EXIT_FAILURE);
+        	}
         }
     } else if (c->print_options == END && c->spin_up == FALSE) {
         /* Final state + param file */
@@ -399,8 +411,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     ** ====================== */
     c->day_idx = 0;
     c->hour_idx = 0;
-
-
+    ocnt = 0;
 
     for (nyr = 0; nyr < c->num_years; nyr++) {
 
@@ -521,7 +532,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 if(c->output_ascii)
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 else
-                    write_daily_outputs_binary(c, f, s, year, doy+1);
+                    //write_daily_outputs_binary(c, f, s, year, doy+1);
+                    save_daily_outputs_binary(c, f, s, year, doy+1, *(&odata),
+                                              ocnt);
             }
 
             // Step 2: Store the time-varying variables
@@ -573,23 +586,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
 
             c->day_idx++;
-
-
-            //printf("%d %d %f", (int)year, doy, s->water_frac[0] * s->thickness[0] * M_TO_MM);
-            //printf("%d %d %f", (int)year, doy, s->water_frac[0]);
-            //for (i = 1; i < p->n_layers; i++) {
-            //
-            //    //printf(" %f", s->water_frac[i] * s->thickness[i] * M_TO_MM);
-            //    printf(" %f", s->water_frac[i]);
-            //
-            //}
-            //printf("\n");
-            //printf("%d %d %lf %lf %lf\n", (int)year, doy, s->saved_swp, s->wtfac_root, f->gpp*100);
-
-            //printf("%d %d %lf %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root, s->saved_swp);
-            //printf("%d %d %lf %lf %lf\n", (int)year, doy, f->gpp*100, f->transpiration, s->wtfac_root);
-
-
+            ocnt += c->ovars;
             /* ======================= **
             **   E N D   O F   D A Y   **
             ** ======================= */
@@ -622,6 +619,21 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     sma(SMA_FREE, hw);
     if (c->disturbance) {
         free(disturbance_yrs);
+    }
+
+    if (c->print_options == DAILY &&
+        c->spin_up == FALSE &&
+        c->output_ascii == FALSE) {
+        if (fwrite(odata, sizeof(double), c->total_num_days*c->ovars, c->ofp) !=\
+                                          c->total_num_days*c->ovars) {
+            fprintf(stderr, "Error writing binary output file: %s\n", \
+                    c->out_fname);
+	        exit(EXIT_FAILURE);
+        }
+    }
+
+    if (odata != NULL) {
+        free(odata);
     }
 
     return;

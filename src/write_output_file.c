@@ -541,3 +541,28 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
 
     return (1);
 }
+
+void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
+                                int doy, double *odata, long ocnt) {
+
+    /* save everything and do a single big dump at the end */
+    odata[ocnt] = (double)year;
+    odata[ocnt+1] = (double)doy;
+    odata[ocnt+2] = s->shoot;
+    odata[ocnt+3] = s->lai;
+    odata[ocnt+4] = s->branch;
+    odata[ocnt+5] = s->stem;
+    odata[ocnt+6] = s->root;
+    odata[ocnt+7] = s->wtfac_root;
+    odata[ocnt+8] = s->pawater_root;
+    odata[ocnt+9] = f->et;
+    odata[ocnt+10] = f->transpiration;
+    odata[ocnt+11] = f->soil_evap;
+    odata[ocnt+12] = f->gpp;
+    odata[ocnt+13] = f->npp;
+    odata[ocnt+14] = s->predawn_swp;
+    odata[ocnt+15] = s->midday_lwp;
+    odata[ocnt+16] = s->midday_xwp;
+
+    return;
+}
