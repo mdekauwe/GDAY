@@ -414,6 +414,7 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
     cnt = 0;
     c->num_years = 1;
     current_yr = data[0];
+
     for (i = 0; i < c->nrows * c->ncols; i += c->ncols) {
 
         doy_idx = (int)ma->doy[cnt] - 1;
@@ -457,20 +458,17 @@ void read_subdaily_met_data_binary(char **argv, control *c, met_arrays *ma,
             ma->wind[cnt] = 3.0;    /* Haverd et al. 2012 */
             ma->press[cnt] = 100.0;
 
+            /* Build an array of the unique years as we loop over the input file */
+            if (current_yr != ma->year[cnt]) {
+                c->num_years++;
+                current_yr = ma->year[cnt];
+            }
+
             cnt++;
-            //printf("%f %f %d %f\n", ma->year[cnt], ma->doy[cnt], hod, ma->tair[i]);
         }
-
-        /* Build an array of the unique years as we loop over the input file */
-        if (current_yr != ma->year[cnt]) {
-            c->num_years++;
-            current_yr = ma->year[cnt];
-        }
-
-
     }
 
-
+    
     /* tidy up */
     free(data);
     fclose(fp);
