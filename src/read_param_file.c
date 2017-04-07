@@ -407,6 +407,17 @@ int handler(char *section, char *name, char *value, control *c,
              fprintf(stderr, "Unknown respiration model: %s\n", temp);
              exit(EXIT_FAILURE);
          }
+    } else if (MATCH("control", "soil_drainage")) {
+        if (strcmp(temp, "GRAVITY") == 0||
+            strcmp(temp, "gravity") == 0)
+            c->soil_drainage = GRAVITY;
+        else if (strcmp(temp, "CASCADING") == 0||
+            strcmp(temp, "cascading") == 0)
+            c->soil_drainage = CASCADING;
+        else {
+            fprintf(stderr, "Unknown soil_drainage option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "spinup_method")) {
         if (strcmp(temp, "BRUTE") == 0 || strcmp(temp, "brute") == 0)
             c->spinup_method = BRUTE;

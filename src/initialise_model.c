@@ -47,6 +47,7 @@ void initialise_control(control *c) {
     c->water_balance = 0;            /* Water calculations: 0=simple 2 layered bucket; 1=SPA-style hydraulics */
     c->water_store = FALSE;         /* Simulate capacitance or not? */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
+    c->soil_drainage = GRAVITY;
 
     /* Internal calculated */
     c->num_years = 0;               /* Total number of years simulated */

@@ -66,6 +66,10 @@
 #define BRUTE 0
 #define SAS 1
 
+/* Drainage options for SPA */
+#define GRAVITY 0
+#define CASCADING 1
+
 /* Spinup array index */
 #define AF 0
 #define AR 1
