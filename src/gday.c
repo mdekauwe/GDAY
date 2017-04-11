@@ -673,7 +673,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         c->disturbance = cntrl_flag;
     }
 
-    fprintf(stderr, "Spinning up the model...\n");
+    //fprintf(stderr, "Spinning up the model...\n");
 
     if (c->spinup_method == BRUTE) {
 
@@ -691,8 +691,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 }
 
                 /* Have we reached a steady state? */
-                fprintf(stderr,
-                  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+                //fprintf(stderr,
+                //  "Spinup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
             }
 
             /* total plant, soil, litter and system carbon */
