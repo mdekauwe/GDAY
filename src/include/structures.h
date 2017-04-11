@@ -55,6 +55,7 @@ typedef struct {
     long  day_idx;
     int   pdebug;
     int   spinup_method;
+    int   soil_drainage;
 } control;
 
 

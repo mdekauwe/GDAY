@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     } else {
         read_daily_met_data(argv, c, ma);
     }
-
+    //exit(1);
 
     if (c->spin_up) {
         spin_up_pools(cw, c, f, fs, ma, m, p, s, nr);

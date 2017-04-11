@@ -192,7 +192,15 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // down the profile
         //
         for (i = 0; i < p->n_layers; i++) {
-            calc_soil_balance(f, nr, p, s, i, &water_lost);
+            if (c->soil_drainage == GRAVITY) {
+                calc_soil_balance(f, nr, p, s, i, &water_lost);
+            } else if (c->soil_drainage == CASCADING) {
+                // Redistribute soil water following a cascading or
+                // 'tipping bucket' approach, much simpler and computational
+                // effective. We have made an assumption about the drainage
+                // rate to make this work
+                calc_soil_balance_cascading(f, nr, p, s, i, &water_lost);
+            }
         }
 
         //
@@ -1142,6 +1150,68 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // Update plant conductance
     cw->plant_k = stem_relk * p->kp;
+
+    return;
+}
+
+void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
+                                 int soil_layer, double *water_lost) {
+    //
+    // Much simpler solution to soil water drainge: assumes that water can move
+    // (downwards) through the soil profile, filling up the layers until
+    // field capacity is reached, with the fraction of water exceeding this
+    // threshold moving to the deeper layer
+    //
+
+    int     i;
+    double  unsat, drain_layer, liquid, new_water_frac, change, drainage;
+
+    /* unsaturated volume of layer below (m3 m-2) */
+    unsat = MAX(0.0, (p->porosity[soil_layer+1] - \
+                      s->water_frac[soil_layer+1]) *\
+                      s->thickness[soil_layer+1] / s->thickness[soil_layer]);
+
+    /* soil water capacity of the current layer */
+    drain_layer = p->field_capacity[soil_layer];
+    liquid = s->water_frac[soil_layer];
+
+    if (liquid > 0.0 && liquid > drain_layer) {
+
+        // Assumption that ~5% of the water in the layer will drain, this is
+        // taken from running the standard SPA model and averaging the change
+        // for 10000 timesteps. I got ~7% for the site in question, tumba, so
+        // I've assumed a universal 10%, this number could do with more
+        // testing :)
+
+        // waterloss from this layer
+        drainage = liquid * 0.1;
+
+        // gravitational drainage above field_capacity
+        if (drainage <= drain_layer) {
+            drainage = 0.0;
+        }
+
+        // layer below cannot accept more water than unsat
+        if (drainage > unsat) {
+            drainage = unsat;
+        }
+
+        // waterloss from this layer
+        new_water_frac = s->water_frac[soil_layer] - drainage;
+
+        /* convert from water fraction to absolute amount (m) */
+        change = (s->water_frac[soil_layer] - new_water_frac) * \
+                  s->thickness[soil_layer];
+
+        // update soil layer below with drained liquid
+        if (soil_layer+1 < p->n_layers) {
+            f->water_gain[soil_layer+1] += change;
+        } else {
+            // We are draining through the bottom soil layer, add to runoff
+            *water_lost += change;
+        }
+        f->water_loss[soil_layer] += change;
+    }
 
     return;
 }

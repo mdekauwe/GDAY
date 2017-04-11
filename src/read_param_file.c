@@ -386,16 +386,27 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown spinup method: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "soil_drainage")) {
+        if (strcmp(temp, "GRAVITY") == 0||
+            strcmp(temp, "gravity") == 0)
+            c->soil_drainage = GRAVITY;
+        else if (strcmp(temp, "CASCADING") == 0||
+            strcmp(temp, "cascading") == 0)
+            c->soil_drainage = CASCADING;
+        else {
+            fprintf(stderr, "Unknown soil_drainage option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "sub_daily")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
-            strcmp(temp, "false") == 0)
+            strcmp(temp, "false") == 0) {
             c->sub_daily = FALSE;
-        else if (strcmp(temp, "True") == 0 ||
+        } else if (strcmp(temp, "True") == 0 ||
             strcmp(temp, "TRUE") == 0 ||
-            strcmp(temp, "true") == 0)
+            strcmp(temp, "true") == 0) {
             c->sub_daily = TRUE;
-        else {
+        } else {
             fprintf(stderr, "Unknown sub_daily option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
