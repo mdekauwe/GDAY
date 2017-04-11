@@ -958,8 +958,8 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         }
     }
 
-    fprintf(stderr,
-      "Spunup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
+    //fprintf(stderr,
+    //  "Spunup: Plant C - %f, Soil C - %f\n", s->plantc, s->soilc);
 
     return;
 }
