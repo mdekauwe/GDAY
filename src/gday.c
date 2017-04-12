@@ -128,6 +128,11 @@ int main(int argc, char **argv)
         allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
+
+        // i.e. not dead
+        cw->death_year = -999.9;
+        cw->death_doy = -999.9;
+        cw->not_dead = TRUE;
     }
 
     if (c->sub_daily) {
@@ -136,7 +141,7 @@ int main(int argc, char **argv)
     } else {
         read_daily_met_data(argv, c, ma);
     }
-    //exit(1);
+
 
     if (c->spin_up) {
         spin_up_pools(cw, c, f, fs, ma, m, p, s, nr);
