@@ -464,7 +464,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // Transpiration is limited in the perfectly isohydric case above the
     // critical threshold for embolism given by min_lwp.
     e_supply = MAX(0.0, *ktot * (s->weighted_swp - p->min_lwp));
-
+    
     // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
     e_demand = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
 
