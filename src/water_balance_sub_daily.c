@@ -1144,8 +1144,8 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     // out how to write it to a file later.
     if (stem_relk < (1.0 - p->plc_dead) && cw->not_dead) {
         cw->not_dead = FALSE;
-        cw->death_year = (int)year;
-        cw->death_doy = (int)doy+1;
+        cw->death_year = (double)year;
+        cw->death_doy = (double)doy;
     }
 
     // Update plant conductance

@@ -542,8 +542,8 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     return (1);
 }
 
-void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
-                                int doy, double *odata, long ocnt) {
+void save_daily_outputs_binary(control *c, canopy_wk *cw, fluxes *f, state *s,
+                               int year, int doy, double *odata, long ocnt) {
 
     /* save everything and do a single big dump at the end */
     odata[ocnt] = (double)year;
@@ -563,6 +563,8 @@ void save_daily_outputs_binary(control *c, fluxes *f, state *s, int year,
     odata[ocnt+14] = s->predawn_swp;
     odata[ocnt+15] = s->midday_lwp;
     odata[ocnt+16] = s->midday_xwp;
+    odata[ocnt+17] = cw->death_year;
+    odata[ocnt+18] = cw->death_doy;
 
     return;
 }

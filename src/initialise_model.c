@@ -48,7 +48,7 @@ void initialise_control(control *c) {
     c->water_store = FALSE;         /* Simulate capacitance or not? */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
-    c->ovars = 17;                  /* Number of vars in output binary file */
+    c->ovars = 19;                  /* Number of vars in output binary file */
 
     /* Internal calculated */
     c->num_years = 0;               /* Total number of years simulated */

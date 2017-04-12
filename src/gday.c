@@ -128,6 +128,11 @@ int main(int argc, char **argv)
         allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
+
+        // i.e. not dead
+        cw->death_year = -999.9;
+        cw->death_doy = -999.9;
+        cw->not_dead = TRUE;
     }
 
     if (c->sub_daily) {
@@ -533,8 +538,8 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                     write_daily_outputs_ascii(c, f, s, year, doy+1);
                 else
                     //write_daily_outputs_binary(c, f, s, year, doy+1);
-                    save_daily_outputs_binary(c, f, s, year, doy+1, *(&odata),
-                                              ocnt);
+                    save_daily_outputs_binary(c, cw, f, s, year, doy+1,
+                                              *(&odata), ocnt);
             }
 
             // Step 2: Store the time-varying variables
