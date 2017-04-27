@@ -86,7 +86,7 @@ int main(int argc, char **argv)
     }
 
     fs = (fast_spinup *)malloc(sizeof(fast_spinup));
-    if (cw == NULL) {
+    if (fs == NULL) {
         fprintf(stderr, "fast spinup structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
     }
