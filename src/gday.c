@@ -786,7 +786,7 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     mu_decayrate3 = fs->dr[3] / total_days;
     mu_decayrate4 = fs->dr[4] / total_days;
     mu_decayrate5 = fs->dr[5] / total_days;
-    mu_decayrate6 = fs->dr[5] / total_days;
+    mu_decayrate6 = fs->dr[6] / total_days;
     mu_fmleaf = fs->alloc[S1] / total_days;
     mu_fmroot = fs->alloc[S2] / total_days;
 
