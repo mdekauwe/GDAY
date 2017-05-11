@@ -190,7 +190,7 @@ typedef struct {
     double c_alloc_fmin;                    /* allocation to leaves at zero leaf n/c. If using allometric model this is the min alloc to leaves */
     double c_alloc_rmax;                    /* allocation to roots at root n_crit. If using allometric model this is the max alloc to fine roots */
     double c_alloc_rmin;                    /* allocation to roots at zero root n/c. If using allometric model this is the min alloc to fine roots */
-    double cfracts;                         /* carbon fraction of dry biomass */
+    double cfracts;                         /* conversion factor -> from dry matter (DM) to C */
     double crdecay;                         /* coarse roots turnover rate (1/yr) */
     double cretrans;                        /* coarse root n retranslocation fraction */
     double croot0;                          /* constant in coarse_root-stem allometry (trees) */
