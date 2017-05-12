@@ -1330,13 +1330,17 @@ void update_roots(control *c, params *p, state *s) {
 
     // Enforcing a minimum fine root mass, otherwise during spinup this can go
     // wrong.
-    fine_root_min = 50.0 / TONNES_HA_2_G_M2;
-    if (s->root < fine_root_min) {
-        fine_root = fine_root_min;
+
+    if (c->spin_up) {
+        fine_root_min = 50.0 / TONNES_HA_2_G_M2;
+        if (s->root < fine_root_min) {
+            fine_root = fine_root_min;
+        } else {
+            fine_root = s->root;
+        }
     } else {
         fine_root = s->root;
     }
-
     root_biomass = MAX(min_biomass, fine_root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
     //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
