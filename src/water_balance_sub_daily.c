@@ -1009,6 +1009,8 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
     }
     s->pawater_root = root_zone_total;
 
+
+
     return;
 }
 
@@ -1203,6 +1205,9 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
         change = (s->water_frac[soil_layer] - new_water_frac) * \
                   s->thickness[soil_layer];
 
+        // Update current layer
+        f->water_loss[soil_layer] += change;
+        
         // update soil layer below with drained liquid
         if (soil_layer+1 < p->n_layers) {
             f->water_gain[soil_layer+1] += change;
@@ -1210,7 +1215,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
             // We are draining through the bottom soil layer, add to runoff
             *water_lost += change;
         }
-        f->water_loss[soil_layer] += change;
+
     }
 
     return;
