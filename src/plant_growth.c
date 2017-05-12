@@ -1320,7 +1320,7 @@ void update_roots(control *c, params *p, state *s) {
     int    i;
     double soil_layers[p->n_layers];
     double C_2_BIOMASS = 2.0;
-    double min_biomass = 10.0; /* To exend at least a layer; g C m-2 */
+    double min_biomass;
     double root_biomass, root_cross_sec_area, root_depth, root_reach, mult;
     double surf_biomass, prev, curr, slope, cumulative_depth;
     double x1 = 0.1;        /* lower bound for brent search */
@@ -1328,16 +1328,9 @@ void update_roots(control *c, params *p, state *s) {
     double tol = 0.0001;    /* tolerance for brent search */
     double fine_root, fine_root_min;
 
-    // Enforcing a minimum fine root mass, otherwise during spinup this can go
-    // wrong.
-    fine_root_min = 50.0 / TONNES_HA_2_G_M2;
-    if (s->root < fine_root_min) {
-        fine_root = fine_root_min;
-    } else {
-        fine_root = s->root;
-    }
-
-    root_biomass = MAX(min_biomass, fine_root * TONNES_HA_2_G_M2 * C_2_BIOMASS);
+    min_biomass = 20.0;  // g root biomss
+    fine_root = s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS;
+    root_biomass = MAX(min_biomass, fine_root);
     //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
