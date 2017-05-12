@@ -1003,18 +1003,11 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
         // - this is just for outputting, these aren't used.
         if (i == 0) {
             s->pawater_topsoil = water_content * M_TO_MM;
-        } else {
+        } else if (i <= s->rooted_layers) {
             root_zone_total += water_content * M_TO_MM;
         }
     }
     s->pawater_root = root_zone_total;
-
-    // Should we be emptying out the water stored below the rooted layers?
-    //for (i = 0; i < p->n_layers; i++) {
-    //    if (i > s->rooted_layers) {
-    //        s->water_frac[i] = 0.01;
-    //    }
-    //}
 
     return;
 }
