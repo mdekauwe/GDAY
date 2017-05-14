@@ -1003,7 +1003,10 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
         // - this is just for outputting, these aren't used.
         if (i == 0) {
             s->pawater_topsoil = water_content * M_TO_MM;
-        } else if (i <= s->rooted_layers) {
+        //} else if (i <= s->rooted_layers) {
+        // if we do the above & the root depth changes we would get large
+        // errors in our water balance check, as we could suddenly lose a layer
+        } else {
             root_zone_total += water_content * M_TO_MM;
         }
     }
@@ -1207,7 +1210,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
 
         // Update current layer
         f->water_loss[soil_layer] += change;
-        
+
         // update soil layer below with drained liquid
         if (soil_layer+1 < p->n_layers) {
             f->water_gain[soil_layer+1] += change;
