@@ -948,6 +948,7 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
     double root_zone_total, water_content, needed, taken, prev_soil_evap;
     int    i, rr;
     double soil_evap_overshoot, transpiration_overshoot, prev_trans;
+    double effective_swp, wp;
 
 
 
@@ -1007,7 +1008,17 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
         // if we do the above & the root depth changes we would get large
         // errors in our water balance check, as we could suddenly lose a layer
         } else {
-            root_zone_total += water_content * M_TO_MM;
+
+            // SPA doesn't have a wilting point per layer, we can infer an
+            // effective one by assuming a SWP of -1.5 MPa. I think by doing
+            // this our water balance check would no longer work...so expect
+            // some error there
+            effective_swp = -1.5;
+
+            // I've just rearranged the SWP calculation
+            wp = pow( effective_swp / (-0.001 * p->potA[i]),
+                      (1.0 / p->potB[i]) );
+            root_zone_total += (water_content * M_TO_MM) - wp;
         }
     }
     s->pawater_root = root_zone_total;

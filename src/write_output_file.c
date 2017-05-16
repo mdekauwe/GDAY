@@ -122,8 +122,11 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "predawn_swp,");
     fprintf(*fp, "midday_lwp,");
     fprintf(*fp, "midday_xwp,");
-    fprintf(*fp, "leafretransn\n");
-
+    fprintf(*fp, "leafretransn,");
+    fprintf(*fp, "theta1,");
+    fprintf(*fp, "theta2,");
+    fprintf(*fp, "theta3,");
+    fprintf(*fp, "theta4\n");
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
@@ -249,8 +252,36 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,", s->predawn_swp);
     fprintf(c->ofp, "%.10f,", s->midday_lwp);
     fprintf(c->ofp, "%.10f,", s->midday_xwp);
-    fprintf(c->ofp, "%.10f\n", f->leafretransn);
+    fprintf(c->ofp, "%.10f,", f->leafretransn);
 
+    if (c->water_balance == HYDRAULICS) {
+        fprintf(c->ofp, "%.10f,", s->water_frac[0] + \
+                                  s->water_frac[1] + \
+                                  s->water_frac[2] + \
+                                  s->water_frac[3] + \
+                                  s->water_frac[4]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[5] + \
+                                  s->water_frac[6] + \
+                                  s->water_frac[7] + \
+                                  s->water_frac[8] + \
+                                  s->water_frac[9]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[10] + \
+                                  s->water_frac[11] + \
+                                  s->water_frac[12] + \
+                                  s->water_frac[13] + \
+                                  s->water_frac[14]);
+        fprintf(c->ofp, "%.10f\n", s->water_frac[15] + \
+                                   s->water_frac[16] + \
+                                   s->water_frac[17] + \
+                                   s->water_frac[18] + \
+                                   s->water_frac[19]);
+    } else {
+        fprintf(c->ofp, "%.10f\n", -999.9);
+        fprintf(c->ofp, "%.10f\n", -999.9);
+        fprintf(c->ofp, "%.10f\n", -999.9);
+        fprintf(c->ofp, "%.10f\n", -999.9);
+        fprintf(c->ofp, "%.10f\n", -999.9);
+    }
 
     return;
 }
