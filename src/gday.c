@@ -255,10 +255,11 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     int    nyr, doy, window_size, i, dummy = 0;
     int    fire_found = FALSE;;
     int    num_disturbance_yrs = 0;
-    long   ocnt;
     double *odata = NULL; /* for binary output */
+    double *yodata = NULL; /* for binary output */
     double fdecay, rdecay, current_limitation, nitfac, year;
     int   *disturbance_yrs = NULL;
+    long   ocnt;
 
     if (c->deciduous_model) {
         /* Are we reading in last years average growing season? */
@@ -629,21 +630,192 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     if (c->print_options == DAILY &&
         c->spin_up == FALSE &&
         c->output_ascii == FALSE) {
-        if (fwrite(odata, sizeof(double), c->total_num_days*c->ovars, c->ofp) !=\
-                                          c->total_num_days*c->ovars) {
+        if ((yodata = (double *)calloc(c->num_years*c->ovars,
+                                       sizeof(double))) == NULL) {
+    		fprintf(stderr,"Error allocating space for yodata\n");
+    		exit(EXIT_FAILURE);
+    	}
+
+        translate_daily_to_annual_aussie_summers(c, ma, *(&odata), *(&yodata));
+        
+        if (fwrite(yodata, sizeof(double), (c->num_years-1)*c->yovars, c->ofp) !=\
+                                           (c->num_years-1)*c->yovars) {
             fprintf(stderr, "Error writing binary output file: %s\n", \
                     c->out_fname);
 	        exit(EXIT_FAILURE);
         }
+
+        //if (fwrite(odata, sizeof(double), c->total_num_days*c->ovars, c->ofp) !=\
+        //                                  c->total_num_days*c->ovars) {
+        //    fprintf(stderr, "Error writing binary output file: %s\n", \
+        //            c->out_fname);
+	    //    exit(EXIT_FAILURE);
+        //}
     }
 
     if (odata != NULL) {
         free(odata);
     }
 
+    if (yodata != NULL) {
+        free(yodata);
+    }
+
     return;
 
 
+}
+
+
+
+void translate_daily_to_annual_aussie_summers(control *c, met_arrays *ma,
+                                              double *odata, double *yodata) {
+
+    double summer_ndays;
+    int    start_day, end_day, nyr, doy, offset;
+    long   ocnt, yocnt;
+    double yshoot, ylai, ywood, yroot, ywtfac_root, ypawater_root, yet;
+    double ytrans, ysoil_evap, ygpp, ynpp, ypredawn_swp, ymidday_lwp;
+    double ymidday_xwp, ydeath_year, ydeath_doy, summer_days, year;
+
+    yocnt = 0;
+    ocnt = 0;
+    c->hour_idx = 0;
+
+    // NB. just looping over Australian summers, so drop first & last year
+    // we will grab their last and first months below
+
+    // Sort out starting offset as we're skipping the first year
+    if ( is_leap_year(ma->year[0]) ) {
+        c->num_days = 366;
+    } else {
+        c->num_days = 365;
+    }
+    c->hour_idx = 48 * c->num_days;
+    ocnt = c->ovars * c->num_days;
+
+    for (nyr = 1; nyr < c->num_years; nyr++) {
+        year = ma->year[c->hour_idx];
+
+        if (is_leap_year(year)) {
+            c->num_days = 366;
+            start_day = 0;
+            end_day = 61;
+            summer_ndays = 91.0;
+        } else {
+            c->num_days = 365;
+            start_day = 0;
+            end_day = 60;
+            summer_ndays = 90.0;
+        }
+        yshoot = 0.0;
+        ylai = 0.0;
+        ywood = 0.0;
+        yroot = 0.0;
+        ywtfac_root = 0.0;
+        ypawater_root = 0.0;
+        yet = 0.0;
+        ytrans = 0.0;
+        ysoil_evap = 0.0;
+        ygpp = 0.0;
+        ynpp = 0.0;
+        ypredawn_swp = 0.0;
+        ymidday_lwp = 0.0;
+        ymidday_xwp = 0.0;
+        ydeath_year = 0.0;
+        ydeath_doy = 0.0;
+
+
+        // Get previous years december
+        for (doy = 31; doy != 0; doy-- ) {
+
+            offset = (c->ovars*(doy-31));
+
+            yshoot += odata[ocnt+2-offset];
+            ylai += odata[ocnt+3-offset];
+            ywood += odata[ocnt+4-offset] + odata[ocnt+5-offset];
+            yroot += odata[ocnt+6-offset];
+            ywtfac_root += odata[ocnt+7-offset];
+            ypawater_root += odata[ocnt+8-offset];
+            yet += odata[ocnt+9-offset];
+            ytrans += odata[ocnt+10-offset];
+            ysoil_evap += odata[ocnt+11-offset];
+            ygpp += odata[ocnt+12-offset];
+            ynpp += odata[ocnt+13-offset];
+            ypredawn_swp += odata[ocnt+14-offset];
+            ymidday_lwp += odata[ocnt+15-offset];
+            ymidday_xwp += odata[ocnt+16-offset];
+            if (odata[ocnt+17-offset] > -500.0) {
+                ydeath_year = odata[ocnt+17-offset];
+            } else {
+                ydeath_year = -999.9;
+            }
+            if (odata[ocnt-doy+18] > -500.0) {
+                ydeath_doy = odata[ocnt+18-offset];
+            } else {
+                ydeath_doy = -999.9;
+            }
+
+        }
+
+        // Loop over Jan/Feb
+        for (doy = start_day; doy < end_day; doy++) {
+
+            yshoot += odata[ocnt+2];
+            ylai += odata[ocnt+3];
+            ywood += odata[ocnt+4] + odata[ocnt+5];
+            yroot += odata[ocnt+6];
+            ywtfac_root += odata[ocnt+7];
+            ypawater_root += odata[ocnt+8];
+            yet += odata[ocnt+9];
+            ytrans += odata[ocnt+10];
+            ysoil_evap += odata[ocnt+11];
+            ygpp += odata[ocnt+12] * TONNES_HA_2_G_M2;
+            ynpp += odata[ocnt+13] * TONNES_HA_2_G_M2;
+            ypredawn_swp += odata[ocnt+14];
+            ymidday_lwp += odata[ocnt+15];
+            ymidday_xwp += odata[ocnt+16];
+            if (odata[ocnt+17] > -500.0) {
+                ydeath_year = odata[ocnt+17];
+            } else {
+                ydeath_year = -999.9;
+            }
+            if (odata[ocnt+18] > -500.0) {
+                ydeath_doy = odata[ocnt+18];
+            } else {
+                ydeath_doy = -999.9;
+            }
+
+            c->hour_idx+=48;
+            ocnt += c->ovars;
+        }
+
+        // Sort out end point for the year
+        c->hour_idx = 48 * c->num_days * (nyr + 1);
+        ocnt = c->ovars * c->num_days * (nyr + 1);
+
+        yodata[yocnt] = (double)year;
+        yodata[yocnt+1] = yshoot / summer_ndays;
+        yodata[yocnt+2] = ylai / summer_ndays;
+        yodata[yocnt+3] = ywood / summer_ndays;
+        yodata[yocnt+4] = yroot / summer_ndays;
+        yodata[yocnt+5] = ywtfac_root / summer_ndays;
+        yodata[yocnt+6] = ypawater_root / summer_ndays;
+        yodata[yocnt+7] = yet;
+        yodata[yocnt+8] = ytrans;
+        yodata[yocnt+9] = ysoil_evap;
+        yodata[yocnt+10] = ygpp;
+        yodata[yocnt+11] = ynpp;
+        yodata[yocnt+12] = ypredawn_swp / summer_ndays;
+        yodata[yocnt+13] = ymidday_lwp / summer_ndays;
+        yodata[yocnt+14] = ymidday_xwp / summer_ndays;
+        yodata[yocnt+15] = ydeath_year;
+        yodata[yocnt+16] = ydeath_doy;
+        yocnt += c->yovars;
+
+    }
+
+    return;
 }
 
 void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,

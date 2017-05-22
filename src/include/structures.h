@@ -60,6 +60,7 @@ typedef struct {
     int   pdebug;
     int   spinup_method;
     int   soil_drainage;
+    int   yovars;
 } control;
 
 

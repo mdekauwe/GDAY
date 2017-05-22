@@ -118,4 +118,7 @@ void   fill_up_solar_arrays(canopy_wk *, control *, met_arrays *, params *);
 void   zero_fast_spinup_stuff(fast_spinup *);
 void   sas_spinup(canopy_wk *, control *, fluxes *, fast_spinup *,
                      met_arrays *, met *, params *p, state *, nrutil *);
+void translate_daily_to_annual_aussie_summers(control *, met_arrays *,
+                                              double *, double *);
+
 #endif /* GDAY_H */
