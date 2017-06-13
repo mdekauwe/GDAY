@@ -815,7 +815,7 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
 
     /* value affecting the max time interval at which variables should b calc */
     double  soilpor = p->porosity[soil_layer];
-    double  unsat, drain_layer, liquid, new_water_frac, change;
+    double  unsat, drain_layer, new_water_frac, change;
     //double *ystart = NULL;
     //ystart = dvector(1,N);
 
@@ -830,13 +830,11 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
 
     /* soil water capacity of the current layer */
     drain_layer = p->field_capacity[soil_layer];
-    liquid = s->water_frac[soil_layer];
 
-    /*
-    ** initial conditions; i.e. is there liquid water and more
-    ** water than layer can hold
-    */
-    if (liquid > 0.0 && liquid > drain_layer) {
+    // SPA assumes drainages occurs if water_frac > field_capacity, but we are
+    // assuming drainage always takes place. Remko argues for this making more
+    // physical sense
+    if (s->water_frac[soil_layer] > 0.0) {
 
         // ystart is a vector 1..N, so need to index from 1 not 0
         nr->ystart[1] = s->water_frac[soil_layer];
