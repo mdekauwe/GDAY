@@ -1124,7 +1124,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         cw->xylem_psi = arg1 - arg2;
 
         // refill plant water store
-        cw->plant_water = cw->plant_water0;
+        cw->plant_water = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
 
     } else {
 
