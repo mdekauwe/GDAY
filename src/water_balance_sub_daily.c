@@ -722,7 +722,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
         s->wetting_top[ar1] -= netc;
 
         // Wetting layer is dried out.
-        if (s->wetting_top[ar1] > s->wetting_bot[ar1]) {
+        if (s->wetting_top[ar1] >= s->wetting_bot[ar1]) {
             /* How much more drying is there? */
             diff = s->wetting_top[ar1] - s->wetting_bot[ar1];
             s->wetting_top[ar1] = 0.0;
