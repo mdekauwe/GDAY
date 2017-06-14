@@ -72,7 +72,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
         ** calculate the soil conductance per layer and call this via
         ** the integration func when we update the soil water balance
         */
-        for (i = 0; i < p->n_layers; i++) {
+        for (i = 0; i < p->core; i++) {
             f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
                                                         p->cond1[i], p->cond2[i],
                                                         p->cond3[i]);
@@ -167,7 +167,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // calculate the soil conductance per layer and call this via
         // the integration func when we update the soil water balance
         //
-        for (i = 0; i < p->n_layers; i++) {
+        for (i = 0; i < p->core; i++) {
             f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
                                                         p->cond1[i],
                                                         p->cond2[i],
@@ -271,7 +271,7 @@ void zero_water_movement(fluxes *f, params *p) {
     // zero'd at the start of each timestep
     int i;
 
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->core; i++) {
         f->water_loss[i] = 0.0;
         f->water_gain[i] = 0.0;
         f->ppt_gain[i] = 0.0;
@@ -284,92 +284,92 @@ void zero_water_movement(fluxes *f, params *p) {
 
 void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
     /* Allocate the necessary memory for all the hydraulics arrays */
-    p->potA = malloc(p->n_layers * sizeof(double));
+    p->potA = malloc(p->core * sizeof(double));
     if (p->potA == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's potA\n");
         exit(EXIT_FAILURE);
     }
 
-    p->potB = malloc(p->n_layers * sizeof(double));
+    p->potB = malloc(p->core * sizeof(double));
     if (p->potB == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's potB\n");
         exit(EXIT_FAILURE);
     }
 
-    p->cond1 = malloc(p->n_layers * sizeof(double));
+    p->cond1 = malloc(p->core * sizeof(double));
     if (p->cond1 == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's cond1\n");
         exit(EXIT_FAILURE);
     }
 
-    p->cond2 = malloc(p->n_layers * sizeof(double));
+    p->cond2 = malloc(p->core * sizeof(double));
     if (p->cond1 == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's cond2\n");
         exit(EXIT_FAILURE);
     }
 
-    p->cond3 = malloc(p->n_layers * sizeof(double));
+    p->cond3 = malloc(p->core * sizeof(double));
     if (p->cond1 == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's cond3\n");
         exit(EXIT_FAILURE);
     }
 
-    p->porosity = malloc(p->n_layers * sizeof(double));
+    p->porosity = malloc(p->core * sizeof(double));
     if (p->porosity == NULL) {
         fprintf(stderr, "malloc failed allocating porosity\n");
         exit(EXIT_FAILURE);
     }
 
-    p->field_capacity = malloc(p->n_layers * sizeof(double));
+    p->field_capacity = malloc(p->core * sizeof(double));
     if (p->field_capacity == NULL) {
         fprintf(stderr, "malloc failed allocating field_capacity\n");
         exit(EXIT_FAILURE);
     }
 
-    f->soil_conduct = malloc(p->n_layers * sizeof(double));
+    f->soil_conduct = malloc(p->core * sizeof(double));
     if (f->soil_conduct == NULL) {
         fprintf(stderr, "malloc failed allocating soil_conduct\n");
         exit(EXIT_FAILURE);
     }
 
-    f->swp = malloc(p->n_layers * sizeof(double));
+    f->swp = malloc(p->core * sizeof(double));
     if (f->swp == NULL) {
         fprintf(stderr, "malloc failed allocating swp\n");
         exit(EXIT_FAILURE);
     }
 
-    f->soilR = malloc(p->n_layers * sizeof(double));
+    f->soilR = malloc(p->core * sizeof(double));
     if (f->soilR == NULL) {
         fprintf(stderr, "malloc failed allocating soilR\n");
         exit(EXIT_FAILURE);
     }
 
-    f->fraction_uptake = malloc(p->n_layers * sizeof(double));
+    f->fraction_uptake = malloc(p->core * sizeof(double));
     if (f->fraction_uptake == NULL) {
         fprintf(stderr, "malloc failed allocating soilR\n");
         exit(EXIT_FAILURE);
     }
 
-    f->ppt_gain = malloc(p->n_layers * sizeof(double));
+    f->ppt_gain = malloc(p->core * sizeof(double));
     if (f->ppt_gain == NULL) {
         fprintf(stderr, "malloc failed allocating ppt_gain\n");
         exit(EXIT_FAILURE);
     }
 
-    f->water_loss = malloc(p->n_layers * sizeof(double));
+    f->water_loss = malloc(p->core * sizeof(double));
     if (f->water_loss == NULL) {
         fprintf(stderr, "malloc failed allocating water_loss\n");
         exit(EXIT_FAILURE);
     }
 
-    f->water_gain = malloc(p->n_layers * sizeof(double));
+    f->water_gain = malloc(p->core * sizeof(double));
     if (f->water_gain == NULL) {
         fprintf(stderr, "malloc failed allocating water_gain\n");
         exit(EXIT_FAILURE);
     }
 
     /* Depth to bottom of wet soil layers (m) */
-    s->water_frac = malloc(p->n_layers * sizeof(double));
+    s->water_frac = malloc(p->core * sizeof(double));
     if (s->water_frac == NULL) {
         fprintf(stderr, "malloc failed allocating water_frac\n");
         exit(EXIT_FAILURE);
@@ -396,7 +396,7 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
-    f->est_evap = malloc(p->n_layers * sizeof(double));
+    f->est_evap = malloc(p->core * sizeof(double));
     if (f->est_evap == NULL) {
         fprintf(stderr, "malloc failed allocating est_evap\n");
         exit(EXIT_FAILURE);
@@ -475,7 +475,7 @@ void calc_saxton_stuff(params *p, double *fsoil) {
     ** this later
     */
 
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->core; i++) {
         p->potA[i] = exp(A + B * clay + CC * sand * \
                          sand + D * sand * sand * \
                          clay) * 100.0;
@@ -538,7 +538,6 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     int    i;
     double arg1, arg2;
 
-    //for (i = 0; i < p->n_layers; i++) {
     for (i = 0; i < s->rooted_layers; i++) {
 
         if (s->water_frac[i] > 0.0) {
@@ -758,11 +757,13 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
         total infilatration in timestep.
     */
     int    i;
-    double add, wdiff, runoff;
+    double add;     // surface water available for infiltration (m)
+    double wdiff;   // available space in a given soil lyr for water to fill (m)
+    double runoff;
 
     add = surface_water * MM_TO_M;
 
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->core; i++) {
         f->ppt_gain[i] = 0.0;
     }
 
