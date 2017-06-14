@@ -193,7 +193,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         //
         for (i = 0; i < p->n_layers; i++) {
             if (c->soil_drainage == GRAVITY) {
-                calc_soil_balance(f, nr, p, s, i, &water_lost);
+                calc_soil_balance(f, nr, p, s, i);
             } else if (c->soil_drainage == CASCADING) {
                 // Redistribute soil water following a cascading or
                 // 'tipping bucket' approach, much simpler and computational
@@ -804,7 +804,7 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
 
 
 void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
-                       int soil_layer, double *water_lost) {
+                       int soil_layer) {
     //
     // Integrator for soil gravitational drainage
     //
@@ -857,14 +857,8 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
                   s->thickness[soil_layer];
 
         // update soil layer below with drained liquid
-        if (soil_layer+1 < p->n_layers) {
-            f->water_gain[soil_layer+1] += change;
-        } else {
-            // We are draining through the bottom soil layer, add to runoff
-            *water_lost += change;
-        }
+        f->water_gain[soil_layer+1] += change;
         f->water_loss[soil_layer] += change;
-
     }
 
     if (f->water_loss[soil_layer] < 0.0) {
