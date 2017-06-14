@@ -727,7 +727,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
             diff = s->wetting_top[ar1] - s->wetting_bot[ar1];
             s->wetting_top[ar1] = 0.0;
             s->wetting_bot[ar1] = 0.0;
-            ar2 = ar1 - 1;
+            ar2 = (ar1 + 1) - 1;          // +1 is fortran logic offset
 
             /* Move to deeper wetting layer */
             if (ar2 > 0) {
