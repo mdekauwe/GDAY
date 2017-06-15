@@ -257,18 +257,18 @@ void initialise_params(params *p) {
     p->root_radius = 0.0005;
     p->root_density = 0.5e6;
     p->max_depth = 2.0;
-    p->root_resist = 20; /* Evergreen value: fine root hydraulic resistivity (MPa s g mmol-1 H2O) */
+    p->root_resist = 20;      /* Evergreen value: fine root hydraulic resistivity (MPa s g mmol-1 H2O) */
     p->min_lwp = -2.0;        /* minimum leaf water potential (MPa) */
 
     /* Hydraulics stuff - private */
-    p->potA = NULL;
-    p->potB = NULL;
-    p->cond1 = NULL;
-    p->cond2 = NULL;
-    p->cond3 = NULL;
-    p->porosity = NULL;
-    p->field_capacity = NULL;
-    p->wetting = 10;
+    p->potA = NULL;             // component of the Saxton soil water retention equations
+    p->potB = NULL;             // component of the Saxton soil water retention equations
+    p->cond1 = NULL;            // component of the Saxton soil water retention equations
+    p->cond2 = NULL;            // component of the Saxton soil water retention equations
+    p->cond3 = NULL;            // component of the Saxton soil water retention equations
+    p->porosity = NULL;         // soil layer porosity
+    p->field_capacity = NULL;   // Field capacity of moisture for each layer, when soil water content at SWP = -10kPa
+    p->wetting = 10;            // number of layers to use for wetting calcs
     p->plc_dead = 0.85;
 
 
@@ -503,7 +503,7 @@ void initialise_state(state *s) {
     s->thickness = NULL;
     s->root_mass = NULL;
     s->root_length = NULL;
-    s->layer_depth = NULL;
+    s->layer_depth = NULL;              // Soil layer depth (m)
     s->water_frac = NULL;
     s->initial_water = 0.0;
     s->dry_thick = 0.1;

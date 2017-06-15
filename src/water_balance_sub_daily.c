@@ -643,6 +643,9 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     // Tracks surface wetting and drying in the top soil layer and so the
     // thickness of the uppermost dry layer and thus soil evaporation
     //
+    // wetting_bot - Depth to bottom of wet soil layers (m)
+    // wetting_top - Depth to top of wet soil layers (m)
+    //
 
     double seconds_per_step = 1800.0;
     double dmin = 0.001;
