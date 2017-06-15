@@ -211,11 +211,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         runoff = calc_infiltration(f, p, s, surface_water);
         runoff += water_lost * M_TO_MM;
 
-        // Don't see point of calculating these again
-        // Find SWP & soil resistance without updating waterfrac yet
-        calc_soil_water_potential(f, p, s);
-        calc_soil_root_resistance(f, p, s);
-
         update_soil_water_storage(f, p, s, &soil_evap, &transpiration);
         et = transpiration + soil_evap + canopy_evap;
     } else {
