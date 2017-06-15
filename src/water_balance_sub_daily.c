@@ -958,6 +958,8 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
     double soil_evap_overshoot, transpiration_overshoot, prev_trans;
     double effective_swp, wp;
 
+
+
     root_zone_total = 0.0;
     for (i = 0; i < p->soil_layers; i++) {
 
