@@ -366,7 +366,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
         // Update the soil water storage
         root_zone_total = 0.0;
-        for (i = 0; i < p->n_layers; i++) {
+        for (i = 0; i < p->soil_layers; i++) {
 
             // water content of soil layer (m)
             water_content = s->water_frac[i] * s->thickness[i];
@@ -637,7 +637,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     	}
 
         translate_daily_to_annual_aussie_summers(c, ma, *(&odata), *(&yodata));
-        
+
         if (fwrite(yodata, sizeof(double), (c->num_years-1)*c->yovars, c->ofp) !=\
                                            (c->num_years-1)*c->yovars) {
             fprintf(stderr, "Error writing binary output file: %s\n", \

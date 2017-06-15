@@ -360,7 +360,8 @@ typedef struct {
 
     /* hydraulics */
     double layer_thickness;                 /* Soil layer thickness (m) */
-    int    n_layers;                        /* Number of soil layers */
+    int    soil_layers;                     // Number of soil layers
+    int    core;                            // Layer below soil layers, i.e. 20 + 1
     double root_k;    /* mass of roots for reaching 50% maximum depth (g m-2) */
     double root_radius;  /* (m) */
     double root_density; /* g biomass m-3*/
