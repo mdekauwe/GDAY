@@ -123,10 +123,29 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "midday_lwp,");
     fprintf(*fp, "midday_xwp,");
     fprintf(*fp, "leafretransn,");
+    fprintf(*fp, "dead_year,");
+    fprintf(*fp, "dead_doy,");
+    fprintf(*fp, "theta0,");
     fprintf(*fp, "theta1,");
     fprintf(*fp, "theta2,");
     fprintf(*fp, "theta3,");
-    fprintf(*fp, "theta4\n");
+    fprintf(*fp, "theta4,");
+    fprintf(*fp, "theta5,");
+    fprintf(*fp, "theta6,");
+    fprintf(*fp, "theta7,");
+    fprintf(*fp, "theta8,");
+    fprintf(*fp, "theta9,");
+    fprintf(*fp, "theta10,");
+    fprintf(*fp, "theta11,");
+    fprintf(*fp, "theta12,");
+    fprintf(*fp, "theta13,");
+    fprintf(*fp, "theta14,");
+    fprintf(*fp, "theta15,");
+    fprintf(*fp, "theta16,");
+    fprintf(*fp, "theta17,");
+    fprintf(*fp, "theta18,");
+    fprintf(*fp, "theta19,");
+    fprintf(*fp, "theta20\n");
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
@@ -153,8 +172,8 @@ void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
     return;
 }
 
-void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
-                               int doy) {
+void write_daily_outputs_ascii(control *c, canopy_wk *cw, fluxes *f, state *s,
+                               int year, int doy) {
     /*
         Write daily state and fluxes headers to an output CSV file. Note we
         are not writing anything useful like units as there is a wrapper
@@ -253,29 +272,49 @@ void write_daily_outputs_ascii(control *c, fluxes *f, state *s, int year,
     fprintf(c->ofp, "%.10f,", s->midday_lwp);
     fprintf(c->ofp, "%.10f,", s->midday_xwp);
     fprintf(c->ofp, "%.10f,", f->leafretransn);
+    fprintf(c->ofp, "%.10f,", cw->death_year);
+    fprintf(c->ofp, "%.10f,", cw->death_doy);
 
     if (c->water_balance == HYDRAULICS) {
-        fprintf(c->ofp, "%.10f,", s->water_frac[0] + \
-                                  s->water_frac[1] + \
-                                  s->water_frac[2] + \
-                                  s->water_frac[3] + \
-                                  s->water_frac[4]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[5] + \
-                                  s->water_frac[6] + \
-                                  s->water_frac[7] + \
-                                  s->water_frac[8] + \
-                                  s->water_frac[9]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[10] + \
-                                  s->water_frac[11] + \
-                                  s->water_frac[12] + \
-                                  s->water_frac[13] + \
-                                  s->water_frac[14]);
-        fprintf(c->ofp, "%.10f\n", s->water_frac[15] + \
-                                   s->water_frac[16] + \
-                                   s->water_frac[17] + \
-                                   s->water_frac[18] + \
-                                   s->water_frac[19]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[0]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[1]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[2]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[3]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[4]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[5]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[6]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[7]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[8]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[9]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[10]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[11]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[12]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[13]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[14]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[15]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[16]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[17]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[18]);
+        fprintf(c->ofp, "%.10f,", s->water_frac[19]);
+        fprintf(c->ofp, "%.10f\n", s->water_frac[20]);
     } else {
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
+        fprintf(c->ofp, "%.10f,", -999.9);
         fprintf(c->ofp, "%.10f,", -999.9);
         fprintf(c->ofp, "%.10f,", -999.9);
         fprintf(c->ofp, "%.10f,", -999.9);

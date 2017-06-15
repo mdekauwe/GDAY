@@ -515,10 +515,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             day_end_calculations(c, p, s, c->num_days, FALSE);
 
             if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
-                write_daily_outputs_ascii(c, f, s, year, doy+1);
+                write_daily_outputs_ascii(c, cw, f, s, year, doy+1);
             } else if (c->print_options == DAILY && c->spin_up == FALSE) {
                 if(c->output_ascii)
-                    write_daily_outputs_ascii(c, f, s, year, doy+1);
+                    write_daily_outputs_ascii(c, cw, f, s, year, doy+1);
                 else
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
