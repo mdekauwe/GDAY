@@ -62,7 +62,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 
         /* Initalise SW fraction - we should read this from param file */
         s->initial_water = 0.0;
-        for (i = 0; i < p->n_layers; i++) {
+        for (i = 0; i < p->soil_layers; i++) {
             s->water_frac[i] = 0.4;
             s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
         }
@@ -191,7 +191,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // determines water movement between soil layers due drainage
         // down the profile
         //
-        for (i = 0; i < p->n_layers; i++) {
+        for (i = 0; i < p->soil_layers; i++) {
             if (c->soil_drainage == GRAVITY) {
                 calc_soil_balance(f, nr, p, s, i);
             } else if (c->soil_drainage == CASCADING) {
@@ -768,7 +768,7 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
     }
 
     runoff = 0.0;
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->soil_layers; i++) {
 
         // determine the available pore space in current soil layer
         wdiff = MAX(0.0, (p->porosity[i] - s->water_frac[i]) * \
@@ -950,7 +950,7 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
 
 
     root_zone_total = 0.0;
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->soil_layers; i++) {
 
         // water content of soil layer (m)
         water_content = s->water_frac[i] * s->thickness[i];
@@ -1219,7 +1219,7 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
         f->water_loss[soil_layer] += change;
 
         // update soil layer below with drained liquid
-        if (soil_layer+1 < p->n_layers) {
+        if (soil_layer+1 < p->soil_layers) {
             f->water_gain[soil_layer+1] += change;
         } else {
             // We are draining through the bottom soil layer, add to runoff

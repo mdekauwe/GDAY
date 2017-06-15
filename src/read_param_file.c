@@ -788,8 +788,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->nf_crit = atof(value);
     } else if (MATCH("params", "nf_min")) {
         p->nf_min = atof(value);
-    } else if (MATCH("params", "n_layers")) {
-        p->n_layers = atof(value);
+    } else if (MATCH("params", "soil_layers")) {
+        p->soil_layers = atof(value);
     } else if (MATCH("params", "nmax")) {
         p->nmax = atof(value);
     } else if (MATCH("params", "nmin")) {

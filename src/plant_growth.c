@@ -1260,28 +1260,28 @@ void initialise_roots(fluxes *f, params *p, state *s) {
     double thick;
 
     // Using CABLE depths, but spread over 2 m.
-    double cable_thickness[7] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248, 2.0};
+    //double cable_thickness[7] = {0.01, 0.025, 0.067, 0.178, 0.472, 1.248, 2.0};
 
-    s->thickness = malloc(p->n_layers * sizeof(double));
+    s->thickness = malloc(p->core * sizeof(double));
     if (s->thickness == NULL) {
         fprintf(stderr, "malloc failed allocating thickness\n");
         exit(EXIT_FAILURE);
     }
 
     /* root mass is g biomass, i.e. ~twice the C content */
-    s->root_mass = malloc(p->n_layers * sizeof(double));
+    s->root_mass = malloc(p->core * sizeof(double));
     if (s->root_mass == NULL) {
         fprintf(stderr, "malloc failed allocating root_mass\n");
         exit(EXIT_FAILURE);
     }
 
-    s->root_length = malloc(p->n_layers * sizeof(double));
+    s->root_length = malloc(p->core * sizeof(double));
     if (s->root_length == NULL) {
         fprintf(stderr, "malloc failed allocating root_length\n");
         exit(EXIT_FAILURE);
     }
 
-    s->layer_depth = malloc(p->n_layers * sizeof(double));
+    s->layer_depth = malloc(p->core * sizeof(double));
     if (s->layer_depth == NULL) {
         fprintf(stderr, "malloc failed allocating layer_depth\n");
         exit(EXIT_FAILURE);
@@ -1291,20 +1291,16 @@ void initialise_roots(fluxes *f, params *p, state *s) {
     thick = 0.1;
     s->layer_depth[0] = thick;
     s->thickness[0] = thick;
-    //printf("%d %f %f\n", 0, s->thickness[0], s->layer_depth[0]);
-    for (i = 1; i < p->n_layers; i++) {
+    for (i = 1; i < p->core; i++) {
         thick += p->layer_thickness;
         s->layer_depth[i] = thick;
         s->thickness[i] = p->layer_thickness;
 
-        //printf("%d %f %f\n", i, s->thickness[i], s->layer_depth[i]);
-
         /* made up initalisation, following SPA, get replaced second timestep */
         s->root_mass[i] = 0.1;
         s->root_length[i] = 0.1;
-        s->rooted_layers = p->n_layers;
+        s->rooted_layers = p->core;
     }
-
 
     return;
 }
@@ -1318,7 +1314,6 @@ void update_roots(control *c, params *p, state *s) {
         TODO: implement CABLE version.
     */
     int    i;
-    double soil_layers[p->n_layers];
     double C_2_BIOMASS = 2.0;
     double min_biomass;
     double root_biomass, root_cross_sec_area, root_depth, root_reach, mult;
@@ -1337,7 +1332,7 @@ void update_roots(control *c, params *p, state *s) {
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
 
     s->rooted_layers = 0;
-    for (i = 0; i < p->n_layers; i++) {
+    for (i = 0; i < p->core; i++) {
         if (s->layer_depth[i] > root_depth) {
             s->rooted_layers = i;
             break;
@@ -1384,7 +1379,6 @@ void update_roots(control *c, params *p, state *s) {
 
     return;
 }
-
 
 double calc_root_dist(double slope, double root_biomass, double surf_biomass,
                       double rooted_layers, double top_lyr_thickness,
