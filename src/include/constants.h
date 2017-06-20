@@ -44,6 +44,7 @@
 #define GSVGSC 1.57            /* Ratio of Gsw:Gsc */
 #define GBHGBC 1.32            /* Ratio of Gbh:Gbc */
 #define SIGMA 5.67e-8          /* Steffan Boltzman constant (W/m2/K4) */
+#define VW 18.05E-6            // partial molal volume of water, m3 mol-1 at 20C
 #define LEAF_EMISSIVITY 0.95   /* Emissivity of thermal radiation by leaf */
 #define KPA_2_PA 1000.
 #define KPA_2_MPA 0.001
