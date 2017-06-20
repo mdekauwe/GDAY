@@ -1246,7 +1246,7 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     // latent energy loss from soil surface
 
     double diff, ea, esat, esurf, lambda, rho, tortuosity, tk;
-    double qe_flux, tsk, gaw, gws, arg1, arg2, conv;
+    double qe_flux, tsk, ga, gws, arg1, arg2, conv;
 
     tortuosity = 2.5;
     tk = tair + DEG_TO_KELVIN;
@@ -1257,7 +1257,7 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     lambda = calc_latent_heat_of_vapourisation(tair) * conv;
 
     //  determine boundary layer conductance (m s-1)
-    gaw = calc_exchange_coefficient(wind, s->canht);
+    ga = calc_soil_boundary_layer_conductance(wind);
 
     // density of air (kg m-3) (t-dependent)
     rho  = 353.0 / tk;
@@ -1282,7 +1282,7 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     gws = p->porosity[0] * diff / (tortuosity * s->dry_thick);
 
     arg1 = lambda * rho * 0.622 / (1E-3 * press) * (ea - esurf);
-    arg2 = (1.0 / gaw + 1.0 / gws);
+    arg2 = (1.0 / ga + 1.0 / gws);
     qe_flux = arg1 / arg2;
 
     // no evaporation if surface is frozen
@@ -1304,28 +1304,37 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     return (qe_flux);
 }
 
-double calc_exchange_coefficient(double wind, double canht) {
-    // heat or vapour exchange coefficient/boundary layer !
-    // cond, m s-1.   See Mat William's ref 1028          !
-
-    double soil_conductance, log_frac, numerator, soil_roughl, vk;
-    double tower_height;
-
+double calc_soil_boundary_layer_conductance(double wind) {
     // Boundary layer conductance at ground level for NEUTRAL conditions.
-    // Substitute lower altitude than canopy_height
-    // Heat exchange coefficient from Hinzmann
-    // 0.13 * canopy_height gives roughness length
-    // NOTE: 0.13 is coefficient for bulk surface conductance
-    // with moderately dense canopy. Soil roughl itself should
-    // be ~ 0.01->0.05 m
+    // m s-1.
+
+    double z0m, z0h, d, ga, z0h_z0m, arg1, arg2, arg3, vk, soil_roughl, canht;
 
     // von Karman's constant
     vk = 0.41;
-    tower_height = canht + 2.0;
-    soil_roughl = 0.13;
-    numerator = wind * (vk * vk);
-    log_frac = log(tower_height / (soil_roughl * canht));
-    soil_conductance = numerator / (log_frac * log_frac);
 
-    return (soil_conductance);
+    // Substituting a lower altitude than canopy_height
+    canht = 0.5;
+
+    // Heat exchange coefficient from Hinzmann
+    // NB. 0.13 is coeff for bulk surface conduc with moderately dense canopy
+    soil_roughl = 0.13;
+
+    // roughness length for momentum (m)
+    z0m = soil_roughl * canht;
+
+    // roughness length governing transfer of heat and vapour [m]
+    z0h_z0m = 0.1;
+    z0h = z0h_z0m * z0m;
+
+    /* zero plan displacement height [m] */
+    d = 0.667 * canht;
+
+    arg1 = (vk * vk) * wind;
+    arg2 = log((canht - d) / z0m);
+    arg3 = log((canht - d) / z0h);
+
+    ga = (arg1 / (arg2 * arg3));
+
+    return (ga);
 }
