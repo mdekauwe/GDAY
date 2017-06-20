@@ -44,4 +44,7 @@ double calc_xylem_water_potential(double, double);
 double calc_relative_weibull(double, double, double);
 void   calc_soil_balance_cascading(fluxes *, nrutil *, params *, state *, int,
                                    double *);
+double calc_qe_flux(fluxes *, params *, state *, double, double, double, double,
+                    double);
+double calc_exchange_coefficient(double, double);
 #endif /* WATER_BALANCE_SUBDAILY_H */

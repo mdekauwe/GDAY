@@ -153,8 +153,11 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                           &canopy_evap);
 
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-        soil_evap = calc_soil_evaporation(m, p, s, net_rad);
-        soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+        //soil_evap = calc_soil_evaporation(m, p, s, net_rad);
+        //soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+
+        soil_evap = calc_qe_flux(f, p, s, m->tair, m->tsoil,
+                                 m->vpd, m->press, m->wind);
 
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
@@ -1235,4 +1238,94 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
     }
 
     return;
+}
+
+double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
+                    double vpd, double press, double wind) {
+
+    // latent energy loss from soil surface
+
+    double diff, ea, esat, esurf, lambda, rho, tortuosity, tk;
+    double qe_flux, tsk, gaw, gws, arg1, arg2, conv;
+
+    tortuosity = 2.5;
+    tk = tair + DEG_TO_KELVIN;
+    tsk = tsoil + DEG_TO_KELVIN;
+
+    // latent heat of vapourisation (J kg-1)
+    conv = G_WATER_2_MOL_WATER * KG_AS_G; // J mol-1 to J kg-1
+    lambda = calc_latent_heat_of_vapourisation(tair) * conv;
+
+    //  determine boundary layer conductance (m s-1)
+    gaw = calc_exchange_coefficient(wind, s->canht);
+
+    // density of air (kg m-3) (t-dependent)
+    rho  = 353.0 / tk;
+
+    // diffusion coefficient for water (m2 s-1)
+    diff = 24.2E-6 * pow((tsk / 293.2), 1.75);
+
+    // saturation vapour pressure of air (kPa)...
+    esat = calc_sat_water_vapour_press(tair) * PA_2_KPA;
+
+    // vapour pressure of air
+    ea = esat - (vpd * PA_2_KPA);
+
+    // saturation vapour pressure (kPa) at surface - assume saturation...
+    esat = calc_sat_water_vapour_press(tsoil) * PA_2_KPA;
+
+    // vapour pressure in soil airspace (kPa)
+    // dependent on soil water potential - Jones p.110.
+    esurf = esat * exp(1E6 * f->swp[0] * VW / (RGAS * tsk));
+
+    //soil conductance to water vapour diffusion (m s-1)...
+    gws = p->porosity[0] * diff / (tortuosity * s->dry_thick);
+
+    arg1 = lambda * rho * 0.622 / (1E-3 * press) * (ea - esurf);
+    arg2 = (1.0 / gaw + 1.0 / gws);
+    qe_flux = arg1 / arg2;
+
+    // no evaporation if surface is frozen
+    if (tsoil < 0.0) {
+        qe_flux = 0.0;
+    } else if (s->water_frac[0] < 0.0) {
+        qe_flux = 0.0;
+    } else {
+        // NB. lambda is in J kg-1, so don't need mol conversions
+        qe_flux /= lambda;
+        if (qe_flux < 0.0) {
+            // kg m-2 30 min-1 or mm 30 min-1
+            qe_flux *= -1.0 * SEC_2_HLFHR;
+        } else {
+            // else dew, which I'm not doing anything with
+            qe_flux = 0.0;
+        }
+    }
+    return (qe_flux);
+}
+
+double calc_exchange_coefficient(double wind, double canht) {
+    // heat or vapour exchange coefficient/boundary layer !
+    // cond, m s-1.   See Mat William's ref 1028          !
+
+    double soil_conductance, log_frac, numerator, soil_roughl, vk;
+    double tower_height;
+
+    // Boundary layer conductance at ground level for NEUTRAL conditions.
+    // Substitute lower altitude than canopy_height
+    // Heat exchange coefficient from Hinzmann
+    // 0.13 * canopy_height gives roughness length
+    // NOTE: 0.13 is coefficient for bulk surface conductance
+    // with moderately dense canopy. Soil roughl itself should
+    // be ~ 0.01->0.05 m
+
+    // von Karman's constant
+    vk = 0.41;
+    tower_height = canht + 2.0;
+    soil_roughl = 0.13;
+    numerator = wind * (vk * vk);
+    log_frac = log(tower_height / (soil_roughl * canht));
+    soil_conductance = numerator / (log_frac * log_frac);
+
+    return (soil_conductance);
 }
