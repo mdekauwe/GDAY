@@ -62,7 +62,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 
         /* Initalise SW fraction - we should read this from param file */
         s->initial_water = 0.0;
-        for (i = 0; i < p->soil_layers; i++) {
+        for (i = 0; i < p->core; i++) {
             s->water_frac[i] = 0.4;
             s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
         }
@@ -196,7 +196,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         //
         for (i = 0; i < p->soil_layers; i++) {
             if (c->soil_drainage == GRAVITY) {
-                calc_soil_balance(f, nr, p, s, i, &water_lost);
+                calc_soil_balance(f, nr, p, s, i);
             } else if (c->soil_drainage == CASCADING) {
                 // Redistribute soil water following a cascading or
                 // 'tipping bucket' approach, much simpler and computational
@@ -212,7 +212,9 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // is considered runoff
         //
         runoff = calc_infiltration(f, p, s, surface_water);
-        runoff += water_lost * M_TO_MM;
+
+        // Add deep drainage: loss of water from lowest soil layer
+        runoff += f->water_gain[p->core-1] * M_TO_MM;
 
         update_soil_water_storage(f, p, s, &soil_evap, &transpiration);
         et = transpiration + soil_evap + canopy_evap;
@@ -806,7 +808,7 @@ double calc_infiltration(fluxes *f, params *p, state *s, double surface_water) {
 
 
 void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
-                       int soil_layer, double *water_lost) {
+                       int soil_layer) {
     //
     // Integrator for soil gravitational drainage
     //
@@ -861,17 +863,6 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
         // update soil layer below with drained liquid
         f->water_gain[soil_layer+1] += change;
         f->water_loss[soil_layer] += change;
-
-        // SPA assumption. Water can be passed through the final layer
-        // (to the core layer), but this water is lost in any balance as this
-        // layer is actually kept dry to ensure drainage occurs.
-        // I'm going to add this water to runoff just to ensure water balances.
-        // I guess it can be thought of as sub-surface runoff
-
-        // Counting from zero so this logic makes sense
-        if (soil_layer+1 == p->core - 1) {
-            *water_lost += change;
-        }
     }
 
     if (f->water_loss[soil_layer] < 0.0) {
