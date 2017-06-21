@@ -62,7 +62,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 
         /* Initalise SW fraction - we should read this from param file */
         s->initial_water = 0.0;
-        for (i = 0; i < p->soil_layers; i++) {
+        for (i = 0; i < p->core; i++) {
             s->water_frac[i] = 0.4;
             s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
         }
