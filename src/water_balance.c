@@ -416,13 +416,14 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
     * Landsberg and Sands
 
     */
-    double canopy_spill, canopy_capacity, max_interception;
+    double canopy_spill, canopy_capacity, max_interception, frac_wet;;
 
     if (c->sub_daily) {
 
-        /* Max canopy intercept (mm): BATS-type canopy saturation
-           proportional to LAI */
-        canopy_capacity = 0.1 * s->lai;
+        // Max canopy intercept (mm): BATS-type canopy saturation
+        // proportional to LAI. I've tuned the storage down to get ~20% annual
+        // interception for a canopy LAI ~3 at Tumba.
+        canopy_capacity = 0.02 * s->lai;
 
         /* Calculate canopy intercepted rainfall */
         if (m->rain > 0.0) {
@@ -441,7 +442,6 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
         /* Add canopy interception to canopy storage term */
         s->canopy_store += *interception;
 
-
         /* Calculate canopy water storage excess */
         if (s->canopy_store > canopy_capacity) {
             canopy_spill = s->canopy_store - canopy_capacity;
@@ -454,6 +454,13 @@ void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
 
         /* Update canopy storage term */
         s->canopy_store -= canopy_spill;
+
+        // Calculate fraction of canopy which is wet
+        frac_wet = MAX(0.0, MIN(1.0, \
+                       0.8 * s->canopy_store / MAX(canopy_capacity, 0.01)));
+
+        // Reduce evap possible by fraction that is wet
+        *canopy_evap *= frac_wet;
 
         /* remove canopy evap flux */;
         if (s->canopy_store > *canopy_evap) {
