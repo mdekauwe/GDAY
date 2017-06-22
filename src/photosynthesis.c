@@ -132,17 +132,17 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     if (c->water_balance == HYDRAULICS) {
         cw->ts_Cs = Cs;
         cw->ts_vcmax = vcmax;
+        cw->ts_jmax = jmax;
         cw->ts_km = km;
         cw->ts_gamma_star = gamma_star;
         cw->ts_rd = rd;
-        cw->ts_Vj = Vj;
     }
 
     return;
 }
 
 void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
-                            state *s) {
+                            state *s, double par, double water_stress) {
     /*
         Calculate photosynthesis as above but for here we are resolving Ci and
         A for a given gs (Jarvis style) to get the Emax solution.
@@ -151,7 +151,7 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     */
 
     double gamma_star, km, jmax, vcmax, rd, Vj, gs;
-    double A, B, C, Ac, Aj, Cs;
+    double A, B, C, Ac, Aj, Cs, J;
     int    idx, qudratic_error = FALSE, large_root;
 
     // Unpack calculated properties from first photosynthesis solution
@@ -161,7 +161,12 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
     km = cw->ts_km;
     gamma_star = cw->ts_gamma_star;
     rd = cw->ts_rd;
-    Vj = cw->ts_Vj;
+    jmax = cw->ts_jmax;
+    qudratic_error = FALSE;
+    large_root = FALSE;
+    J = quad(p->theta, -(p->alpha_j * par + jmax),
+             p->alpha_j * par * jmax, large_root, &qudratic_error);
+    Vj = J / 4.0;
     gs = cw->gsc_leaf[idx];
 
     /* Solution when Rubisco rate is limiting */

@@ -696,7 +696,7 @@ typedef struct {
     double ts_km;           // Temporary variable to store km //
     double ts_gamma_star;   // Temporary variable to store gamma_star //
     double ts_rd;           // Temporary variable to store rd //
-    double ts_Vj;           // Temporary variable to store Vj //
+    double ts_jmax;         // Temporary variable to store jmax //
 
     // Capacitance stuff
     double plant_k;
