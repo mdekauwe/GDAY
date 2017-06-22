@@ -485,7 +485,7 @@ void calc_saxton_stuff(params *p, double *fsoil) {
         p->cond3[i] = R + T * sand + U * clay + V * clay * clay;
 
         p->porosity[i] = H + J * sand + K * log10(clay);
-
+        //p->porosity[i] = 0.4;
         // field capacity is water content at which SWP = -10 kPa
         //p->field_capacity[i] = zbrent(&saxton_field_capacity, x1, x2, tol,
         //                              p->potA[i], p->potB[i],

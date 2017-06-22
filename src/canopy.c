@@ -480,12 +480,13 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
             gsv = cw->gsc_leaf[idx] * GSVGSC;
         }
 
-        // Re-solve An for the new gs
-        photosynthesis_C3_emax(c, cw, m, p, s);
-
         // Need to calculate an effective beta to use in soil decomposition
         cw->fwsoil_leaf[idx] = e_supply / e_demand;
         //cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
+
+        // Re-solve An for the new gs
+        photosynthesis_C3_emax(c, cw, m, p, s, cw->apar_leaf[idx],
+                               cw->fwsoil_leaf[idx]);
 
     } else {
 

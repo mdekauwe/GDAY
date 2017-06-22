@@ -355,7 +355,7 @@ typedef struct {
 
     /* hydraulics */
     double layer_thickness;                 /* Soil layer thickness (m) */
-    int    soil_layers;                     // Number of soil layers 
+    int    soil_layers;                     // Number of soil layers
     int    core;                            // Layer below soil layers, i.e. 20 + 1
     double root_k;    /* mass of roots for reaching 50% maximum depth (g m-2) */
     double root_radius;  /* (m) */
@@ -691,7 +691,7 @@ typedef struct {
     double ts_km;           // Temporary variable to store km //
     double ts_gamma_star;   // Temporary variable to store gamma_star //
     double ts_rd;           // Temporary variable to store rd //
-    double ts_Vj;           // Temporary variable to store Vj //
+    double ts_jmax;         // Temporary variable to store jmax //
 
     // Capacitance stuff
     double plant_k;
