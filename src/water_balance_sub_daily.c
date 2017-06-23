@@ -1312,31 +1312,28 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
 double calc_soil_boundary_layer_conductance(double wind, double canht) {
     // Boundary layer conductance at ground level for NEUTRAL conditions.
     // m s-1.
+    //
+    // NB. I'm using bare soil values, but assuming whatever the canopy height
+    // is on the basis the resistance is below the ground and not really a
+    // bare soil. I think this makes sense, but open to being corrected here...
 
-    double z0m, z0h, d, ga, z0h_z0m, arg1, arg2, arg3, vk, soil_roughl;
+    double z0, d, ga, arg1, arg2, vk;
 
     // von Karman's constant
     vk = 0.41;
 
-    // Heat exchange coefficient from Hinzmann
-    // NB. 0.13 is coeff for bulk surface conduc with moderately dense canopy
-    soil_roughl = 0.13;
+    // roughness length (m); using value for bare soil
+    // Fig 3.8, Jones 2013, pg 62.
+    z0 = 0.0015;
 
-    // roughness length for momentum (m)
-    z0m = soil_roughl * canht;
-
-    // roughness length governing transfer of heat and vapour [m]
-    z0h_z0m = 0.1;
-    z0h = z0h_z0m * z0m;
-
-    /* zero plan displacement height [m] */
+    // zero plan displacement height [m]
+    // using value for bare soil, Fig 3.8, Jones 2013, pg 62.
     d = 0.0;
 
     arg1 = (vk * vk) * wind;
-    arg2 = log((canht - d) / z0m);
-    arg3 = log((canht - d) / z0h);
+    arg2 = log((canht - d) / z0) * log((canht - d) / z0);
 
-    ga = (arg1 / (arg2 * arg3));
+    ga = arg1 / arg2;
 
     return (ga);
 }
