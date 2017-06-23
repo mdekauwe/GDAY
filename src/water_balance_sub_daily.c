@@ -212,7 +212,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // is considered runoff
         //
         runoff = calc_infiltration(f, p, s, surface_water);
-        
+
         // Add deep drainage: loss of water from lowest soil layer
         runoff += f->water_gain[p->core-1] * M_TO_MM;
 
@@ -1235,10 +1235,18 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
 double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
                     double vpd, double press, double wind) {
 
-    // latent energy loss from soil surface
+    // Latent energy loss from soil surface following Choudhury & Monteith
+    //
+    // NB. Returned as soil evap in mm time unit-1
+    //
+    // Reference:
+    // ----------
+    // * Choudhury & Monteith (1988) A four-layer model for the heat balance of
+    //   homogeneous land surfaces. Quarterly Journal of the Royal
+    //   Meteorological Society, 480, 373-398.
 
     double diff, ea, esat, esurf, lambda, rho, tortuosity, tk;
-    double qe_flux, tsk, ga, gws, arg1, arg2, conv;
+    double qe_flux, tsk, ga, gws, conv, gw_tot;
 
     tortuosity = 2.5;
     tk = tair + DEG_TO_KELVIN;
@@ -1249,12 +1257,13 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     lambda = calc_latent_heat_of_vapourisation(tair) * conv;
 
     //  determine boundary layer conductance (m s-1)
-    ga = calc_soil_boundary_layer_conductance(wind);
+    ga = calc_soil_boundary_layer_conductance(wind, s->canht);
 
     // density of air (kg m-3) (t-dependent)
     rho  = 353.0 / tk;
 
-    // diffusion coefficient for water (m2 s-1)
+    // diffusion coefficient for water (m2 s-1
+    // Jones 1992, appendix 2.
     diff = 24.2E-6 * pow((tsk / 293.2), 1.75);
 
     // saturation vapour pressure of air (kPa)...
@@ -1267,15 +1276,17 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     esat = calc_sat_water_vapour_press(tsoil) * PA_2_KPA;
 
     // vapour pressure in soil airspace (kPa)
-    // dependent on soil water potential - Jones p.110.
+    // dependent on soil water potential - Jones p.110/eq 5.11
     esurf = esat * exp(1E6 * f->swp[0] * VW / (RGAS * tsk));
 
-    //soil conductance to water vapour diffusion (m s-1)...
+    // soil conductance to water vapour diffusion (m s-1)...
+    // Choudhury & Monteith (1988), Eq 41b
     gws = p->porosity[0] * diff / (tortuosity * s->dry_thick);
 
-    arg1 = lambda * rho * 0.622 / (1E-3 * press) * (ea - esurf);
-    arg2 = (1.0 / ga + 1.0 / gws);
-    qe_flux = arg1 / arg2;
+    // Total conductance
+    gw_tot = (1.0 / ga + 1.0 / gws);
+
+    qe_flux = lambda * rho * 0.622 / (1E-3 * press) * (ea - esurf) / gw_tot;
 
     // no evaporation if surface is frozen
     if (tsoil < 0.0) {
@@ -1296,17 +1307,14 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     return (qe_flux);
 }
 
-double calc_soil_boundary_layer_conductance(double wind) {
+double calc_soil_boundary_layer_conductance(double wind, double canht) {
     // Boundary layer conductance at ground level for NEUTRAL conditions.
     // m s-1.
 
-    double z0m, z0h, d, ga, z0h_z0m, arg1, arg2, arg3, vk, soil_roughl, canht;
+    double z0m, z0h, d, ga, z0h_z0m, arg1, arg2, arg3, vk, soil_roughl;
 
     // von Karman's constant
     vk = 0.41;
-
-    // Substituting a lower altitude than canopy_height
-    canht = 0.5;
 
     // Heat exchange coefficient from Hinzmann
     // NB. 0.13 is coeff for bulk surface conduc with moderately dense canopy
@@ -1320,7 +1328,7 @@ double calc_soil_boundary_layer_conductance(double wind) {
     z0h = z0h_z0m * z0m;
 
     /* zero plan displacement height [m] */
-    d = 0.667 * canht;
+    d = 0.0;
 
     arg1 = (vk * vk) * wind;
     arg2 = log((canht - d) / z0m);

@@ -46,5 +46,5 @@ void   calc_soil_balance_cascading(fluxes *, nrutil *, params *, state *, int,
                                    double *);
 double calc_qe_flux(fluxes *, params *, state *, double, double, double, double,
                     double);
-double calc_soil_boundary_layer_conductance(double);
+double calc_soil_boundary_layer_conductance(double, double);
 #endif /* WATER_BALANCE_SUBDAILY_H */
