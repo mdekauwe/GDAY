@@ -54,27 +54,7 @@ def ambient_sim(experiment_id, site, treatment, ascii=True):
 
 
                          # control
-                         "alloc_model": "allometric",
-                         "assim_model": "mate",
-                         "calc_sw_params": "True",   #0 uses fwp values, 1= derive them
-                         "deciduous_model": "false",
-                         "fixed_stem_nc": "true",
-                         "fixleafnc": "false",
-                         "grazing": "false",
-                         "model_optroot": "false",
-                         "modeljm": "2",
-                         "nuptake_model": "2",
-                         "output_ascii" : str(ascii),
-                         "passiveconst": "false",
                          "print_options": "daily",
-                         "ps_pathway": "c3",
-                         "respiration_model": "fixed",
-                         "strfloat": "0",
-                         "trans_model": "1",
-                         "use_eff_nc": "0",
-                         "use_leuning": "0",
-                         "water_stress": "true",
-                         "sw_stress_model": "1",     # Landsberg
                     }
     ad.adjust_param_file(cfg_fname, replace_dict)
 
@@ -87,9 +67,9 @@ def ambient_sim(experiment_id, site, treatment, ascii=True):
     sys.path.append("scripts")
     import translate_GDAY_output_to_NCEAS_format as tr
     if ascii:
-        tr.translate_output(out_fname, met_fname, binary=False)
+        tr.translate_output(out_fname, met_fname)
     else:
-        tr.translate_output(out_fname, met_fname, binary=True)
+        tr.translate_output(out_fname, met_fname)
 
 
 
