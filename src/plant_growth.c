@@ -49,8 +49,8 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         current_sw = s->pawater_topsoil + s->pawater_root;
         current_cs = s->canopy_store;
         f->day_ppt = m->rain;
-        check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
-                            current_cs, year, doy);
+        //check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
+        //                    current_cs, year, doy);
     }
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
