@@ -389,13 +389,6 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
-    /* Depth to top of wet soil layers (m) */
-    s->wetting_top = malloc(p->wetting * sizeof(double));
-    if (s->wetting_top == NULL) {
-        fprintf(stderr, "malloc failed allocating wetting_top\n");
-        exit(EXIT_FAILURE);
-    }
-
     f->est_evap = malloc(p->core * sizeof(double));
     if (f->est_evap == NULL) {
         fprintf(stderr, "malloc failed allocating est_evap\n");
