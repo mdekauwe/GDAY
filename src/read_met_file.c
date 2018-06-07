@@ -294,7 +294,7 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
                           &(ma->tsoil[i]), &(ma->vpd[i]), &(ma->co2[i]), \
                           &(ma->ndep[i]), &(ma->nfix[i]), &(ma->wind[i]), \
                           &(ma->press[i])) != nvars) {
-            fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
+            fprintf(stderr, "%s: badly formatted input in subdaily met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
         }
