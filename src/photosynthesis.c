@@ -51,14 +51,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     rd = 0.015 * vcmax;
     /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
 
-    /* actual electron transport rate */
-    error = FALSE;
-    large_root = FALSE;
-    J = quad(p->theta, -(p->alpha_j * par + jmax),
-             p->alpha_j * par * jmax, large_root, &error);
-
-    /* RuBP regeneration rate */
-    Vj = J / 4.0;
+    calc_RuBP_regeneration_rate(p, par, jmax, &J, &Vj);
 
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
@@ -121,6 +114,24 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     }
 
     return;
+}
+
+int calc_RuBP_regeneration_rate(params *p, double par, double jmax, double *J,
+                                double *Vj) {
+
+    int large_root = FALSE, error = FALSE;
+    double A, B, C;
+
+    /* Solve actual electron transport rate */
+    A = p->theta;
+    B = -(p->alpha_j * par + jmax);
+    C = p->alpha_j * par * jmax;
+    *J = quad(A, B, C, large_root, &error);
+
+    /* RuBP regeneration rate */
+    *Vj = *J / 4.0;
+
+    return error;
 }
 
 int solve_ci(double g0, double gs_over_a, double rd, double Cs,
