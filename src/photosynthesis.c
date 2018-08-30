@@ -85,16 +85,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         g0 = g0_zero;
 
         /* Solution when Rubisco activity is limiting */
-        A = g0 + gs_over_a * (vcmax - rd);
-        B = ( (1.0 - Cs * gs_over_a) * (vcmax - rd) + g0 * (km - Cs) -
-               gs_over_a * (vcmax * gamma_star + km * rd) );
-        C = ( -(1.0 - Cs * gs_over_a) * (vcmax * gamma_star + km * rd) -
-               g0 * km * Cs );
-
-        /* intercellular CO2 concentration */
-        qudratic_error = FALSE;
-        large_root = TRUE;
-        Ci = quad(A, B, C, large_root, &qudratic_error);
+        qudratic_error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, vcmax,
+                                  km, &Ci);
 
         if (qudratic_error || Ci <= 0.0 || Ci > Cs) {
             Ac = 0.0;
@@ -103,17 +95,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         }
 
         /* Solution when electron transport rate is limiting */
-        A = g0 + gs_over_a * (Vj - rd);
-        B = ( (1. - Cs * gs_over_a) * (Vj - rd) + g0 *
-              (2. * gamma_star - Cs) - gs_over_a *
-              (Vj * gamma_star + 2.0 * gamma_star * rd) );
-        C = ( -(1.0 - Cs * gs_over_a) * gamma_star * (Vj + 2.0 * rd) -
-               g0 * 2.0 * gamma_star * Cs );
-
-        /* Intercellular CO2 concentration */
-        qudratic_error = FALSE;
-        large_root = TRUE;
-        Ci = quad(A, B, C, large_root, &qudratic_error);
+        qudratic_error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, Vj,
+                                  2.0*gamma_star, &Ci);
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
 
@@ -139,6 +122,38 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     }
 
     return;
+}
+
+int solve_ci(double g0, double gs_over_a, double rd, double Cs,
+             double gamma_star, double gamma, double beta, double *Ci) {
+    //
+    // Solve intercellular CO2 concentration using quadric equation, following
+    // Leuning 1990, see eqn 15a-c, solving simultaneous solution for Eqs 2, 12
+    // and 13
+    //
+    // Reference:
+    // ----------
+    // Leuning (1990) Modelling Stomatal Behaviour and Photosynthesis of
+    // Eucalyptus grandis. Aust. J. Plant Physiol., 17, 159-75.
+    //
+    int large_root = TRUE, qudratic_error = FALSE;
+    double A, B, C, arg1, arg2, arg3, c1, c2, c3;
+
+    A = g0 + gs_over_a * (gamma - rd);
+
+    arg1 = (1. - Cs * gs_over_a) * (gamma - rd);
+    arg2 = g0 * (beta - Cs);
+    arg3 = gs_over_a * (gamma * gamma_star + beta * rd);
+    B = arg1 + arg2 - arg3;
+
+    arg1 = -(1.0 - Cs * gs_over_a);
+    arg2 = (gamma * gamma_star + beta * rd);
+    arg3 =  g0 * beta * Cs;
+    C = arg1 * arg2 - arg3;
+
+    *Ci = quad(A, B, C, large_root, &qudratic_error);
+
+    return (qudratic_error);
 }
 
 void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,

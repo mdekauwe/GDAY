@@ -7,6 +7,8 @@
 
 /* Sub-daily funcs */
 void   photosynthesis_C3(control *, canopy_wk *, met *m, params *, state *);
+int    solve_ci(double, double, double, double, double, double, double,
+                double *);
 void   photosynthesis_C3_emax(control *, canopy_wk *, met *m, params *,
                               state *, double, double);
 double calc_co2_compensation_point(params *, double);
