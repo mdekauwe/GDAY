@@ -32,7 +32,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
     double A, B, C, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
     /*double Rd0 = 0.92;  Dark respiration rate make a paramater! */
-    int    idx, qudratic_error = FALSE, large_root;
+    int    idx, error = FALSE, large_root;
     double g0_zero = 1E-09; /* numerical issues, don't use zero */
 
     /* unpack some stuff */
@@ -52,10 +52,10 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
 
     /* actual electron transport rate */
-    qudratic_error = FALSE;
+    error = FALSE;
     large_root = FALSE;
     J = quad(p->theta, -(p->alpha_j * par + jmax),
-             p->alpha_j * par * jmax, large_root, &qudratic_error);
+             p->alpha_j * par * jmax, large_root, &error);
 
     /* RuBP regeneration rate */
     Vj = J / 4.0;
@@ -85,18 +85,17 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         g0 = g0_zero;
 
         /* Solution when Rubisco activity is limiting */
-        qudratic_error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, vcmax,
-                                  km, &Ci);
+        error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, vcmax, km, &Ci);
 
-        if (qudratic_error || Ci <= 0.0 || Ci > Cs) {
+        if (error || Ci <= 0.0 || Ci > Cs) {
             Ac = 0.0;
         } else {
             Ac = vcmax * (Ci - gamma_star) / (Ci + km);
         }
 
         /* Solution when electron transport rate is limiting */
-        qudratic_error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, Vj,
-                                  2.0*gamma_star, &Ci);
+        error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, Vj,
+                         2.0*gamma_star, &Ci);
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
 
@@ -136,7 +135,7 @@ int solve_ci(double g0, double gs_over_a, double rd, double Cs,
     // Leuning (1990) Modelling Stomatal Behaviour and Photosynthesis of
     // Eucalyptus grandis. Aust. J. Plant Physiol., 17, 159-75.
     //
-    int large_root = TRUE, qudratic_error = FALSE;
+    int large_root = TRUE, error = FALSE;
     double A, B, C, arg1, arg2, arg3, c1, c2, c3;
 
     A = g0 + gs_over_a * (gamma - rd);
@@ -151,9 +150,9 @@ int solve_ci(double g0, double gs_over_a, double rd, double Cs,
     arg3 =  g0 * beta * Cs;
     C = arg1 * arg2 - arg3;
 
-    *Ci = quad(A, B, C, large_root, &qudratic_error);
+    *Ci = quad(A, B, C, large_root, &error);
 
-    return (qudratic_error);
+    return (error);
 }
 
 void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
