@@ -7,8 +7,8 @@
 
 /* Sub-daily funcs */
 void   photosynthesis_C3(control *, canopy_wk *, met *m, params *, state *);
-int    calc_RuBP_regeneration_rate(params *, double, double, double *,
-                                   double *);
+int    calc_electron_transport_rate(params *, double, double, double *,
+                                    double *);
 int    solve_ci(double, double, double, double, double, double, double,
                 double *);
 void   photosynthesis_C3_emax(control *, canopy_wk *, met *m, params *,

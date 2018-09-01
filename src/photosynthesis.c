@@ -51,7 +51,8 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     rd = 0.015 * vcmax;
     /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
 
-    calc_RuBP_regeneration_rate(p, par, jmax, &J, &Vj);
+    // Rate of electron transport, which is a function of absorbed PAR
+    calc_electron_transport_rate(p, par, jmax, &J, &Vj);
 
     /* Deal with extreme cases */
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
@@ -116,19 +117,25 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     return;
 }
 
-int calc_RuBP_regeneration_rate(params *p, double par, double jmax, double *J,
-                                double *Vj) {
+int calc_electron_transport_rate(params *p, double par, double jmax, double *J,
+                                 double *Vj) {
 
+    // Electron transport rate for a given absorbed irradiance
+    //
+    // Reference:
+    // ----------
+    // Farquhar G.D. & Wong S.C. (1984) An empirical model of stomatal
+    // conductance. Australian Journal of Plant Physiology 11, 191-210,
+    // eqn A but probably clearer in Leuning 1995, eqn C3.
+    //
     int large_root = FALSE, error = FALSE;
     double A, B, C;
 
-    /* Solve actual electron transport rate */
     A = p->theta;
     B = -(p->alpha_j * par + jmax);
     C = p->alpha_j * par * jmax;
-    *J = quad(A, B, C, large_root, &error);
 
-    /* RuBP regeneration rate */
+    *J = quad(A, B, C, large_root, &error);
     *Vj = *J / 4.0;
 
     return error;
