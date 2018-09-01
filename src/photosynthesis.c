@@ -10,7 +10,7 @@
 *   Martin De Kauwe
 *
 * DATE:
-*   14.01.2016
+*   01.09.2018
 *
 * =========================================================================== */
 #include "photosynthesis.h"
@@ -120,16 +120,16 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
 int calc_electron_transport_rate(params *p, double par, double jmax, double *J,
                                  double *Vj) {
     //
-    // Electron transport rate for a given absorbed irradiance
+    //  Electron transport rate for a given absorbed irradiance
     //
-    // Reference:
-    // ----------
-    // * Farquhar G.D. & Wong S.C. (1984) An empirical model of stomatal
-    //   conductance. Australian Journal of Plant Physiology 11, 191-210,
-    //   eqn A but probably clearer in:
-    // * Leuning, R. et a., Leaf nitrogen, photosynthesis, conductance and
-    //   transpiration: scaling from leaves to canopies, Plant Cell Environ.,
-    //   18, 1183– 1200, 1995. Leuning 1995, eqn C3.
+    //  Reference:
+    //  ----------
+    //  * Farquhar G.D. & Wong S.C. (1984) An empirical model of stomatal
+    //    conductance. Australian Journal of Plant Physiology 11, 191-210,
+    //    eqn A but probably clearer in:
+    //  * Leuning, R. et a., Leaf nitrogen, photosynthesis, conductance and
+    //    transpiration: scaling from leaves to canopies, Plant Cell Environ.,
+    //    18, 1183– 1200, 1995. Leuning 1995, eqn C3.
     //
     int large_root = FALSE, error = FALSE;
     double A, B, C;
@@ -147,14 +147,14 @@ int calc_electron_transport_rate(params *p, double par, double jmax, double *J,
 int solve_ci(double g0, double gs_over_a, double rd, double Cs,
              double gamma_star, double gamma, double beta, double *Ci) {
     //
-    // Solve intercellular CO2 concentration using quadric equation, following
-    // Leuning 1990, see eqn 15a-c, solving simultaneous solution for Eqs 2, 12
-    // and 13
+    //  Solve intercellular CO2 concentration using quadric equation, following
+    //  Leuning 1990, see eqn 15a-c, solving simultaneous solution for Eqs 2,
+    //  12 and 13
     //
-    // Reference:
-    // ----------
-    // Leuning (1990) Modelling Stomatal Behaviour and Photosynthesis of
-    // Eucalyptus grandis. Aust. J. Plant Physiol., 17, 159-75.
+    //  Reference:
+    //  ----------
+    //  * Leuning (1990) Modelling Stomatal Behaviour and Photosynthesis of
+    //    Eucalyptus grandis. Aust. J. Plant Physiol., 17, 159-75.
     //
     int large_root = TRUE, error = FALSE;
     double A, B, C, arg1, arg2, arg3, c1, c2, c3;
@@ -179,8 +179,8 @@ int solve_ci(double g0, double gs_over_a, double rd, double Cs,
 void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
                             state *s, double par, double water_stress) {
     //
-    // Calculate photosynthesis as above but for here we are resolving Ci and
-    // A for a given gs (Jarvis style) to get the Emax solution.
+    //  Calculate photosynthesis as above but for here we are resolving Ci and
+    //  A for a given gs (Jarvis style) to get the Emax solution.
     //
 
     double gamma_star, km, jmax, vcmax, rd, Vj, gs;
@@ -260,36 +260,35 @@ double calc_co2_compensation_point(params *p, double tleaf) {
 }
 
 double calculate_michaelis_menten(params *p, double tleaf) {
-    /*
-        Effective Michaelis-Menten coefficent of Rubisco activity
+    //
+    //  Effective Michaelis-Menten coefficent of Rubisco activity
+    //
+    //  Parameters:
+    //  ----------
+    //  tleaf : float
+    //      leaf temperature (deg C)
+    //
+    //  Returns:
+    //  -------
+    //  Km : float
+    //      Effective Michaelis-Menten constant for Rubisco catalytic activity
+    //      (umol mol-1)
+    //
+    //  References:
+    //  -----------
+    //  Rubisco kinetic parameter values are from:
+    //  * Bernacchi et al. (2001) PCE, 24, 253-259.
+    //  * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
 
-        Parameters:
-        ----------
-        tleaf : float
-            leaf temperature (deg C)
-
-        Returns:
-        -------
-        Km : float
-            Effective Michaelis-Menten constant for Rubisco catalytic activity
-            (umol mol-1)
-
-        References:
-        -----------
-        Rubisco kinetic parameter values are from:
-        * Bernacchi et al. (2001) PCE, 24, 253-259.
-        * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
-
-    */
     double Kc, Ko, Km;
 
-    /* Michaelis-Menten coefficents for carboxylation by Rubisco */
+    // Michaelis-Menten coefficents for carboxylation by Rubisco
     Kc = arrhenius(p->kc25, p->eac, tleaf, p->measurement_temp);
 
-    /* Michaelis-Menten coefficents for oxygenation by Rubisco */
+    // Michaelis-Menten coefficents for oxygenation by Rubisco
     Ko = arrhenius(p->ko25, p->eao, tleaf, p->measurement_temp);
 
-    /* return effective Michaelis-Menten coefficient for CO2 */
+    // return effective Michaelis-Menten coefficient for CO2
     Km = Kc * (1.0 + p->oi / Ko);
 
     return (Km);
@@ -297,22 +296,22 @@ double calculate_michaelis_menten(params *p, double tleaf) {
 
 void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
                             double tleaf, double *jmax, double *vcmax) {
-    /*
-        Calculate the potential electron transport rate (Jmax) and the
-        maximum Rubisco activity (Vcmax) at the leaf temperature.
-
-        For Jmax -> peaked arrhenius is well behaved for tleaf < 0.0
-
-        Parameters:
-        ----------
-        tleaf : float
-            air temperature (deg C)
-        jmax : float
-            the potential electron transport rate at the leaf temperature
-            (umol m-2 s-1)
-        vcmax : float
-            the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
-    */
+    //
+    //  Calculate the potential electron transport rate (Jmax) and the
+    //  maximum Rubisco activity (Vcmax) at the leaf temperature.
+    //
+    //  For Jmax -> peaked arrhenius is well behaved for tleaf < 0.0
+    //
+    //  Parameters:
+    //  ----------
+    //  tleaf : float
+    //      air temperature (deg C)
+    //  jmax : float
+    //      the potential electron transport rate at the leaf temperature
+    //      (umol m-2 s-1)
+    //  vcmax : float
+    //      the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
+    //
     double jmax25, vcmax25;
     double lower_bound = 0.0;
     double upper_bound = 10.0;
@@ -338,7 +337,7 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
-        /* NB when using the fixed JV reln, we only apply scalar to Vcmax */
+        // NB when using the fixed JV reln, we only apply scalar to Vcmax
         if (cw->ileaf == SUNLIT) {
             vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * cscalar;
             jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
@@ -358,13 +357,13 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
-    /* reduce photosynthetic capacity with moisture stress */
+    // reduce photosynthetic capacity with moisture stress
     if (c->water_balance == BUCKET) {
         *jmax *= s->wtfac_root;
         *vcmax *= s->wtfac_root;
     } // Should add non-stomal limitation here
 
-    /* Jmax/Vcmax forced linearly to zero at low T */
+    // Jmax/Vcmax forced linearly to zero at low T
     if (tleaf < lower_bound) {
         *jmax = 0.0;
         *vcmax = 0.0;
@@ -377,38 +376,39 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
 }
 
 double calc_leaf_day_respiration(double tleaf, double Rd0) {
-    /* Calculate leaf respiration in the light using a Q10 (exponential)
-    formulation
+    //
+    //  Calculate leaf respiration in the light using a Q10 (exponential)
+    //  formulation
+    //
+    //  Parameters:
+    //  ----------
+    //  Rd0 : float
+    //      Estimate of respiration rate at the reference temperature 25 deg C
+    //      or or 298 K
+    //  Tleaf : float
+    //      leaf temperature
+    //
+    //  Returns:
+    //  -------
+    //  Rd : float
+    //      leaf respiration in the light
+    //
 
-    Parameters:
-    ----------
-    Rd0 : float
-        Estimate of respiration rate at the reference temperature 25 deg C
-        or or 298 K
-    Tleaf : float
-        leaf temperature
-
-    Returns:
-    -------
-    Rd : float
-        leaf respiration in the light
-
-    */
     double Rd;
-    /* tbelow is the minimum temperature at which respiration occurs;
-       below this, Rd(T) is set to zero. */
+    // tbelow is the minimum temperature at which respiration occurs;
+    //   below this, Rd(T) is set to zero.
     double tbelow = -100.0;
 
-    /* Determines the respiration in the light, relative to
-       respiration in the dark. For example, if DAYRESP = 0.7, respiration
-       in the light is 30% lower than in the dark. */
-    double day_resp = 1.0;  /* no effect of light */
+    // Determines the respiration in the light, relative to
+    //   respiration in the dark. For example, if DAYRESP = 0.7, respiration
+    //   in the light is 30% lower than in the dark.
+    double day_resp = 1.0;  // no effect of light
 
-    /* Default temp at which maint resp specified */
+    // Default temp at which maint resp specified
     double rtemp = 0.0;
 
-    /* exponential coefficient of the temperature response of foliage
-       respiration */
+    // exponential coefficient of the temperature response of foliage
+    //   respiration
     double q10f = 0.067;
 
     if (tleaf >= tbelow)
@@ -420,30 +420,30 @@ double calc_leaf_day_respiration(double tleaf, double Rd0) {
 }
 
 double arrhenius(double k25, double Ea, double T, double Tref) {
-    /*
-        Temperature dependence of kinetic parameters is described by an
-        Arrhenius function
-
-        Parameters:
-        ----------
-        k25 : float
-            rate parameter value at 25 degC
-        Ea : float
-            activation energy for the parameter [J mol-1]
-        T : float
-            temperature [deg C]
-        Tref : float
-            measurement temperature [deg C]
-
-        Returns:
-        -------
-        kt : float
-            temperature dependence on parameter
-
-        References:
-        -----------
-        * Medlyn et al. 2002, PCE, 25, 1167-1179.
-    */
+    //
+    //  Temperature dependence of kinetic parameters is described by an
+    //  Arrhenius function
+    //
+    //  Parameters:
+    //  ----------
+    //  k25 : float
+    //      rate parameter value at 25 degC
+    //  Ea : float
+    //      activation energy for the parameter [J mol-1]
+    //  T : float
+    //      temperature [deg C]
+    //  Tref : float
+    //      measurement temperature [deg C]
+    //
+    //  Returns:
+    //  -------
+    //  kt : float
+    //      temperature dependence on parameter
+    //
+    //  References:
+    //  -----------
+    //  * Medlyn et al. 2002, PCE, 25, 1167-1179.
+    //
     double Tk, TrefK;
     Tk = T + DEG_TO_KELVIN;
     TrefK = Tref + DEG_TO_KELVIN;
@@ -453,37 +453,37 @@ double arrhenius(double k25, double Ea, double T, double Tref) {
 
 double peaked_arrhenius(double k25, double Ea, double T, double Tref,
                         double deltaS, double Hd) {
-    /*
-        Temperature dependancy approximated by peaked Arrhenius eqn,
-        accounting for the rate of inhibition at higher temperatures.
+    //
+    //  Temperature dependancy approximated by peaked Arrhenius eqn,
+    //  accounting for the rate of inhibition at higher temperatures.
+    //
+    //  Parameters:
+    //  ----------
+    //  k25 : float
+    //      rate parameter value at 25 degC
+    //  Ea : float
+    //      activation energy for the parameter [J mol-1]
+    //  T : float
+    //      temperature [deg C]
+    //  Tref : float
+    //      measurement temperature [deg C]
+    //  deltaS : float
+    //      entropy factor [J mol-1 K-1)
+    //  Hd : float
+    //      describes rate of decrease about the optimum temp [J mol-1]
+    //
+    //  Returns:
+    //  -------
+    //  kt : float
+    //      temperature dependence on parameter
+    //
+    //  References:
+    //  -----------
+    //  * Medlyn et al. 2002, PCE, 25, 1167-1179.
+    //
 
-        Parameters:
-        ----------
-        k25 : float
-            rate parameter value at 25 degC
-        Ea : float
-            activation energy for the parameter [J mol-1]
-        T : float
-            temperature [deg C]
-        Tref : float
-            measurement temperature [deg C]
-        deltaS : float
-            entropy factor [J mol-1 K-1)
-        Hd : float
-            describes rate of decrease about the optimum temp [J mol-1]
-
-        Returns:
-        -------
-        kt : float
-            temperature dependence on parameter
-
-        References:
-        -----------
-        * Medlyn et al. 2002, PCE, 25, 1167-1179.
-
-    */
-    double arg1, arg2, arg3;
-    double Tk, TrefK;
+    doub arg1, arg2, arg3;
+    doub Tk, TrefK;
     Tk = T + DEG_TO_KELVIN;
     TrefK = Tref + DEG_TO_KELVIN;
 
@@ -496,29 +496,30 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tref,
 
 
 double quad(double a, double b, double c, bool large, int *error) {
-    /* quadratic solution
+    //
+    //  quadratic solution
+    //
+    //  Parameters:
+    //  ----------
+    //  a : float
+    //      co-efficient
+    //  b : float
+    //      co-efficient
+    //  c : float
+    //      co-efficient
+    //
+    //  Returns:
+    //  -------
+    //  root : float
+    //
 
-    Parameters:
-    ----------
-    a : float
-        co-efficient
-    b : float
-        co-efficient
-    c : float
-        co-efficient
-
-    Returns:
-    -------
-    root : float
-
-    */
     double d, root;
 
-    /* discriminant */
+    // discriminant
     d = (b * b) - 4.0 * a * c;
     if (d < 0.0) {
-        /*fprintf(stderr, "imaginary root found\n");
-        exit(EXIT_FAILURE);*/
+        //fprintf(stderr, "imaginary root found\n");
+        // exit(EXIT_FAILURE);
         *error = TRUE;
     }
 
@@ -528,8 +529,8 @@ double quad(double a, double b, double c, bool large, int *error) {
         } else if (a == 0.0 && b == 0.0) {
             root = 0.0;
             if (c != 0.0) {
-                /*fprintf(stderr, "Can't solve quadratic\n");
-                exit(EXIT_FAILURE);*/
+                // fprintf(stderr, "Can't solve quadratic\n");
+                // exit(EXIT_FAILURE);
                 *error = TRUE;
             }
         } else {
@@ -542,8 +543,8 @@ double quad(double a, double b, double c, bool large, int *error) {
         } else if (a == 0.0 && b == 0.0) {
             root = 0.0;
             if (c != 0.0) {
-                /*fprintf(stderr, "Can't solve quadratic\n");
-                exit(EXIT_FAILURE);*/
+                // fprintf(stderr, "Can't solve quadratic\n");
+                //exit(EXIT_FAILURE);
                 *error = TRUE;
             }
         } else {
