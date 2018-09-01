@@ -16,54 +16,54 @@
 #include "photosynthesis.h"
 
 void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
-    /*
-        Calculate photosynthesis following Farquhar & von Caemmerer, this is an
-        implementation of the routinue in MAESTRA
-
-        References:
-        -----------
-        * GD Farquhar, S Von Caemmerer (1982) Modelling of photosynthetic
-          response to environmental conditions. Encyclopedia of plant
-          physiology 12, 549-587.
-        * Medlyn, B. E. et al (2011) Global Change Biology, 17, 2134-2144.
-        * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
-    */
+    //
+    //  Calculate photosynthesis following Farquhar & von Caemmerer, this is an
+    //  implementation of the routinue in MAESTRA
+    //
+    //  References:
+    //  -----------
+    //  * GD Farquhar, S Von Caemmerer (1982) Modelling of photosynthetic
+    //    response to environmental conditions. Encyclopedia of plant
+    //    physiology 12, 549-587.
+    //  * Medlyn, B. E. et al (2011) Global Change Biology, 17, 2134-2144.
+    //  * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
+    //
 
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
     double A, B, C, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
-    /*double Rd0 = 0.92;  Dark respiration rate make a paramater! */
+    //double Rd0 = 0.92;  Dark respiration rate make a paramater!
     int    idx, error = FALSE, large_root;
-    double g0_zero = 1E-09; /* numerical issues, don't use zero */
+    double g0_zero = 1E-09; // numerical issues, don't use zero
 
-    /* unpack some stuff */
+    // unpack some stuff
     idx = cw->ileaf;
     par = cw->apar_leaf[idx];
     Cs = cw->Cs;
     tleaf = cw->tleaf[idx];
     dleaf = cw->dleaf;
 
-    /* Calculate photosynthetic parameters from leaf temperature. */
+    // Calculate photosynthetic parameters from leaf temperature.
     gamma_star = calc_co2_compensation_point(p, tleaf);
     km = calculate_michaelis_menten(p, tleaf);
     calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
 
-    /* leaf respiration in the light, Collatz et al. 1991 */
+    // leaf respiration in the light, Collatz et al. 1991
     rd = 0.015 * vcmax;
-    /*rd = calc_leaf_day_respiration(tleaf, Rd0); */
+    // rd = calc_leaf_day_respiration(tleaf, Rd0);
 
     // Rate of electron transport, which is a function of absorbed PAR
     calc_electron_transport_rate(p, par, jmax, &J, &Vj);
 
-    /* Deal with extreme cases */
+    // Deal with extreme cases
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
         cw->an_leaf[idx] = -rd;
         cw->gsc_leaf[idx] = g0_zero;
     } else {
-        /* Hardwiring this for Medlyn gs model for the moment, till I figure
-        out the best structure */
+        // Hardwiring this for Medlyn gs model for the moment, till I figure
+        // out the best structure
 
-        /* For the medlyn model this is already in conductance to CO2, so the
-           1.6 from the corrigendum to Medlyn et al 2011 is missing here */
+        // For the medlyn model this is already in conductance to CO2, so the
+        // 1.6 from the corrigendum to Medlyn et al 2011 is missing here
         dleaf_kpa = dleaf * PA_2_KPA;
         if (dleaf_kpa < 0.05) {
             dleaf_kpa = 0.05;
@@ -78,7 +78,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         }
         g0 = g0_zero;
 
-        /* Solution when Rubisco activity is limiting */
+        // Solution when Rubisco activity is limiting
         error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, vcmax, km, &Ci);
 
         if (error || Ci <= 0.0 || Ci > Cs) {
@@ -87,13 +87,13 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
             Ac = vcmax * (Ci - gamma_star) / (Ci + km);
         }
 
-        /* Solution when electron transport rate is limiting */
+        // Solution when electron transport rate is limiting
         error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, Vj,
                          2.0*gamma_star, &Ci);
 
         Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
 
-        /* Below light compensation point? */
+        // Below light compensation point?
         if (Aj - rd < 1E-6) {
             Ci = Cs;
             Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
@@ -119,14 +119,17 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
 
 int calc_electron_transport_rate(params *p, double par, double jmax, double *J,
                                  double *Vj) {
-
+    //
     // Electron transport rate for a given absorbed irradiance
     //
     // Reference:
     // ----------
-    // Farquhar G.D. & Wong S.C. (1984) An empirical model of stomatal
-    // conductance. Australian Journal of Plant Physiology 11, 191-210,
-    // eqn A but probably clearer in Leuning 1995, eqn C3.
+    // * Farquhar G.D. & Wong S.C. (1984) An empirical model of stomatal
+    //   conductance. Australian Journal of Plant Physiology 11, 191-210,
+    //   eqn A but probably clearer in:
+    // * Leuning, R. et a., Leaf nitrogen, photosynthesis, conductance and
+    //   transpiration: scaling from leaves to canopies, Plant Cell Environ.,
+    //   18, 1183– 1200, 1995. Leuning 1995, eqn C3.
     //
     int large_root = FALSE, error = FALSE;
     double A, B, C;
@@ -175,12 +178,10 @@ int solve_ci(double g0, double gs_over_a, double rd, double Cs,
 
 void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
                             state *s, double par, double water_stress) {
-    /*
-        Calculate photosynthesis as above but for here we are resolving Ci and
-        A for a given gs (Jarvis style) to get the Emax solution.
-
-        This follows MAESPA code.
-    */
+    //
+    // Calculate photosynthesis as above but for here we are resolving Ci and
+    // A for a given gs (Jarvis style) to get the Emax solution.
+    //
 
     double gamma_star, km, jmax, vcmax, rd, Vj, gs;
     double A, B, C, Ac, Aj, Cs, J;
@@ -218,7 +219,7 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
         Ac = 0.0;
     }
 
-    /* Solution when electron transport rate is limiting */
+    // Solution when electron transport rate is limiting
     A = 1.0 / gs;
     B = (rd - Vj) / gs - Cs - 2.0 * gamma_star;
     C = Vj * (Cs - gamma_star) - rd * (Cs + 2.0 * gamma_star);
@@ -236,25 +237,25 @@ void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
 }
 
 double calc_co2_compensation_point(params *p, double tleaf) {
-    /*
-        CO2 compensation point in the absence of non-photorespiratory
-        respiration.
-
-        Parameters:
-        ----------
-        tleaf : float
-            leaf temperature (deg C)
-
-        Returns:
-        -------
-        gamma_star : float
-            CO2 compensation point in the abscence of mitochondrial respiration
-            (umol mol-1)
-
-        References:
-        -----------
-        * Bernacchi et al 2001 PCE 24: 253-260
-    */
+    //
+    //  CO2 compensation point in the absence of non-photorespiratory
+    //  respiration.
+    //
+    //  Parameters:
+    //  ----------
+    //  tleaf : float
+    //      leaf temperature (deg C)
+    //
+    //  Returns:
+    //  -------
+    //  gamma_star : float
+    //      CO2 compensation point in the abscence of mitochondrial respiration
+    //      (umol mol-1)
+    //
+    //  References:
+    //  -----------
+    //  * Bernacchi et al 2001 PCE 24: 253-260
+    //
     return (arrhenius(p->gamstar25, p->eag, tleaf, p->measurement_temp));
 }
 
