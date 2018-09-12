@@ -41,7 +41,7 @@ class CreateMetData(object):
         if self.daily:
             self.ovar_names = ['#year', 'doy', 'tair', 'rain', 'tsoil',
                                'tam', 'tpm', 'tmin', 'tmax', 'tday', 'vpd_am',
-                               'vpd_pm', 'co2', 'ndep', 'nfix', 'wind', 'pres',
+                               'vpd_pm', 'co2', 'ndep', 'nfix', 'wind', 'press',
                                'wind_am', 'wind_pm', 'par_am', 'par_pm']
             self.ounits = ['#--', '--', 'degC', 'mm/d', 'degC','degC', 'degC',
                            'degC','degC', 'degC', 'kPa', 'kPa', 'ppm', 't/ha/d',
