@@ -66,6 +66,7 @@ class CreateMetData(object):
         self.K_to_C = 273.15
         self.G_M2_to_TONNES_HA = 0.01
         self.MM_S_TO_MM_HR = 3600.0
+        self.MM_S_TO_MM_HLFHR = 1800.0
         self.SW_2_PAR = 2.3
         self.J_TO_UMOL = 4.57
         self.UMOL_TO_J = 1.0 / self.J_TO_UMOL
@@ -217,7 +218,7 @@ class CreateMetData(object):
                 # need to split the rain in two & spread over 2 half hrs
                 rain = days_data.Rainf[hod] * self.MM_S_TO_MM_HR / 2.0
             else:
-                rain = days_data.Rainf[hod] * self.MM_S_TO_MM_HR
+                rain = days_data.Rainf[hod] * self.MM_S_TO_MM_HLFR
 
             par = days_data.SWdown[hod] * self.SW_2_PAR
             if par < 0.0:
@@ -313,12 +314,11 @@ class CreateMetData(object):
         par_am = np.sum(morning.PAR * conv)
         par_pm = np.sum(afternoon.PAR * conv)
 
-        # rain -> mm/30 min
-        # Don't need the conversion!
-        # coversion 1800 seconds to half hours and summed gives day value.
-        # Going to use the whole day including the night data
-        #rain = max(0.0, np.sum(days_data.Precip * 1800.))
-        rain = max(0.0, np.sum(days_data.Rainf))
+        if diff == 0:
+            rain = days_data.Rainf * self.MM_S_TO_MM_HR
+        else:
+            rain = days_data.Rainf * self.MM_S_TO_MM_HLFHR
+        rain = max(0.0, np.sum(rain))
 
         # co2 -> [ppm] Daily mean value
         if vary_co2:
