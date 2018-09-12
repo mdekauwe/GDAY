@@ -482,8 +482,8 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tref,
     //  * Medlyn et al. 2002, PCE, 25, 1167-1179.
     //
 
-    doub arg1, arg2, arg3;
-    doub Tk, TrefK;
+    double arg1, arg2, arg3;
+    double Tk, TrefK;
     Tk = T + DEG_TO_KELVIN;
     TrefK = Tref + DEG_TO_KELVIN;
 
