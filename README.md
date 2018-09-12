@@ -87,6 +87,8 @@ The git hash allows you to connect which version of the model code produced whic
 
 - The deciduous phenology scheme does not currently work with the two-leaf version of the model (can be fixed).
 
+- Wind speed must be > 0.0, some flux files have timesteps where this isn't the case and it will crash the model. Similarly, with the Medlyn gs model, VPD must be greater than 0.05 kPa.
+
 ## Meteorological driving file
 
 **30-minute file:**
