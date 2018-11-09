@@ -84,7 +84,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->par);
             calculate_top_of_canopy_leafn(cw, p, s);
-            calc_leaf_to_canopy_scalar(cw, p);
+            calc_leaf_to_canopy_scalar(cw, p, s);
 
             /* sunlit / shaded loop */
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
@@ -399,7 +399,7 @@ void initialise_leaf_surface(canopy_wk *cw, met *m) {
     cw->Cs = m->Ca;
 }
 
-void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
+void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
     /*
         Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
         values. Following Wang & Leuning, as long as sunlit and shaded
@@ -411,29 +411,30 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p) {
 
         per unit ground area
 
+        I'm now matching the logic used in cable_radiation
+
         Parameters:
         ----------
         canopy_wk : structure
             various canopy values: in this case the sunlit or shaded LAI &
             cos_zenith angle.
-        scalar_sun : float
-            scalar for sunlit leaves, values returned in unit ground area
-            (returned)
-        scalar_sha : float
-            scalar for shaded leaves, values returned in unit ground area
-            (returned)
+
 
         References:
         ----------
         * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
     */
-    double kn, lai_sun, lai_sha;
+    double kn, transb, cf2n;
     kn = p->kn;
-    lai_sun = cw->lai_leaf[SUNLIT];
-    lai_sha = cw->lai_leaf[SHADED];
 
-    cw->cscalar[SUNLIT] = (1.0 - exp(-(cw->kb + kn) * lai_sun)) / (cw->kb + kn);
-    cw->cscalar[SHADED] = (1.0 - exp(-kn * lai_sha)) / kn - cw->cscalar[SUNLIT];
+    transb = exp(-cw->kb * s->lai);
+
+    // Relative leaf nitrogen concentration within canopy:
+    cf2n = exp(-kn * s->lai);
+
+    // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C:
+    cw->cscalar[SUNLIT] = (1.0 - transb * cf2n) / (cw->kb + kn);
+    cw->cscalar[SHADED] = (1.0 - cf2n) / kn - cw->cscalar[SUNLIT];
 
     return;
 }
