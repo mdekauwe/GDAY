@@ -49,8 +49,14 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
 
     // leaf respiration in the light, Collatz et al. 1991
-    rd = 0.015 * vcmax * scalex;
+    rd = 0.015 * vcmax;
     // rd = calc_leaf_day_respiration(tleaf, Rd0);
+
+    // scale leaf to canopy
+    vcmax *= scalex;
+    jmax *= scalex;
+    rd *= scalex;
+
 
     // Rate of electron transport, which is a function of absorbed PAR
     calc_electron_transport_rate(p, par, jmax, &J, &Vj);
@@ -317,40 +323,39 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double lower_bound = 0.0;
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
-    double scalex = cw->scalex[cw->ileaf];
 
     if (c->modeljm == 0) {
         if (cw->ileaf == SUNLIT) {
-            *jmax = p->jmax * scalex;
-            *vcmax = p->vcmax * scalex;
+            *jmax = p->jmax;
+            *vcmax = p->vcmax;
         } else {
-            *jmax = p->jmax * scalex;
-            *vcmax = p->vcmax * scalex;
+            *jmax = p->jmax;
+            *vcmax = p->vcmax;
         }
     } else if (c->modeljm == 1) {
         if (cw->ileaf == SUNLIT) {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalex;
-            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * scalex;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
+            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
         } else {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalex;
-            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb) * scalex;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
+            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
         // NB when using the fixed JV reln, we only apply scalar to Vcmax
         if (cw->ileaf == SUNLIT) {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalex;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
             jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         } else {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb) * scalex;
+            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
             jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         }
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 3) {
-        jmax25 = p->jmax * scalex;
-        vcmax25 = p->vcmax * scalex;
+        jmax25 = p->jmax;
+        vcmax25 = p->vcmax;
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else {
