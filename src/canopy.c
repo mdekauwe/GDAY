@@ -401,17 +401,10 @@ void initialise_leaf_surface(canopy_wk *cw, met *m) {
 
 void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
     /*
-        Calculate scalar to transform leaf Vcmax and Jmax values to big leaf
-        values. Following Wang & Leuning, as long as sunlit and shaded
-        leaves are treated seperately, values of parameters in the coupled
-        model for the two big leaves can be closely approximated by
-        integrating values for individual leaves.
+        Calculate scalar to transform beam/diffuse leaf Vcmax, Jmax and Rd values
+        to big leaf values.
 
-        - Inserting eqn C6 & C7 into B5
-
-        per unit ground area
-
-        I'm now matching the logic used in cable_radiation
+        - Insert eqn C6 & C7 into B5
 
         Parameters:
         ----------
@@ -424,17 +417,11 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
         ----------
         * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
     */
-    double kn, transb, cf2n;
-    kn = p->kn;
+    double kn = p->kn;
 
-    transb = exp(-cw->kb * s->lai);
-
-    // Relative leaf nitrogen concentration within canopy:
-    cf2n = exp(-kn * s->lai);
-
-    // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C:
-    cw->scalex[SUNLIT] = (1.0 - transb * cf2n) / (cw->kb + kn);
-    cw->scalex[SHADED] = (1.0 - cf2n) / kn - cw->scalex[SUNLIT];
+    // Parameters to scale up from single leaf to the big leaves
+    cw->scalex[SUNLIT] = (1.0 - exp(-(cw->kb + kn) * s->lai)) / (cw->kb + kn);
+    cw->scalex[SHADED] = (1.0 - exp(-kn * s->lai)) / kn - cw->scalex[SUNLIT];
 
     return;
 }
