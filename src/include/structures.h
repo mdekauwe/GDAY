@@ -680,7 +680,7 @@ typedef struct {
     double dleaf;           /* leaf VPD (Pa) */
     double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
     double kb;              /* beam radiation ext coeff of canopy */
-    double cscalar[2];      /* scale from single leaf to canopy */
+    double scalex[2];      /* scale from single leaf to canopy */
     double *cz_store;       /* Array to hold coz zenith angles */
     double *ele_store;      /* Array to hold elevations */
     double *df_store;       /* Array to hold diffuse fractions */

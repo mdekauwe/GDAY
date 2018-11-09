@@ -433,8 +433,8 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
     cf2n = exp(-kn * s->lai);
 
     // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C:
-    cw->cscalar[SUNLIT] = (1.0 - transb * cf2n) / (cw->kb + kn);
-    cw->cscalar[SHADED] = (1.0 - cf2n) / kn - cw->cscalar[SUNLIT];
+    cw->scalex[SUNLIT] = (1.0 - transb * cf2n) / (cw->kb + kn);
+    cw->scalex[SHADED] = (1.0 - cf2n) / kn - cw->scalex[SUNLIT];
 
     return;
 }
