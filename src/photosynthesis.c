@@ -34,7 +34,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     //double Rd0 = 0.92;  Dark respiration rate make a paramater!
     int    idx, error = FALSE, large_root;
     double g0_zero = 1E-09; // numerical issues, don't use zero
-
+    double cscalar = cw->cscalar[cw->ileaf];
     // unpack some stuff
     idx = cw->ileaf;
     par = cw->apar_leaf[idx];
@@ -48,7 +48,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
 
     // leaf respiration in the light, Collatz et al. 1991
-    rd = 0.015 * vcmax;
+    rd = 0.015 * vcmax * cscalar;
     // rd = calc_leaf_day_respiration(tleaf, Rd0);
 
     // Rate of electron transport, which is a function of absorbed PAR
