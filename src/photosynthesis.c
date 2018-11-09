@@ -52,11 +52,10 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     rd = 0.015 * vcmax;
     // rd = calc_leaf_day_respiration(tleaf, Rd0);
 
-    // scale leaf to canopy
+    // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C
     vcmax *= scalex;
     jmax *= scalex;
     rd *= scalex;
-
 
     // Rate of electron transport, which is a function of absorbed PAR
     calc_electron_transport_rate(p, par, jmax, &J, &Vj);
