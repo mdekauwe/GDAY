@@ -23,5 +23,6 @@ double estimate_clearness(double, double);
 void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double);
 double calculate_solar_noon(double, double);
 double calculate_hour_angle(double, double);
+double psi_func(double, double);
 
 #endif /* RADIATION_H */

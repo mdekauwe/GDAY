@@ -94,66 +94,66 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
         References:
         -----------
-        * De Pury & Farquhar (1997) PCE, 20, 537-557.
+        * Wang and Leuning (1998) AFm, 91, 89-111. B3b and B4, the answer is
+          identical de P & F
 
         but see also:
-        * Wang and Leuning (1998) AFm, 91, 89-111.
+        * De Pury & Farquhar (1997) PCE, 20, 537-557.
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
     */
     double Ib, Id, scattered, shaded, beam, psi1, psi2, Gross, lai, lad;
     double total_canopy_irradiance, arg1, arg2, arg3, rho_cd, rho_cb, omega;
     double k_dash_b, k_dash_d;
+    double cf1, cf2, cf3;
 
-    rho_cd = 0.036;    /* canopy reflection coeffcient for diffuse PAR */
-    rho_cb = 0.029;     /* canopy reflection coeffcient for direct PAR */
-    omega = 0.15;                /* leaf scattering coefficient of PAR */
-    k_dash_b = 0.46 / cw->cos_zenith;      /* beam & scat PAR ext coef */
-    k_dash_d = 0.719;     /* diffuse & scattered PAR extinction coeff  */
+    rho_cd = 0.036;             // canopy reflection coeffcient for diffuse PAR
+    rho_cb = 0.029;              // canopy reflection coeffcient for direct PAR
+    omega = 0.15;                         // leaf scattering coefficient of PAR
+    k_dash_b = 0.46 / cw->cos_zenith;               // beam & scat PAR ext coef
+    k_dash_d = 0.719;               // diffuse & scattered PAR extinction coeff
 
-    /* unpack local variables */
+    // unpack local variables
     lai = s->lai;
-    lad = p->lad;        /* NB. default is to assume spherical LAD=0 */
+    lad = p->lad;                   // NB. default is to assume spherical LAD=0
 
-    /*
-    ** Ross-Goudriaan function is the ratio of the projected area of leaves
-    ** in the direction perpendicular to the direction of incident solar
-    ** radiation and the actual leaf area. See Sellers (1985), eqn 13/
-    ** note this is taken from CABLE code (Kowalczyk '06, eqn 28/29)
-    */
+    // Ross-Goudriaan function is the ratio of the projected area of leaves
+    // in the direction perpendicular to the direction of incident solar
+    // radiation and the actual leaf area. See Sellers (1985), eqn 13/
+    // note this is taken from CABLE code (Kowalczyk '06, eqn 28/29)
     psi1 = 0.5 - 0.633 * lad;
     psi2 = 0.877 * (1.0 - 2.0 * psi1);
     Gross = psi1 + psi2 * cw->cos_zenith;
 
-    /* beam extinction coefficient for black leaves */
+    // beam extinction coefficient for black leaves
     cw->kb = Gross / cw->cos_zenith;
 
-    /* Direct-beam irradiance absorbed by sunlit leaves - de P & F, eqn 20b */
+    // By substituting eq. B2 or B3 into Eq B1 and then integrating we get ...
+
+    // Direct or beam irradiance absorbed by sunlit fraction of the canopy
+    // Eqn B3b
     Ib = par * cw->direct_frac;
-    beam = Ib * (1.0 - omega) * (1.0 - exp(-cw->kb * lai));
 
-    /* Diffuse irradiance absorbed by sunlit leaves - de P & F, eqn 20c */
+    cf1 = psi_func(k_dash_d + cw->kb, lai);
+    cf2 = psi_func(k_dash_b + cw->kb, lai);
+    cf3 = psi_func(cw->kb, lai) - psi_func(2.0 * cw->kb, lai);
+
+    arg1 = Id * (1.0 - rho_cd) * k_dash_d * cf1;
+    arg2 = Ib * (1.0 - rho_cb) * k_dash_b * cf2;
+    arg3 = Ib * (1.0 - omega) * cw->kb * cf3;
+    cw->apar_leaf[SUNLIT] = arg1 + arg2 + arg3;
+
+    // Diffuse irradiance absorbed by shaded fraction of the canopy
+    // Eqn B4
     Id = par * cw->diffuse_frac;
-    arg1 = Id * (1.0 - rho_cd);
-    arg2 = 1.0 - exp(-(k_dash_d + cw->kb) * lai);
-    arg3 = k_dash_d / (k_dash_d + cw->kb);
-    shaded = arg1 * arg2 * arg3;
 
-    /* Scattered-beam irradiance abs. by sunlit leaves - de P & F, eqn 20d */
-    arg1 = (1.0 - rho_cb) * (1.0 - exp(-(k_dash_b + cw->kb) * lai));
-    arg2 = k_dash_b / (k_dash_b + cw->kb);
-    arg3 = (1.0 - omega) * (1.0 - exp(-2.0 * cw->kb * lai)) / 2.0;
-    scattered = Ib * (arg1 * arg2 - arg3);
+    cf1 = psi_func(k_dash_d, lai) - psi_func(k_dash_d + cw->kb, lai);
+    cf2 = psi_func(k_dash_b, lai) - psi_func(k_dash_b + cw->kb, lai);
+    cf3 = psi_func(cw->kb, lai) - psi_func(2.0 * cw->kb, lai);
 
-    /* Total irradiance absorbed by the canopy (Ic) - de P & F, eqn 13 */
-    arg1 = (1.0 - rho_cb) * Ib * (1.0 - exp(-k_dash_b * lai));
-    arg2 = (1.0 - rho_cd) * Id * (1.0 - exp(-k_dash_d * lai));
-    total_canopy_irradiance = arg1 + arg2;
-
-    /* Irradiance absorbed by the sunlit fraction of the canopy */
-    cw->apar_leaf[SUNLIT] = beam + scattered + shaded;
-
-    /* Irradiance absorbed by the shaded fraction of the canopy */
-    cw->apar_leaf[SHADED] = total_canopy_irradiance - cw->apar_leaf[SUNLIT];
+    arg1 = Id * (1.0 - rho_cd) * k_dash_d * cf1;
+    arg2 = Ib * (1.0 - rho_cb) * k_dash_b * cf2;
+    arg3 = Ib * (1.0 - omega) * cw->kb * cf3;
+    cw->apar_leaf[SHADED] = arg1 + arg2 - arg3;
 
     /* Calculate sunlit &shdaded LAI of the canopy - de P * F eqn 18*/
     cw->lai_leaf[SUNLIT] = (1.0 - exp(-cw->kb * lai)) / cw->kb;
@@ -161,6 +161,21 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     return;
 }
+
+double psi_func(double z, double lai) {
+    /*
+        B5 function from Wang and Leuning which integrates property passed via
+        arg list over the canopy space
+
+        References:
+        -----------
+        * Wang and Leuning (1998) AFm, 91, 89-111. Page 106
+
+    */
+    return ( (1.0 - exp(-z * lai)) / z );
+
+}
+
 
 void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
                               double hod) {
