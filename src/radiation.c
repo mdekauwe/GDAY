@@ -127,12 +127,14 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     // beam extinction coefficient for black leaves
     cw->kb = Gross / cw->cos_zenith;
 
+    // beam and diffuse fracs
+    Ib = par * cw->direct_frac;
+    Id = par * cw->diffuse_frac;
+
     // By substituting eq. B2 or B3 into Eq B1 and then integrating we get ...
 
     // Direct or beam irradiance absorbed by sunlit fraction of the canopy
     // Eqn B3b
-    Ib = par * cw->direct_frac;
-
     cf1 = psi_func(k_dash_d + cw->kb, lai);
     cf2 = psi_func(k_dash_b + cw->kb, lai);
     cf3 = psi_func(cw->kb, lai) - psi_func(2.0 * cw->kb, lai);
@@ -144,8 +146,6 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     // Diffuse irradiance absorbed by shaded fraction of the canopy
     // Eqn B4
-    Id = par * cw->diffuse_frac;
-
     cf1 = psi_func(k_dash_d, lai) - psi_func(k_dash_d + cw->kb, lai);
     cf2 = psi_func(k_dash_b, lai) - psi_func(k_dash_b + cw->kb, lai);
     cf3 = psi_func(cw->kb, lai) - psi_func(2.0 * cw->kb, lai);
