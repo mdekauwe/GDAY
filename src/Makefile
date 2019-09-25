@@ -9,8 +9,8 @@ HOME     = /Users/$(USER)
 		   -fsanitize=bounds -fsanitize-undefined-trap-on-error
 CFLAGS   = -O3 #-g
 ARCH     =  x86_64
-INCLS    = -I./include #-I/opt/local/include
-LIBS     = -lm #-L/opt/local/lib -lgsl -lgslcblas
+INCLS    = -I./include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include#-I/opt/local/include
+LIBS     = -lm -L/usr/lib/ -lSystem #-L/opt/local/lib -lgsl -lgslcblas
 CC       =  gcc
 PROGRAM  =  gday
 
