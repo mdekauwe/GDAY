@@ -134,7 +134,7 @@ press | atmospheric pressure | kPa
 wind_am | morning wind speed | m s<sup>-1</sup>
 wind_pm | afternoon wind speed | m s<sup>-1</sup>
 par_am | morning photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
-par_am | afternoon photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
+par_pm | afternoon photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
 
 ## Nitrogen inputs
 Nitrogen (N) entering the system via biological N fixation (BNF; tonnes ha<sup>-1</sup> yr<sup>-1</sup>) and N deposition (tonnes ha<sup>-1</sup> yr<sup>-1</sup>) are prescribed and passed via the met file. If information isn't available from the experiment GDAY is being applied to, BNF can be calculated as a function of evapotranspiration (ET) based on Cleveland et al. 1999.
