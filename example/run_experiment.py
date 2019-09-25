@@ -36,6 +36,7 @@ def main(experiment_id, site, treatment):
 
     #years = np.unique(amb.YEAR).values
     years = np.unique(amb.YEAR)
+    years = [int(float(i)) for i in years]
 
     ax1 = fig.add_subplot(311)
 
