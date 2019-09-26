@@ -108,6 +108,8 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
     net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
+
+    soil_evap = calc_soil_evaporation(m, p, s, net_rad_am+net_rad_pm);
     soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
 
     /* gC m-2 day-1 -> umol m-2 s-1 */
