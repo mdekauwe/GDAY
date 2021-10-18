@@ -82,7 +82,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
         /* Is the sun up? */
         if (cw->elevation > 0.0 && m->par > 20.0) {
-            calculate_absorbed_radiation(cw, p, s, m->par);
+            calculate_absorbed_radiation(cw, p, s, m->sw_rad, m->tair);
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
 
@@ -230,8 +230,6 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     double omega, transpiration, LE, Tdiff, gv, gbc, gh, sw_rad, trans_mmol;
 
     idx = cw->ileaf;
-    sw_rad = cw->apar_leaf[idx] * PAR_2_SW; /* W m-2 */
-    cw->rnet_leaf[idx] = calc_leaf_net_rad(p, s, m->tair, m->vpd, sw_rad);
     penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
                         cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
                         &omega);
@@ -420,7 +418,8 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
     double kn = p->kn;
 
     // Parameters to scale up from single leaf to the big leaves
-    cw->scalex[SUNLIT] = (1.0 - exp(-(cw->kb + kn) * s->lai)) / (cw->kb + kn);
+    cw->scalex[SUNLIT] = (1.0 - exp(-cw->kb * s->lai) * \
+                                exp(-kn * s->lai)) / (cw->kb + kn);
     cw->scalex[SHADED] = (1.0 - exp(-kn * s->lai)) / kn - cw->scalex[SUNLIT];
 
     return;

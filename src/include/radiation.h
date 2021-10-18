@@ -20,7 +20,7 @@ void   get_diffuse_frac(canopy_wk *, int, double);
 void   spitters(canopy_wk *, int, double);
 double calc_extra_terrestrial_rad(double, double);
 double estimate_clearness(double, double);
-void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double);
+void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double, double);
 double calculate_solar_noon(double, double);
 double calculate_hour_angle(double, double);
 double psi_func(double, double);
