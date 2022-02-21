@@ -370,6 +370,9 @@ typedef struct {
     double plc_shape;
     double capac;
     double plc_dead;
+    double b_plant;
+    double c_plant;
+    double Kcrit;
 
     /* not shared via cmd line */
     double *potA;

@@ -271,8 +271,9 @@ void initialise_params(params *p) {
     p->field_capacity = NULL;   // Field capacity of moisture for each layer, when soil water content at SWP = -10kPa
     p->wetting = 10;            // number of layers to use for wetting calcs
     p->plc_dead = 0.85;
-    p->b_plant = ;
-    p->c_plant = ;
+    p->b_plant = 3.22139896;
+    p->c_plant = 6.145211317;
+    p->Kcrit =  0.075; // Kmax * 0.05
 
 }
 

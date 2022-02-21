@@ -114,11 +114,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                     if (c->water_balance == GS_OPT) {
                         calculate_gs_E(c, cw, f, m, p, s, &ktot, Anet_opt, gsc_opt);
-                        exit(1);
-                        //calculate_gs_E(c, cw, f, m, p, s, &ktot);
 
                         /* Calculate new Cs, dleaf, Tleaf */
-                        //solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
+                        solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
 
                     } else {
 
@@ -250,14 +248,16 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     int    idx;
     double omega, transpiration, LE, Tdiff, gv, gbc, gh, sw_rad, trans_mmol;
 
-    idx = cw->ileaf;
-    penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
-                        cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
-                        &omega);
+    if (c->water_balance == HYDRAULICS) {
+        idx = cw->ileaf;
+        penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
+                            cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh,
+                            &gv, &omega);
 
-    /* store in structure */
-    cw->trans_leaf[idx] = transpiration;
-    cw->omega_leaf[idx] = omega;
+        /* store in structure */
+        cw->trans_leaf[idx] = transpiration;
+        cw->omega_leaf[idx] = omega;
+    }
 
     /*
      * calculate new Cs, dleaf & tleaf
@@ -451,49 +451,84 @@ void calculate_gs_E(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
 
     double e_supply, e_demand, gsv, frac;
-    int    idx = cw->ileaf;
-    int    k, N;
+    int    leaf_idx = cw->ileaf;
+    int    k, N, idx=0;
     double e_leaf[c->resolution], psi_leaf[c->resolution], Kc[c->resolution];
+    double gain[c->resolution], cost[c->resolution], profit[c->resolution];
     double RGSWC = 1.57;
+    double weibull, max_an, max_profit, p_crit, kcmax;
     N = c->resolution;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // (mmol m–2 s–1 MPa–1)
     //*ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
 
-    // Assuming perfect coupling, infer E_sun/sha from gsc. NB. as we're
-    // iterating, Tleaf will change and so VPD, maintaining energy
-    // balance
+    // Canopy xylem pressure (P_crit) MPa, beyond which tree
+    // desiccates (Ecrit), MPa
+    p_crit = -p->b_plant * pow(log(cw->plant_k / p->Kcrit), (1.0 / p->c_plant));
+
+    // Plant hydraulic conductance (mmol m-2 leaf s-1 MPa-1)
+    weibull = exp(-pow((-s->weighted_swp / p->b_plant), p->c_plant));
+    weibull = MIN(1.0, MAX(1.0E-09, weibull));
+    kcmax = cw->plant_k * weibull;
+
+    // Find Max An, we need this to normalise by below
+    max_an = -9999.;
     for (k=0; k<N; k++) {
+
+        // Ensure we don't check for profit in bad psi_leaf search space
+        if (psi_leaf[k] >= s->weighted_swp || psi_leaf[k] <= p_crit) {
+            if (An[k] > max_an) {
+                max_an = An[k];
+            }
+        }
+    }
+
+    max_profit = -9999.;
+
+    for (k=0; k<N; k++) {
+
+        // Assuming perfect coupling, infer E_sun/sha from gsc. NB. as we're
+        // iterating, Tleaf will change and so VPD, maintaining energy
+        // balance
         e_leaf[k] = gsc[k] * RGSWC / m->press * m->vpd; // mol H2O m-2 s-1
 
         // Rescale from canopy to leaf..as e_leaf is E_sun/sha i.e. big-leaf to
         // unit leaf, mmol m-2 s-1
-        e_leaf[k] *= MOL_2_MMOL / cw->scalex[idx];
+        e_leaf[k] *= MOL_2_MMOL / cw->scalex[leaf_idx];
 
         // Infer the matching leaf water potential (MPa).
         psi_leaf[k] = s->weighted_swp - e_leaf[k] / cw->plant_k;
 
         // Soil–plant hydraulic conductance at canopy xylem pressure
         // mmol m-2 s-1 MPa-1
-        weibull = exp(-(-psi_leaf[k] / p->b_plant)**p->c_plant);
-        weibull = min(1.0, max(1.0E-09, weibull));
-        Kc[k] = cw->plant_k * weibull
+        weibull = exp(-pow((-psi_leaf[k] / p->b_plant), p->c_plant));
+        weibull = MIN(1.0, MAX(1.0E-09, weibull));
+        Kc[k] = cw->plant_k * weibull;
 
+        // normalised gain (-)
+        gain[k] = An[k] / max_an;
 
+        // normalised cost (-)
+        cost[k] = (kcmax - Kc[k]) / (kcmax - p->Kcrit);
 
-        printf("%f %f %f\n", e_leaf[k], psi_leaf[k], Kc[k]);
+        // Locate maximum profit
+        profit[k] = gain[k] - cost[k];
+
+        // Ensure we don't check for profit in bad psi_leaf search space
+        if (psi_leaf[k] >= s->weighted_swp || psi_leaf[k] <= p_crit) {
+            if (profit[k] > max_profit) {
+                max_profit = profit[k];
+                idx = k;
+            }
+        }
     }
-
-    //int max = arr[0];
-
-    // Traverse array elements
-    // from second and compare
-    // every element with current max
-    //for (i = 1; i < n; i++)
-    //    if (arr[i] > max)
-    //        max = arr[i]
-
+    // Save optimised values
+    cw->an_leaf[leaf_idx] = An[idx]; // umol m-2 s-1
+    cw->trans_leaf[leaf_idx] = e_leaf[idx]; // ! mol H2O m-2 s-1
+    cw->lwp_leaf[leaf_idx] = psi_leaf[idx]; // MPa
+    printf("%f %f\n", cw->an_leaf[leaf_idx], idx);
+    return;
 
 }
 
