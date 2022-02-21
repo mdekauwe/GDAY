@@ -45,7 +45,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
     double previous_cs, current_cs, relk;
     double Anet_opt[c->resolution], gsc_opt[c->resolution];
-    double apar;
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // - this is only used in hydraulics, so set it to zero.
     // (mmol m–2 s–1 MPa–1)
@@ -71,6 +70,20 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         cw->plant_k = p->kp;
     }
 
+    ///
+    ///
+    ///
+    /// DEBUG
+    ///
+    ///
+    ///
+    /// DEBUG
+    s->lai = 6.0;
+    ///
+    ///
+    ///
+    /// DEBUG
+
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
 
@@ -82,10 +95,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         unpack_solar_geometry(cw, c);
 
         /* Is the sun up? */
-        apar = cw->apar_leaf[0] + cw->apar_leaf[1];
-
         if (cw->elevation > 0.0 && m->par > 50.0) {
-        //if (cw->elevation > 0.0 && apar > 50.0) {
             calculate_absorbed_radiation(cw, p, s, m->sw_rad, m->tair);
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
@@ -102,11 +112,19 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     if (c->ps_pathway == C3 && c->water_balance != GS_OPT) {
                         photosynthesis_C3(c, cw, m, p, s);
                     } else if (c->ps_pathway == C3 && c->water_balance == GS_OPT) {
+
+                        photosynthesis_C3(c, cw, m, p, s);
+                        printf("*%f %f\n", cw->an_leaf[cw->ileaf], cw->gsc_leaf[cw->ileaf]);
+
+
                         photosynthesis_C3_opt(c, cw, m, p, s, Anet_opt, gsc_opt);
 
                         //for (k=0; k<c->resolution; k++) {
                         //    printf("%f %f\n", Anet_opt[k], gsc_opt[k]);
                         //}
+
+
+
 
 
                     } else {
@@ -118,21 +136,23 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     if (c->water_balance == GS_OPT) {
 
                         // If there is bugger all light, assume there are no fluxes
-                        if (cw->apar_leaf[cw->ileaf] > 50) {
+                        if (cw->apar_leaf[cw->ileaf] > 50.0) {
 
                             calculate_gs_E_psi_leaf(c, cw, f, m, p, s, &ktot,
                                                     Anet_opt, gsc_opt);
                             /* Calculate new Cs, dleaf, Tleaf */
                             solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
-                            
+
+                            printf("**%f %f\n\n", cw->an_leaf[cw->ileaf], cw->gsc_leaf[cw->ileaf]);
+
+
+
                         } else {
                             cw->an_leaf[cw->ileaf] = 0.0; // umol m-2 s-1
                             cw->trans_leaf[cw->ileaf] = 0.0; // ! mol H2O m-2 s-1
                             break;
                             //cw->lwp_leaf[leaf_idx] = psi_leaf[idx]; // MPa
                         }
-
-
 
                     } else {
 
@@ -217,6 +237,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         c->hour_idx++;
         sunlight_hrs++;
     } /* end of hour loop */
+
+    exit(1);
 
     /* work out average omega for the day over sunlight hours */
     f->omega /= sunlight_hrs;
