@@ -45,7 +45,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
     double previous_cs, current_cs, relk;
     double Anet_opt[c->resolution], gsc_opt[c->resolution];
-
+    double apar;
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // - this is only used in hydraulics, so set it to zero.
     // (mmol m–2 s–1 MPa–1)
@@ -82,7 +82,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         unpack_solar_geometry(cw, c);
 
         /* Is the sun up? */
-        if (cw->elevation > 0.0 && m->par > 20.0) {
+        apar = cw->apar_leaf[0] + cw->apar_leaf[1];
+
+        if (cw->elevation > 0.0 && m->par > 50.0) {
+        //if (cw->elevation > 0.0 && leaf_par > 50.0) {
             calculate_absorbed_radiation(cw, p, s, m->sw_rad, m->tair);
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
@@ -99,6 +102,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     if (c->ps_pathway == C3 && c->water_balance != GS_OPT) {
                         photosynthesis_C3(c, cw, m, p, s);
                     } else if (c->ps_pathway == C3 && c->water_balance == GS_OPT) {
+                        printf("* %f %f %f\n", m->par, cw->apar_leaf[0], cw->apar_leaf[1]);
                         photosynthesis_C3_opt(c, cw, m, p, s, Anet_opt, gsc_opt);
 
                         //for (k=0; k<c->resolution; k++) {
@@ -113,7 +117,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     }
 
                     if (c->water_balance == GS_OPT) {
-                        calculate_gs_E(c, cw, f, m, p, s, &ktot, Anet_opt, gsc_opt);
+                        calculate_gs_E_psi_leaf(c, cw, f, m, p, s, &ktot,
+                                                Anet_opt, gsc_opt);
 
                         /* Calculate new Cs, dleaf, Tleaf */
                         solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
@@ -446,8 +451,9 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
     return;
 }
 
-void calculate_gs_E(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
-                    state *s, double *ktot, double *An, double *gsc) {
+void calculate_gs_E_psi_leaf(control *c, canopy_wk *cw, fluxes *f, met *m,
+                             params *p, state *s, double *ktot, double *An,
+                             double *gsc) {
 
 
     double e_supply, e_demand, gsv, frac;
@@ -478,14 +484,16 @@ void calculate_gs_E(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
 
         // Ensure we don't check for profit in bad psi_leaf search space
         if (psi_leaf[k] >= s->weighted_swp || psi_leaf[k] <= p_crit) {
+
             if (An[k] > max_an) {
                 max_an = An[k];
             }
         }
     }
+    //if (max_an< -500.)
+    //    exit(1);
 
     max_profit = -9999.;
-
     for (k=0; k<N; k++) {
 
         // Assuming perfect coupling, infer E_sun/sha from gsc. NB. as we're
@@ -527,7 +535,8 @@ void calculate_gs_E(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     cw->an_leaf[leaf_idx] = An[idx]; // umol m-2 s-1
     cw->trans_leaf[leaf_idx] = e_leaf[idx]; // ! mol H2O m-2 s-1
     cw->lwp_leaf[leaf_idx] = psi_leaf[idx]; // MPa
-    printf("%f %f\n", cw->an_leaf[leaf_idx], idx);
+    //printf("%f %d\n", cw->an_leaf[leaf_idx], idx);
+    
     return;
 
 }
