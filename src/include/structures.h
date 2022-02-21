@@ -56,6 +56,7 @@ typedef struct {
     int   pdebug;
     int   spinup_method;
     int   soil_drainage;
+    int   resolution;     // allows jumps in Ci ~ 0.35 umol mol-1
 } control;
 
 

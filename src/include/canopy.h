@@ -34,4 +34,7 @@ void    unpack_solar_geometry(canopy_wk *, control *);
 double  calc_lwp(fluxes *, state *, double, double);
 void  calculate_emax(control *, canopy_wk *, fluxes *, met *, params *,
                      state *, double *);
+void  calculate_gs_E(control *, canopy_wk *, fluxes *, met *, params *,
+                     state *, double *, double *, double *);
+
 #endif /* CANOPY_H */

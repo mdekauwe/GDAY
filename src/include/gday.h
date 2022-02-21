@@ -61,6 +61,7 @@
 /* water balance identifiers */
 #define BUCKET 0
 #define HYDRAULICS 1
+#define GS_OPT 2
 
 /* Drainage options for SPA */
 #define GRAVITY 0

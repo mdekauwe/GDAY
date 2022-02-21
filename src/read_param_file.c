@@ -432,6 +432,9 @@ int handler(char *section, char *name, char *value, control *c,
         if (strcmp(temp, "hydraulics") == 0||
             strcmp(temp, "HYDRAULICS") == 0)
             c->water_balance = HYDRAULICS;
+        else if (strcmp(temp, "gs_opt") == 0||
+            strcmp(temp, "GS_OPT") == 0)
+            c->water_balance = GS_OPT;
         else {
             c->water_balance = BUCKET;
         }

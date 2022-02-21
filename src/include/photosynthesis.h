@@ -7,6 +7,8 @@
 
 /* Sub-daily funcs */
 void   photosynthesis_C3(control *, canopy_wk *, met *m, params *, state *);
+void   photosynthesis_C3_opt(control *, canopy_wk *, met *m, params *, state *,
+                             double *, double *);
 int    calc_electron_transport_rate(params *, double, double, double *,
                                     double *);
 int    solve_ci(double, double, double, double, double, double, double,

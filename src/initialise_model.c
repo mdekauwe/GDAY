@@ -55,6 +55,7 @@ void initialise_control(control *c) {
     c->sub_daily = FALSE;           /* Run at daily or 30 minute timestep */
     c->num_hlf_hrs = 48;
     c->pdebug = FALSE;              /* Use to debug a specific day */
+    c->resolution = 1000;
     return;
 }
 
@@ -270,7 +271,8 @@ void initialise_params(params *p) {
     p->field_capacity = NULL;   // Field capacity of moisture for each layer, when soil water content at SWP = -10kPa
     p->wetting = 10;            // number of layers to use for wetting calcs
     p->plc_dead = 0.85;
-
+    p->b_plant = ;
+    p->c_plant = ;
 
 }
 

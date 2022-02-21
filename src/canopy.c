@@ -41,9 +41,10 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
-    int    debug = TRUE;
+    int    debug = TRUE, k;
     double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
     double previous_cs, current_cs, relk;
+    double Anet_opt[c->resolution], gsc_opt[c->resolution];
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // - this is only used in hydraulics, so set it to zero.
@@ -95,27 +96,47 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* Leaf temperature loop */
                 while (TRUE) {
 
-                    if (c->ps_pathway == C3) {
+                    if (c->ps_pathway == C3 && c->water_balance != GS_OPT) {
                         photosynthesis_C3(c, cw, m, p, s);
+                    } else if (c->ps_pathway == C3 && c->water_balance == GS_OPT) {
+                        photosynthesis_C3_opt(c, cw, m, p, s, Anet_opt, gsc_opt);
+
+                        //for (k=0; k<c->resolution; k++) {
+                        //    printf("%f %f\n", Anet_opt[k], gsc_opt[k]);
+                        //}
+
+
                     } else {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
                     }
 
-                    if (cw->an_leaf[cw->ileaf] > 1E-04) {
-
-                        if (c->water_balance == HYDRAULICS) {
-                            // Ensure transpiration does not exceed Emax, if it
-                            // does we recalculate gs and An
-                            calculate_emax(c, cw, f, m, p, s, &ktot);
-                        }
+                    if (c->water_balance == GS_OPT) {
+                        calculate_gs_E(c, cw, f, m, p, s, &ktot, Anet_opt, gsc_opt);
+                        exit(1);
+                        //calculate_gs_E(c, cw, f, m, p, s, &ktot);
 
                         /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
+                        //solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
 
                     } else {
-                        break;
+
+
+                        if (cw->an_leaf[cw->ileaf] > 1E-04) {
+
+                            if (c->water_balance == HYDRAULICS) {
+                                // Ensure transpiration does not exceed Emax, if it
+                                // does we recalculate gs and An
+                                calculate_emax(c, cw, f, m, p, s, &ktot);
+                            }
+
+                            /* Calculate new Cs, dleaf, Tleaf */
+                            solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
+
+                        } else {
+                            break;
+                        }
                     }
 
                     if (iter >= itermax) {
@@ -425,7 +446,56 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
     return;
 }
 
+void calculate_gs_E(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
+                    state *s, double *ktot, double *An, double *gsc) {
 
+
+    double e_supply, e_demand, gsv, frac;
+    int    idx = cw->ileaf;
+    int    k, N;
+    double e_leaf[c->resolution], psi_leaf[c->resolution], Kc[c->resolution];
+    double RGSWC = 1.57;
+    N = c->resolution;
+
+    // Hydraulic conductance of the entire soil-to-leaf pathway
+    // (mmol m–2 s–1 MPa–1)
+    //*ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
+
+    // Assuming perfect coupling, infer E_sun/sha from gsc. NB. as we're
+    // iterating, Tleaf will change and so VPD, maintaining energy
+    // balance
+    for (k=0; k<N; k++) {
+        e_leaf[k] = gsc[k] * RGSWC / m->press * m->vpd; // mol H2O m-2 s-1
+
+        // Rescale from canopy to leaf..as e_leaf is E_sun/sha i.e. big-leaf to
+        // unit leaf, mmol m-2 s-1
+        e_leaf[k] *= MOL_2_MMOL / cw->scalex[idx];
+
+        // Infer the matching leaf water potential (MPa).
+        psi_leaf[k] = s->weighted_swp - e_leaf[k] / cw->plant_k;
+
+        // Soil–plant hydraulic conductance at canopy xylem pressure
+        // mmol m-2 s-1 MPa-1
+        weibull = exp(-(-psi_leaf[k] / p->b_plant)**p->c_plant);
+        weibull = min(1.0, max(1.0E-09, weibull));
+        Kc[k] = cw->plant_k * weibull
+
+
+
+        printf("%f %f %f\n", e_leaf[k], psi_leaf[k], Kc[k]);
+    }
+
+    //int max = arr[0];
+
+    // Traverse array elements
+    // from second and compare
+    // every element with current max
+    //for (i = 1; i < n; i++)
+    //    if (arr[i] > max)
+    //        max = arr[i]
+
+
+}
 
 void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
                     state *s, double *ktot) {

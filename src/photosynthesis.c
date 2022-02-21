@@ -123,6 +123,90 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     return;
 }
 
+void photosynthesis_C3_opt(control *c, canopy_wk *cw, met *m, params *p,
+                             state *s, double *Anet, double *gsc) {
+    //
+    //  Calculate photosynthesis following Farquhar & von Caemmerer, this is an
+    //  implementation of the routinue in MAESTRA
+    //
+    //  References:
+    //  -----------
+    //  * GD Farquhar, S Von Caemmerer (1982) Modelling of photosynthetic
+    //    response to environmental conditions. Encyclopedia of plant
+    //    physiology 12, 549-587.
+    //  * Medlyn, B. E. et al (2011) Global Change Biology, 17, 2134-2144.
+    //  * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
+    //
+
+    double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
+    double A, B, C, Cs, tleaf, dleaf, dleaf_kpa;
+    //double Rd0 = 0.92;  Dark respiration rate make a paramater!
+    int    idx, k, N, error = FALSE, large_root;
+    double g0_zero = 1E-09; // numerical issues, don't use zero
+    double scalex = cw->scalex[cw->ileaf];
+    double lower, upper;
+    double Ci[c->resolution], Ac[c->resolution], Aj[c->resolution];
+    double Agross[c->resolution];
+
+    // unpack some stuff
+    idx = cw->ileaf;
+    par = cw->apar_leaf[idx];
+    Cs = cw->Cs;
+    tleaf = cw->tleaf[idx];
+    dleaf = cw->dleaf;
+
+    // Calculate photosynthetic parameters from leaf temperature.
+    gamma_star = calc_co2_compensation_point(p, tleaf);
+    km = calculate_michaelis_menten(p, tleaf);
+    calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
+
+    // Generate a sequence of Ci's that we will solve the optimisation
+    // model for, range btw gamma_star and Cs. umol mol-1
+    N = c->resolution;
+    lower = gamma_star;
+    upper = Cs;
+    for (k=1; k<=N; k++) {
+        Ci[k-1] = lower + (double)k * (upper - lower) / (double)(N-1);
+    }
+
+    calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
+
+    // leaf respiration in the light, Collatz et al. 1991
+    rd = 0.015 * vcmax;
+    // rd = calc_leaf_day_respiration(tleaf, Rd0);
+
+    // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C
+    vcmax *= scalex;
+    jmax *= scalex;
+    rd *= scalex;
+
+    // Rate of electron transport, which is a function of absorbed PAR
+    calc_electron_transport_rate(p, par, jmax, &J, &Vj);
+
+    // Calculate the sunlit/shaded A_leaf (i.e. scaled up), umol m-2 s-1
+    for (k=0; k<N; k++) {
+
+        Ac[k] = assim(Ci[k], gamma_star, vcmax, km); // umol m-2 s-1
+        Aj[k] = assim(Ci[k], gamma_star, Vj, 2.0*gamma_star); // umol m-2 s-1
+
+        error = FALSE;
+        large_root = TRUE;
+        Agross[k] = -quad(1.0-1E-04, Ac[k]+Aj[k], Ac[k]*Aj[k], large_root,
+                      &error);
+        if (error) {
+            Agross[k] = 0.0;
+        }
+        Anet[k] = Agross[k] - rd; // Net photosynthesis, umol m-2 s-1
+        // Use an_leaf to infer gsc_sun/sha. NB. An is the scaled up values
+        // via scalex applied to Vcmax/Jmax
+        gsc[k] = Anet[k] / MAX(1.e-6, Cs - Ci[k]); // mol CO2 m-2 s-1
+        //printf("* %f %f %f\n", Anet[k], Agross[k], rd);
+    }
+
+    return;
+}
+
+
 int calc_electron_transport_rate(params *p, double par, double jmax, double *J,
                                  double *Vj) {
     //
