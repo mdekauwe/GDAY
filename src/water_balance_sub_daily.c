@@ -861,7 +861,10 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
     if (f->water_loss[soil_layer] < 0.0) {
         fprintf(stderr, "waterloss probem in soil_balance: %d %f\n",
                 soil_layer, f->water_loss[soil_layer]);
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
+
+        // ISSUE: We need to fix this, related to gs_opt, this will let it run
+        f->water_loss[soil_layer] = 0.0;
     }
 
     //free_dvector(ystart, 1, N);

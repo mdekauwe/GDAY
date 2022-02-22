@@ -652,6 +652,8 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 /* 1000 years (50 yrs x 20 cycles) */
                 for (i = 0; i < 20; i++) {
                     run_sim(cw, c, f, fs, ma, m, p, s, nr); /* run GDAY */
+                    //fprintf(stderr,
+                    //  "%d: Spinup: Plant C - %f, Soil C - %f\n", i, s->plantc, s->soilc);
                 }
 
                 /* Have we reached a steady state? */
