@@ -124,7 +124,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (c->water_balance == HYDRAULICS) {
+    if (c->water_balance == HYDRAULICS || c->water_balance == GS_OPT) {
         allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
@@ -178,7 +178,7 @@ int main(int argc, char **argv)
         free(cw->df_store);
 
         /* Clean up hydraulics */
-        if (c->water_balance == HYDRAULICS) {
+        if (c->water_balance == HYDRAULICS || c->water_balance == GS_OPT) {
             free(f->soil_conduct);
             free(f->swp);
             free(f->soilR);
@@ -341,7 +341,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                             p->cfracts * s->shoot));
     }
 
-    if (c->water_balance == HYDRAULICS) {
+    if (c->water_balance == HYDRAULICS || c->water_balance == GS_OPT) {
         double root_zone_total, water_content;
 
         // Update the soil water storage
@@ -582,7 +582,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         // growth of new roots. It is debatable when this should be done. I've
         // picked the year end for computation reasons and probably because
         // plants wouldn't do this as dynamcially as on a daily basis. Probably
-        if (c->water_balance == HYDRAULICS) {
+        if (c->water_balance == HYDRAULICS || c->water_balance == GS_OPT) {
             update_roots(c, p, s);
         }
     }

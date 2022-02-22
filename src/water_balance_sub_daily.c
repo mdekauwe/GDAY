@@ -49,7 +49,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     }
 
     /* Set up all the hydraulics stuff */
-    if (c->water_balance == HYDRAULICS) {
+    if (c->water_balance == HYDRAULICS || c->water_balance == GS_OPT) {
         calc_saxton_stuff(p, fsoil_root);
 
         for (i = 0; i < p->wetting; i++) {
@@ -136,7 +136,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
     // Water drained through the bottom soil layer
     double water_lost = 0.0;
 
-    if (c->water_balance == HYDRAULICS) {
+    if (c->water_balance == HYDRAULICS || c->water_balance == GS_OPT) {
 
         zero_water_movement(f, p);
 
