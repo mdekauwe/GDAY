@@ -70,7 +70,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         cw->plant_k = p->kp;
     }
 
-
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
 
@@ -554,10 +553,10 @@ void calculate_gs_E_psi_leaf(control *c, canopy_wk *cw, fluxes *f, met *m,
 
         // Save optimised values
         cw->an_leaf[leaf_idx] = An[idx]; // umol m-2 s-1
-        cw->trans_leaf[leaf_idx] = e_leaf[idx]; // ! mol H2O m-2 s-1
+        cw->trans_leaf[leaf_idx] = e_leaf[idx] * MMOL_2_MOL; // ! mol H2O m-2 s-1
         cw->lwp_leaf[leaf_idx] = psi_leaf[idx]; // MPa
 
-        //printf("%f %f %f %f %f %f %f %f\n", An[idx], e_leaf[idx], gsc[idx], psi_leaf[idx], kcmax, Kc[idx], gain[idx], cost[idx]);
+        //printf("%d %f %f %f %f %f %f \n", idx, An[idx], e_leaf[idx], gsc[idx], psi_leaf[idx],  gain[idx], cost[idx]);
         //if (e_leaf[idx] > 87942) {
         //    for (k=0; k<N; k++) {
         //        printf("%d: %f %f %f %f\n", k, profit[k], gain[k], cost[k], max_profit);

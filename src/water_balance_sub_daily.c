@@ -1161,7 +1161,7 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
 
     // Update plant conductance
     cw->plant_k = stem_relk * p->kp;
-
+    
     return;
 }
 
