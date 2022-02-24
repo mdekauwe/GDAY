@@ -81,7 +81,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         unpack_solar_geometry(cw, c);
 
         /* Is the sun up? */
-        if (cw->elevation > 0.0 && m->par > 50.0) {
+        if (cw->elevation > 0.0 && m->par > 20.0) {
             calculate_absorbed_radiation(cw, p, s, m->sw_rad, m->tair);
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
