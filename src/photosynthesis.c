@@ -199,10 +199,15 @@ void photosynthesis_C3_opt(control *c, canopy_wk *cw, met *m, params *p,
 
 
         Anet[k] = Agross[k] - rd; // Net photosynthesis, umol m-2 s-1
+        if (Anet[k] < 1E-08) {
+            Anet[k] = 1E-08;
+        }
         //printf("** %d: %f %f %f %f %f\n", k, Anet[k], Agross[k], par, tleaf, dleaf );
         // Use an_leaf to infer gsc_sun/sha. NB. An is the scaled up values
         // via scalex applied to Vcmax/Jmax
         gsc[k] = Anet[k] / MAX(1.e-6, Cs - Ci[k]); // mol CO2 m-2 s-1
+
+
         //printf("* %f %f %f\n", Anet[k], Agross[k], rd);
     }
 

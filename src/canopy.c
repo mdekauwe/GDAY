@@ -486,7 +486,7 @@ void calculate_gs_E_psi_leaf(control *c, canopy_wk *cw, fluxes *f, met *m,
     for (k=0; k<N; k++) {
 
         // Ensure we don't check for profit in bad psi_leaf search space
-        if (psi_leaf[k] >= s->weighted_swp || psi_leaf[k] <= p_crit) {
+        if (psi_leaf[k] <= s->weighted_swp || psi_leaf[k] >= p_crit) {
 
             if (An[k] > max_an) {
                 max_an = An[k];
@@ -503,7 +503,8 @@ void calculate_gs_E_psi_leaf(control *c, canopy_wk *cw, fluxes *f, met *m,
             // Assuming perfect coupling, infer E_sun/sha from gsc. NB. as we're
             // iterating, Tleaf will change and so VPD, maintaining energy
             // balance
-            e_leaf[k] = gsc[k] * RGSWC / m->press * m->vpd; // mol H2O m-2 s-1
+            e_leaf[k] = gsc[k] * RGSWC / m->press * cw->dleaf; // mol H2O m-2 s-1
+
 
             // Rescale from canopy to leaf..as e_leaf is E_sun/sha i.e. big-leaf to
             // unit leaf, mmol m-2 s-1
@@ -511,6 +512,7 @@ void calculate_gs_E_psi_leaf(control *c, canopy_wk *cw, fluxes *f, met *m,
 
             // Infer the matching leaf water potential (MPa).
             psi_leaf[k] = s->weighted_swp - e_leaf[k] / cw->plant_k;
+            //psi_leaf[k] = MAX(-20.0, psi_leaf[k]);
 
             // Soil–plant hydraulic conductance at canopy xylem pressure
             // mmol m-2 s-1 MPa-1
@@ -520,30 +522,57 @@ void calculate_gs_E_psi_leaf(control *c, canopy_wk *cw, fluxes *f, met *m,
 
             // normalised gain (-)
             gain[k] = An[k] / max_an;
+            gain[k] = MIN(1.0, MAX(1.0E-09, gain[k]));
 
             // normalised cost (-)
             cost[k] = (kcmax - Kc[k]) / (kcmax - p->Kcrit);
+            cost[k] = MIN(1.0, MAX(1.0E-09, cost[k]));
 
             // Locate maximum profit
             profit[k] = gain[k] - cost[k];
 
+
+            //printf("* %f %f %f\n", profit[k], gain[k], cost[k]);
+
+
             // Ensure we don't check for profit in bad psi_leaf search space
-            if (psi_leaf[k] >= s->weighted_swp || psi_leaf[k] <= p_crit) {
+            if (psi_leaf[k] <= s->weighted_swp || psi_leaf[k] >= p_crit) {
+
                 if (profit[k] > max_profit) {
                     max_profit = profit[k];
                     idx = k;
+
                 }
             }
+
+            //printf("** %f %f %d %f %f %f\n", max_profit, profit[k], idx, psi_leaf[k], s->weighted_swp, p_crit);
+
+
         }
+
+
 
         // Save optimised values
         cw->an_leaf[leaf_idx] = An[idx]; // umol m-2 s-1
         cw->trans_leaf[leaf_idx] = e_leaf[idx]; // ! mol H2O m-2 s-1
         cw->lwp_leaf[leaf_idx] = psi_leaf[idx]; // MPa
-        //printf("%f %d\n", cw->an_leaf[leaf_idx], idx);
+
+        //printf("%f %f %f %f %f %f %f %f\n", An[idx], e_leaf[idx], gsc[idx], psi_leaf[idx], kcmax, Kc[idx], gain[idx], cost[idx]);
+        //if (e_leaf[idx] > 87942) {
+        //    for (k=0; k<N; k++) {
+        //        printf("%d: %f %f %f %f\n", k, profit[k], gain[k], cost[k], max_profit);
+        //    }
+        //    printf("%d\n", idx);
+        //    exit(1);
+        //}
+        //if (e_leaf[idx] > 87942) {
+        //    exit(1);
+        //}
+
+        //printf("%d %f %f %f\n", idx, cw->an_leaf[leaf_idx], cw->trans_leaf[leaf_idx], cw->lwp_leaf[leaf_idx]);
+
 
     } else {
-        // Save optimised values
         cw->an_leaf[leaf_idx] = 0.0; // umol m-2 s-1
         cw->trans_leaf[leaf_idx] = 0.0; // ! mol H2O m-2 s-1
         cw->lwp_leaf[leaf_idx] = s->weighted_swp; // MPa
