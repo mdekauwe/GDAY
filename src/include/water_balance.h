@@ -22,8 +22,8 @@ void    penman_canopy_wrapper(params *, state *, double, double, double, double,
                               double, double, double, double *, double *,
                               double *, double *, double *);
 void    penman_leaf_wrapper(met *, params *, state *, double, double,
-                            double, double *, double *, double *, double *,
-                            double *, double *);
+                            double, double, double *, double *, double *,
+                            double *, double *, double *);
 void    penman_monteith(double, double, double, double, double, double, double *,
                         double *, double *, double *);
 double  calc_sat_water_vapour_press(double);

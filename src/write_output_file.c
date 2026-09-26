@@ -166,8 +166,10 @@ void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
     /* Canopy stuff */
     fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,",
                        cw->an_canopy, cw->rd_canopy, cw->gsc_canopy);
+    /* mean of the sunlit & shaded leaves (tleaf_new is stale at night) */
     fprintf(c->ofp_sd, "%.10f,%.10f,%.10f\n",
-                       cw->apar_canopy, cw->trans_canopy, cw->tleaf_new);
+                       cw->apar_canopy, cw->trans_canopy,
+                       (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2.0);
 
     return;
 }

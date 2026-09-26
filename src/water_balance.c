@@ -590,10 +590,15 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
 }
 
 void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
-                         double gsc, double *transpiration, double *LE,
-                         double *gbc, double *gh, double *gv, double *omega) {
+                         double gsc, double lai_leaf, double *transpiration,
+                         double *LE, double *gbc, double *gh, double *gv,
+                         double *omega) {
     /*
         Calculates transpiration by leaves using the Penman-Monteith
+
+        NB. rnet and gsc are big-leaf values (per m2 ground for the sunlit or
+        shaded fraction), so the per unit leaf area boundary layer and
+        radiation conductances are scaled by that fraction's LAI.
 
         Parameters:
         ----------
@@ -625,11 +630,11 @@ void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
     /* Boundary layer conductance for heat - single sided, free convection */
     gbhf = calc_bdn_layer_free_conduct(m->tair, tleaf, m->press, p->leaf_width);
 
-    /* Total boundary layer conductance for heat */
-    gbh = gbhu + gbhf;
+    /* Total boundary layer conductance for heat, scaled to the big leaf */
+    gbh = (gbhu + gbhf) * lai_leaf;
 
     /* Total conductance for heat - two-sided */
-    *gh = 2.0 * (gbh + gradn);
+    *gh = 2.0 * (gbh + gradn * lai_leaf);
 
     gbv = GBVGBH * gbh;
     gsv = GSVGSC * gsc;

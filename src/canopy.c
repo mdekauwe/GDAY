@@ -219,12 +219,17 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
 
     */
     int    idx;
-    double omega, transpiration, LE, Tdiff, gv, gbc, gh, trans_mmol;
+    double omega, transpiration, LE, Tdiff, gv, gbc, gh, trans_mmol, lai_leaf;
 
     idx = cw->ileaf;
+
+    // floor avoids a zero conductance when one fraction has ~no leaf area,
+    // its rnet and An are then ~0 too
+    lai_leaf = MAX(cw->lai_leaf[idx], 0.001);
+
     penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
-                        cw->gsc_leaf[idx], &transpiration, &LE, &gbc, &gh, &gv,
-                        &omega);
+                        cw->gsc_leaf[idx], lai_leaf, &transpiration, &LE, &gbc,
+                        &gh, &gv, &omega);
 
     /* store in structure */
     cw->trans_leaf[idx] = transpiration;
@@ -233,8 +238,11 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     /*
      * calculate new Cs, dleaf & tleaf
      */
+    // Rn_iso - LE = cp Ma gh (Tleaf - Tair), gh including the radiative
+    // conductance. MAESPA has Tdiff / 4 here, but that makes the converged
+    // leaf-air difference 4x too small.
     Tdiff = (cw->rnet_leaf[idx] - LE) / (CP * MASS_AIR * gh);
-    cw->tleaf_new = m->tair + Tdiff / 4.0;
+    cw->tleaf_new = m->tair + Tdiff;
     cw->Cs = m->Ca - cw->an_leaf[idx] / gbc;
     cw->dleaf = cw->trans_leaf[idx] * m->press / gv;
 
