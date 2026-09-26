@@ -329,33 +329,19 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     double upper_bound = 10.0;
     double tref = p->measurement_temp;
 
+    // NB. the same top-of-canopy values are used for both leaves, the
+    // sunlit/shaded difference comes from scalex in photosynthesis_C3
     if (c->modeljm == 0) {
-        if (cw->ileaf == SUNLIT) {
-            *jmax = p->jmax;
-            *vcmax = p->vcmax;
-        } else {
-            *jmax = p->jmax;
-            *vcmax = p->vcmax;
-        }
+        *jmax = p->jmax;
+        *vcmax = p->vcmax;
     } else if (c->modeljm == 1) {
-        if (cw->ileaf == SUNLIT) {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
-            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
-        } else {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
-            jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
-        }
+        vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
+        jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
-        // NB when using the fixed JV reln, we only apply scalar to Vcmax
-        if (cw->ileaf == SUNLIT) {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
-            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
-        } else {
-            vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
-            jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
-        }
+        vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
+        jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 3) {
@@ -868,8 +854,8 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     *jmax *= s->wtfac_root;
     *vcmax *= s->wtfac_root;
     /*  Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
-    adj_for_low_temp(*(&jmax), Tk);
-    adj_for_low_temp(*(&vcmax), Tk);
+    adj_for_low_temp(jmax, Tk);
+    adj_for_low_temp(vcmax, Tk);
 
     return;
 
@@ -1228,7 +1214,7 @@ void calculate_vcmax_parameter(params *p, state *s, double Tk, double N0,
     *vcmax *= s->wtfac_root;
 
     /* Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
-    adj_for_low_temp(*(&vcmax), Tk);
+    adj_for_low_temp(vcmax, Tk);
 
     return;
 }
