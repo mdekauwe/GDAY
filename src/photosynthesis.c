@@ -354,11 +354,8 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
-    // reduce photosynthetic capacity with moisture stress
-    if (c->water_balance == BUCKET) {
-        *jmax *= s->wtfac_root;
-        *vcmax *= s->wtfac_root;
-    } // Should add non-stomal limitation here
+    // NB. bucket model water stress acts through g1 only (photosynthesis_C3),
+    // it was previously applied to Jmax/Vcmax as well, i.e. twice.
 
     // Jmax/Vcmax forced linearly to zero at low T
     if (tleaf < lower_bound) {
@@ -850,9 +847,7 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     }
 
 
-    /* reduce photosynthetic capacity with moisture stress */
-    *jmax *= s->wtfac_root;
-    *vcmax *= s->wtfac_root;
+    /* NB. water stress acts through g1 only, see calculate_ci */
     /*  Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
     adj_for_low_temp(jmax, Tk);
     adj_for_low_temp(vcmax, Tk);
@@ -1210,8 +1205,7 @@ void calculate_vcmax_parameter(params *p, state *s, double Tk, double N0,
     *vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
     *vcmax = peaked_arrh(mt, *(vcmax25), Ea, Tk, delS, Hd);
 
-    /* reduce photosynthetic capacity with moisture stress */
-    *vcmax *= s->wtfac_root;
+    /* NB. water stress acts through g1 only, see calculate_ci */
 
     /* Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
     adj_for_low_temp(vcmax, Tk);
