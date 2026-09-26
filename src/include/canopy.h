@@ -18,6 +18,7 @@
 void    initialise_leaf_surface(canopy_wk *, met *);
 void    zero_carbon_day_fluxes(fluxes *);
 void    zero_hourly_fluxes(canopy_wk *);
+void    zero_leaf_water_fluxes(control *, canopy_wk *, state *);
 void    update_daily_carbon_fluxes(fluxes *, params *, double, double);
 void    canopy(canopy_wk *, control *, fluxes *, met_arrays *, met *,
                nrutil *nr, params *, state *);

@@ -91,6 +91,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 initialise_leaf_surface(cw, m);
+                iter = 0;
 
                 /* Leaf temperature loop */
                 while (TRUE) {
@@ -115,6 +116,12 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
 
                     } else {
+                        /*
+                        ** No carbon gain, so gs = g0 ~ 0. Don't carry over
+                        ** the water fluxes from a previous iteration or
+                        ** timestep.
+                        */
+                        zero_leaf_water_fluxes(c, cw, s);
                         break;
                     }
 
@@ -136,6 +143,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         } else {
 
             zero_hourly_fluxes(cw);
+            for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
+                zero_leaf_water_fluxes(c, cw, s);
+            }
 
             /* set tleaf to tair during the night */
             cw->tleaf[SUNLIT] = m->tair;
@@ -342,6 +352,25 @@ void zero_hourly_fluxes(canopy_wk *cw) {
         cw->rnet_leaf[i] = 0.0;
         cw->apar_leaf[i] = 0.0;
         cw->omega_leaf[i] = 0.0;
+    }
+
+    return;
+}
+
+void zero_leaf_water_fluxes(control *c, canopy_wk *cw, state *s) {
+    /*
+        Reset the current leaf's water fluxes for when it isn't transpiring,
+        i.e. at night or when An is ~0. With no flow the leaf water potential
+        equilibrates with the soil.
+    */
+    int idx = cw->ileaf;
+
+    cw->trans_leaf[idx] = 0.0;
+    cw->omega_leaf[idx] = 0.0;
+
+    if (c->water_balance == HYDRAULICS) {
+        cw->trans_deficit_leaf[idx] = 0.0;
+        cw->lwp_leaf[idx] = s->weighted_swp;
     }
 
     return;

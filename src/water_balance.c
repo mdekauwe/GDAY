@@ -801,6 +801,7 @@ void penman_monteith(double press, double vpd, double rnet, double slope,
         *LE = arg1 / arg2; /* W m-2 */
         *transpiration = *LE / lambda; /* mol H20 m-2 s-1 */
     } else {
+        *LE = 0.0;
         *transpiration = 0.0;
     }
 
@@ -964,9 +965,14 @@ double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
     */
     double cmolar, Tk, gbh;
 
+    // Floor the wind speed, in still air with tleaf = tair (i.e. the first
+    // iteration) both the forced and free components are otherwise zero, so
+    // gbc = 0 and Cs = Ca - An / gbc blows up.
+    double min_wind = 0.1; // m s-1
+
     Tk = tair + DEG_TO_KELVIN;
     cmolar = press / (RGAS * Tk);
-    gbh = 0.003 * sqrt(wind / leaf_width) * cmolar;
+    gbh = 0.003 * sqrt(MAX(wind, min_wind) / leaf_width) * cmolar;
 
     return (gbh);
 }

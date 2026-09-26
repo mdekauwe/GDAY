@@ -63,6 +63,7 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     // Deal with extreme cases
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
         cw->an_leaf[idx] = -rd;
+        cw->rd_leaf[idx] = rd;
         cw->gsc_leaf[idx] = g0_zero;
     } else {
         // Hardwiring this for Medlyn gs model for the moment, till I figure
@@ -97,7 +98,12 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         error = solve_ci(g0, gs_over_a, rd, Cs, gamma_star, Vj,
                          2.0*gamma_star, &Ci);
 
-        Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
+        if (error) {
+            // no real root, handled by the compensation point case below
+            Aj = 0.0;
+        } else {
+            Aj = Vj * (Ci - gamma_star) / (Ci + 2.0 * gamma_star);
+        }
 
         // Below light compensation point?
         if (Aj - rd < 1E-6) {
