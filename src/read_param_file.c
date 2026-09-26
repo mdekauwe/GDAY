@@ -632,6 +632,14 @@ int handler(char *section, char *name, char *value, control *c,
         p->displace_ratio = atof(value);
     } else if (MATCH("params", "disturbance_doy")) {
         p->disturbance_doy = atoi(value);
+    } else if (MATCH("params", "burn_specific_yr")) {
+        p->burn_specific_yr = atoi(value);
+    } else if (MATCH("params", "return_interval")) {
+        p->return_interval = atoi(value);
+    } else if (MATCH("params", "hurricane_doy")) {
+        p->hurricane_doy = atoi(value);
+    } else if (MATCH("params", "hurricane_yr")) {
+        p->hurricane_yr = atoi(value);
     } else if (MATCH("params", "dz0v_dh")) {
         p->dz0v_dh = atof(value);
     } else if (MATCH("params", "eac")) {

@@ -102,7 +102,11 @@ void initialise_params(params *p) {
     p->density = 420.0;
     p->direct_frac = 0.5;
     p->displace_ratio = 0.78;
-    p->disturbance_doy = 1.0;
+    p->disturbance_doy = 1;
+    p->burn_specific_yr = -999;     /* < -900 = not set, use return_interval */
+    p->return_interval = 11;        /* years between fires */
+    p->hurricane_doy = -999;
+    p->hurricane_yr = -999;
     p->dz0v_dh = 0.075;
     p->eac = 79430.0;   /* Temp. response of Kc (J mol-1) */
     p->eag = 37830.0;

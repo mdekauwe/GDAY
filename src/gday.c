@@ -472,11 +472,12 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                         }
                     }
                 }
-            } else if (c->hurricane &&
-                p->hurricane_yr == year &&
-                p->hurricane_doy == doy) {
+            }
 
-                /* Hurricane? */
+            /* Hurricane? NB. hurricane_doy is 1-based like disturbance_doy */
+            if (c->hurricane &&
+                p->hurricane_yr == year &&
+                p->hurricane_doy == doy+1) {
                 hurricane(f, p, s);
             }
 

@@ -1322,17 +1322,21 @@ void update_roots(control *c, params *p, state *s) {
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
 
-    /* if the roots reach beyond the profile, every layer is rooted */
+    /*
+    ** Number of rooted layers, including the one the root tip is in. This
+    ** is a count (SPA's Fortran index), so loops run i < rooted_layers.
+    ** If the roots reach beyond the profile, every layer is rooted.
+    */
     s->rooted_layers = p->soil_layers;
     for (i = 0; i < p->soil_layers; i++) {
         if (s->layer_depth[i] > root_depth) {
-            s->rooted_layers = i;
+            s->rooted_layers = i + 1;
             break;
         }
     }
 
     /* how for into the soil do the reach extend? */
-    root_reach = s->layer_depth[s->rooted_layers];
+    root_reach = s->layer_depth[s->rooted_layers - 1];
 
     /* Enforce 50 % of root mass in the top 1/4 of the rooted layers. */
     mult = MIN(1.0 / s->thickness[0], \
@@ -1355,7 +1359,7 @@ void update_roots(control *c, params *p, state *s) {
 
         prev = 1.0 / slope;
         cumulative_depth = 0.0;
-        for (i = 0; i <= s->rooted_layers; i++) {
+        for (i = 0; i < s->rooted_layers; i++) {
             cumulative_depth += s->thickness[i];
             curr = 1.0 / slope * exp(-slope * cumulative_depth);
             s->root_mass[i] = (prev - curr) * surf_biomass;
@@ -1367,6 +1371,8 @@ void update_roots(control *c, params *p, state *s) {
         }
     } else {
         s->root_mass[0] = root_biomass;
+        s->root_length[0] = s->root_mass[0] / (p->root_density * \
+                                               root_cross_sec_area);
     }
 
     return;

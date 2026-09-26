@@ -3,67 +3,52 @@
 
 void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
                                         int **yrs, int *cnt) {
-    int nyr, year_of_disturbance, yrs_till_event, prjday, year;
+    /*
+        Years in which a fire happens (on disturbance_doy). Either a single
+        prescribed year (burn_specific_yr) or every return_interval years,
+        starting return_interval years after the first year of the forcing.
+    */
+    int first_year, last_year, year;
 
-    if (p->burn_specific_yr < -900.0) {
-        year_of_disturbance = p->burn_specific_yr;
-        (*yrs)[0] = p->burn_specific_yr;
+    /* the met arrays are in timestep order, so the ends give the years */
+    if (c->sub_daily) {
+        first_year = (int)ma->year[0];
+        last_year = (int)ma->year[c->total_num_days * c->num_hlf_hrs - 1];
     } else {
-        yrs_till_event = time_till_next_disturbance();
-        year = (int)ma->year[c->day_idx];
-        /*year_of_disturbance = year + yrs_till_event; */
-        year_of_disturbance = 1996;
+        first_year = (int)ma->year[0];
+        last_year = (int)ma->year[c->total_num_days - 1];
+    }
 
-        /* figure out the years of the disturbance events  */
-        *cnt = 0;
-        prjday = 0;
+    *cnt = 0;
+    if (p->burn_specific_yr > -900) {
+        (*yrs)[0] = p->burn_specific_yr;
+        *cnt = 1;
+    } else {
+        for (year = first_year + time_till_next_disturbance(p);
+             year <= last_year;
+             year += time_till_next_disturbance(p)) {
 
-        for (nyr = 0; nyr < c->num_years - 1; nyr++) {
-            year = (int)ma->year[c->day_idx];
-            if (is_leap_year(year))
-                prjday+=366;
-            else
-                prjday+=365;
-
-            if (year == year_of_disturbance) {
-                yrs_till_event = time_till_next_disturbance();
-                if (*cnt == 0) {
-                    (*yrs)[0] = year_of_disturbance;
-                    *cnt += 1;
-                } else {
-                    *cnt += 1;
-                    if ((*yrs = (int *)realloc(*yrs, *cnt * sizeof(int))) == NULL) {
-                        fprintf(stderr,"Error resizing years array\n");
-                        exit(EXIT_FAILURE);
-                    }
-                    (*yrs)[*cnt - 1] = year_of_disturbance;
+            if (*cnt > 0) {
+                *yrs = (int *)realloc(*yrs, (*cnt + 1) * sizeof(int));
+                if (*yrs == NULL) {
+                    fprintf(stderr,"Error resizing years array\n");
+                    exit(EXIT_FAILURE);
                 }
-
-                /* See if there is another event? */
-                year_of_disturbance = year + yrs_till_event;
             }
+            (*yrs)[*cnt] = year;
+            *cnt += 1;
         }
     }
 
     return;
 }
 
-int time_till_next_disturbance(void) {
+int time_till_next_disturbance(params *p) {
     /* calculate the number of years until a disturbance event occurs
-    assuming a return interval of X years
+    assuming a return interval of X years. Deterministic for now, a random
+    interval would be -log(1 - U) * return_interval (Knuth 3.4.1). */
 
-    - section 3.4.1 D. Knuth, The Art of Computer Programming.
-
-    Parameters
-    ----------
-    return_interval : int/float
-        interval disturbance return at in years
-    */
-    /* rate = 1.0 / p->return_interval; */
-
-    /*return int(-log(1.0 - random.random()) / rate); */
-
-    return (11);
+    return (MAX(1, p->return_interval));
 }
 
 int check_for_fire(control *c, fluxes *f, params *p, state *s, int year,
@@ -160,55 +145,26 @@ void fire(control *c, fluxes *f, params *p, state *s) {
 }
 
 void hurricane(fluxes *f, params *p, state *s) {
-    /* Specifically for the florida simulations - reduce LAI by 40%  */
+    /*
+        Specifically for the florida simulations - reduce LAI by 40%
 
-    double orig_shoot_c, lost_c, lost_n, nc_leaf_litter, lnleaf, fmleaf
-    ;
-    /* Reduce LAI by 40%  */
-    s->lai -= s->lai * 0.4;
+        Called after calculate_litterfall, so the lost foliage is added to
+        the day's leaf litter; update_plant_state then removes the C from the
+        shoot, carbon_allocation reduces the LAI accordingly and the litter
+        is partitioned into the soil pools as usual. Previously the lost C&N
+        were added to the partitioned litter fluxes, which are overwritten
+        later in the day, i.e. they vanished. No retranslocation.
+    */
+    double frac_lost = 0.4, lost_c, lost_n;
 
-    /* adjust C in the foliage */
-    orig_shoot_c = s->shoot;
-    s->shoot = s->lai / (p->sla * M2_AS_HA / KG_AS_TONNES / p->cfracts);
-    lost_c = orig_shoot_c - s->shoot;
-    lost_n = s->shootnc * lost_c;
+    lost_c = s->shoot * frac_lost;
+    lost_n = s->shootn * frac_lost;
+
+    f->deadleaves += lost_c;
+    f->deadleafn += lost_n;
+
+    /* shoot N isn't updated from deadleafn, so remove it here */
     s->shootn -= lost_n;
-
-    /* Drop straight to floor, no retranslocation */
-
-    /* C -> structural */
-    if (float_eq(lost_c, 0.0)) {
-        nc_leaf_litter = 0.0;
-    } else {
-        nc_leaf_litter = lost_n / lost_c;
-    }
-
-    if (float_eq(nc_leaf_litter, 0.0)) {
-        /* catch divide by zero if we have no leaves  */
-        lnleaf = 0.0;
-    } else {
-        lnleaf = p->ligshoot / p->cfracts / nc_leaf_litter;
-    }
-
-    fmleaf = MAX(0.0, 0.85 - (0.018 * lnleaf));
-    f->surf_struct_litter += lost_c * (1.0 - fmleaf);
-
-    /* C -> metabolic */
-    f->surf_metab_litter += lost_c * fmleaf;
-
-    /* N -> structural */
-    if (float_eq(f->surf_struct_litter, 0.0)) {
-        f->n_surf_struct_litter += 0.0;
-    } else {
-        f->n_surf_struct_litter += (lost_n * f->surf_struct_litter *
-                                    p->structrat / f->surf_struct_litter);
-    }
-
-    /* N -> metabolic pools */
-    f->n_surf_metab_litter += lost_n - f->n_surf_struct_litter;
-
-    /* s->structsurf += lost_c; */
-    /* s->structsurfn += lost_n; */
 
     return;
 }
