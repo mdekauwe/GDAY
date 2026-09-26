@@ -755,14 +755,6 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, fast_spinup *fs,
         exit(EXIT_FAILURE);
     }
 
-    if (c->spinup_method == SAS) {
-        fs->alloc[AF] += f->alleaf;
-        fs->alloc[AR] += f->alroot;
-        fs->alloc[ACR] += f->alcroot;
-        fs->alloc[AB] += f->albranch;
-        fs->alloc[AW] += f->alstem;
-    }
-
     return;
 }
 

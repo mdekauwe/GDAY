@@ -44,17 +44,6 @@ void calculate_litterfall(control *c, fluxes *f, fast_spinup *fs,
     else
         f->deadleaves = *fdecay * s->shoot;
 
-    if (c->spinup_method == SAS) {
-        if (c->deciduous_model)
-            fs->loss[LF] += f->lrate;
-        else
-            fs->loss[LF] += *fdecay;
-
-        fs->loss[LR] += *rdecay;
-        fs->loss[LCR] += p->crdecay;
-        fs->loss[LB] += p->bdecay;
-        fs->loss[LW] += p->wdecay;
-    }
 
     /* N litter production */
     f->deadleafn = f->deadleaves * ncflit;

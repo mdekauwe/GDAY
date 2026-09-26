@@ -103,6 +103,7 @@ int main(int argc, char **argv)
     initialise_fluxes(f);
     initialise_state(s);
     initialise_nrutil(nr);
+    zero_fast_spinup_stuff(fs);
 
     clparser(argc, argv, c);
     strcpy(c->git_code_ver, build_git_sha);
@@ -532,47 +533,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                     write_daily_outputs_binary(c, f, s, year, doy+1);
             }
 
-            // Step 2: Store the time-varying variables
+            // Store the time-varying variables for the SAS spin-up
             if (c->spinup_method == SAS) {
-                fs->npp_ss += f->npp;
-                fs->ndays ++;
-                fs->shoot_nc += s->shootn / s->shoot;
-                fs->root_nc += s->rootn / s->root;
-                fs->branch_nc += s->branchn / s->branch;
-                if (s->croot > 0.0) {
-                    fs->croot_nc += s->crootn / s->croot;
-                } else {
-                    fs->croot_nc = 0.0;
-                }
-                fs->stem_nc += s->stemn / s->stem;
-                if (s->stemnmob > 0.0) {
-                    fs->stemnmob_ratio += s->stemnmob / s->stem;
-                } else {
-                    fs->stemnmob_ratio = 0.0;
-                }
-                if (s->stemnimm > 0.0) {
-                    fs->stemnimm_ratio += s->stemnimm / s->stem;
-                } else {
-                    fs->stemnimm_ratio = 0.0;
-                }
-
-                if (s->metabsoil > 0.0) {
-                    fs->metablsoil_nc += s->metabsoiln / s->metabsoil;
-                } else {
-                    fs->metablsoil_nc += 0.0;
-                }
-
-                if (s->metabsurf > 0.0) {
-                    fs->metabsurf_nc += s->metabsurfn / s->metabsurf;
-                } else {
-                    fs->metabsurf_nc += 0.0;
-                }
-
-                fs->structsoil_nc += s->structsoiln / s->structsoil;
-                fs->structsurf_nc += s->structsurfn / s->structsurf;
-                fs->activesoil_nc += s->activesoiln / s->activesoil;
-                fs->slowsoil_nc += s->slowsoiln / s->slowsoil;
-                fs->passivesoil_nc += s->passivesoiln / s->passivesoil;
+                accumulate_fast_spinup_stuff(fs, f, s);
             }
             c->day_idx++;
             /* ======================= **
@@ -697,236 +660,165 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     // Semi-analytical solution (SAS) to accelerate model spin-up of
     // carbon–nitrogen pools, following Xia et al. (2013) GMD.
     //
+    // 1. Run the model until the fast plant pools (leaves, fine roots) and
+    //    hence NPP and allocation are ~stable.
+    // 2. Set the woody, litter and SOM pools to the steady state of their
+    //    (linear) dynamics, dX/dt = inputs - k X = 0, using the mean inputs
+    //    and turnover rates over the last cycle.
+    // 3. Run the model until plant and soil C are stable, which also lets
+    //    the N pools and any feedbacks (e.g. allometry) settle.
+    //
+    // NB. root exudation inputs to the active pool are not included in the
+    //     analytical step, step 3 takes care of that. Pools with a zero
+    //     turnover rate (e.g. crdecay = 0) have no steady state and are left
+    //     as simulated.
+    //
 
-    double cleaf0, cwood0, croot0, criteria, arg1, arg2, arg3;
-    double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
-    double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood;
-    double leaf_material, wood_material;
-    double surf_struct_litter, structout_surf, structout_soil;
-    double surf_struct_to_slow, surf_struct_to_active;
-    double soil_struct_to_slow, soil_struct_litter;
-    double soil_metab_litter, metabsurfX, metabsoilX;
-    double structsurfX, structsoilX, surf_metab_to_active, soil_metab_to_active;
-    double co2_to_air0, co2_to_air1, co2_to_air2, co2_to_air3, co2_to_air4;
-    double co2_to_air5, co2_to_air6;
-    double activesoilX, slowsoilX, passivesoilX, passive_to_active;
-    double c_into_active, slow_to_active, slow_to_passive, slowout;
-    double activeout, frac_microb_resp, c_into_passive;
-    double active_to_slow, active_to_passive, c_into_slow, mu_fmleaf, mu_fmroot;
-    double leafgrowth, rootgrowth, crootgrowth, branchgrowth, stemgrowth;
-    double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
-    double mu_decayrate0, mu_decayrate1, mu_decayrate2, mu_decayrate3, mu_decayrate4;
-    double mu_decayrate5, mu_decayrate6, surf_metab_litter, soil_struct_to_active;
-    double total_days, deadsapwood, sapwoodX;
-    double prev_passivec = 99999.9;
+    double cleaf0, croot0, rel_change, ratio;
+    double ndays, k[7], in_ss, in_ms, in_st, in_mt;
+    double bd, wd, crd, sapd, cpbranch, cpstem, cpcroot;
+    double to_active, to_slow, frac_microb_resp, x, a, b, cp;
+    double prev_plantc, prev_soilc;
+    int    i, iter;
 
-    // Step 1: Initial spin
-    // - we first need to achieve steady state plant pools (or NPP is an
-    //   alternative, I didn't test that).
-    zero_fast_spinup_stuff(fs);
-    run_sim(cw, c, f, fs, ma, m, p, s, nr); /* run GDAY */
-    cleaf0 = s->shoot;
-    cwood0 = s->branch + s->croot + s->stem;
-    croot0 = s->root;
-    criteria = 0.01 * (cleaf0 + cwood0 + croot0);
+    // Steps 1 & 2 are repeated, as NPP responds (via N mineralisation) to
+    // the soil pools just solved for, until the analytical solution settles
+    run_sim(cw, c, f, fs, ma, m, p, s, nr);
+    prev_plantc = -999.9;
+    prev_soilc = -999.9;
+    for (iter = 0; iter < 50; iter++) {
 
+    // Step 1: fast plant pools to steady state (summed relative change of
+    //         leaf and fine root C over a cycle < 1%)
     while (TRUE) {
-        zero_fast_spinup_stuff(fs);
-        run_sim(cw, c, f, fs, ma, m, p, s, nr); /* run GDAY */
-        arg1 = fabs((s->shoot - cleaf0) / s->shoot);
-        wood = s->branch + s->croot + s->stem;
-        arg2 = fabs((wood - cwood0) / wood);
-        arg3 = fabs((s->root - croot0) / s->root);
+        cleaf0 = s->shoot;
+        croot0 = s->root;
 
-        if ((arg1 + arg2 + arg3) < criteria) {
+        zero_fast_spinup_stuff(fs);
+        run_sim(cw, c, f, fs, ma, m, p, s, nr);
+
+        rel_change = (fabs(s->shoot - cleaf0) / MAX(s->shoot, 1E-06) +
+                      fabs(s->root - croot0) / MAX(s->root, 1E-06));
+        if (rel_change < 0.01) {
             break;
-        } else {
-            cleaf0 = s->shoot;
-            cwood0 = s->branch + s->croot + s->stem;
-            croot0 = s->root;
-            criteria = 0.01 * (cleaf0 + cwood0 + croot0);
         }
     }
 
-    // Step 2: store the time varying vars is done internal in the rest of the
-    //         code.
+    // Step 2: analytical steady state from the means of the last cycle
+    ndays = (double)fs->ndays;
+    for (i = 0; i < 7; i++) {
+        k[i] = fs->dr[i] / ndays;
+    }
+    cpbranch = fs->cpbranch / ndays;
+    cpstem = fs->cpstem / ndays;
+    cpcroot = fs->cpcroot / ndays;
 
-    // Step 3: Analytically solve the steady state pools
+    // run_sim leaves the rate constants in per year units
+    bd = p->bdecay / NDAYS_IN_YR;
+    wd = p->wdecay / NDAYS_IN_YR;
+    crd = p->crdecay / NDAYS_IN_YR;
+    sapd = p->sapturnover / NDAYS_IN_YR;
 
-    // Calculate the mean time-varying variables
-    total_days = (double)fs->ndays;
-    mu_af = fs->alloc[AF] / total_days;
-    mu_lf = fs->loss[LF] / total_days;
-    mu_ar = fs->alloc[AR] / total_days;
-    mu_lr = fs->loss[LR] / total_days;
-    mu_acr = fs->alloc[ACR] / total_days;
-    mu_lcr = fs->loss[LCR] / total_days;
-    mu_ab = fs->alloc[AB] / total_days;
-    mu_lb = fs->loss[LB] / total_days;
-    mu_aw = fs->alloc[AW] / total_days;
-    mu_lw = fs->loss[LW] / total_days;
-    mu_decayrate0 = fs->dr[0] / total_days;
-    mu_decayrate1 = fs->dr[1] / total_days;
-    mu_decayrate2 = fs->dr[2] / total_days;
-    mu_decayrate3 = fs->dr[3] / total_days;
-    mu_decayrate4 = fs->dr[4] / total_days;
-    mu_decayrate5 = fs->dr[5] / total_days;
-    mu_decayrate6 = fs->dr[6] / total_days;
-    mu_fmleaf = fs->alloc[S1] / total_days;
-    mu_fmroot = fs->alloc[S2] / total_days;
+    // litter inputs; at steady state woody litter = woody growth
+    in_ss = fs->surf_struct_litter / ndays;
+    in_ms = fs->surf_metab_litter / ndays;
+    in_st = fs->soil_struct_litter / ndays;
+    in_mt = fs->soil_metab_litter / ndays;
 
-    fs->shoot_nc /= total_days;
-    fs->root_nc /= total_days;
-    fs->branch_nc /= total_days;
-    fs->croot_nc /= total_days;
-    fs->stem_nc /= total_days;
-    fs->stemnmob_ratio /= total_days;
-    fs->stemnimm_ratio /= total_days;
-    fs->metablsoil_nc /= total_days;
-    fs->metabsurf_nc /= total_days;
-    fs->structsoil_nc /= total_days;
-    fs->structsurf_nc /= total_days;
-    fs->activesoil_nc /= total_days;
-    fs->slowsoil_nc /= total_days;
-    fs->passivesoil_nc /= total_days;
+    // woody pools, N scaled so their N:C is unchanged
+    if (bd > 0.0 && s->branch > 0.0) {
+        ratio = (cpbranch / bd) / s->branch;
+        s->branch *= ratio;
+        s->branchn *= ratio;
+        in_ss += cpbranch - fs->deadbranch / ndays;
+    }
+    if (wd > 0.0 && s->stem > 0.0) {
+        ratio = (cpstem / wd) / s->stem;
+        s->stem *= ratio;
+        s->stemnimm *= ratio;
+        s->stemnmob *= ratio;
+        s->stemn = s->stemnimm + s->stemnmob;
+        s->sapwood = cpstem / (wd + sapd);
+        in_ss += cpstem - fs->deadstems / ndays;
+    }
+    if (crd > 0.0 && s->croot > 0.0) {
+        ratio = (cpcroot / crd) / s->croot;
+        s->croot *= ratio;
+        s->crootn *= ratio;
+        in_st += cpcroot - fs->deadcroots / ndays;
+    }
 
-    // Steady-state NPP
-    NPP = fs->npp_ss / total_days;
+    // litter pools, all their outflow is k X = inputs
+    s->structsurf = in_ss / k[0];
+    s->metabsurf = in_ms / k[1];
+    s->structsoil = in_st / k[2];
+    s->metabsoil = in_mt / k[3];
 
-    // Solve the C pools
-    leafgrowth = (NPP * mu_af);
-    deadleaves = (s->shoot * mu_lf);
-    shootX = leafgrowth - deadleaves;
+    // litter C passed on to the SOM pools (same fractions as soils.c)
+    to_active = (in_ss * (1.0 - p->ligshoot) * 0.55 +
+                 in_st * (1.0 - p->ligroot) * 0.45 +
+                 in_ms * 0.45 + in_mt * 0.45);
+    to_slow = in_ss * p->ligshoot * 0.7 + in_st * p->ligroot * 0.7;
 
-    rootgrowth = (NPP * mu_ar);
-    deadroots = (s->root * mu_lr);
-    rootX = rootgrowth - deadroots;
-
-    crootgrowth = (NPP * mu_acr);
-    deadcroots = (s->croot * mu_lcr);
-    crootX = crootgrowth - deadcroots;
-
-    branchgrowth = (NPP * mu_ab);
-    deadbranches = (s->branch * mu_lb);
-    branchX = branchgrowth - deadbranches;
-
-    stemgrowth = (NPP * mu_aw);
-    deadstems = (s->stem * mu_lw);
-    stemX = stemgrowth - deadstems;
-
-    deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
-    sapwoodX = stemgrowth - deadsapwood;
-
-    leaf_material = deadleaves * (1.0 - mu_fmleaf);
-    wood_material = deadbranches + deadstems + deadsapwood;
-
-    surf_metab_litter = deadleaves * mu_fmleaf;
-    surf_metab_to_active = s->metabsurf * mu_decayrate1 * 0.45;
-
-    soil_metab_litter = deadroots * mu_fmroot;
-    soil_metab_to_active = s->metabsoil * mu_decayrate3 * 0.45;
-
-    surf_struct_litter = leaf_material + wood_material;
-    structout_surf = s->structsurf * mu_decayrate0;
-    surf_struct_to_slow = structout_surf * p->ligshoot * 0.7;
-    surf_struct_to_active = structout_surf * (1.0 - p->ligshoot) * 0.55;
-
-    structout_soil = s->structsoil * mu_decayrate2;
-    soil_struct_to_slow = structout_soil * p->ligroot * 0.7;
-    soil_struct_to_active = structout_soil * (1.0 - p->ligroot) * 0.45;
-    soil_struct_litter = deadroots * (1.0 - mu_fmroot) + deadcroots;
-
+    // SOM pools are coupled. Writing a, b, cp for the outflows kX of the
+    // active, slow and passive pools:
+    //   a  = to_active + 0.42 b + 0.45 cp
+    //   b  = to_slow + x a,          x = 1 - frac_microb_resp - 0.004
+    //   cp = 0.004 a + 0.03 b
     frac_microb_resp = 0.85 - (0.68 * p->finesoil);
+    x = 1.0 - frac_microb_resp - 0.004;
+    if (c->passiveconst) {
+        // passive pool is fixed, so its outflow is known
+        cp = k[6] * s->passivesoil;
+        a = (to_active + 0.42 * to_slow + 0.45 * cp) / (1.0 - 0.42 * x);
+        b = to_slow + x * a;
+    } else {
+        a = ((to_active + (0.42 + 0.45 * 0.03) * to_slow) /
+             (1.0 - 0.42 * x - 0.45 * (0.004 + 0.03 * x)));
+        b = to_slow + x * a;
+        cp = 0.004 * a + 0.03 * b;
+        s->passivesoil = cp / k[6];
+    }
+    s->activesoil = a / k[4];
+    s->slowsoil = b / k[5];
 
-    /* outflows first, as the inflows to the active pool depend on them */
-    activeout = s->activesoil * mu_decayrate4;
-    active_to_slow = activeout * (1.0 - frac_microb_resp - 0.004);
-    active_to_passive = activeout * 0.004;
+    // N pools from the mean N:C ratios of the last cycle
+    s->metabsoiln = s->metabsoil * fs->metablsoil_nc / ndays;
+    s->metabsurfn = s->metabsurf * fs->metabsurf_nc / ndays;
+    s->structsoiln = s->structsoil * fs->structsoil_nc / ndays;
+    s->structsurfn = s->structsurf * fs->structsurf_nc / ndays;
+    s->activesoiln = s->activesoil * fs->activesoil_nc / ndays;
+    s->slowsoiln = s->slowsoil * fs->slowsoil_nc / ndays;
+    if (c->passiveconst == FALSE) {
+        s->passivesoiln = s->passivesoil * fs->passivesoil_nc / ndays;
+    }
 
-    slowout = s->slowsoil * mu_decayrate5;
-    slow_to_active = slowout * 0.42;
-    slow_to_passive = slowout * 0.03;
+    // derived totals
+    day_end_calculations(c, p, s, -99, TRUE);
+    fprintf(stderr, "SAS spinup (analytical): Plant C - %f, Soil C - %f\n",
+            s->plantc, s->soilc);
 
-    passive_to_active = s->passivesoil * mu_decayrate6 * 0.45;
+    if (fabs(s->plantc - prev_plantc) < 1E-03 * s->plantc &&
+        fabs(s->soilc - prev_soilc) < 1E-03 * s->soilc) {
+        break;
+    }
+    prev_plantc = s->plantc;
+    prev_soilc = s->soilc;
 
-    c_into_active = surf_struct_to_active + soil_struct_to_active + \
-                    surf_metab_to_active + soil_metab_to_active + \
-                    slow_to_active + passive_to_active;
-    c_into_slow = surf_struct_to_slow + soil_struct_to_slow + \
-                  active_to_slow;
-    c_into_passive = active_to_passive + slow_to_passive;
+    } /* end of analytical iterations */
 
-    co2_to_air0 = (structout_surf * \
-                   (p->ligshoot * 0.3 + (1.0 - p->ligshoot) * 0.45));
-    co2_to_air1 = (structout_soil * \
-                  (p->ligroot * 0.3 + (1.0 - p->ligroot) * 0.55));
-    co2_to_air2 = s->metabsurf * mu_decayrate1 * 0.55;
-    co2_to_air3 = s->metabsoil * mu_decayrate3 * 0.55;
-    co2_to_air4 = activeout * frac_microb_resp;
-    co2_to_air5 = slowout * 0.55;
-    co2_to_air6 = s->passivesoil * mu_decayrate6 * 0.55;
-
-    structsurfX = (surf_struct_litter - \
-                  (surf_struct_to_slow + surf_struct_to_active +
-                   co2_to_air0));
-
-    structsoilX = (soil_struct_litter - \
-                  (soil_struct_to_slow + soil_struct_to_active +
-                   co2_to_air1));
-
-    metabsurfX = (surf_metab_litter - \
-                  (surf_metab_to_active + co2_to_air2));
-
-    metabsoilX = (soil_metab_litter - \
-                  (soil_metab_to_active + co2_to_air3));
-
-    activesoilX = c_into_active - \
-                  (active_to_slow + active_to_passive + co2_to_air4);
-
-    slowsoilX = c_into_slow - \
-                (slow_to_active + slow_to_passive + co2_to_air5);
-
-    passivesoilX = c_into_passive - \
-                    (passive_to_active + co2_to_air6);
-
-    // Update the state
-    s->shoot += shootX;
-    s->root += rootX;
-    s->croot += crootX;
-    s->branch += branchX;
-    s->stem += stemX;
-    s->sapwood += sapwoodX;
-    s->metabsoil += metabsoilX;
-    s->metabsurf += metabsurfX;
-    s->structsoil += structsoilX;
-    s->structsurf += structsurfX;
-    s->activesoil += activesoilX;
-    s->slowsoil += slowsoilX;
-    s->passivesoil += passivesoilX;
-
-    // Now solve the N pools using the average NC ratio
-    s->shootn = s->shoot * fs->shoot_nc;
-    s->rootn = s->root * fs->root_nc;
-    s->crootn = s->croot * fs->croot_nc;
-    s->branchn = s->branch * fs->branch_nc;
-    s->stemn = s->stem * fs->stem_nc;
-    s->stemnimm = s->stem * fs->stemnimm_ratio;
-    s->stemnmob = s->stem * fs->stemnmob_ratio;
-    s->metabsoiln = s->metabsoil * fs->metablsoil_nc;
-    s->metabsurfn = s->metabsurf * fs->metabsurf_nc;
-    s->structsoiln = s->structsoil * fs->structsoil_nc;
-    s->structsurfn = s->structsurf * fs->structsurf_nc;
-    s->activesoiln = s->activesoil * fs->activesoil_nc;
-    s->slowsoiln = s->slowsoil * fs->slowsoil_nc;
-    s->passivesoiln = s->passivesoil * fs->passivesoil_nc;
-
-    // Step 4:  Keep spinning until the slowest C pool (passive) hit equilibrium
+    // Step 3: run until plant & soil C change by < 0.01% per cycle
     while (TRUE) {
-        if (fabs(s->passivesoil - prev_passivec) < 0.05) {
+        prev_plantc = s->plantc;
+        prev_soilc = s->soilc;
+        zero_fast_spinup_stuff(fs);
+        run_sim(cw, c, f, fs, ma, m, p, s, nr);
+        fprintf(stderr, "SAS spinup: Plant C - %f, Soil C - %f\n",
+                s->plantc, s->soilc);
+
+        if (fabs(s->plantc - prev_plantc) < 1E-04 * s->plantc &&
+            fabs(s->soilc - prev_soilc) < 1E-04 * s->soilc) {
             break;
-        } else {
-            prev_passivec = s->passivesoil;
-            run_sim(cw, c, f, fs, ma, m, p, s, nr);
         }
     }
 
@@ -986,27 +878,19 @@ void zero_fast_spinup_stuff(fast_spinup *fs) {
     int i;
 
     fs->ndays = 0;
-    fs->npp_ss = 0.0;
-
-    for (i = 0; i < 5; i++) {
-        fs->alloc[i] = 0.0;
-        fs->loss[i] = 0.0;
-    }
-
-    fs->alloc[S1] = 0.0;
-    fs->alloc[S2] = 0.0;
-
-    for (i = 0; i <= 6; i++) {
+    for (i = 0; i < 7; i++) {
         fs->dr[i] = 0.0;
     }
-
-    fs->shoot_nc = 0.0;
-    fs->root_nc = 0.0;
-    fs->branch_nc = 0.0;
-    fs->croot_nc = 0.0;
-    fs->stem_nc = 0.0;
-    fs->stemnmob_ratio = 0.0;
-    fs->stemnimm_ratio = 0.0;
+    fs->surf_struct_litter = 0.0;
+    fs->surf_metab_litter = 0.0;
+    fs->soil_struct_litter = 0.0;
+    fs->soil_metab_litter = 0.0;
+    fs->cpbranch = 0.0;
+    fs->cpstem = 0.0;
+    fs->cpcroot = 0.0;
+    fs->deadbranch = 0.0;
+    fs->deadstems = 0.0;
+    fs->deadcroots = 0.0;
     fs->metablsoil_nc = 0.0;
     fs->metabsurf_nc = 0.0;
     fs->structsoil_nc = 0.0;
@@ -1018,6 +902,34 @@ void zero_fast_spinup_stuff(fast_spinup *fs) {
     return;
 }
 
+void accumulate_fast_spinup_stuff(fast_spinup *fs, fluxes *f, state *s) {
+    /* daily sums of woody growth/turnover and of the litter & SOM N:C
+       ratios (0 when a pool is empty) */
+
+    fs->ndays++;
+    fs->cpbranch += f->cpbranch;
+    fs->cpstem += f->cpstem;
+    fs->cpcroot += f->cpcroot;
+    fs->deadbranch += f->deadbranch;
+    fs->deadstems += f->deadstems;
+    fs->deadcroots += f->deadcroots;
+    if (s->metabsoil > 0.0)
+        fs->metablsoil_nc += s->metabsoiln / s->metabsoil;
+    if (s->metabsurf > 0.0)
+        fs->metabsurf_nc += s->metabsurfn / s->metabsurf;
+    if (s->structsoil > 0.0)
+        fs->structsoil_nc += s->structsoiln / s->structsoil;
+    if (s->structsurf > 0.0)
+        fs->structsurf_nc += s->structsurfn / s->structsurf;
+    if (s->activesoil > 0.0)
+        fs->activesoil_nc += s->activesoiln / s->activesoil;
+    if (s->slowsoil > 0.0)
+        fs->slowsoil_nc += s->slowsoiln / s->slowsoil;
+    if (s->passivesoil > 0.0)
+        fs->passivesoil_nc += s->passivesoiln / s->passivesoil;
+
+    return;
+}
 
 void correct_rate_constants(params *p, int output) {
     /* adjust rate constants for the number of days in years */

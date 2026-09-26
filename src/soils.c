@@ -46,16 +46,16 @@ void calculate_csoil_flows(control *c, fluxes *f, fast_spinup *fs, params *p,
     p->fmleaf = metafract(lnleaf);
     p->fmroot = metafract(lnroot);
 
-    if (c->spinup_method == SAS) {
-        fs->alloc[S1] = p->fmleaf;
-        fs->alloc[S2] = p->fmroot;
-
-    }
-
-
     /* input from faeces */
     flux_from_grazers(c, f, p);
     partition_plant_litter(f, p);
+
+    if (c->spinup_method == SAS) {
+        fs->surf_struct_litter += f->surf_struct_litter;
+        fs->surf_metab_litter += f->surf_metab_litter;
+        fs->soil_struct_litter += f->soil_struct_litter;
+        fs->soil_metab_litter += f->soil_metab_litter;
+    }
     cfluxes_from_structural_pool(f, p, s);
     cfluxes_from_metabolic_pool(f, p, s);
     cfluxes_from_active_pool(f, p, s, frac_microb_resp);

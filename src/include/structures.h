@@ -729,20 +729,21 @@ typedef struct {
 
 } nrutil;
 
+/* running sums over the last spin-up cycle, for the SAS spin-up */
 typedef struct {
     long   ndays;
-    double npp_ss;
-    double alloc[7];
-    double loss[5];
-    double dr[7];
-    double shoot_nc;
-    double root_nc;
-    double branch_nc;
-    double croot_nc;
-    double stem_nc;
-    double stemnmob_ratio;
-    double stemnimm_ratio;
-    double metablsoil_nc;
+    double dr[7];                   /* litter & SOM decay rates (d-1) */
+    double surf_struct_litter;      /* litter C inputs (t C ha-1 d-1) */
+    double surf_metab_litter;
+    double soil_struct_litter;
+    double soil_metab_litter;
+    double cpbranch;                /* woody growth & turnover */
+    double cpstem;
+    double cpcroot;
+    double deadbranch;
+    double deadstems;
+    double deadcroots;
+    double metablsoil_nc;           /* pool N:C ratios */
     double metabsurf_nc;
     double structsoil_nc;
     double structsurf_nc;
