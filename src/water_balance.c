@@ -92,14 +92,18 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double soil_evap, et, interception, runoff, conv,
-           transpiration, SEC_2_DAY, DAY_2_SEC,
+           transpiration, SEC_2_DAY, secs_half_day,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
            LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
            gpp_am, gpp_pm, omega_pm, throughfall,
            canopy_evap;
 
+    /*
+    ** am and pm values are means (or totals) over half the daylight period,
+    ** so rates are converted over half the day length and summed.
+    */
     SEC_2_DAY = 60.0 * 60.0 * daylen;
-    DAY_2_SEC = 1.0 / SEC_2_DAY;
+    secs_half_day = SEC_2_DAY / 2.0;
 
     /* don't need to work out the canopy evap */
     calc_interception(c, m, p, f, s, &throughfall, &interception,
@@ -111,11 +115,12 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     //net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
     //soil_evap = calc_soil_evaporation(m, p, s, net_rad);
 
-    soil_evap = calc_soil_evaporation(m, p, s, net_rad_am+net_rad_pm);
-    soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * (60.0 * 60.0 * daylen);
+    /* mean daytime net radiation */
+    soil_evap = calc_soil_evaporation(m, p, s, (net_rad_am + net_rad_pm) / 2.0);
+    soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
 
-    /* gC m-2 day-1 -> umol m-2 s-1 */
-    conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL * DAY_2_SEC;
+    /* gC m-2 half-day-1 -> umol m-2 s-1 */
+    conv = GRAMS_C_TO_MOL_C * MOL_TO_UMOL / secs_half_day;
     gpp_am = f->gpp_am * conv;
     gpp_pm = f->gpp_pm * conv;
 
@@ -127,14 +132,14 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
                           &transpiration_pm, &LE_pm, &omega_pm);
 
     /* mol m-2 s-1 to mm/day */
-    conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
+    conv = MOLE_WATER_2_G_WATER * G_TO_KG * secs_half_day;
     transpiration = (transpiration_am + transpiration_pm) * conv;
 
     f->omega = (omega_am + omega_pm) / 2.0;
 
-    /* output in mol H20 m-2 s-1 */
-    f->gs_mol_m2_sec = gs_am + gs_pm;
-    f->ga_mol_m2_sec = ga_am + ga_pm;
+    /* output in mol H20 m-2 s-1, daytime mean */
+    f->gs_mol_m2_sec = (gs_am + gs_pm) / 2.0;
+    f->ga_mol_m2_sec = (ga_am + ga_pm) / 2.0;
 
 
     /*
