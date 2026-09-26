@@ -135,9 +135,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
     double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
     double canopy_evap, surface_water;
 
-    // Water drained through the bottom soil layer
-    double water_lost = 0.0;
-
     if (c->water_balance == HYDRAULICS) {
 
         zero_water_movement(f, p);
@@ -204,7 +201,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                 // 'tipping bucket' approach, much simpler and computational
                 // effective. We have made an assumption about the drainage
                 // rate to make this work
-                calc_soil_balance_cascading(f, nr, p, s, i, &water_lost);
+                calc_soil_balance_cascading(f, p, s, i);
             }
         }
 
@@ -618,9 +615,14 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
         }
         s->weighted_swp /= total_est_evap;
     } else {
-        /* No water was evaporated */
+        /*
+        ** No water was evaporated, i.e. every rooted layer is drier than
+        ** min_lwp. Use the unweighted mean, otherwise weighted_swp would stay
+        ** at 0 MPa and the dry soil would look saturated.
+        */
         for (i = 0; i < s->rooted_layers; i++) {
             f->fraction_uptake[i] = 1.0 / (double)s->rooted_layers;
+            s->weighted_swp += f->swp[i] * f->fraction_uptake[i];
         }
     }
 
@@ -704,7 +706,7 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
                         s->wetting_bot[ar1] = 0.;    /* remove layer */
                     }
                 }
-            } else {
+            } else if (ar1 + 1 < p->wetting) {
 
                 // Create a new wetting zone
                 s->wetting_top[ar1+1] = 0.0;
@@ -724,10 +726,13 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
             diff = s->wetting_top[ar1] - s->wetting_bot[ar1];
             s->wetting_top[ar1] = 0.0;
             s->wetting_bot[ar1] = 0.0;
-            ar2 = (ar1 + 1) - 1;          // +1 is fortran logic offset
+
+            // Newer (shallower) zones sit at higher indices, so the next
+            // deeper zone is ar1 - 1 (SPA's ar1 - 1 in Fortran indexing)
+            ar2 = ar1 - 1;
 
             /* Move to deeper wetting layer */
-            if (ar2 > 0) {
+            if (ar2 >= 0) {
                 /* dry out deeper layer */
                 s->wetting_top[ar2] += diff;
                 s->dry_thick = MAX(dmin, s->wetting_top[ar2]);
@@ -940,12 +945,18 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
     //
     // Update the soil water storage at the end of the timestep
     //
-    double root_zone_total, water_content, needed, taken, prev_soil_evap;
+    double root_zone_total, water_content, deficit, cut;
     int    i, rr;
-    double soil_evap_overshoot, transpiration_overshoot, prev_trans;
     double effective_swp, wp;
 
-
+    // Is soil evap taken from first or second layer?
+    if (s->dry_thick < s->thickness[0]) {
+        // The dry zone does not extend beneath the top layer
+        rr = 0;
+    } else {
+        // The dry zone does extend beneath the top layer
+        rr = 1;
+    }
 
     root_zone_total = 0.0;
     for (i = 0; i < p->soil_layers; i++) {
@@ -953,40 +964,25 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
         // water content of soil layer (m)
         water_content = s->water_frac[i] * s->thickness[i];
 
-        needed = water_content + f->water_gain[i] + \
-                 f->ppt_gain[i] - f->water_loss[i];
-
-        // Is soil evap taken from first or second layer?
-        if (s->dry_thick < s->thickness[0]) {
-            // The dry zone does not extend beneath the top layer
-            rr = 0;
-        } else {
-            // The dry zone does extend beneath the top layer
-            rr = 1;
-        }
-
         // Correction for potential to over-evaporate if using Emax drought
-        // stress correction. This stops that happening.
-        if (i == rr) {
-            if (needed < 0.0) {
-                prev_soil_evap = *soil_evap;
-                *soil_evap = MAX(0.0, *soil_evap + (needed * M_TO_MM));
-                if (*soil_evap > 0.0) {
-                    taken = (prev_soil_evap - *soil_evap) * MM_TO_M;
-                    needed -= taken;
-                    f->water_loss[i] += taken;
-                }
-            }
-        } else {
-            if (needed < 0.0) {
-                prev_trans = *transpiration;
-                *transpiration = MAX(0.0, *transpiration + (needed * M_TO_MM));
-                taken = (prev_trans - *transpiration) * MM_TO_M;
-                f->water_loss[i] += taken;
-            }
+        // stress correction. Any shortfall in the layer is removed from the
+        // fluxes drawing on it, soil evaporation first, then transpiration,
+        // so the reported fluxes match the water actually extracted.
+        // NB water gain here is drainage from the layer above
+        deficit = f->water_loss[i] - (water_content + f->water_gain[i] + \
+                                      f->ppt_gain[i]);
+        if (deficit > 0.0 && i == rr) {
+            cut = MIN(deficit, *soil_evap * MM_TO_M);
+            *soil_evap -= cut * M_TO_MM;
+            f->water_loss[i] -= cut;
+            deficit -= cut;
+        }
+        if (deficit > 0.0 && i < s->rooted_layers) {
+            cut = MIN(deficit, *transpiration * MM_TO_M);
+            *transpiration -= cut * M_TO_MM;
+            f->water_loss[i] -= cut;
         }
 
-        // NB water gain here is drainage from the layer above
         water_content = MAX(0.0, water_content +    \
                                  f->water_gain[i] + \
                                  f->ppt_gain[i] -   \
@@ -1115,7 +1111,11 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
         water_flux = *transpiration * conv;
 
         arg1 = s->weighted_swp;
-        arg2 = water_flux / (2.0 * cw->plant_k * s->lai);
+        if (s->lai > 0.0 && cw->plant_k > 0.0) {
+            arg2 = water_flux / (2.0 * cw->plant_k * s->lai);
+        } else {
+            arg2 = 0.0;
+        }
         cw->xylem_psi = arg1 - arg2;
 
         // refill plant water store
@@ -1164,8 +1164,8 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     return;
 }
 
-void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
-                                 int soil_layer, double *water_lost) {
+void calc_soil_balance_cascading(fluxes *f, params *p, state *s,
+                                 int soil_layer) {
     //
     // Much simpler solution to soil water drainge: assumes that water can move
     // (downwards) through the soil profile, filling up the layers until
@@ -1193,13 +1193,9 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
         // I've assumed a universal 10%, this number could do with more
         // testing :)
 
-        // waterloss from this layer
-        drainage = liquid * 0.1;
-
-        // gravitational drainage above field_capacity
-        if (drainage <= drain_layer) {
-            drainage = 0.0;
-        }
+        // waterloss from this layer, but gravitational drainage can only
+        // remove water above field_capacity
+        drainage = MIN(liquid * 0.1, liquid - drain_layer);
 
         // layer below cannot accept more water than unsat
         if (drainage > unsat) {
@@ -1216,13 +1212,9 @@ void calc_soil_balance_cascading(fluxes *f, nrutil *nr, params *p, state *s,
         // Update current layer
         f->water_loss[soil_layer] += change;
 
-        // update soil layer below with drained liquid
-        if (soil_layer+1 < p->soil_layers) {
-            f->water_gain[soil_layer+1] += change;
-        } else {
-            // We are draining through the bottom soil layer, add to runoff
-            *water_lost += change;
-        }
+        // update soil layer below with drained liquid. Drainage from the
+        // bottom layer lands in the core layer and is counted as runoff
+        f->water_gain[soil_layer+1] += change;
 
     }
 
