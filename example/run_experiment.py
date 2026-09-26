@@ -65,8 +65,8 @@ def main(experiment_id, site, treatment):
     ax3.set_ylabel("Transpiration (mm yr$^{-1}$)")
     ax3.set_xlabel("Year")
     ax3.set_ylim(0., 800)
+    fig.savefig("outputs/example_plot.png", dpi=100)
     plt.show()
-    #fig.savefig("example_plot.png", dpi=100)
 
 
 def date_converter(*args):
@@ -74,9 +74,9 @@ def date_converter(*args):
                                 str(int(float(args[1]))), '%Y %j')
 
 def read_data(fname):
-    df = pd.read_csv(fname, parse_dates=[[0,1]], index_col=0, sep=",",
-                     keep_date_col=True, date_parser=date_converter,
-                     na_values=["-999.9"], skiprows=3)
+    # NB. parse_dates=[[0,1]]/date_parser were removed from pandas
+    df = pd.read_csv(fname, sep=",", na_values=["-999.9"], skiprows=3)
+    df.index = [date_converter(y, d) for y, d in zip(df.YEAR, df.DOY)]
     return df
 
 
