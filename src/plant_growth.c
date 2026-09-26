@@ -245,8 +245,8 @@ void carbon_daily_production(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* Calculate plant respiration */
     if (c->respiration_model == FIXED) {
-        /* Plant respiration assuming carbon-use efficiency. */
-        f->auto_resp = f->gpp * p->cue;
+        /* Plant respiration assuming carbon-use efficiency, NPP = CUE * GPP */
+        f->auto_resp = f->gpp * (1.0 - p->cue);
     } else if (c->respiration_model == VARY) {
         calc_autotrophic_respiration(c, f, m, p, s);
     }

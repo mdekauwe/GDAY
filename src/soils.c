@@ -66,6 +66,11 @@ void calculate_csoil_flows(control *c, fluxes *f, fast_spinup *fs, params *p,
     /* update the C pools */
     calculate_cpools(f, s);
 
+    /* adds the respired part of root exudation to hetero_resp */
+    if (c->exudation && c->alloc_model != GRASSES) {
+        calc_root_exudation_uptake_of_C(f, p, s);
+    }
+
     /* calculate NEP */
     f->nep = f->npp - f->hetero_resp - f->ceaten * (1.0 - p->fracfaeces);
 
@@ -80,10 +85,6 @@ void calculate_csoil_flows(control *c, fluxes *f, fast_spinup *fs, params *p,
 
     /* switch off grazing if this was just activated as an annual event */
     c->grazing = cntrl_grazing;
-
-    if (c->exudation && c->alloc_model != GRASSES) {
-        calc_root_exudation_uptake_of_C(f, p, s);
-    }
 
     return;
 }
@@ -811,7 +812,7 @@ void partition_plant_litter_n(control *c, fluxes *f, params *p, double nsurf,
         if (float_eq(c_soil_struct_litter, 0.0))
             f->n_soil_struct_litter = 0.0;
         else
-            f->n_soil_struct_litter = (nsurf * f->soil_struct_litter *
+            f->n_soil_struct_litter = (nsoil * f->soil_struct_litter *
                                        p->structrat / c_soil_struct_litter);
     } else {
 

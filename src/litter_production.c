@@ -76,7 +76,7 @@ void calculate_litterfall(control *c, fluxes *f, fast_spinup *fs,
         daily_grazing_calc(*fdecay, p, f, s);
 
     /* annually */
-    } else if (c->grazing == 2 && p->disturbance_doy == doy) {
+    } else if (c->grazing == 2 && p->disturbance_doy == doy+1) {
         annual_grazing_calc(p, f, s);
 
     /* no grazing */
@@ -126,8 +126,8 @@ void annual_grazing_calc(params *p, fluxes *f, state *s) {
     return;
 }
 
-float decay_in_dry_soils(double decay_rate, double decay_rate_dry, params *p,
-                         state *s) {
+double decay_in_dry_soils(double decay_rate, double decay_rate_dry, params *p,
+                          state *s) {
     /* Decay rates (e.g. leaf litterfall) can increase in dry soil, adjust
     decay param. This is based on field measurements by F. J. Hingston
     (unpublished) cited in Corbeels.

@@ -239,14 +239,10 @@ void update_water_storage(control *c, fluxes *f, params *p, state *s,
         s->pawater_root = 0.0;
 
         /*
-        ** if there was any water in the layer before we over-evaporated
-        ** then use this to do some of the evaporation required
+        ** transpire whatever was there, including this step's drainage from
+        ** the topsoil
         */
-        if (isgreater(previous, 0.0)) {
-            transpiration_root = previous;
-        } else {
-            transpiration_root = 0.0;
-        }
+        transpiration_root = MAX(0.0, previous + drainage);
 
     /* We have more water than the rootzone can hold -> runoff */
     } else if (s->pawater_root > p->wcapac_root) {
@@ -364,14 +360,10 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
         s->pawater_root = 0.0;
 
         /*
-        ** if there was any water in the layer before we over-evaporated
-        ** then use this to do some of the evaporation required
+        ** transpire whatever was there, including this step's drainage from
+        ** the topsoil
         */
-        if (isgreater(previous, 0.0)) {
-            transpiration_root = previous;
-        } else {
-            transpiration_root = 0.0;
-        }
+        transpiration_root = MAX(0.0, previous + drainage);
 
     /* We have more water than the rootzone can hold -> runoff */
     } else if (s->pawater_root > p->wcapac_root) {
@@ -1369,9 +1361,9 @@ double calc_beta(double paw, double depth, double fc, double wp,
 
     theta = paw / depth;
     beta = pow(theta / (fc - wp), exponent);
-    if (beta > fc) {
+    if (beta > 1.0) {
         beta = 1.0;
-    } else if (beta <= wp) {
+    } else if (beta < 0.0) {
         beta = 0.0;
     }
 
