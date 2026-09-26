@@ -111,6 +111,8 @@ def main():
         "sd_hyd_dry": {"water_balance": "hydraulics", "met": "dry"},
         "sd_hyd_dry_cascade": {"water_balance": "hydraulics", "met": "dry",
                                "soil_drainage": "cascading"},
+        "sd_hyd_dry_store": {"water_balance": "hydraulics", "met": "dry",
+                             "water_store": "true"},
     }
     for name, opts in cases.items():
         met = "met_30min_dry.csv" if opts.pop("met", "") == "dry" else \

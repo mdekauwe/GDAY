@@ -125,6 +125,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "You can't run the hydraulics model with daily flag\n");
         exit(EXIT_FAILURE);
     }
+    if (c->water_store && c->water_balance != HYDRAULICS) {
+        /* the plant store is set up and exchanges water with the SPA layers */
+        fprintf(stderr, "water_store needs water_balance = hydraulics\n");
+        exit(EXIT_FAILURE);
+    }
 
     if (c->water_balance == HYDRAULICS) {
         allocate_numerical_libs_stuff(nr);
