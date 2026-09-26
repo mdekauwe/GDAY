@@ -96,7 +96,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
            LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
            gpp_am, gpp_pm, omega_pm, throughfall,
-           canopy_evap;
+           canopy_evap, frac_canopy;
 
     /*
     ** am and pm values are means (or totals) over half the daylight period,
@@ -124,12 +124,19 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     gpp_am = f->gpp_am * conv;
     gpp_pm = f->gpp_pm * conv;
 
+    /*
+    ** The soil gets exp(-0.398 LAI) of the net radiation (Ritchie, see
+    ** calc_soil_evaporation), so the canopy only gets the rest; previously
+    ** transpiration used all of it, double counting the soil's share.
+    */
+    frac_canopy = 1.0 - exp(-0.398 * s->lai);
+
     penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
-                          net_rad_am, m->Ca, gpp_am, &ga_am, &gs_am,
-                          &transpiration_am, &LE_am, &omega_am);
+                          net_rad_am * frac_canopy, m->Ca, gpp_am, &ga_am,
+                          &gs_am, &transpiration_am, &LE_am, &omega_am);
     penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
-                          net_rad_pm, m->Ca, gpp_pm, &ga_pm, &gs_pm,
-                          &transpiration_pm, &LE_pm, &omega_pm);
+                          net_rad_pm * frac_canopy, m->Ca, gpp_pm, &ga_pm,
+                          &gs_pm, &transpiration_pm, &LE_pm, &omega_pm);
 
     /* mol m-2 s-1 to mm/day */
     conv = MOLE_WATER_2_G_WATER * G_TO_KG * secs_half_day;
@@ -711,8 +718,13 @@ void penman_monteith(double press, double vpd, double rnet, double slope,
         *transpiration = 0.0;
     }
 
-    /* Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09? */
+    /*
+    ** Should not be negative - not sure gv>0.0 catches it as g0 = 1E-09?
+    ** Dew isn't handled in the water balance, so keep LE consistent with
+    ** the water flux (LE is used in the leaf energy balance)
+    */
     *transpiration = MAX(0.0, *transpiration);
+    *LE = MAX(0.0, *LE);
 
     return;
 }
