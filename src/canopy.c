@@ -41,7 +41,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
-    double doy, year, dummy2=0.0, relk;
+    int    n_beta = 0;
+    double doy, year, dummy2=0.0, relk, sum_beta = 0.0;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // - this is only used in hydraulics, so set it to zero.
@@ -133,6 +134,12 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     iter++;
                 } /* end of leaf temperature loop */
 
+                /* the Emax water stress factor, if the leaf transpired */
+                if (c->water_balance == HYDRAULICS &&
+                    cw->an_leaf[cw->ileaf] > 1E-04) {
+                    sum_beta += cw->fwsoil_leaf[cw->ileaf];
+                    n_beta++;
+                }
 
             } /* end of sunlit/shaded leaf loop */
 
@@ -185,18 +192,27 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);
         }
         c->hour_idx++;
-        sunlight_hrs++;
+        if (cw->elevation > 0.0 && m->par > 20.0) {
+            sunlight_hrs++;
+        }
     } /* end of hour loop */
 
     /* work out average omega for the day over sunlight hours */
-    f->omega /= sunlight_hrs;
+    if (sunlight_hrs > 0) {
+        f->omega /= sunlight_hrs;
+    }
 
-    if (c->water_stress) {
+    if (c->water_stress && c->water_balance == HYDRAULICS) {
+        // Daytime mean of the Emax stress factor (supply / demand), used in
+        // soil decomposition and allocation. Unchanged if nothing transpired.
+        if (n_beta > 0) {
+            s->wtfac_root = sum_beta / (double)n_beta;
+            s->wtfac_topsoil = s->wtfac_root;
+        }
+    } else if (c->water_stress) {
         // Calculate the soil moisture availability factors [0,1] in the
         // topsoil and the entire root zone
         calculate_soil_water_fac(c, p, s);
-
-        //printf("%lf %.10lf\n", s->wtfac_root, s->saved_swp);
     } else {
         s->wtfac_topsoil = 1.0;
         s->wtfac_root = 1.0;
@@ -337,8 +353,6 @@ void zero_leaf_water_fluxes(control *c, canopy_wk *cw, state *s) {
 
 void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
 
-    double beta;
-
     cw->an_canopy = cw->an_leaf[SUNLIT] + cw->an_leaf[SHADED];
     cw->rd_canopy = cw->rd_leaf[SUNLIT] + cw->rd_leaf[SHADED];
     cw->gsc_canopy = cw->gsc_leaf[SUNLIT] + cw->gsc_leaf[SHADED];
@@ -350,9 +364,6 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
     if (c->water_balance == HYDRAULICS) {
         cw->lwp_canopy = (cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED]) / 2.0;
 
-        beta = (cw->fwsoil_leaf[SUNLIT] + cw->fwsoil_leaf[SHADED]) / 2.0;
-        s->wtfac_topsoil = beta;
-        s->wtfac_root = beta;
         // mmol m-2 s-1 to mol m-2 s-1, for consistency with transpiration
         cw->trans_deficit_canopy = (cw->trans_deficit_leaf[SUNLIT] +
                                    cw->trans_deficit_leaf[SHADED]) * MMOL_2_MOL;
@@ -434,9 +445,18 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     double e_supply, e_demand, gsv;
     int    idx = cw->ileaf;
 
-    // Hydraulic conductance of the entire soil-to-leaf pathway
-    // (mmol m–2 s–1 MPa–1)
-    *ktot = 1.0 / (f->total_soil_resist + 1.0 / cw->plant_k);
+    // Hydraulic conductance of the entire soil-to-leaf pathway, per unit
+    // ground area (mmol m–2 s–1 MPa–1). The soil resistance is per ground
+    // area and plant_k per leaf area. The two big leaves share the supply
+    // in proportion to their leaf area, so ktot is this leaf's share (it is
+    // also used for this leaf's water potential).
+    double frac;
+    if (s->lai > 0.0) {
+        frac = cw->lai_leaf[idx] / s->lai;
+        *ktot = frac / (f->total_soil_resist + 1.0 / (cw->plant_k * s->lai));
+    } else {
+        *ktot = 0.0;
+    }
 
     // Maximum transpiration rate (mmol m-2 s-1)
     // Following Darcy's law which relates leaf transpiration to hydraulic
