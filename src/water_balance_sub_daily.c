@@ -1083,10 +1083,16 @@ double calc_relative_weibull(double p, double p50, double sx) {
     // ---------
     // * Ogle et al. (2009) Ecological Applications, 19, 577-581.
     //
+    // NB. Ogle et al. write the curve in terms of positive tensions, so the
+    // shape exponent uses |p50|, p / p50 is already positive.
     double v, relative_weibull;
 
+    if (p >= 0.0) {
+        return (1.0);
+    }
+
     v = -50.0 * log(0.5);
-    relative_weibull = 1.0 - pow(0.5, pow((p / p50), (p50 * sx) / v));
+    relative_weibull = pow(0.5, pow((p / p50), (fabs(p50) * sx) / v));
 
     return (relative_weibull);
 }
