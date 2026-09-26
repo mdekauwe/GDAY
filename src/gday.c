@@ -149,24 +149,27 @@ int main(int argc, char **argv)
         run_sim(cw, c, f, fs, ma, m, p, s, nr);
     }
 
-    /* clean up */
-    fclose(c->ofp);
-    if (c->print_options == SUBDAILY ) {
+    /* clean up - not every file is opened in every run mode */
+    if (c->ofp != NULL) {
+        fclose(c->ofp);
+    }
+    if (c->ofp_sd != NULL) {
         fclose(c->ofp_sd);
     }
-    fclose(c->ifp);
-    if (c->output_ascii == FALSE) {
+    if (c->ifp != NULL) {
+        fclose(c->ifp);
+    }
+    if (c->ofp_hdr != NULL) {
         fclose(c->ofp_hdr);
     }
 
-    free(cw);
-    free(c);
     free(ma->year);
     free(ma->tair);
     free(ma->rain);
     free(ma->tsoil);
     free(ma->co2);
     free(ma->ndep);
+    free(ma->nfix);
     free(ma->wind);
     free(ma->press);
     free(ma->par);
@@ -206,15 +209,15 @@ int main(int argc, char **argv)
             free_dvector(nr->y, 1, nr->N);
             free_dvector(nr->ystart, 1, nr->N);
             free_dvector(nr->dydx, 1, nr->N);
-			free_dvector(nr->yscal, 1, nr->N);
+            free_dvector(nr->yscal, 1, nr->N);
             free_dvector(nr->xp, 1, nr->kmax);
             free_dmatrix(nr->yp, 1, nr->N, 1, nr->kmax);
             free_dvector(nr->ytemp, 1, nr->N);
-        	free_dvector(nr->ak6, 1, nr->N);
-        	free_dvector(nr->ak5, 1, nr->N);
-        	free_dvector(nr->ak4, 1, nr->N);
-        	free_dvector(nr->ak3, 1, nr->N);
-        	free_dvector(nr->ak2, 1, nr->N);
+            free_dvector(nr->ak6, 1, nr->N);
+            free_dvector(nr->ak5, 1, nr->N);
+            free_dvector(nr->ak4, 1, nr->N);
+            free_dvector(nr->ak3, 1, nr->N);
+            free_dvector(nr->ak2, 1, nr->N);
             free_dvector(nr->yerr, 1, nr->N);
         }
 
@@ -224,6 +227,7 @@ int main(int argc, char **argv)
         free(ma->tpm);
         free(ma->tmin);
         free(ma->tmax);
+        free(ma->tday);
         free(ma->vpd_am);
         free(ma->vpd_pm);
         free(ma->wind_am);
@@ -232,12 +236,15 @@ int main(int argc, char **argv)
         free(ma->par_pm);
     }
     free(s->day_length);
+    free(cw);
+    free(c);
     free(ma);
     free(m);
     free(p);
     free(s);
     free(f);
     free(fs);
+    free(nr);
 
     exit(EXIT_SUCCESS);
 }
@@ -809,7 +816,7 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     woodX = branchX + stemX + crootX;
 
     deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
-    sapwoodX += stemgrowth - deadsapwood;
+    sapwoodX = stemgrowth - deadsapwood;
 
     leaf_material = deadleaves * (1.0 - mu_fmleaf);
     wood_material = deadbranches + deadstems + deadsapwood;
@@ -832,20 +839,22 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
     frac_microb_resp = 0.85 - (0.68 * p->finesoil);
 
+    /* outflows first, as the inflows to the active pool depend on them */
     activeout = s->activesoil * mu_decayrate4;
-    c_into_active = surf_struct_to_active + soil_struct_to_active + \
-                    surf_metab_to_active + soil_metab_to_active + \
-                    slow_to_active + passive_to_active;
     active_to_slow = activeout * (1.0 - frac_microb_resp - 0.004);
     active_to_passive = activeout * 0.004;
 
     slowout = s->slowsoil * mu_decayrate5;
     slow_to_active = slowout * 0.42;
     slow_to_passive = slowout * 0.03;
-    c_into_slow = surf_struct_to_slow + soil_struct_to_slow + \
-                  active_to_slow;
 
     passive_to_active = s->passivesoil * mu_decayrate6 * 0.45;
+
+    c_into_active = surf_struct_to_active + soil_struct_to_active + \
+                    surf_metab_to_active + soil_metab_to_active + \
+                    slow_to_active + passive_to_active;
+    c_into_slow = surf_struct_to_slow + soil_struct_to_slow + \
+                  active_to_slow;
     c_into_passive = active_to_passive + slow_to_passive;
 
     co2_to_air0 = (structout_surf * \

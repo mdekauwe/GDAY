@@ -50,6 +50,10 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
 
     /* Set up all the hydraulics stuff */
     if (c->water_balance == HYDRAULICS) {
+        /* Saxton parameters always need the texture */
+        if (fsoil_root == NULL) {
+            fsoil_root = get_soil_fracs(p->rootsoil_type);
+        }
         calc_saxton_stuff(p, fsoil_root);
 
         for (i = 0; i < p->wetting; i++) {
@@ -85,10 +89,8 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
         calc_water_uptake_per_layer(f, p, s);
     }
 
-    if (c->calc_sw_params) {
-        free(fsoil_top);
-        free(fsoil_root);
-    }
+    free(fsoil_top);
+    free(fsoil_root);
 
     return;
 }
@@ -303,13 +305,13 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
     }
 
     p->cond2 = malloc(p->core * sizeof(double));
-    if (p->cond1 == NULL) {
+    if (p->cond2 == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's cond2\n");
         exit(EXIT_FAILURE);
     }
 
     p->cond3 = malloc(p->core * sizeof(double));
-    if (p->cond1 == NULL) {
+    if (p->cond3 == NULL) {
         fprintf(stderr, "malloc failed allocating Saxton's cond3\n");
         exit(EXIT_FAILURE);
     }
@@ -346,7 +348,7 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
 
     f->fraction_uptake = malloc(p->core * sizeof(double));
     if (f->fraction_uptake == NULL) {
-        fprintf(stderr, "malloc failed allocating soilR\n");
+        fprintf(stderr, "malloc failed allocating fraction_uptake\n");
         exit(EXIT_FAILURE);
     }
 
@@ -368,7 +370,7 @@ void setup_hydraulics_arrays(fluxes *f, params *p, state *s) {
         exit(EXIT_FAILURE);
     }
 
-    /* Depth to bottom of wet soil layers (m) */
+    /* Volumetric soil water content of each layer (m3 m-3) */
     s->water_frac = malloc(p->core * sizeof(double));
     if (s->water_frac == NULL) {
         fprintf(stderr, "malloc failed allocating water_frac\n");

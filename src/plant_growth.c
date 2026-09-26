@@ -1295,12 +1295,16 @@ void initialise_roots(fluxes *f, params *p, state *s) {
         thick += p->layer_thickness;
         s->layer_depth[i] = thick;
         s->thickness[i] = p->layer_thickness;
+    }
 
-        /* made up initalisation, following SPA, get replaced second timestep */
+    /* made up initalisation, following SPA, replaced by update_roots */
+    for (i = 0; i < p->core; i++) {
         s->root_mass[i] = 0.1;
         s->root_length[i] = 0.1;
-        s->rooted_layers = p->core;
     }
+
+    /* core is the drainage layer beneath the profile, it can't be rooted */
+    s->rooted_layers = p->soil_layers;
 
     return;
 }
@@ -1331,8 +1335,9 @@ void update_roots(control *c, params *p, state *s) {
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
     root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
 
-    s->rooted_layers = 0;
-    for (i = 0; i < p->core; i++) {
+    /* if the roots reach beyond the profile, every layer is rooted */
+    s->rooted_layers = p->soil_layers;
+    for (i = 0; i < p->soil_layers; i++) {
         if (s->layer_depth[i] > root_depth) {
             s->rooted_layers = i;
             break;

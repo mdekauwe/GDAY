@@ -11,6 +11,7 @@ void initialise_control(control *c) {
 
     c->ifp = NULL;
     c->ofp = NULL;
+    c->ofp_sd = NULL;
     c->ofp_hdr = NULL;
     strcpy(c->cfg_fname, "*NOT SET*");
     strcpy(c->met_fname, "*NOT SET*");

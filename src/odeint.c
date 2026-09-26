@@ -57,21 +57,12 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
                                   double, double, double))) {
 
 
-	int      kmax, kount;
+	int      kount;
 	int      nstp, i;
-	double   dxsav, xsav, x, hnext, hdid, h;
-	//double  *yscal=NULL, *y=NULL, *dydx=NULL, *xp=NULL;
-	//double **yp=NULL;
+	double   dxsav, xsav = 0.0, x, hnext, hdid, h;
 
-	/* initialising this within the func, which means this isn't generic*/
-	//kmax = 100;
-
-	//xp = dvector(1, kmax);
-	//yp = dmatrix(1,nvar,1,kmax);
-	//yscal=dvector(1,nvar);
-	//y=dvector(1,nvar);
-	//dydx=dvector(1,nvar);
-
+	/* storage for intermediate results is allocated with nr->kmax slots */
+	int      kmax = nr->kmax;
 
     dxsav = (x2 - x1) / 20.0;
     x=x1;
@@ -104,14 +95,6 @@ void odeint(double ystart[], int nvar, double x1, double x2, double eps,
 				nr->xp[++kount]=x;
 				for (i=1;i<=nvar;i++) nr->yp[i][kount]=nr->y[i];
 			}
-
-			//free_dvector(dydx,1,nvar);
-			//free_dvector(y,1,nvar);
-			//free_dvector(yscal,1,nvar);
-            //free_dvector(xp,1,kmax);
-            //free_dmatrix(yp,1,nvar,1,kmax);
-
-            //printf("** %lf\n", ystart[1]);
 			return;
 		}
 		if (fabs(hnext) <= hmin) nrerror("Step size too small in odeint");

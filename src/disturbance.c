@@ -32,11 +32,11 @@ void figure_out_years_with_disturbances(control *c, met_arrays *ma, params *p,
                     *cnt += 1;
                 } else {
                     *cnt += 1;
-                    if ((yrs = (int **)realloc(yrs, (1 + *cnt) * sizeof(int))) == NULL) {
+                    if ((*yrs = (int *)realloc(*yrs, *cnt * sizeof(int))) == NULL) {
                         fprintf(stderr,"Error resizing years array\n");
-                		exit(EXIT_FAILURE);
+                        exit(EXIT_FAILURE);
                     }
-                    (*yrs)[*cnt] = year_of_disturbance;
+                    (*yrs)[*cnt - 1] = year_of_disturbance;
                 }
 
                 /* See if there is another event? */

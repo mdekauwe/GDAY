@@ -386,6 +386,9 @@ int write_final_state(control *c, params *p, state *s)
     int line_number = 0;
     int match = FALSE;
 
+    /* the input file was consumed when it was parsed */
+    rewind(c->ifp);
+
     while (fgets(line, sizeof(line), c->ifp) != NULL) {
         strcpy(saved_line, line);
         line_number++;

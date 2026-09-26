@@ -23,7 +23,7 @@ int parse_ini_file(control *c, params *p, state *s)
     int line_number = 0;
 
     if ((c->ifp = fopen(c->cfg_fname, "r")) == NULL){
-        prog_error("Error opening output file for write on line", __LINE__);
+        prog_error("Error opening parameter file for read on line", __LINE__);
     }
 
     while (fgets(line, sizeof(line), c->ifp) != NULL) {
@@ -75,11 +75,7 @@ int parse_ini_file(control *c, params *p, state *s)
         }
     }
 
-    if (c->print_options == END) {
-        /* we need to re-read this file to dump the final state */
-        rewind(c->ifp);
-    }
-
+    /* NB. the file is left open so write_final_state can copy it */
     return error;
 
 
@@ -789,7 +785,9 @@ int handler(char *section, char *name, char *value, control *c,
     } else if (MATCH("params", "nf_min")) {
         p->nf_min = atof(value);
     } else if (MATCH("params", "soil_layers")) {
-        p->soil_layers = atof(value);
+        p->soil_layers = atoi(value);
+        /* arrays are sized by core, keep it in sync */
+        p->core = p->soil_layers + 1;
     } else if (MATCH("params", "nmax")) {
         p->nmax = atof(value);
     } else if (MATCH("params", "nmin")) {
