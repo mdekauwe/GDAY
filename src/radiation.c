@@ -104,7 +104,7 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     double c1_1 = 0.0, c1_2 = 0.0, c1_3 = 0.0, rhoch_1 = 0.0;
     double rhoch_2 = 0.0, rhoch_3 = 0.0;
     double rhocdf_vis= 0.0, rhocdf_nir= 0.0, rhocdf_lw= 0.0, sfact= 0.0;
-    double albsoilsn_sha= 0.0, albsoilsn_sun= 0.0;
+    double albsoil_vis = 0.0, albsoil_nir = 0.0;
     double k_dash_d_vis = 0.0, k_dash_d_nir = 0.0, cexpk_dash_d_vis = 0.0;
     double cexpk_dash_d_nir = 0.0, k_dash_b_nir = 0.0, cexpk_dash_b_nir = 0.0;
     double rho_td_vis = 0.0, rho_td_nir = 0.0, k_dash_b_vis = 0.0;
@@ -257,9 +257,10 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
         sfact = 0.68;
     }
 
-    // soil + snow reflectance (ignoring snow)
-    albsoilsn_sha = 2.0 * soil_reflectance / (1. + sfact);
-    albsoilsn_sun = sfact * albsoilsn_sha;
+    // soil + snow reflectance (ignoring snow), as CABLE's albsoilsn(:,1:2),
+    // i.e. the soil is darker in the visible than the NIR
+    albsoil_nir = 2.0 * soil_reflectance / (1. + sfact);
+    albsoil_vis = sfact * albsoil_nir;
 
     // Update extinction coefficients and fractional transmittance for
     // leaf transmittance and reflection (ie. NOT black leaves):
@@ -273,13 +274,13 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     // Calculate effective canopy-soiil diffuse reflectance (fraction)
     if (s->lai > 0.001) {
-        rho_td_vis = rhocdf_vis + (albsoilsn_sha - rhocdf_vis) * \
+        rho_td_vis = rhocdf_vis + (albsoil_vis - rhocdf_vis) * \
                         (cexpk_dash_d_vis * cexpk_dash_d_vis);
-        rho_td_nir = rhocdf_nir + (albsoilsn_sun - rhocdf_nir) * \
+        rho_td_nir = rhocdf_nir + (albsoil_nir - rhocdf_nir) * \
                         (cexpk_dash_d_nir * cexpk_dash_d_nir);
     } else {
-        rho_td_vis = albsoilsn_sha;
-        rho_td_nir = albsoilsn_sun;
+        rho_td_vis = albsoil_vis;
+        rho_td_nir = albsoil_nir;
     }
 
     // where vegetated and sunlit
@@ -300,15 +301,18 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     cexpk_dash_b_nir = exp(-MIN(k_dash_b_nir * s->lai, 30.));
 
     // Calculate effective canopy-soil beam reflectance (fraction):
-    rho_tb_vis = rhocbm_vis + (albsoilsn_sha - rhocbm_vis) * \
+    rho_tb_vis = rhocbm_vis + (albsoil_vis - rhocbm_vis) * \
                     (cexpk_dash_b_vis * cexpk_dash_b_vis);
-    rho_tb_nir = rhocbm_nir + (albsoilsn_sun - rhocbm_nir) * \
+    rho_tb_nir = rhocbm_nir + (albsoil_nir - rhocbm_nir) * \
                     (cexpk_dash_b_nir * cexpk_dash_b_nir);
 
     if ( (s->lai > LAI_THRESH) & (sw_rad > RAD_THRESH) ) {
 
-        Ib = sw_rad * cw->direct_frac;
-        Id = sw_rad * cw->diffuse_frac;
+        // Beam and diffuse irradiance *per waveband*, shortwave is split
+        // equally between the visible and NIR (as in CABLE). Using the full
+        // shortwave for each band absorbed ~2x the incident PAR.
+        Ib = 0.5 * sw_rad * cw->direct_frac;
+        Id = 0.5 * sw_rad * cw->diffuse_frac;
 
         a1_vis = Id * (1.0 - rho_td_vis) * k_dash_d_vis;
         a1_nir = Id * (1.0 - rho_td_nir) * k_dash_d_nir;
