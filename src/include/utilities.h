@@ -14,7 +14,6 @@
 
 
 /* utilities */
-double round_to_value(double, double);
 double day_length(int, int, double);
 void   calculate_daylength(state *, int, double);
 int    is_leap_year(int);

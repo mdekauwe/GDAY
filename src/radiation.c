@@ -40,7 +40,6 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
           Components of incoming radiation. Agricultural Forest Meteorol.,
           38:217-229.
     */
-    double So, tau, R, K, cos_zen_sq;
     double solar_constant, tmpr, tmpk, tmprat;
 
     solar_constant = 1370.0; // W m–2
@@ -49,7 +48,7 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
     tmpr = 0.847 + cw->cos_zenith * (1.04 * cw->cos_zenith - 1.61);
     tmpk = (1.47 - tmpr) / 1.66;
 
-    if ( (cw->cos_zenith > 1.0e-10) & (sw_rad > 10.0) ) {
+    if (cw->cos_zenith > 1.0e-10 && sw_rad > 10.0) {
         tmprat = sw_rad / (solar_constant * (1.0 + 0.033 * \
                     cos(2. * M_PI * (doy-10.0) / 365.0)) * cw->cos_zenith);
     } else {
@@ -99,11 +98,10 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     double lw_down = 0.0, flpwb = 0.0, emissivity_air = 0.0;
     double cos3_15 = 0.0, cos3_45 = 0.0, cos3_75 = 0.0;
-    double tk = 0.0, flwv = 0.0, flws = 0.0, txx1 = 0.0, txx2 = 0.0;
+    double tk = 0.0, txx1 = 0.0, txx2 = 0.0;
     double txx3 = 0.0, kbx1 = 0.0, kbx2 = 0.0, kbx3 = 0.0;
-    double c1_1 = 0.0, c1_2 = 0.0, c1_3 = 0.0, rhoch_1 = 0.0;
-    double rhoch_2 = 0.0, rhoch_3 = 0.0;
-    double rhocdf_vis= 0.0, rhocdf_nir= 0.0, rhocdf_lw= 0.0, sfact= 0.0;
+    double c1_1 = 0.0, c1_2 = 0.0, rhoch_1 = 0.0, rhoch_2 = 0.0;
+    double rhocdf_vis= 0.0, rhocdf_nir= 0.0, sfact= 0.0;
     double albsoil_vis = 0.0, albsoil_nir = 0.0;
     double k_dash_d_vis = 0.0, k_dash_d_nir = 0.0, cexpk_dash_d_vis = 0.0;
     double cexpk_dash_d_nir = 0.0, k_dash_b_nir = 0.0, cexpk_dash_b_nir = 0.0;
@@ -164,12 +162,6 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     // air emissivity
     emissivity_air = lw_down / flpwb;
 
-    // vegetation long-wave radiation (isothermal)
-    flwv = emissivity_leaf * flpwb;
-
-    // soil long-wave radiation
-    flws = SIGMA * emissivity_soil * pow(tk, 4.0);
-
     // cos(15 45 75 degrees)
     cos3_15 = cos(DEG2RAD(15.0));
     cos3_45 = cos(DEG2RAD(45.0));
@@ -223,15 +215,12 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
 
     c1_1 = sqrt(1. - tau_vis - refl_vis);
     c1_2 = sqrt(1. - tau_nir - refl_nir);
-    c1_3 = 1.0;
 
     // Canopy reflection black horiz leaves
     // (eq. 6.19 in Goudriaan and van Laar, 1994):
     rhoch_1 = (1.0 - c1_1) / (1.0 + c1_1);
     rhoch_2 = (1.0 - c1_2) / (1.0 + c1_2);
-    rhoch_3 = (1.0 - c1_3) / (1.0 + c1_3);
 
-    // 0 = visible; 1 = nir radiation; 2 = LW
     // Canopy reflection of diffuse radiation for black leaves:
     rhocdf_vis = rhoch_1 * 2. * \
                     (gauss_w1 * kbx1 / (kbx1 + kd) + \
@@ -239,11 +228,6 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
                      gauss_w3 * kbx3 / (kbx3 + kd));
 
     rhocdf_nir = rhoch_2 * 2. * \
-                    (gauss_w1 * kbx1 / (kbx1 + kd) + \
-                     gauss_w2 * kbx2 / (kbx2 + kd) + \
-                     gauss_w3 * kbx3 / (kbx3 + kd));
-
-    rhocdf_lw = rhoch_3 * 2. * \
                     (gauss_w1 * kbx1 / (kbx1 + kd) + \
                      gauss_w2 * kbx2 / (kbx2 + kd) + \
                      gauss_w3 * kbx3 / (kbx3 + kd));
@@ -452,207 +436,4 @@ void calculate_solar_geometry(canopy_wk *cw, params *p, double doy,
     cw->elevation = 90.0 - zenith_angle;
 
     return;
-}
-
-double calculate_solar_noon(double et, double longitude) {
-    /* Calculation solar noon - De Pury & Farquhar, '97: eqn A16
-
-    Reference:
-    ----------
-    * De Pury & Farquhar (1997) PCE, 20, 537-557.
-
-    Returns:
-    ---------
-    t0 - solar noon (hours).
-    */
-    double t0, Ls;
-
-    /* all international standard meridians are multiples of 15deg east/west of
-       greenwich */
-    Ls = round_to_value(longitude, 15.);
-    t0 = 12.0 + (4.0 * (Ls - longitude) - et) / 60.0;
-
-    return (t0);
-}
-
-double calculate_hour_angle(double t, double t0) {
-    /* Calculation solar noon - De Pury & Farquhar, '97: eqn A15
-
-    Reference:
-    ----------
-    * De Pury & Farquhar (1997) PCE, 20, 537-557.
-
-    Returns:
-    ---------
-    h - hour angle (radians).
-    */
-    return (M_PI * (t - t0) / 12.0);
-
-}
-
-double day_angle(int doy) {
-    /* Calculation of day angle - De Pury & Farquhar, '97: eqn A18
-
-    Reference:
-    ----------
-    * De Pury & Farquhar (1997) PCE, 20, 537-557.
-    * J. W. Spencer (1971). Fourier series representation of the position of
-      the sun.
-
-    Returns:
-    ---------
-    gamma - day angle in radians.
-    */
-    return (2.0 * M_PI * ((float)doy - 1.0) / 365.0);
-}
-
-double calculate_solar_declination(int doy, double gamma) {
-    /*
-    Solar Declination Angle is a function of day of year and is indepenent
-    of location, varying between 23deg45' to -23deg45'
-
-    Arguments:
-    ----------
-    doy : int
-        day of year, 1=jan 1
-    gamma : double
-        fractional year (radians)
-
-    Returns:
-    --------
-    dec: float
-        Solar Declination Angle [radians]
-
-    Reference:
-    ----------
-    * De Pury & Farquhar (1997) PCE, 20, 537-557.
-    * Leuning et al (1995) Plant, Cell and Environment, 18, 1183-1200.
-    * J. W. Spencer (1971). Fourier series representation of the position of
-      the sun.
-    */
-    double decl;
-
-    /* Solar Declination Angle (radians) A14 - De Pury & Farquhar  */
-    decl = -23.4 * (M_PI / 180.) * cos(2.0 * M_PI * ((float)doy + 10.) / 365.);
-
-    return (decl);
-}
-
-double calculate_eqn_of_time(double gamma) {
-    /* Equation of time - correction for the difference btw solar time
-    and the clock time.
-
-    Arguments:
-    ----------
-    doy : int
-        day of year
-    gamma : double
-        fractional year (radians)
-
-    References:
-    -----------
-    * De Pury & Farquhar (1997) PCE, 20, 537-557.
-    * Campbell, G. S. and Norman, J. M. (1998) Introduction to environmental
-      biophysics. Pg 169.
-    * J. W. Spencer (1971). Fourier series representation of the position of
-      the sun.
-    * Hughes, David W.; Yallop, B. D.; Hohenkerk, C. Y. (1989),
-      "The Equation of Time", Monthly Notices of the Royal Astronomical
-      Society 238: 1529–1535
-    */
-    double et;
-
-    /*
-    ** from Spencer '71. This better matches the de Pury worked example (pg 554)
-    ** The de Pury version is this essentially with the 229.18 already applied
-    ** It probably doesn't matter which is used, but there is some rounding
-    ** error below (radians)
-    */
-    et = 0.000075 + 0.001868 * cos(gamma) - 0.032077 * sin(gamma) -\
-         0.014615 * cos(2.0 * gamma) - 0.04089 * sin(2.0 * gamma);
-
-    /* radians to minutes */
-    et *= 229.18;
-
-    /* radians to hours */
-    /*et *= 24.0 / (2.0 * M_PI);*/
-
-    /* minutes - de Pury and Farquhar, 1997 - A17 */
-    /*et = (0.017 + 0.4281 * cos(gamma) - 7.351 * sin(gamma) - 3.349 *
-          cos(2.0 * gamma) - 9.731 * sin(gamma));*/
-
-    return (et);
-}
-
-
-
-double calc_extra_terrestrial_rad(double doy, double cos_zenith) {
-    /* Solar radiation incident outside the earth's atmosphere, e.g.
-    extra-terrestrial radiation. The value varies a little with the earths
-    orbit.
-
-    Using formula from Spitters not Leuning!
-
-    Arguments:
-    ----------
-    doy : double
-        day of year
-    cos_zenith : double
-        cosine of zenith angle (radians)
-
-    Returns:
-    --------
-    So : float
-        solar radiation normal to the sun's bean outside the Earth's atmosphere
-        (J m-2 s-1)
-
-    Reference:
-    ----------
-    * Spitters et al. (1986) AFM, 38, 217-229, equation 1.
-    */
-
-    double So, Sc;
-
-    /* Solar constant (J m-2 s-1) */
-    Sc = 1370.0;
-
-    if (cos_zenith > 0.0) {
-        /*
-        ** remember sin_beta = cos_zenith; trig funcs are cofuncs of each other
-        ** sin(x) = cos(90-x) and cos(x) = sin(90-x).
-        */
-        So = Sc * (1.0 + 0.033 * cos(doy / 365.0 * 2.0 * M_PI)) * cos_zenith;
-    } else {
-        So = 0.0;
-    }
-
-    return (So);
-
-}
-
-
-double estimate_clearness(double sw_rad, double So) {
-    /*
-        estimate atmospheric transmisivity - the amount of diffuse radiation
-        is a function of the amount of haze and/or clouds in the sky. Estimate
-        a proxy for this, i.e. the ratio between global solar radiation on a
-        horizontal surface at the ground and the extraterrestrial solar
-        radiation
-    */
-    double tau;
-
-    /* catch possible divide by zero when zenith = 90. */
-    if (So <= 0.0) {
-        tau = 0.0;
-    } else {
-        tau = sw_rad / So;
-    }
-
-    if (tau > 1.0) {
-        tau = 1.0;
-    } else if (tau < 0.0) {
-        tau = 0.0;
-    }
-
-    return (tau);
 }

@@ -698,8 +698,8 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
     double cleaf0, cwood0, croot0, criteria, arg1, arg2, arg3;
     double NPP, mu_af, mu_ar, mu_acr, mu_ab, mu_aw, mu_lf, mu_lr, mu_lcr;
-    double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood, woodX;
-    double mu_ass1, mu_ass2, mu_ass3, leaf_material, wood_material, mu_as1;
+    double mu_lb, mu_lw, shootX, rootX, crootX, branchX, stemX, wood;
+    double leaf_material, wood_material;
     double surf_struct_litter, structout_surf, structout_soil;
     double surf_struct_to_slow, surf_struct_to_active;
     double soil_struct_to_slow, soil_struct_litter;
@@ -715,9 +715,8 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     double deadleaves, deadroots, deadcroots, deadbranches, deadstems;
     double mu_decayrate0, mu_decayrate1, mu_decayrate2, mu_decayrate3, mu_decayrate4;
     double mu_decayrate5, mu_decayrate6, surf_metab_litter, soil_struct_to_active;
-    double total_days, deadsapwood, sapwoodX, new_passive;
+    double total_days, deadsapwood, sapwoodX;
     double prev_passivec = 99999.9;
-    int    i, cntrl_flag;
 
     // Step 1: Initial spin
     // - we first need to achieve steady state plant pools (or NPP is an
@@ -812,8 +811,6 @@ void sas_spinup(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     stemgrowth = (NPP * mu_aw);
     deadstems = (s->stem * mu_lw);
     stemX = stemgrowth - deadstems;
-
-    woodX = branchX + stemX + crootX;
 
     deadsapwood = (mu_lw + p->sapturnover) * s->sapwood;
     sapwoodX = stemgrowth - deadsapwood;

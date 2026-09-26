@@ -26,7 +26,6 @@ void    solve_leaf_energy_balance(control *, canopy_wk *, fluxes *, met *,
                                   params *, state *, double);
 void    sum_hourly_carbon_fluxes(canopy_wk *, fluxes *, params *);
 void    scale_leaf_to_canopy(control *c, canopy_wk *, state *);
-double  calc_leaf_net_rad(params *, state *, double, double, double);
 void    calculate_top_of_canopy_leafn(canopy_wk *, params *, state *);
 void    calc_leaf_to_canopy_scalar(canopy_wk *, params *, state *);
 void    unpack_solar_geometry(canopy_wk *, control *);

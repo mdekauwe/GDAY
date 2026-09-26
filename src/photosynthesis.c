@@ -30,9 +30,9 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     //
 
     double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
-    double A, B, C, Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
+    double Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
     //double Rd0 = 0.92;  Dark respiration rate make a paramater!
-    int    idx, error = FALSE, large_root;
+    int    idx, error = FALSE;
     double g0_zero = 1E-09; // numerical issues, don't use zero
     double scalex = cw->scalex[cw->ileaf];
 
@@ -169,7 +169,7 @@ int solve_ci(double g0, double gs_over_a, double rd, double Cs,
     //    Eucalyptus grandis. Aust. J. Plant Physiol., 17, 159-75.
     //
     int large_root = TRUE, error = FALSE;
-    double A, B, C, arg1, arg2, arg3, c1, c2, c3;
+    double A, B, C, arg1, arg2, arg3;
 
     A = g0 + gs_over_a * (gamma - rd);
 
@@ -564,12 +564,6 @@ double quad(double a, double b, double c, bool large, int *error) {
     }
     return (root);
 }
-
-
-
-
-
-
 
 
 void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
@@ -1079,8 +1073,6 @@ double epsilon(params *p, double asat, double par, double alpha,
 }
 
 
-
-
 void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
                             double daylen, double ncontent) {
     /*
@@ -1308,170 +1300,3 @@ double quadratic(double a, double b, double c) {
 
     return (root);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-        # Reducing assimilation if we encounter frost. Frost is assumed to
-        # impact on the maximum photosynthetic capacity and alpha_j
-        # So there is only an indirect effect on LAI, this could be changed...
-        if c->frost:
-            Tmax = m->'tmax'][day]
-            Tmin = m->'tmin'][day]
-
-            Thard = self.calc_frost_hardiness(daylen, Tmin, Tmax)
-            (total_alpha_limf,
-            total_amax_limf) = self.calc_frost_impact_factors(Thard, Tmin, Tmax)
-            alpha_am *= total_alpha_limf
-            alpha_pm *= total_alpha_limf
-
-
-
-
-
-]
-
-
-    def calc_frost_hardiness(self, daylength, Tmin, Tmax):
-        """ Capacity of plants to survive frost defined by a hardiness
-        paramater, Thard.
-
-
-        Parameters:
-        ----------
-
-
-        Returns:
-        -------
-        Thard : float (deg C)
-            Nightly minimum temperature causing a 50% reduction in Amax in
-            previously undamaged leaves.
-
-        References:
-        -----------
-        * King and Ball, 1998, Aust. J. Plant Physiol., 25, 27-37.
-        """
-        beta = 1.0 # degC/h
-
-        # Average night-time temperature
-        Tnight = Tmin + 0.25 * (Tmax - Tmin)
-
-        # equinox daylength
-        Teq = 12.0
-
-        # Stationary level of hardiness
-        Tstat = (p->frost_a + p->frost_b *
-                 (Tnight + beta * (daylength - Teq)))
-
-        # previous days Thard
-        if p->thardp is None:
-            p->thardp = Tstat
-
-        # Frost hardiness parameter
-        Thard = (p->thardp + p->frost_c *
-                 (Tstat - p->thardp))
-
-        if Thard < -12.0:
-            Thard = -12.0
-        elif Thard > -3.0:
-            Thard = -3.0
-
-        # set previous value to todays value
-        p->thardp = Thard
-
-        return (Thard)
-
-    def calc_frost_impact_factors(self, Thard, Tmin, Tmax):
-        """ Calculate multiplicative frost impact factors, 0=lethal frost; 1=no
-        damage from the previous night
-
-
-        Parameters:
-        ----------
-        k25 : float
-            rate parameter value at 25 degC
-        Ea : float
-            activation energy for the parameter [J mol-1]
-        Tk : float
-            leaf temperature [deg K]
-
-        Returns:
-        -------
-        total_alpha_limf : float [0-1]
-            limitation on alpha
-        total_amax_limf : float [0-1]
-            limitation on Amax
-
-        References:
-        -----------
-        * King and Ball, 1998, Aust. J. Plant Physiol., 25, 27-37.
-        """
-
-        # Temperature range between 0 and 100% photosynthetic damage from low
-        # temp following Battaglia et a. 2004.
-        Trange = 5.0
-        #Trange = Tmax - Tmin
-
-        # Factor accounting for the previous nights frost on Amax
-        if Tmin > Thard + 0.5 * Trange:
-            f_A = 1.0
-        elif Thard + 0.5 * Trange > Tmin and Tmin > Thard - 0.5 * Trange:
-            f_A = 0.5 * (1.0 + sin(pi * (Tmin - Thard) / Trange))
-        elif Tmin <= Thard - 0.5 * Trange:
-            f_A = 0.0
-
-        # Factor accounting for effect on initial slope of the light response
-        # curve (alpha)
-        d = 1.5 + 0.5 * exp(-2.0 * p->kext * s->lai)
-        if f_A >= 0.5:
-            f_alpha = f_A**d
-        elif f_A < 0.5:
-            f_alpha = f_A / d
-
-        #
-        ## Short term effects, complete recovery ~ 5 days
-        #
-        if p->fcap < 0.8:
-            fcA = f_A * (p->fcap + 0.2)
-        elif p->fcap >= 0.8:
-            fcA = f_A
-
-        if p->fc_alpha_p < 0.8:
-            fc_alpha = f_alpha * (p->fc_alpha_p + 0.2)
-        elif p->fc_alpha_p >= 0.8:
-            fc_alpha = f_alpha
-
-        # set previous days values to todays value
-        p->fcap = fcA
-        p->fc_alpha_p = fc_alpha
-
-        #
-        ## Long term cumulative frost impact factor
-        #
-        if f_alpha < 1.0:
-            f_long = f_alpha**p->frost_p * p->f_long_gp
-        elif f_alpha == 1.0:
-            f_long = 0.01 + 0.99 * p->f_long_gp
-
-        # set previous value to todays value
-        p->f_long_gp = f_long
-
-        # Combined factor
-        total_alpha_limf = max(min(1.0, f_long * fc_alpha), 0.0)
-        total_amax_limf = max(min(1.0, fcA * f_long), 0.0)
-
-        return (total_alpha_limf, total_amax_limf)
-*/

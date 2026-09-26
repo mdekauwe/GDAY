@@ -15,7 +15,7 @@ double zbrent(double (*func)(double, double, double, double, double, double),
     ** Numerical Recipies in C, chapter 9.3
     */
     int    iter;
-    double a=x1,b=x2,c,d,e,min1,min2;
+    double a=x1,b=x2,c=x2,d=0.0,e=0.0,min1,min2;
     double fa=(*func)(a, root_biomass, surf_biomass, rooted_layers,
                       top_lyr_thickness, root_reach);
     double fb=(*func)(b, root_biomass, surf_biomass, rooted_layers,

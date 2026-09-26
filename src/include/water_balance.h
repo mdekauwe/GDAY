@@ -34,7 +34,6 @@ double  calc_net_radiation(params *, double, double);
 double  calc_latent_heat_of_vapourisation(double);
 double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_sat_vapour_pressure_curve(double);
-void    _calc_soil_water_potential(control *, params *, state *);
 double  calc_sw_modifier(double, double, double);
 
 double *get_soil_fracs(char *);

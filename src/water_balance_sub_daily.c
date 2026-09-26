@@ -132,7 +132,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
 
     int    i;
     double soil_evap, et, interception, runoff, conv, transpiration, net_rad;
-    double SEC_2_DAY, DAY_2_SEC, transpiration_am, transpiration_pm, gs_am;
     double canopy_evap, surface_water;
 
     if (c->water_balance == HYDRAULICS) {
@@ -435,9 +434,7 @@ void calc_saxton_stuff(params *p, double *fsoil) {
           Soil Science Society of America Journal, 90, 1031-1036.
     */
     int    i;
-    double mult1 = 100.0;
     double mult2 = 2.778E-6;
-    double mult3 = 1000.0;
     double A = -4.396;
     double B = -0.0715;
     double CC = -4.880E-4;
@@ -454,10 +451,6 @@ void calc_saxton_stuff(params *p, double *fsoil) {
     double T = 3.671e-2;
     double U = -0.1103;
     double V = 8.7546E-4;
-    double x1 = 0.1;
-    double x2 = 0.7;
-    double tol = 0.0001;
-    double dummy = 0.0;
     double sand = fsoil[SAND] * 100.0;
     double clay = fsoil[CLAY] * 100.0;
 
@@ -528,7 +521,6 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     //
 
     int    i;
-    double arg1, arg2;
 
     for (i = 0; i < s->rooted_layers; i++) {
 
@@ -547,7 +539,6 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
     /* head of pressure (MPa/m) */
     double head = 0.009807;
     double Lsoil, rs, soilR1, soilR2, arg1, arg2, rsum;
-    double root_xsec_area = M_PI * p->root_radius * p->root_radius;
     int    i;
 
     // Store each layers resistance, used in LWP calculatons
@@ -644,7 +635,6 @@ void calc_wetting_layers(fluxes *f, params *p, state *s, double soil_evap,
     // wetting_top - Depth to top of wet soil layers (m)
     //
 
-    double seconds_per_step = 1800.0;
     double dmin = 0.001;
     double airspace = p->porosity[0];
     double min_val, netc, diff;
@@ -814,15 +804,13 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
     //
     int    nbad;                /* N of unsuccessful changes of the step size */
     int    nok;                 /* N of successful changes of the step size */
-    int    i, N = 1, max_iter;
+    int    i, N = 1;
     double eps = 1.0e-4;        /* precision */
     double h1 = .001;           /* first guess at integrator size */
     double hmin = 0.0;          /* minimum value of the integrator step */
     double x1 = 1.0;             /* initial time */
     double x2 = 2.0;             /* final time */
 
-    /* value affecting the max time interval at which variables should b calc */
-    double  soilpor = p->porosity[soil_layer];
     double  unsat, drain_layer, new_water_frac, change;
     //double *ystart = NULL;
     //ystart = dvector(1,N);
@@ -1104,7 +1092,6 @@ void update_plant_water_store(canopy_wk *cw, params *p, state *s,
     // 5 % of full hydration
     double min_value = 0.05 * cw->plant_water0;
     double ratio, water_flux, stem_relk, arg1, arg2;
-    double delta_water_store = 0.0;
     double conv;
 
     // Under normal circumstances, i.e et_deficit = 0, the assumption is that
@@ -1179,7 +1166,6 @@ void calc_soil_balance_cascading(fluxes *f, params *p, state *s,
     // threshold moving to the deeper layer
     //
 
-    int     i;
     double  unsat, drain_layer, liquid, new_water_frac, change, drainage;
 
     /* unsaturated volume of layer below (m3 m-2) */

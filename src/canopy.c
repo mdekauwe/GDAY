@@ -41,9 +41,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
-    int    debug = TRUE;
-    double doy, year, dummy2=0.0, previous_sw, current_sw, gsv;
-    double previous_cs, current_cs, relk;
+    double doy, year, dummy2=0.0, relk;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // - this is only used in hydraulics, so set it to zero.
@@ -53,8 +51,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     /* loop through the day */
     zero_carbon_day_fluxes(f);
     zero_water_day_fluxes(f);
-    previous_sw = s->pawater_topsoil + s->pawater_root;
-    previous_cs = s->canopy_store;
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
@@ -157,7 +153,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             **/
             if (c->water_balance == HYDRAULICS && hod == 10) {
                 s->predawn_swp = s->weighted_swp;
-                /*_calc_soil_water_potential(c, p, s);*/
 
             }
 
@@ -207,19 +202,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         s->wtfac_root = 1.0;
     }
 
-    //current_sw = s->pawater_topsoil + s->pawater_root;
-    //current_cs = s->canopy_store;
-    //check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
-    //                    current_cs, year, doy);
-
-    //if (debug) {
-    //    current_sw = s->pawater_topsoil + s->pawater_root;
-    //    check_water_balance(c, f, previous_sw, current_sw);
-    //}
-
-    //if (c->pdebug) {
-    //    exit(1);
-    //}
     return;
 }
 
@@ -237,7 +219,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
 
     */
     int    idx;
-    double omega, transpiration, LE, Tdiff, gv, gbc, gh, sw_rad, trans_mmol;
+    double omega, transpiration, LE, Tdiff, gv, gbc, gh, trans_mmol;
 
     idx = cw->ileaf;
     penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
@@ -263,37 +245,6 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     }
 
     return;
-}
-
-double calc_leaf_net_rad(params *p, state *s, double tair, double vpd,
-                         double sw_rad) {
-
-    double rnet, Tk, ea, emissivity_atm, net_lw_rad;
-    /*
-        extinction coefficient for diffuse radiation and black leaves
-        (m2 ground m2 leaf)
-    */
-    double kd = 0.8;
-
-    /* isothermal net LW radiaiton at top of canopy, assuming emissivity of
-       the canopy is 1 */
-    Tk = tair + DEG_TO_KELVIN;
-
-    /* Isothermal net radiation (Leuning et al. 1995, Appendix) */
-    ea = calc_sat_water_vapour_press(tair) - vpd;
-
-    /* catch for AWAP diurnal stuff until I better connect VPD and Tair */
-    if (ea < 0.0) {
-        ea = 0.0;
-    }
-
-    /* apparent emissivity for a hemisphere radiating at air temp eqn D4 */
-    emissivity_atm = 0.642 * pow((ea / Tk), (1.0 / 7.0));
-
-    net_lw_rad = (1.0 - emissivity_atm) * SIGMA * pow(Tk, 4.0);
-    rnet = p->leaf_abs * sw_rad - net_lw_rad * kd * exp(-kd * s->lai);
-
-    return (rnet);
 }
 
 void zero_carbon_day_fluxes(fluxes *f) {
@@ -467,7 +418,7 @@ void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
     // Reference:
     // * Duursma et al. 2008, Tree Physiology 28, 265–276
 
-    double e_supply, e_demand, gsv, frac;
+    double e_supply, e_demand, gsv;
     int    idx = cw->ileaf;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway

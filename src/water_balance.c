@@ -9,7 +9,6 @@ void initialise_soils_day(control *c, fluxes *f, params *p, state *s) {
     /* Initialise soil water state & parameters  */
 
     double *fsoil_top = NULL, *fsoil_root = NULL;
-    int     i;
 
     /* site params not known, so derive them based on Cosby et al */
 
@@ -93,7 +92,7 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
 
     */
     double soil_evap, et, interception, runoff, conv,
-           transpiration, net_rad, SEC_2_DAY, DAY_2_SEC,
+           transpiration, SEC_2_DAY, DAY_2_SEC,
            transpiration_am, transpiration_pm, gs_am, gs_pm, LE_am,
            LE_pm, ga_am, ga_pm, net_rad_am, net_rad_pm, omega_am,
            gpp_am, gpp_pm, omega_pm, throughfall,
@@ -1274,8 +1273,7 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
     */
 
     double moisture_ratio_topsoil, moisture_ratio_root;
-    double b, sf, psi_f;
-    /*double psi_swp_topsoil;*/
+    double b;
 
     //if (c->water_balance == HYDRAULICS) {
     //    continue;
@@ -1314,16 +1312,9 @@ void calculate_soil_water_fac(control *c, params *p, state *s) {
         // Hardwiring this for testing. Values taken from Table, 1 in
         // De Kauwe et al. 2015, Biogeosciences
         b = 0.82;
-        sf = 1.9;
-        psi_f = -1.85;
 
         s->wtfac_topsoil = exp(b * s->predawn_swp);
         s->wtfac_root = exp(b * s->predawn_swp);
-
-        //s->wtfac_topsoil_ns = (1.0 + exp(sf * psi_f)) / \
-        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
-        //s->wtfac_root_ns = (1.0 + exp(sf * psi_f)) / \
-        //                      (1.0 + exp(sf * (psi_f - s->predawn_swp)));
 
         /*
         s->wtfac_topsoil = exp(p->g1_b * s->psi_s_topsoil);
@@ -1382,28 +1373,6 @@ double calc_sw_modifier(double theta, double c_theta, double n_theta) {
     */
     return (1.0  / (1.0 + pow(((1.0 - theta) / c_theta), n_theta)));
 }
-
-
-void _calc_soil_water_potential(control *c, params *p, state *s) {
-    /*
-        Estimate pre-dawn soil water potential from soil water content
-    */
-    double theta_over_theta_sat, theta;
-
-    /* Soil water potential of topsoil (MPa) */
-    theta = (s->pawater_topsoil / p->topsoil_depth) + p->theta_wp_topsoil;
-    theta_over_theta_sat = theta / p->theta_sp_topsoil;
-    s->psi_s_topsoil = p->psi_sat_topsoil * \
-                        pow(theta_over_theta_sat, -p->b_topsoil);
-
-    /* Soil water potential of rootzone (MPa) */
-    theta = (s->pawater_root / p->rooting_depth) + p->theta_wp_root;
-    theta_over_theta_sat = theta / p->theta_sp_root;
-    s->psi_s_root = p->psi_sat_root * pow(theta_over_theta_sat, -p->b_root);
-    /*printf("%lf %lf %lf\n", s->psi_s_root, theta, theta_over_theta_sat);
-    exit(1);*/
-}
-
 
 
 void update_daily_water_struct(fluxes *f, double day_soil_evap,

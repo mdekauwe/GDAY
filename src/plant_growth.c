@@ -27,16 +27,11 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 {
     double previous_topsoil_store, dummy=0.0,
            previous_rootzone_store, nitfac, ncbnew, nccnew, ncwimm, ncwnew;
-    double previous_sw, current_sw, previous_cs, current_cs, year;
     int    recalc_wb;
 
     /* Store the previous days soil water store */
     previous_topsoil_store = s->pawater_topsoil;
     previous_rootzone_store = s->pawater_root;
-
-    previous_sw = s->pawater_topsoil + s->pawater_root;
-    previous_cs = s->canopy_store;
-    year = ma->year[c->day_idx];
 
     if (c->sub_daily) {
         /* calculate 30 min two-leaf GPP/NPP, respiration and water fluxes */
@@ -45,12 +40,7 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         /* calculate daily GPP/NPP, respiration and update water balance */
         carbon_daily_production(c, f, m, p, s, day_length);
         calculate_water_balance(c, f, m, p, s, day_length, dummy, dummy, dummy);
-
-        current_sw = s->pawater_topsoil + s->pawater_root;
-        current_cs = s->canopy_store;
         f->day_ppt = m->rain;
-        //check_water_balance(c, f, s, previous_sw, current_sw, previous_cs,
-        //                    current_cs, year, doy);
     }
 
     /* leaf N:C as a fraction of Ncmaxyoung, i.e. the max N:C ratio of
@@ -624,13 +614,9 @@ void calc_carbon_allocation_fracs(control *c, fluxes *f, fast_spinup *fs,
     Corbeels, M. et al (2005) Ecological Modelling, 187, 449-474.
     McMurtrie, R. E. et al (2000) Plant and Soil, 224, 135-152.
     */
-    double min_leaf_alloc, adj, arg1, arg2, arg3, arg4, leaf2sa_target,
-           sap_cross_sec_area, lr_max, stress, mis_match, orig_ar,
-           reduction, target_branch, coarse_root_target, left_over,
-           total_alloc, leaf2sap, spare;
-
-    /* this is obviously arbitary */
-    double min_stem_alloc = 0.01;
+    double min_leaf_alloc, arg1, arg2, arg3, arg4, leaf2sa_target,
+           sap_cross_sec_area, target_branch, coarse_root_target,
+           total_alloc, leaf2sap;
 
     if (c->alloc_model == FIXED){
         f->alleaf = (p->c_alloc_fmax + nitfac *
@@ -1325,7 +1311,7 @@ void update_roots(control *c, params *p, state *s) {
     double x1 = 0.1;        /* lower bound for brent search */
     double x2 = 10.0;       /* upper bound for brent search */
     double tol = 0.0001;    /* tolerance for brent search */
-    double fine_root, fine_root_min;
+    double fine_root;
 
     min_biomass = 20.0;  // g root biomss
     fine_root = s->root * TONNES_HA_2_G_M2 * C_2_BIOMASS;
@@ -1392,10 +1378,8 @@ double calc_root_dist(double slope, double root_biomass, double surf_biomass,
         This function is used in the in the zbrent numerical algorithm to
         figure out the slope of the rooting distribution for a given depth
     */
-    double one, two, arg1, arg2;
+    double arg1, arg2;
 
-    one = (1.0 - exp(-slope * rooted_layers * top_lyr_thickness)) / slope;
-    two = root_biomass / surf_biomass;
     arg1 = (1.0 - exp(-slope * root_reach)) / slope;
     arg2 = root_biomass / surf_biomass;
 
