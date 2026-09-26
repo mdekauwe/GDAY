@@ -98,7 +98,9 @@ void calc_day_growth(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                  timestep, so invert T from WUE assumption and use that
                  to recalculate the end day water balance
             */
-            f->transpiration = f->gpp_gCm2 / f->wue;
+            if (f->wue > 0.0) {
+                f->transpiration = f->gpp_gCm2 / f->wue;
+            }
             update_water_storage_recalwb(c, f, p, s, m);
 
         } else {
@@ -472,8 +474,12 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         arg = f->npstemimm + f->npstemmob + f->npbranch + f->npcroot;
 
 
-        if (arg > ntot && c->fixleafnc == FALSE && c->fixed_lai && c->ncycle) {
-
+        /*
+        ** NB. this previously also required fixed_lai, so with a dynamic LAI
+        ** wood could take more N than was available. LAI is only readjusted
+        ** below when it isn't prescribed.
+        */
+        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
@@ -503,7 +509,11 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->npcroot = f->npp * f->alcroot * nccnew;
 
             /* Save WUE before cut back */
-            f->wue = f->gpp_gCm2 / f->transpiration;
+            if (f->transpiration > 0.0) {
+                f->wue = f->gpp_gCm2 / f->transpiration;
+            } else {
+                f->wue = 0.0;
+            }
 
             /* Also need to recalculate GPP and thus Ra and return a flag
                so that we know to recalculate the water balance. */
@@ -518,20 +528,11 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->auto_resp =  f->gpp - f->npp;
             recalc_wb = TRUE;
 
-            /* Now reduce LAI for down-regulated growth. */
-            if (c->deciduous_model) {
-                if (float_eq(s->shoot, 0.0)) {
-                    s->lai = 0.0;
-                } else if (s->leaf_out_days[doy] > 0.0) {
-                    s->lai -= lai_inc;
-                    s->lai += (f->cpleaf *
-                               (p->sla * M2_AS_HA / \
-                               (KG_AS_TONNES * p->cfracts)) -
-                               (f->deadleaves + f->ceaten) * s->lai / s->shoot);
-                } else {
-                    s->lai = 0.0;
-                }
-            } else {
+            /*
+            ** Now reduce LAI for down-regulated growth (we're in the
+            ** evergreen branch, deciduous allocation is from storage)
+            */
+            if (c->fixed_lai == FALSE) {
                 /* update leaf area [m2 m-2] */
                 if (float_eq(s->shoot, 0.0)) {
                     s->lai = 0.0;
