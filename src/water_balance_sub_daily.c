@@ -134,6 +134,20 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
     double soil_evap, et, interception, runoff, conv, transpiration, net_rad;
     double canopy_evap, surface_water;
 
+#ifdef CHECK_WATER_BALANCE
+    // Debug/test build: verify each timestep closes (see tests/)
+    double wb_store0 = 0.0, wb_store1 = 0.0, wb_resid, plant0 = 0.0;
+    int    wb_i;
+    if (c->water_balance == HYDRAULICS) {
+        for (wb_i = 0; wb_i < p->soil_layers; wb_i++)
+            wb_store0 += s->water_frac[wb_i] * s->thickness[wb_i] * M_TO_MM;
+    }
+    wb_store0 += s->canopy_store;
+    if (c->water_store) {
+        plant0 = cw->plant_water;
+    }
+#endif
+
     if (c->water_balance == HYDRAULICS) {
 
         zero_water_movement(f, p);
@@ -260,6 +274,24 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             surface_water, canopy_evap, runoff, omega_leaf,
                             m->rain);
+
+#ifdef CHECK_WATER_BALANCE
+    if (c->water_balance == HYDRAULICS) {
+        for (wb_i = 0; wb_i < p->soil_layers; wb_i++)
+            wb_store1 += s->water_frac[wb_i] * s->thickness[wb_i] * M_TO_MM;
+        wb_store1 += s->canopy_store;
+        if (c->water_store) {
+            // water drawn from the plant store is included in et
+            wb_store1 += cw->plant_water - plant0;
+        }
+        wb_resid = m->rain - (et + runoff) - (wb_store1 - wb_store0);
+        if (fabs(wb_resid) > 1E-08) {
+            fprintf(stderr, "Water balance not closed: %d %d %.10f mm\n",
+                    (int)year, (int)doy, wb_resid);
+            exit(EXIT_FAILURE);
+        }
+    }
+#endif
 
 }
 

@@ -30,6 +30,15 @@ def date_converter(*args):
     return dt.datetime.strptime(str(int(float(args[0]))) + " " +\
                                 str(int(float(args[1]))), '%Y %j')
 
+def read_csv_with_date(s, skiprows):
+    """ Read a csv whose first two columns are year and doy, indexed by
+    date. (The old parse_dates=[[0,1]]/date_parser route was removed from
+    pandas.) """
+    df = pd.read_csv(s, skiprows=skiprows, sep=",")
+    df.index = [date_converter(y, d) for y, d in zip(df.iloc[:, 0],
+                                                      df.iloc[:, 1])]
+    return df
+
 def translate_output(infname, met_fname):
     outdir = "outputs"
     UNDEF = -9999.
@@ -43,8 +52,9 @@ def translate_output(infname, met_fname):
     # load the rest of the g'day output
     (gday, git_ver) = load_gday_output(infname, envir['NFIX'].values)
 
-    # merge dictionaries to ease output
+    # merge dictionaries to ease output, positional (numpy) access below
     data_dict = dict(envir, **gday)
+    data_dict = {k: np.asarray(v) for k, v in data_dict.items()}
 
     ofname = os.path.join(outdir, "temp.nceas")
     f = open(ofname, "w")
@@ -104,9 +114,7 @@ def load_met_input_data(fname):
     tonnes_per_ha_to_g_m2 = 100.0
 
     s = remove_comments_from_header(fname)
-    met_data = pd.read_csv(s, parse_dates=[[0,1]], skiprows=4, index_col=0,
-                           sep=",", keep_date_col=True,
-                           date_parser=date_converter)
+    met_data = read_csv_with_date(s, skiprows=4)
 
     precip = met_data["rain"]
     par = (met_data["par_am"] + met_data["par_pm"]) * MJ_TO_MOL
@@ -127,8 +135,7 @@ def load_gday_output(fname, nfix):
     yr_to_day = 365.25
 
     (s, git_ver) = remove_comments_from_header_and_get_git_rev(fname)
-    out = pd.read_csv(s, parse_dates=[[0,1]], skiprows=1, index_col=0,
-                      sep=",", keep_date_col=True, date_parser=date_converter)
+    out = read_csv_with_date(s, skiprows=1)
 
     year = out["year"]
     doy = out["doy"]
