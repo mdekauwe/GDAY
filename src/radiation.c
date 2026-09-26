@@ -342,14 +342,19 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
     a3 = psi_func(cw->kb + kd, s->lai);
     a4 = 1.0 - emissivity_soil;
     a5 = (emissivity_leaf - emissivity_air);
-    a6 = psi_func(2.0 * kd, s->lai) * psi_func(cw->kb - kd, s->lai);
+    // soil-reflected term: down through the canopy (exp(-kd L)), then back
+    // up from the soil to the sunlit leaves (exp(-2 kd L) psi(kb - kd)).
+    // Was psi(2 kd) * psi(kb - kd), which isn't dimensionless.
+    a6 = exp(-2.0 * kd * s->lai) * psi_func(cw->kb - kd, s->lai);
     qcan_sun_lw = a1 * (a2 * a3 + a4 * a5 * a6);
 
     // Longwave radiation absorbed by shaded leaves under isothermal conditions
-    // B19 Wang and Leuning 1998
+    // B19 Wang and Leuning 1998: whole canopy minus the sunlit part, with
+    // the soil term entering with the same sign as for the sunlit leaves so
+    // that sunlit + shaded = canopy
     a3 = psi_func(kd, s->lai);
     a6 = exp(-kd * s->lai) * a3;
-    qcan_sha_lw = a1 * (a2 * a3 - a4 * a5 * a6) - qcan_sun_lw;
+    qcan_sha_lw = a1 * (a2 * a3 + a4 * a5 * a6) - qcan_sun_lw;
 
     cw->apar_leaf[SUNLIT] = qcan_sun_vis * J_2_UMOL;
     cw->apar_leaf[SHADED] = qcan_sha_vis * J_2_UMOL;
