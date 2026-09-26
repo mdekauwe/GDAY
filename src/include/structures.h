@@ -40,6 +40,7 @@ typedef struct {
     int   sw_stress_model;
     int   use_eff_nc;
     int   water_stress;
+    int   nonstomatal_limitation; /* also scale Vcmax/Jmax by beta */
     int   water_balance;
     int   water_store;
     int   num_days;

@@ -354,8 +354,12 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
         exit(EXIT_FAILURE);
     }
 
-    // NB. bucket model water stress acts through g1 only (photosynthesis_C3),
-    // it was previously applied to Jmax/Vcmax as well, i.e. twice.
+    // Bucket model water stress acts through g1 (photosynthesis_C3) and,
+    // optionally, on Jmax/Vcmax as a proxy for non-stomatal limitation
+    if (c->water_balance == BUCKET && c->nonstomatal_limitation) {
+        *jmax *= s->wtfac_root;
+        *vcmax *= s->wtfac_root;
+    }
 
     // Jmax/Vcmax forced linearly to zero at low T
     if (tleaf < lower_bound) {
@@ -847,7 +851,12 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     }
 
 
-    /* NB. water stress acts through g1 only, see calculate_ci */
+    /* water stress acts through g1 (calculate_ci) and, optionally, on
+       Jmax/Vcmax as a proxy for non-stomatal limitation */
+    if (c->nonstomatal_limitation) {
+        *jmax *= s->wtfac_root;
+        *vcmax *= s->wtfac_root;
+    }
     /*  Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
     adj_for_low_temp(jmax, Tk);
     adj_for_low_temp(vcmax, Tk);
@@ -1109,8 +1118,10 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
 
     /* Temp dependancies from Massad et al. 2007 */
-    calculate_vcmax_parameter(p, s, m->Tk_am, N0, &vcmax_am, &vcmax25_am, mt);
-    calculate_vcmax_parameter(p, s, m->Tk_pm, N0, &vcmax_pm, &vcmax25_pm, mt);
+    calculate_vcmax_parameter(c, p, s, m->Tk_am, N0, &vcmax_am, &vcmax25_am,
+                              mt);
+    calculate_vcmax_parameter(c, p, s, m->Tk_pm, N0, &vcmax_pm, &vcmax25_pm,
+                              mt);
 
     /* Covert solar irradiance to PAR (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
@@ -1167,7 +1178,8 @@ void mate_C4_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 }
 
 
-void calculate_vcmax_parameter(params *p, state *s, double Tk, double N0,
+void calculate_vcmax_parameter(control *c, params *p, state *s, double Tk,
+                               double N0,
                                double *vcmax, double *vcmax25, double mt) {
     /* Calculate the maximum rate of rubisco-mediated carboxylation at the
     top of the canopy
@@ -1205,7 +1217,11 @@ void calculate_vcmax_parameter(params *p, state *s, double Tk, double N0,
     *vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
     *vcmax = peaked_arrh(mt, *(vcmax25), Ea, Tk, delS, Hd);
 
-    /* NB. water stress acts through g1 only, see calculate_ci */
+    /* water stress acts through g1 (calculate_ci) and, optionally, on
+       Vcmax as a proxy for non-stomatal limitation */
+    if (c->nonstomatal_limitation) {
+        *vcmax *= s->wtfac_root;
+    }
 
     /* Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
     adj_for_low_temp(vcmax, Tk);

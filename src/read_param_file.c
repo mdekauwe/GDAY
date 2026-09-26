@@ -444,6 +444,20 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown water_store option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "nonstomatal_limitation")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0) {
+            c->nonstomatal_limitation = FALSE;
+        } else if (strcmp(temp, "True") == 0 ||
+                   strcmp(temp, "TRUE") == 0 ||
+                   strcmp(temp, "true") == 0) {
+            c->nonstomatal_limitation = TRUE;
+        } else {
+            fprintf(stderr, "Unknown nonstomatal_limitation option: %s\n",
+                    temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "water_stress")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||

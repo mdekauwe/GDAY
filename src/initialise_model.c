@@ -41,6 +41,9 @@ void initialise_control(control *c) {
     c->strfloat = 0;                /* Structural pool input N:C varies=1, fixed=0 */
     c->sw_stress_model = 1;         /* JULES type linear stress func, or Landsberg and Waring non-linear func */
     c->use_eff_nc = 0;              /* use constant leaf n:c for  metfrac s */
+    c->nonstomatal_limitation = TRUE; /* bucket model: water stress also
+                                         reduces Vcmax/Jmax, a proxy for
+                                         non-stomatal limitation */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
     c->water_balance = 0;            /* Water calculations: 0=simple 2 layered bucket; 1=SPA-style hydraulics */
     c->water_store = FALSE;         /* Simulate capacitance or not? */
