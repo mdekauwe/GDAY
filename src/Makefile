@@ -1,19 +1,13 @@
 ##############################################################################
-USER    := $(shell whoami)
-HOME     = /Users/$(USER)
-#CFLAGS   = -g
-#CFLAGS   = -g -Wall -Wextra -Wpedantic \
-           -Wformat=2 -Wno-unused-parameter -Wshadow \
-           -Wwrite-strings -Wstrict-prototypes -Wold-style-definition \
-           -Wredundant-decls -Wnested-externs -Wmissing-include-dirs \
-		   -fsanitize=bounds -fsanitize-undefined-trap-on-error
-CFLAGS   = -O3 #-g
-ARCH     =  x86_64
-INCLS    = -I./include -I/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include#-I/opt/local/include
-LIBS     = -lm -L/usr/lib/ -lSystem #-L/opt/local/lib -lgsl -lgslcblas
-CC       =  gcc
-PROGRAM  =  gday
-
+CC       = gcc
+CFLAGS   = -O3 -Wall -Wno-unused-parameter
+#CFLAGS   = -g -O0 -Wall -Wextra -Wno-unused-parameter -Wshadow \
+#           -fsanitize=address,undefined
+INCLS    = -I./include
+LIBS     = -lm
+PROGRAM  = gday
+ARCH     = x86_64
+PREFIX   = $(HOME)/bin/$(ARCH)
 
 SOURCES  =  \
 $(PROGRAM).c version.c read_param_file.c read_met_file.c litter_production.c \
@@ -22,33 +16,37 @@ water_balance_sub_daily.c simple_moving_average.c soils.c optimal_root_model.c \
 initialise_model.c write_output_file.c phenology.c disturbance.c canopy.c \
 radiation.c zbrent.c odeint.c nrutil.c rkqs.c rkck.c
 
-OBJECTS = $(SOURCES:.c=.o)
-RM       =  rm -f
+OBJECTS  = $(SOURCES:.c=.o)
+DEPS     = $(OBJECTS:.o=.d)
+RM       = rm -f
 ##############################################################################
 
-# top level create the program...
-all: 		$(PROGRAM)
+all: $(PROGRAM)
 
+# Regenerated every build so the git hash written to the outputs is current
+version.c: FORCE
+	@(git rev-parse HEAD 2>/dev/null || echo unknown) | \
+	    awk 'BEGIN {print "#include \"version.h\""} \
+	         {print "const char *build_git_sha = \"" $$0 "\";"}' > version.c.tmp
+	@date | awk '{print "const char *build_git_time = \"" $$0 "\";"}' \
+	    >> version.c.tmp
+	@if cmp -s version.c.tmp version.c; then rm version.c.tmp; \
+	 else mv version.c.tmp version.c; fi
 
-version.c:
-		git rev-parse HEAD | awk ' BEGIN {print "#include \"version.h\""} \
-		                    {print "const char *build_git_sha = \"" $$0"\";"}\
-		                     END {}' > version.c
-		date | awk 'BEGIN {} {print "const char *build_git_time = \""$$0"\";"}\
-		                     END {} ' >> version.c
+%.o: %.c
+	$(CC) $(INCLS) $(CFLAGS) -MMD -MP -c $< -o $@
 
-# Compile the src file...
-$(OBJECTS):	$(SOURCES)
-		$(CC) ${INCLS} $(CFLAGS) -c $(SOURCES)
-
-# Linking the program...
-$(PROGRAM):	$(OBJECTS)
-		$(CC) $(OBJECTS) $(LIBS) ${INCLS} $(CFLAGS) -o $(PROGRAM)
+$(PROGRAM): $(OBJECTS)
+	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $(PROGRAM)
 
 clean:
-		$(RM) $(OBJECTS) $(PROGRAM) version.c
+	$(RM) $(OBJECTS) $(DEPS) $(PROGRAM) version.c version.c.tmp
 
-install:
-		cp $(PROGRAM) $(HOME)/bin/$(ARCH)/.
-		$(RM) $(OBJECTS)
+install: $(PROGRAM)
+	cp $(PROGRAM) $(PREFIX)/.
+
+.PHONY: all clean install FORCE
+FORCE:
+
+-include $(DEPS)
 ##############################################################################

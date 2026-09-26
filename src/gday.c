@@ -105,17 +105,18 @@ int main(int argc, char **argv)
     initialise_nrutil(nr);
 
     clparser(argc, argv, c);
+    strcpy(c->git_code_ver, build_git_sha);
+    if (c->PRINT_GIT) {
+        fprintf(stderr, "\n%s\n", c->git_code_ver);
+        exit(EXIT_SUCCESS);
+    }
+
     /*
      * Read .ini parameter file and meterological data
      */
     error = parse_ini_file(c, p, s);
     if (error != 0) {
         prog_error("Error reading .INI file on line", __LINE__);
-    }
-    strcpy(c->git_code_ver, build_git_sha);
-    if (c->PRINT_GIT) {
-        fprintf(stderr, "\n%s\n", c->git_code_ver);
-        exit(EXIT_FAILURE);
     }
 
     /* House keeping! */

@@ -14,4 +14,10 @@ src/gday
 src/version.c
 src/gday.dSYM*
 
-scripts/__pycache__/*.pyc
+# build artefacts
+src/*.d
+src/version.c.tmp
+
+# python
+__pycache__/
+*.pyc

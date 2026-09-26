@@ -52,7 +52,7 @@ void rkqs(double y[], double dydx[], int n, double *x, double htry, double eps,
 	for (;;) {
 		rkck(y,dydx,n,*x,h,nr->ytemp,nr->yerr, aa, bb, cc, dd, ee, nr, derivs);
 		errmax=0.0;
-		for (i=1;i<=n;i++) errmax=FMAX(errmax,fabs(nr->yerr[i]/yscal[i]));
+		for (i=1;i<=n;i++) errmax=fmax(errmax,fabs(nr->yerr[i]/yscal[i]));
 		errmax /= eps;
 		if (errmax > 1.0) {
 			h=SAFETY*h*pow(errmax,PSHRNK);

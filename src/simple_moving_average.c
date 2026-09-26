@@ -15,7 +15,7 @@ Taken from:
 sma_result sma(enum Action action, ...)
 {
      va_list vl;
-     sma_result r;
+     sma_result r = { .handle = NULL };
      sma_obj *o;
      double v;
 
