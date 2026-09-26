@@ -34,7 +34,8 @@ double  peaked_arrh(double, double, double, double, double, double);
 double  calculate_michaelis_menten_parameter(params *, double, double);
 void    calculate_jmax_and_vcmax(control *, params *, state *, double, double,
                                  double *, double *, double);
-void    adj_for_low_temp(double *, double);
+void    adj_for_low_temp(params *, double *, double);
+double  vcmax_temperature(params *, double, double);
 double  calculate_ci(control *, params *, state *, double, double);
 double  calculate_quantum_efficiency(params *, double ci, double);
 double  assim(double, double, double, double);

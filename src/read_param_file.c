@@ -668,6 +668,14 @@ int handler(char *section, char *name, char *value, control *c,
         p->eav = atof(value);
     } else if (MATCH("params", "edj")) {
         p->edj = atof(value);
+    } else if (MATCH("params", "edv")) {
+        p->edv = atof(value);
+    } else if (MATCH("params", "delsv")) {
+        p->delsv = atof(value);
+    } else if (MATCH("params", "photo_tlow")) {
+        p->photo_tlow = atof(value);
+    } else if (MATCH("params", "photo_thigh")) {
+        p->photo_thigh = atof(value);
     } else if (MATCH("params", "faecescn")) {
         p->faecescn = atof(value);
     } else if (MATCH("params", "faecesn")) {

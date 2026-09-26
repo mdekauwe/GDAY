@@ -117,6 +117,10 @@ void initialise_params(params *p) {
     p->eao = 36380.0;   /* Temp. response of Ko (J mol-1) */
     p->eav = 51560.0;
     p->edj = 200000.0;
+    p->edv = -999.9;          /* off: Vcmax has no high T deactivation */
+    p->delsv = 650.0;
+    p->photo_tlow = 0.0;      /* Jmax/Vcmax ramp linearly to full between */
+    p->photo_thigh = 10.0;    /* photo_tlow and photo_thigh */
     p->faecescn = 25.0;
     p->faecesn = 0.0;
     p->fdecay = 0.59988;

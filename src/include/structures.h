@@ -214,6 +214,10 @@ typedef struct {
     double eao;                             /* Activation energy for oxygenation [J mol-1] */
     double eav;                             /* Activation energy for Rubisco (J mol-1) */
     double edj;                             /* Deactivation energy for electron transport (J mol-1) */
+    double edv;                             /* Deactivation energy for Rubisco (J mol-1), <= 0: plain Arrhenius for Vcmax */
+    double delsv;                           /* Entropy term for Rubisco deactivation (J mol-1 K-1) */
+    double photo_tlow;                      /* Leaf/air T (deg C) below which Jmax/Vcmax = 0 */
+    double photo_thigh;                     /* T (deg C) above which there is no low T reduction of Jmax/Vcmax */
     double faecescn;
     double faecesn;                         /* Faeces C:N ratio */
     double fdecay;                          /* foliage turnover rate (1/yr) */

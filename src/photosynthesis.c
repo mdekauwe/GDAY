@@ -325,8 +325,8 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     //      the maximum Rubisco activity at the leaf temperature (umol m-2 s-1)
     //
     double jmax25, vcmax25;
-    double lower_bound = 0.0;
-    double upper_bound = 10.0;
+    double lower_bound = p->photo_tlow;
+    double upper_bound = p->photo_thigh;
     double tref = p->measurement_temp;
 
     // NB. the same top-of-canopy values are used for both leaves, the
@@ -337,17 +337,17 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     } else if (c->modeljm == 1) {
         vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
         jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+        *vcmax = vcmax_temperature(p, vcmax25, tleaf);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
         vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
         jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+        *vcmax = vcmax_temperature(p, vcmax25, tleaf);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 3) {
         jmax25 = p->jmax;
         vcmax25 = p->vcmax;
-        *vcmax = arrhenius(vcmax25, p->eav, tleaf, tref);
+        *vcmax = vcmax_temperature(p, vcmax25, tleaf);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else {
         fprintf(stderr, "You haven't set Jmax/Vcmax model: modeljm \n");
@@ -492,6 +492,20 @@ double peaked_arrhenius(double k25, double Ea, double T, double Tref,
     return (arg1 * arg2 / arg3);
 }
 
+
+double vcmax_temperature(params *p, double vcmax25, double tleaf) {
+    //
+    //  Vcmax at leaf (or air) temperature (deg C): plain Arrhenius, or
+    //  peaked Arrhenius (Medlyn et al. 2002) when a deactivation energy (edv)
+    //  is given
+    //
+    if (p->edv > 0.0) {
+        return (peaked_arrhenius(vcmax25, p->eav, tleaf, p->measurement_temp,
+                                 p->delsv, p->edv));
+    } else {
+        return (arrhenius(vcmax25, p->eav, tleaf, p->measurement_temp));
+    }
+}
 
 double quad(double a, double b, double c, bool large, int *error) {
     //
@@ -828,10 +842,10 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
 
         /* the maximum rate of electron transport at 25 degC */
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
-        *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+        *vcmax = vcmax_temperature(p, vcmax25, Tk - DEG_TO_KELVIN);
     } else if (c->modeljm == 2) {
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
-        *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+        *vcmax = vcmax_temperature(p, vcmax25, Tk - DEG_TO_KELVIN);
 
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;
         *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk, p->delsj,
@@ -846,7 +860,7 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
 
         /* the maximum rate of electron transport at 25 degC */
         vcmax25 = p->vcmax;
-        *vcmax = arrh(mt, vcmax25, p->eav, Tk);
+        *vcmax = vcmax_temperature(p, vcmax25, Tk - DEG_TO_KELVIN);
 
     }
 
@@ -858,14 +872,14 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
         *vcmax *= s->wtfac_root;
     }
     /*  Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
-    adj_for_low_temp(jmax, Tk);
-    adj_for_low_temp(vcmax, Tk);
+    adj_for_low_temp(p, jmax, Tk);
+    adj_for_low_temp(p, vcmax, Tk);
 
     return;
 
 }
 
-void adj_for_low_temp(double *param, double Tk) {
+void adj_for_low_temp(params *p, double *param, double Tk) {
     /*
     Function allowing Jmax/Vcmax to be forced linearly to zero at low T
 
@@ -874,8 +888,8 @@ void adj_for_low_temp(double *param, double Tk) {
     Tk : float
         air temperature (Kelvin)
     */
-    double lower_bound = 0.0;
-    double upper_bound = 10.0;
+    double lower_bound = p->photo_tlow;
+    double upper_bound = p->photo_thigh;
     double Tc;
 
     Tc = Tk - DEG_TO_KELVIN;
@@ -1224,7 +1238,7 @@ void calculate_vcmax_parameter(control *c, params *p, state *s, double Tk,
     }
 
     /* Function allowing Jmax/Vcmax to be forced linearly to zero at low T */
-    adj_for_low_temp(vcmax, Tk);
+    adj_for_low_temp(p, vcmax, Tk);
 
     return;
 }
