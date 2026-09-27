@@ -63,6 +63,11 @@
 #define HYDRAULICS 1
 
 /* Drainage options for SPA */
+/* Soil hydraulics (retention & conductivity) for the SPA soil layers */
+#define SAXTON 0
+#define VAN_GENUCHTEN 1
+#define BROOKS_COREY 2
+
 #define GRAVITY 0
 #define CASCADING 1
 

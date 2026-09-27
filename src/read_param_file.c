@@ -416,6 +416,30 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown soil_drainage option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "bound_soil_psi")) {
+        c->bound_soil_psi = (strcasecmp(temp, "true") == 0);
+        if (!c->bound_soil_psi && strcasecmp(temp, "false") != 0) {
+            fprintf(stderr, "Unknown bound_soil_psi option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "dry_soil_correction")) {
+        c->dry_soil_correction = (strcasecmp(temp, "true") == 0);
+        if (!c->dry_soil_correction && strcasecmp(temp, "false") != 0) {
+            fprintf(stderr, "Unknown dry_soil_correction option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "soil_hydraulics")) {
+        if (strcasecmp(temp, "saxton") == 0)
+            c->soil_hydraulics = SAXTON;
+        else if (strcasecmp(temp, "van_genuchten") == 0)
+            c->soil_hydraulics = VAN_GENUCHTEN;
+        else if (strcasecmp(temp, "brooks_corey") == 0 ||
+                 strcasecmp(temp, "cosby") == 0)
+            c->soil_hydraulics = BROOKS_COREY;
+        else {
+            fprintf(stderr, "Unknown soil_hydraulics option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "sub_daily")) {
         if (strcmp(temp, "False") == 0 ||
             strcmp(temp, "FALSE") == 0 ||
@@ -691,6 +715,24 @@ int handler(char *section, char *name, char *value, control *c,
         p->eav = atof(value);
     } else if (MATCH("params", "edj")) {
         p->edj = atof(value);
+    } else if (MATCH("params", "soil_psi_open")) {
+        p->soil_psi_open = atof(value);
+    } else if (MATCH("params", "soil_psi_close")) {
+        p->soil_psi_close = atof(value);
+    } else if (MATCH("params", "ds_psi")) {
+        p->ds_psi = atof(value);
+    } else if (MATCH("params", "ds_min_depth")) {
+        p->ds_min_depth = atof(value);
+    } else if (MATCH("params", "soil_b")) {
+        p->soil_b = atof(value);
+    } else if (MATCH("params", "soil_sathh")) {
+        p->soil_sathh = atof(value);
+    } else if (MATCH("params", "soil_satcon")) {
+        p->soil_satcon = atof(value);
+    } else if (MATCH("params", "soil_sm_sat")) {
+        p->soil_sm_sat = atof(value);
+    } else if (MATCH("params", "soil_sm_res")) {
+        p->soil_sm_res = atof(value);
     } else if (MATCH("params", "nc_co2")) {
         p->nc_co2 = atof(value);
     } else if (MATCH("params", "nc_ndep")) {

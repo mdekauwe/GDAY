@@ -77,6 +77,9 @@ def set_keys(txt, d):
             txt = pat.sub("%s = %s" % (key, val), txt)
         else:
             section = "[files]" if key.startswith("out_") else "[control]"
+            if key.startswith("soil_") and key not in ("soil_hydraulics",
+                                                        "soil_drainage"):
+                section = "[params]"
             txt = txt.replace(section, "%s\n%s = %s" % (section, key, val), 1)
     return txt
 
@@ -113,6 +116,17 @@ def main():
                                "soil_drainage": "cascading"},
         "sd_hyd_dry_store": {"water_balance": "hydraulics", "met": "dry",
                              "water_store": "true"},
+        # JULES FR-Pue soil parameters (b, sathh, satcon, sm_sat)
+        "sd_hyd_dry_vg": {"water_balance": "hydraulics", "met": "dry",
+                          "soil_hydraulics": "van_genuchten",
+                          "bound_soil_psi": "true",
+                          "dry_soil_correction": "true",
+                          "soil_b": "6.742", "soil_sathh": "0.22656875",
+                          "soil_satcon": "4.2228e-6", "soil_sm_sat": "0.43648"},
+        "sd_hyd_dry_bc": {"water_balance": "hydraulics", "met": "dry",
+                          "soil_hydraulics": "brooks_corey",
+                          "soil_b": "6.742", "soil_sathh": "0.22656875",
+                          "soil_satcon": "4.2228e-6", "soil_sm_sat": "0.43648"},
     }
     for name, opts in cases.items():
         met = "met_30min_dry.csv" if opts.pop("met", "") == "dry" else \

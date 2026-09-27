@@ -1,5 +1,11 @@
 #include "water_balance_sub_daily.h"
 
+/* the soil layer being drained, for soil_water_store (see calc_soil_balance) */
+static params *drain_p = NULL;
+static int     drain_layer_idx = 0;
+/* control flags for soil_psi, set in initialise_soils_sub_daily */
+static control *c_soil = NULL;
+
 void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     /*
         Initialise soil water state & parameters
@@ -49,12 +55,13 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     }
 
     /* Set up all the hydraulics stuff */
+    c_soil = c;
     if (c->water_balance == HYDRAULICS) {
         /* Saxton parameters always need the texture */
-        if (fsoil_root == NULL) {
+        if (c->soil_hydraulics == SAXTON && fsoil_root == NULL) {
             fsoil_root = get_soil_fracs(p->rootsoil_type);
         }
-        calc_saxton_stuff(p, fsoil_root);
+        setup_soil_hydraulics(c, p, fsoil_root);
 
         for (i = 0; i < p->wetting; i++) {
             s->wetting_bot[i] = 0.0;
@@ -67,7 +74,8 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
         /* Initalise SW fraction - we should read this from param file */
         s->initial_water = 0.0;
         for (i = 0; i < p->core; i++) {
-            s->water_frac[i] = 0.4;
+            /* 0.4 as before (Saxton), but not above saturation */
+            s->water_frac[i] = MIN(0.4, p->porosity[i]);
             s->initial_water += 1E3 * (s->water_frac[i] * s->thickness[i]);
         }
 
@@ -77,9 +85,7 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
         ** the integration func when we update the soil water balance
         */
         for (i = 0; i < p->core; i++) {
-            f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
-                                                        p->cond1[i], p->cond2[i],
-                                                        p->cond3[i]);
+            f->soil_conduct[i] = soil_conductivity(p, i, s->water_frac[i]);
         }
 
         calc_soil_root_resistance(f, p, s);
@@ -183,10 +189,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // the integration func when we update the soil water balance
         //
         for (i = 0; i < p->core; i++) {
-            f->soil_conduct[i] = calc_soil_conductivity(s->water_frac[i],
-                                                        p->cond1[i],
-                                                        p->cond2[i],
-                                                        p->cond3[i]);
+            f->soil_conduct[i] = soil_conductivity(p, i, s->water_frac[i]);
         }
 
         calc_soil_water_potential(f, p, s);
@@ -556,11 +559,7 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
 
     for (i = 0; i < s->rooted_layers; i++) {
 
-        if (s->water_frac[i] > 0.0) {
-            f->swp[i] = -0.001 * p->potA[i] * pow(s->water_frac[i], p->potB[i]);
-        } else {
-            f->swp[i] = -9999.0;
-        }
+        f->swp[i] = soil_psi(c_soil, p, s, i, s->water_frac[i]);
     }
 
     return;
@@ -869,9 +868,10 @@ void calc_soil_balance(fluxes *f, nrutil *nr, params *p, state *s,
 
         // Runge-Kunte ODE integrator used to estimate soil gravitational
         // drainage during each time-step
+        drain_p = p;
+        drain_layer_idx = soil_layer;
         odeint(nr->ystart, N, x1, x2, eps, h1, hmin, &nok, &nbad, unsat,
-               drain_layer, p->cond1[soil_layer], p->cond2[soil_layer],
-               p->cond3[soil_layer], nr, soil_water_store, rkqs);
+               drain_layer, 0.0, 0.0, 0.0, nr, soil_water_store, rkqs);
 
         /* ystart is a vector 1..N, so need to index from 1 */
         new_water_frac = nr->ystart[1];
@@ -909,7 +909,9 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
 
     double drainage;
 
-    drainage = calc_soil_conductivity(y[index], cond1, cond2, cond3);
+    /* layer set by calc_soil_balance (the NR integrator only passes 5
+       doubles through) */
+    drainage = soil_conductivity(drain_p, drain_layer_idx, y[index]);
 
     // Convert units, soil conductivity is in m s-1 //
     drainage *= SEC_2_HLFHR;
@@ -1024,9 +1026,7 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
             // some error there
             effective_swp = -1.5;
 
-            // I've just rearranged the SWP calculation
-            wp = pow( effective_swp / (-0.001 * p->potA[i]),
-                      (1.0 / p->potB[i]) );
+            wp = soil_theta_at_psi(p, i, effective_swp);
             root_zone_total += MAX(0.0, (s->water_frac[i] - wp) * \
                                          s->thickness[i] * M_TO_MM);
         }
@@ -1379,4 +1379,134 @@ double calc_soil_boundary_layer_conductance(double wind, double canht) {
     ga = arg1 / arg2;
 
     return (ga);
+}
+
+/* ==========================================================================
+** Soil hydraulics of the SPA layers: water potential, conductivity and the
+** water content at a given potential, for the scheme set by
+** control soil_hydraulics (Saxton, van Genuchten or Brooks-Corey/Cosby).
+** VG and Brooks-Corey use JULES' parameter conventions (soil_b, soil_sathh,
+** soil_satcon, soil_sm_sat), so JULES/SoilGrids values can be used directly.
+** ======================================================================== */
+
+static int soil_scheme = SAXTON;     /* set by setup_soil_hydraulics */
+
+static double vg_se(params *p, double theta) {
+    /* van Genuchten effective saturation (0-1] */
+    double se = (theta - p->soil_sm_res) / (p->soil_sm_sat - p->soil_sm_res);
+    return (MAX(1E-6, MIN(1.0, se)));
+}
+
+double soil_psi_raw(params *p, int i, double theta) {
+    /* soil water potential (MPa) from the retention curve alone */
+    double n, m, alpha, se, h;
+
+    if (theta <= 0.0) {
+        return (-9999.0);
+    }
+    if (soil_scheme == VAN_GENUCHTEN) {
+        n = 1.0 + 1.0 / p->soil_b;
+        m = 1.0 - 1.0 / n;
+        alpha = 1.0 / p->soil_sathh;
+        se = vg_se(p, theta);
+        h = pow(pow(se, -1.0 / m) - 1.0, 1.0 / n) / alpha;       /* m */
+        return (-h * METER_OF_HEAD_TO_MPA);
+    } else if (soil_scheme == BROOKS_COREY) {
+        h = p->soil_sathh * pow(MIN(1.0, theta / p->soil_sm_sat), -p->soil_b);
+        return (-h * METER_OF_HEAD_TO_MPA);
+    }
+    /* Saxton et al. (1986) */
+    return (-0.001 * p->potA[i] * pow(theta, p->potB[i]));
+}
+
+double soil_theta_at_psi(params *p, int i, double psi) {
+    /* inverse of the retention curve: water content (m3 m-3) at psi (MPa) */
+    double n, m, alpha, h = -psi / METER_OF_HEAD_TO_MPA;
+
+    if (soil_scheme == VAN_GENUCHTEN) {
+        n = 1.0 + 1.0 / p->soil_b;
+        m = 1.0 - 1.0 / n;
+        alpha = 1.0 / p->soil_sathh;
+        return (p->soil_sm_res + (p->soil_sm_sat - p->soil_sm_res) *
+                pow(1.0 + pow(alpha * h, n), -m));
+    } else if (soil_scheme == BROOKS_COREY) {
+        if (h <= p->soil_sathh) {
+            return (p->soil_sm_sat);
+        }
+        return (p->soil_sm_sat * pow(h / p->soil_sathh, -1.0 / p->soil_b));
+    }
+    return (pow(psi / (-0.001 * p->potA[i]), 1.0 / p->potB[i]));
+}
+
+double soil_psi(control *c, params *p, state *s, int i, double theta) {
+    /*
+    ** Soil water potential (MPa) with JULES' optional bounds
+    ** (l_bound_soil_wp): psi_close <= psi <= psi_open, or, with
+    ** dry_soil_correction (l_ds_correction), the Webb (2000) dry soil
+    ** extension below psi_close: log(-psi) linear in water content from
+    ** psi_close to ds_psi at zero water content.
+    */
+    double psi = soil_psi_raw(p, i, theta), theta_close;
+    double depth_top = s->layer_depth[i] - s->thickness[i];
+
+    if (c->bound_soil_psi) {
+        psi = MIN(psi, p->soil_psi_open);
+        if (psi < p->soil_psi_close) {
+            if (c->dry_soil_correction && depth_top >= p->ds_min_depth - 1E-9) {
+                theta_close = soil_theta_at_psi(p, i, p->soil_psi_close);
+                psi = p->ds_psi * pow(p->soil_psi_close / p->ds_psi,
+                                      MAX(0.0, theta) / theta_close);
+            } else {
+                psi = p->soil_psi_close;
+            }
+        }
+    }
+    return (psi);
+}
+
+double soil_conductivity(params *p, int i, double theta) {
+    /* hydraulic conductivity (m s-1) */
+    double n, m, se, k;
+
+    if (soil_scheme == VAN_GENUCHTEN) {
+        n = 1.0 + 1.0 / p->soil_b;
+        m = 1.0 - 1.0 / n;
+        se = vg_se(p, theta);
+        /* Mualem, L = 0.5 */
+        k = p->soil_satcon * sqrt(se) *
+            pow(1.0 - pow(1.0 - pow(se, 1.0 / m), m), 2.0);
+        return (MAX(k, 1E-30));
+    } else if (soil_scheme == BROOKS_COREY) {
+        k = p->soil_satcon * pow(MIN(1.0, MAX(0.0, theta) / p->soil_sm_sat),
+                                 2.0 * p->soil_b + 3.0);
+        return (MAX(k, 1E-30));
+    }
+    return (calc_soil_conductivity(theta, p->cond1[i], p->cond2[i],
+                                   p->cond3[i]));
+}
+
+void setup_soil_hydraulics(control *c, params *p, double *fsoil) {
+    /*
+    ** Per layer porosity & field capacity (-10 kPa, used for gravity
+    ** drainage) for the chosen scheme. Saxton also needs its coefficients.
+    */
+    int i;
+
+    soil_scheme = c->soil_hydraulics;
+    if (soil_scheme == SAXTON) {
+        calc_saxton_stuff(p, fsoil);
+        return;
+    }
+    if (p->soil_b <= 0.0 || p->soil_sathh <= 0.0 || p->soil_satcon <= 0.0 ||
+        p->soil_sm_sat <= 0.0) {
+        fprintf(stderr, "soil_hydraulics = %s needs soil_b, soil_sathh, "
+                "soil_satcon and soil_sm_sat\n",
+                soil_scheme == VAN_GENUCHTEN ? "van_genuchten" : "brooks_corey");
+        exit(EXIT_FAILURE);
+    }
+    for (i = 0; i < p->core; i++) {
+        p->porosity[i] = p->soil_sm_sat;
+        p->field_capacity[i] = soil_theta_at_psi(p, i, -0.01);
+    }
+    return;
 }

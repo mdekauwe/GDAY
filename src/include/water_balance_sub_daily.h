@@ -47,4 +47,10 @@ double calc_relative_weibull(double, double, double);
 double calc_qe_flux(fluxes *, params *, state *, double, double, double, double,
                     double);
 double calc_soil_boundary_layer_conductance(double, double);
+double  soil_psi_raw(params *, int, double);
+double  soil_psi(control *, params *, state *, int, double);
+double  soil_theta_at_psi(params *, int, double);
+double  soil_conductivity(params *, int, double);
+void    setup_soil_hydraulics(control *, params *, double *);
+
 #endif /* WATER_BALANCE_SUBDAILY_H */

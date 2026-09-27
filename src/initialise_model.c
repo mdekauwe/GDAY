@@ -55,6 +55,9 @@ void initialise_control(control *c) {
     c->water_store = FALSE;         /* Simulate capacitance or not? */
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
+    c->soil_hydraulics = SAXTON;
+    c->bound_soil_psi = FALSE;
+    c->dry_soil_correction = FALSE;
 
     /* Internal calculated */
     c->num_years = 0;               /* Total number of years simulated */
@@ -291,6 +294,15 @@ void initialise_params(params *p) {
     p->field_capacity = NULL;   // Field capacity of moisture for each layer, when soil water content at SWP = -10kPa
     p->wetting = 10;            // number of layers to use for wetting calcs
     p->plc_dead = 0.85;
+    p->soil_b = -999.9;         /* VG/Brooks-Corey soil, see soil_hydraulics */
+    p->soil_sathh = -999.9;
+    p->soil_satcon = -999.9;
+    p->soil_sm_sat = -999.9;
+    p->soil_sm_res = 0.0;
+    p->soil_psi_open = -0.033;   /* JULES psi_open_io */
+    p->soil_psi_close = -2.0;    /* JULES psi_close_io */
+    p->ds_psi = -609.0321858;    /* JULES ds_psi (Schneider & Goss 2012) */
+    p->ds_min_depth = 0.0;
 
 
 }

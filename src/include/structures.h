@@ -63,6 +63,9 @@ typedef struct {
     int   pdebug;
     int   spinup_method;
     int   soil_drainage;
+    int   soil_hydraulics;   /* SAXTON, VAN_GENUCHTEN or BROOKS_COREY */
+    int   bound_soil_psi;    /* JULES l_bound_soil_wp: psi_close <= psi <= psi_open */
+    int   dry_soil_correction; /* JULES l_ds_correction (Webb 2000) below psi_close */
 } control;
 
 
@@ -393,6 +396,17 @@ typedef struct {
     double *cond3;
     double *porosity;
     double *field_capacity;
+    /* van Genuchten / Brooks-Corey soil (JULES conventions & names; used for
+       all layers): VG n = 1 + 1/b, alpha = 1/sathh, Mualem L = 0.5 */
+    double soil_b;           /* Brooks-Corey b, or 1/(n-1) for VG (-) */
+    double soil_sathh;       /* |psi| at saturation (BC) or 1/alpha (VG) (m) */
+    double soil_satcon;      /* saturated conductivity (m s-1) */
+    double soil_sm_sat;      /* saturated water content (m3 m-3) */
+    double soil_sm_res;      /* residual water content, VG (m3 m-3) */
+    double soil_psi_open;    /* bound_soil_psi: max soil water potential (MPa) */
+    double soil_psi_close;   /* bound_soil_psi: min / dry soil matching point (MPa) */
+    double ds_psi;           /* dry soil correction: psi at zero water content (MPa) */
+    double ds_min_depth;     /* dry soil correction only below this depth (m) */
     int     wetting;         /* number of wetting layers */
 
 
