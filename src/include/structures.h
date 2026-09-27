@@ -65,6 +65,7 @@ typedef struct {
     int   soil_drainage;
     int   soil_hydraulics;   /* SAXTON, VAN_GENUCHTEN or BROOKS_COREY */
     int   soil_evap_model;   /* SOIL_EVAP_GDAY, _JULES or _OR (Decker/CABLE) */
+    int   canopy_evap_model; /* CANOPY_EVAP_GDAY or _JULES (sub-daily) */
     int   bound_soil_psi;    /* JULES l_bound_soil_wp: psi_close <= psi <= psi_open */
     int   dry_soil_correction; /* JULES l_ds_correction (Webb 2000) below psi_close */
 } control;
@@ -425,6 +426,11 @@ typedef struct {
     double shelter;          /* leaf boundary layer sheltering factor (-) */
     double wind_height;      /* height of the wind forcing (m), <= canht
                                 means the wind is at the canopy top */
+
+    /* JULES canopy interception (canopy_evap_model = jules) */
+    double catch0;           /* canopy capacity with no leaves (mm) */
+    double dcatch_dlai;      /* canopy capacity per unit LAI (mm) */
+    double rain_area_frac;   /* fraction of the area rain falls on (-) */
     int     wetting;         /* number of wetting layers */
 
 

@@ -101,6 +101,20 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
     return;
 }
 
+static void intercept(control *c, met *m, params *p, fluxes *f, state *s,
+                      double *surface_water, double *interception,
+                      double *canopy_evap, double *frac_wet) {
+    /* canopy interception & wet canopy evaporation, GDAY or JULES */
+    if (c->canopy_evap_model == CANOPY_EVAP_JULES) {
+        calc_interception_jules(m, p, s, surface_water, interception,
+                                canopy_evap, frac_wet);
+    } else {
+        calc_interception(c, m, p, f, s, surface_water, interception,
+                          canopy_evap);
+        *frac_wet = 0.0;
+    }
+}
+
 void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                                        met *m, nrutil *nr, params *p, state *s,
                                        int daylen, double trans,
@@ -138,7 +152,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
 
     int    i;
     double soil_evap, et, interception, runoff, conv, transpiration, net_rad;
-    double canopy_evap, surface_water;
+    double canopy_evap, surface_water, frac_wet = 0.0;
 
 #ifdef CHECK_WATER_BALANCE
     // Debug/test build: verify each timestep closes (see tests/)
@@ -166,9 +180,8 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         canopy_evap *= conv;
 
-        /* We could now replace this interception bit with the Rutter scheme? */
-        calc_interception(c, m, p, f, s, &surface_water, &interception,
-                          &canopy_evap);
+        intercept(c, m, p, f, s, &surface_water, &interception,
+                  &canopy_evap, &frac_wet);
 
         if (c->soil_evap_model == SOIL_EVAP_GDAY) {
             soil_evap = calc_qe_flux(f, p, s, m->tair, m->tsoil,
@@ -188,6 +201,11 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
+
+        // JULES: the wet part of the canopy evaporates at the potential
+        // rate, the dry part transpires and the soil beneath evaporates
+        transpiration *= 1.0 - frac_wet;
+        soil_evap *= 1.0 - frac_wet;
 
         et = transpiration + soil_evap + canopy_evap;
 
@@ -256,8 +274,8 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         /* mol m-2 s-1 to mm/day */
         conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
         canopy_evap *= conv;
-        calc_interception(c, m, p, f, s, &surface_water, &interception,
-                          &canopy_evap);
+        intercept(c, m, p, f, s, &surface_water, &interception,
+                  &canopy_evap, &frac_wet);
 
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
         if (c->soil_evap_model == SOIL_EVAP_JULES) {
@@ -274,6 +292,11 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
                         SEC_2_HLFHR;
+
+        // JULES: the wet part of the canopy evaporates at the potential
+        // rate, the dry part transpires and the soil beneath evaporates
+        transpiration *= 1.0 - frac_wet;
+        soil_evap *= 1.0 - frac_wet;
 
         /*
         ** NB. et, transpiration & soil evap may all be adjusted in

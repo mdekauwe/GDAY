@@ -125,6 +125,10 @@ int main(int argc, char **argv)
         fprintf(stderr, "You can't run the hydraulics model with daily flag\n");
         exit(EXIT_FAILURE);
     }
+    if (c->canopy_evap_model == CANOPY_EVAP_JULES && !c->sub_daily) {
+        fprintf(stderr, "canopy_evap_model = jules needs sub_daily = true\n");
+        exit(EXIT_FAILURE);
+    }
     if (c->soil_evap_model == SOIL_EVAP_OR && c->water_balance != HYDRAULICS) {
         /* needs the conductivity of the top SPA layer */
         fprintf(stderr, "soil_evap_model = or needs water_balance = hydraulics\n");

@@ -57,6 +57,7 @@ void initialise_control(control *c) {
     c->soil_drainage = GRAVITY;
     c->soil_hydraulics = SAXTON;
     c->soil_evap_model = SOIL_EVAP_GDAY;
+    c->canopy_evap_model = CANOPY_EVAP_GDAY;
     c->bound_soil_psi = FALSE;
     c->dry_soil_correction = FALSE;
 
@@ -317,6 +318,9 @@ void initialise_params(params *p) {
     p->soil_refl = 0.1;
     p->shelter = 2.0;            /* CABLE shelrb */
     p->wind_height = -999.9;
+    p->catch0 = 0.5;             /* JULES catch0_io */
+    p->dcatch_dlai = 0.05;       /* JULES dcatch_dlai_io */
+    p->rain_area_frac = 1.0;     /* JULES standalone ls_rainfrac */
 
 
 }

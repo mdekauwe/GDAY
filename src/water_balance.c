@@ -318,6 +318,54 @@ void update_water_storage_recalwb(control *c, fluxes *f, params *p, state *s,
     return;
 }
 
+void calc_interception_jules(met *m, params *p, state *s,
+                             double *throughfall, double *interception,
+                             double *canopy_evap, double *frac_wet) {
+    /*
+        Sub-daily canopy interception & wet canopy evaporation as JULES.
+
+        - capacity catch0 + dcatch_dlai * LAI (mm), pft_sparm
+        - the wet fraction evaporates at the potential rate (aerodynamic
+          resistance only), fraca = store / (Epot dt + capacity), sf_resist.
+          The caller scales transpiration and soil evaporation by
+          (1 - fraca), as the JULES tile flux does.
+        - evaporation uses the store at the start of the timestep (JULES'
+          explicit surface fluxes), then rain is intercepted with the sieve
+          scheme: rain falls on rain_area_frac of the area with an
+          exponential distribution of intensity, sieve_jls.
+
+        canopy_evap is the potential evaporation on input and the actual
+        evaporation on output (mm per timestep).
+    */
+    double cap, epot, aexp, can_ratio, tfall;
+
+    cap = MAX(0.0, p->catch0 + p->dcatch_dlai * s->lai);
+    epot = MAX(0.0, *canopy_evap);
+
+    if (cap > 0.0 && epot > 0.0) {
+        *frac_wet = s->canopy_store / (epot + cap);
+    } else {
+        *frac_wet = 0.0;
+    }
+    *canopy_evap = MIN(*frac_wet * epot, s->canopy_store);
+    s->canopy_store -= *canopy_evap;
+
+    if (cap > 0.0 && m->rain > 0.0) {
+        // area * capacity / (rain rate * timestep)
+        aexp = p->rain_area_frac * cap / m->rain;
+        aexp = aexp < 700.0 ? exp(-aexp) : 0.0;
+        can_ratio = MIN(s->canopy_store / cap, 1.0);
+        tfall = m->rain * ((1.0 - can_ratio) * aexp + can_ratio);
+    } else {
+        tfall = m->rain;
+    }
+    *throughfall = tfall;
+    *interception = m->rain - tfall;
+    s->canopy_store += *interception;
+
+    return;
+}
+
 void calc_interception(control *c, met *m, params *p, fluxes *f, state *s,
                        double *throughfall, double *interception,
                        double *canopy_evap) {
@@ -825,7 +873,7 @@ double canopy_boundary_layer_conduct(params *p, double canht, double wind,
     */
 
     /* z0m roughness length governing momentum transfer [m] */
-    double z0m, z0h, d, arg1, arg2, arg3, ga, cmolar;
+    double z0m, z0h, d, arg1, arg2, arg3, ga, cmolar, zref;
     double vk = 0.41;
 
     /* Convert from mm s-1 to mol m-2 s-1 */
@@ -849,9 +897,13 @@ double canopy_boundary_layer_conduct(params *p, double canht, double wind,
     /* zero plan displacement height [m] */
     d = p->displace_ratio * canht;
 
+    /* height of the wind forcing; if not given the wind is assumed to be
+       at the canopy top (as before) */
+    zref = p->wind_height > canht ? p->wind_height : canht;
+
     arg1 = (vk * vk) * wind;
-    arg2 = log((canht - d) / z0m);
-    arg3 = log((canht - d) / z0h);
+    arg2 = log((zref - d) / z0m);
+    arg3 = log((zref - d) / z0h);
 
     ga = (arg1 / (arg2 * arg3)) * cmolar;
 

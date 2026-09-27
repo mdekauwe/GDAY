@@ -448,6 +448,15 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown soil_evap_model option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "canopy_evap_model")) {
+        if (strcasecmp(temp, "gday") == 0)
+            c->canopy_evap_model = CANOPY_EVAP_GDAY;
+        else if (strcasecmp(temp, "jules") == 0)
+            c->canopy_evap_model = CANOPY_EVAP_JULES;
+        else {
+            fprintf(stderr, "Unknown canopy_evap_model option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "soil_hydraulics")) {
         if (strcasecmp(temp, "saxton") == 0)
             c->soil_hydraulics = SAXTON;
@@ -753,6 +762,12 @@ int handler(char *section, char *name, char *value, control *c,
         s->theta_sat_root = atof(value);
     } else if (MATCH("params", "theta_sat_topsoil")) {
         s->theta_sat_topsoil = atof(value);
+    } else if (MATCH("params", "catch0")) {
+        p->catch0 = atof(value);
+    } else if (MATCH("params", "dcatch_dlai")) {
+        p->dcatch_dlai = atof(value);
+    } else if (MATCH("params", "rain_area_frac")) {
+        p->rain_area_frac = atof(value);
     } else if (MATCH("params", "leaf_width")) {
         p->leaf_width = atof(value);
     } else if (MATCH("params", "leaf_tau_vis")) {

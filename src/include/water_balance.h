@@ -45,6 +45,8 @@ void    calculate_soil_water_fac(control *, params *, state *);
 void    update_daily_water_struct(fluxes *, double, double, double, double,
                                   double, double, double);
 void    calc_leaf_bl_forced_conduct(canopy_wk *, params *, state *, met *);
+void    calc_interception_jules(met *, params *, state *, double *, double *,
+                                double *, double *);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
