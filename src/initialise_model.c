@@ -56,6 +56,7 @@ void initialise_control(control *c) {
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
     c->soil_hydraulics = SAXTON;
+    c->soil_evap_model = SOIL_EVAP_GDAY;
     c->bound_soil_psi = FALSE;
     c->dry_soil_correction = FALSE;
 
@@ -303,6 +304,11 @@ void initialise_params(params *p) {
     p->soil_psi_close = -2.0;    /* JULES psi_close_io */
     p->ds_psi = -609.0321858;    /* JULES ds_psi (Schneider & Goss 2012) */
     p->ds_min_depth = 0.0;
+    p->gs_nvg = 0.01;            /* JULES gs_nvg_io, soil */
+    p->gsoil_f = 1.0;
+    p->or_sublayer_dz = 0.005;   /* CABLE psm initial sublayer_dz */
+    p->litter_dz_per_c = 0.003;  /* CABLE: litter_dz = clitt * 0.003 */
+    p->litter_c = -999.9;
 
 
 }

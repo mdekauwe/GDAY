@@ -64,6 +64,11 @@
 
 /* Drainage options for SPA */
 /* Soil hydraulics (retention & conductivity) for the SPA soil layers */
+/* Soil evaporation schemes */
+#define SOIL_EVAP_GDAY 0
+#define SOIL_EVAP_JULES 1
+#define SOIL_EVAP_OR 2
+
 #define SAXTON 0
 #define VAN_GENUCHTEN 1
 #define BROOKS_COREY 2

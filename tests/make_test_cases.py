@@ -78,7 +78,8 @@ def set_keys(txt, d):
         else:
             section = "[files]" if key.startswith("out_") else "[control]"
             if key.startswith("soil_") and key not in ("soil_hydraulics",
-                                                        "soil_drainage"):
+                                                        "soil_drainage",
+                                                        "soil_evap_model"):
                 section = "[params]"
             txt = txt.replace(section, "%s\n%s = %s" % (section, key, val), 1)
     return txt
@@ -138,6 +139,18 @@ def main():
                                    "soil_sathh": "0.22656875",
                                    "soil_satcon": "4.2228e-6",
                                    "soil_sm_sat": "0.43648"},
+        "sd_hyd_vg_richards_jules_esoil": {
+            "water_balance": "hydraulics", "soil_drainage": "richards",
+            "soil_hydraulics": "van_genuchten", "soil_evap_model": "jules",
+            "soil_b": "6.742", "soil_sathh": "0.22656875",
+            "soil_satcon": "4.2228e-6", "soil_sm_sat": "0.43648"},
+        "sd_hyd_vg_richards_or_esoil": {
+            "water_balance": "hydraulics", "soil_drainage": "richards",
+            "soil_hydraulics": "van_genuchten", "soil_evap_model": "or",
+            "soil_b": "6.742", "soil_sathh": "0.22656875",
+            "soil_satcon": "4.2228e-6", "soil_sm_sat": "0.43648"},
+        "sd_bucket_jules_esoil": {"water_balance": "bucket",
+                                  "soil_evap_model": "jules"},
         "sd_hyd_dry_bc": {"water_balance": "hydraulics", "met": "dry",
                           "soil_hydraulics": "brooks_corey",
                           "soil_b": "6.742", "soil_sathh": "0.22656875",

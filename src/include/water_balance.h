@@ -54,4 +54,10 @@ void    check_water_balance(control *, fluxes *, state *s, double, double,
                             double, double, double, int);
 
 
+double  soil_evap_penman(control *, params *, state *, double, double, double,
+                         double, double, double, double, double, double);
+double  calc_soil_boundary_layer_conductance(double, double);
+
+double  topsoil_theta(params *, state *);
+
 #endif /* WATER_BALANCE */

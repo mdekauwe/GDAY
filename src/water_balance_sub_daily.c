@@ -171,11 +171,21 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                           &canopy_evap);
 
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-        //soil_evap = calc_soil_evaporation(m, p, s, net_rad);
-        //soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
-        soil_evap = calc_qe_flux(f, p, s, m->tair, m->tsoil,
-                                 m->vpd, m->press, m->wind);
+        if (c->soil_evap_model == SOIL_EVAP_GDAY) {
+            soil_evap = calc_qe_flux(f, p, s, m->tair, m->tsoil,
+                                     m->vpd, m->press, m->wind);
+        } else {
+            // JULES or Or (CABLE psm) surface conductance, top SPA layer
+            double th1 = s->water_frac[0];
+            double sathh = p->soil_sathh > 0.0 ? p->soil_sathh : 0.1;
+            soil_evap = soil_evap_penman(c, p, s,
+                              net_rad * exp(-0.398 * s->lai), m->tair,
+                              m->vpd, m->press, m->wind, th1,
+                              soil_theta_at_psi(p, 0, p->soil_psi_open),
+                              soil_conductivity(p, 0, th1), sathh);
+            soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
+        }
 
         /* mol m-2 s-1 to mm/30 min */
         transpiration = trans * MOLE_WATER_2_G_WATER * G_TO_KG * \
@@ -252,7 +262,15 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                           &canopy_evap);
 
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-        soil_evap = calc_soil_evaporation(m, p, s, net_rad);
+        if (c->soil_evap_model == SOIL_EVAP_JULES) {
+            soil_evap = soil_evap_penman(c, p, s,
+                              net_rad * exp(-0.398 * s->lai), m->tair,
+                              m->vpd, m->press, m->wind,
+                              topsoil_theta(p, s), p->theta_fc_topsoil,
+                              0.0, 0.0);
+        } else {
+            soil_evap = calc_soil_evaporation(m, p, s, net_rad);
+        }
         soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
 
         /* mol m-2 s-1 to mm/30 min */

@@ -64,6 +64,7 @@ typedef struct {
     int   spinup_method;
     int   soil_drainage;
     int   soil_hydraulics;   /* SAXTON, VAN_GENUCHTEN or BROOKS_COREY */
+    int   soil_evap_model;   /* SOIL_EVAP_GDAY, _JULES or _OR (Decker/CABLE) */
     int   bound_soil_psi;    /* JULES l_bound_soil_wp: psi_close <= psi <= psi_open */
     int   dry_soil_correction; /* JULES l_ds_correction (Webb 2000) below psi_close */
 } control;
@@ -407,6 +408,12 @@ typedef struct {
     double soil_psi_close;   /* bound_soil_psi: min / dry soil matching point (MPa) */
     double ds_psi;           /* dry soil correction: psi at zero water content (MPa) */
     double ds_min_depth;     /* dry soil correction only below this depth (m) */
+    /* soil evaporation: JULES (gs_nvg, gsoil_f) & Or/Decker (CABLE psm) */
+    double gs_nvg;           /* JULES bare soil conductance (m s-1) */
+    double gsoil_f;          /* JULES scaling of gsoil under the canopy (-) */
+    double or_sublayer_dz;   /* Or: viscous sublayer thickness (m) */
+    double litter_dz_per_c;  /* Or: litter depth per litter C (m per t C ha-1) */
+    double litter_c;         /* Or: surface litter C (t C ha-1), <0 = simulated */
     int     wetting;         /* number of wetting layers */
 
 

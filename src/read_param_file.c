@@ -430,6 +430,17 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown dry_soil_correction option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "soil_evap_model")) {
+        if (strcasecmp(temp, "gday") == 0)
+            c->soil_evap_model = SOIL_EVAP_GDAY;
+        else if (strcasecmp(temp, "jules") == 0)
+            c->soil_evap_model = SOIL_EVAP_JULES;
+        else if (strcasecmp(temp, "or") == 0 || strcasecmp(temp, "decker") == 0)
+            c->soil_evap_model = SOIL_EVAP_OR;
+        else {
+            fprintf(stderr, "Unknown soil_evap_model option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "soil_hydraulics")) {
         if (strcasecmp(temp, "saxton") == 0)
             c->soil_hydraulics = SAXTON;
@@ -717,6 +728,16 @@ int handler(char *section, char *name, char *value, control *c,
         p->eav = atof(value);
     } else if (MATCH("params", "edj")) {
         p->edj = atof(value);
+    } else if (MATCH("params", "gs_nvg")) {
+        p->gs_nvg = atof(value);
+    } else if (MATCH("params", "gsoil_f")) {
+        p->gsoil_f = atof(value);
+    } else if (MATCH("params", "or_sublayer_dz")) {
+        p->or_sublayer_dz = atof(value);
+    } else if (MATCH("params", "litter_dz_per_c")) {
+        p->litter_dz_per_c = atof(value);
+    } else if (MATCH("params", "litter_c")) {
+        p->litter_c = atof(value);
     } else if (MATCH("params", "soil_psi_open")) {
         p->soil_psi_open = atof(value);
     } else if (MATCH("params", "soil_psi_close")) {

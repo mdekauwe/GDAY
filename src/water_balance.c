@@ -116,7 +116,17 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     //soil_evap = calc_soil_evaporation(m, p, s, net_rad);
 
     /* mean daytime net radiation */
-    soil_evap = calc_soil_evaporation(m, p, s, (net_rad_am + net_rad_pm) / 2.0);
+    if (c->soil_evap_model == SOIL_EVAP_JULES) {
+        soil_evap = soil_evap_penman(c, p, s,
+                          (net_rad_am + net_rad_pm) / 2.0 *
+                          exp(-0.398 * s->lai), m->tair,
+                          (m->vpd_am + m->vpd_pm) / 2.0, m->press,
+                          (m->wind_am + m->wind_pm) / 2.0,
+                          topsoil_theta(p, s), p->theta_fc_topsoil, 0.0, 0.0);
+    } else {
+        soil_evap = calc_soil_evaporation(m, p, s,
+                                          (net_rad_am + net_rad_pm) / 2.0);
+    }
     soil_evap *= MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_DAY;
 
     /* gC m-2 half-day-1 -> umol m-2 s-1 */
@@ -1354,4 +1364,69 @@ void check_water_balance(control *c, fluxes *f, state *s, double previous_sw,
 
 
     return;
+}
+
+double soil_evap_penman(control *c, params *p, state *s, double rn_soil,
+                        double tair, double vpd, double press, double wind,
+                        double theta1, double theta_crit, double k1,
+                        double sathh) {
+    /*
+    ** Soil evaporation (mol H2O m-2 s-1) as Penman-Monteith for the soil
+    ** surface: available energy rn_soil (W m-2), the below canopy
+    ** aerodynamic conductance and a soil surface conductance:
+    **
+    **  JULES: gsoil = gs_nvg * gsoil_f * (theta1 / theta_crit)^2
+    **         (physiol_jls_mod: gs_nvg * (sthu sm_sat / sm_crit)^2, gsoil_f
+    **          the under canopy scaling)
+    **  Or:    1 / gsoil = lm / (4 K(theta1)) + (dz + pore f(theta1)) / D
+    **         Haghighi & Or, as M. Decker's CABLE cable_psm (or_evap): a
+    **         viscous sublayer (or_sublayer_dz) plus, optionally, a litter
+    **         layer (litter_dz_per_c * surface litter C). NB. CABLE derives
+    **         the sublayer from its in-canopy wind profile; here it is a
+    **         parameter.
+    **
+    ** theta1 & theta_crit: surface layer & critical water content (m3 m-3),
+    ** k1: surface layer conductivity (m s-1), sathh: air entry suction (m).
+    */
+    double lambda, gamma, slope, cmolar, ga, gs, gv, E = 0.0, LE, rs;
+    double litter, dz, pore, w, fth;
+    double lm = 1.73E-5, Dff = 2.5E-5, rtevap_max = 10000.0;
+
+    if (rn_soil <= 0.0 || theta1 <= 0.0 || tair < 0.0) {
+        return (0.0);
+    }
+    cmolar = press / (RGAS * (tair + DEG_TO_KELVIN));   /* mol m-3 */
+
+    if (c->soil_evap_model == SOIL_EVAP_JULES) {
+        gs = p->gs_nvg * p->gsoil_f * pow(theta1 / theta_crit, 2.0);
+    } else {
+        litter = p->litter_c >= 0.0 ? p->litter_c : s->littercag;
+        dz = p->or_sublayer_dz + p->litter_dz_per_c * MAX(0.0, litter);
+        pore = 0.148 / (1000.0 * 9.81 * MAX(fabs(sathh), 1E-3)) *
+               sqrt(M_PI);
+        w = MAX(1E-4, MIN(M_PI / 4.0, theta1));
+        fth = 1.0 / M_PI / sqrt(w) * (sqrt(M_PI / (4.0 * w)) - 1.0);
+        rs = MIN(rtevap_max, lm / (4.0 * MAX(k1, 1E-12)) +
+                             (dz + pore * fth) / Dff);        /* s m-1 */
+        gs = 1.0 / rs;
+    }
+
+    ga = calc_soil_boundary_layer_conductance(wind, s->canht) * cmolar;
+    gs *= cmolar;                                         /* mol m-2 s-1 */
+    if (ga <= 0.0 || gs <= 0.0) {
+        return (0.0);
+    }
+    gv = 1.0 / (1.0 / ga + 1.0 / gs);
+    lambda = calc_latent_heat_of_vapourisation(tair);
+    gamma = calc_pyschrometric_constant(press, lambda);
+    slope = calc_slope_of_sat_vapour_pressure_curve(tair);
+    penman_monteith(press, vpd, rn_soil, slope, lambda, gamma, &ga, &gv, &E,
+                    &LE);
+
+    return (E);
+}
+
+double topsoil_theta(params *p, state *s) {
+    /* bucket model topsoil volumetric water content (m3 m-3) */
+    return (p->theta_wp_topsoil + s->pawater_topsoil / p->topsoil_depth);
 }
