@@ -534,6 +534,18 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             f->gpp = f->npp / p->cue;
             conv = G_AS_TONNES / M2_AS_HA;
             f->gpp_gCm2 = f->gpp / conv;
+            /*
+            ** Daily gs_opt: MATE chose gs with the unlimited GPP; scale it
+            ** with the N-limited GPP so the recalculated transpiration
+            ** matches the carbon actually fixed (gs = A / (Ca - Ci), Ci
+            ** kept)
+            */
+            if (c->gs_model == GS_OPT) {
+                f->gsc_am *= f->gpp_am > 0.0 ?
+                             (f->gpp_gCm2 / 2.0) / f->gpp_am : 0.0;
+                f->gsc_pm *= f->gpp_pm > 0.0 ?
+                             (f->gpp_gCm2 / 2.0) / f->gpp_pm : 0.0;
+            }
             f->gpp_am = f->gpp_gCm2 / 2.0;
             f->gpp_pm = f->gpp_gCm2 / 2.0;
 

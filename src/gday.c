@@ -150,6 +150,26 @@ int main(int argc, char **argv)
         fprintf(stderr, "gs_opt needs p88 < p50 < 0 (MPa)\n");
         exit(EXIT_FAILURE);
     }
+    if (c->plant_segments == N_PLANT_SEG) {
+        /* each segment's effective traits (unset = the whole plant's) */
+        double fr[N_PLANT_SEG] = {p->seg_frac_root, p->seg_frac_stem,
+                                  p->seg_frac_leaf};
+        double s50[N_PLANT_SEG] = {p->p50_root, p->p50_stem, p->p50_leaf};
+        double s88[N_PLANT_SEG] = {p->p88_root, p->p88_stem, p->p88_leaf};
+        const char *nm[N_PLANT_SEG] = {"root", "stem", "leaf"};
+        int k;
+        for (k = 0; k < N_PLANT_SEG; k++) {
+            double a50 = s50[k] < -900.0 ? p->p50 : s50[k];
+            double a88 = s88[k] < -900.0 ? p->p88 : s88[k];
+            if (fr[k] <= 0.0 || a50 >= 0.0 || a88 >= a50) {
+                fprintf(stderr, "plant_segments: the %s segment needs "
+                        "seg_frac > 0 and p88 < p50 < 0 (MPa), got "
+                        "seg_frac %g, p50 %g, p88 %g\n", nm[k], fr[k], a50,
+                        a88);
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
 
     if (c->gs_model == GS_OPT) {
         /* daily (MATE) profit maximisation on the bucket */
@@ -1183,9 +1203,12 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
     /* unpack met forcing */
     if (c->sub_daily) {
         m->rain = ma->rain[c->hour_idx];
-        m->wind = ma->wind[c->hour_idx];
+        // wind and VPD floored (0.1 m s-1, 0.05 kPa): flux site forcing can
+        // have calm or saturated steps, which would divide by zero in the
+        // aerodynamic conductances and the Medlyn gs model
+        m->wind = MAX(WIND_MIN, ma->wind[c->hour_idx]);
         m->press = ma->press[c->hour_idx] * KPA_2_PA;
-        m->vpd = ma->vpd[c->hour_idx] * KPA_2_PA;
+        m->vpd = MAX(VPD_MIN, ma->vpd[c->hour_idx]) * KPA_2_PA;
         m->tair = ma->tair[c->hour_idx];
         m->tsoil = ma->tsoil[c->hour_idx];
         m->lwdown = ma->lwdown != NULL ? ma->lwdown[c->hour_idx] : -999.9;
@@ -1219,10 +1242,10 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
         m->lwdown_pm = ma->lwdown_pm != NULL ? ma->lwdown_pm[c->day_idx]
                                              : -999.9;
         m->rain = ma->rain[c->day_idx];
-        m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
-        m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;
-        m->wind_am = ma->wind_am[c->day_idx];
-        m->wind_pm = ma->wind_pm[c->day_idx];
+        m->vpd_am = MAX(VPD_MIN, ma->vpd_am[c->day_idx]) * KPA_2_PA;
+        m->vpd_pm = MAX(VPD_MIN, ma->vpd_pm[c->day_idx]) * KPA_2_PA;
+        m->wind_am = MAX(WIND_MIN, ma->wind_am[c->day_idx]);
+        m->wind_pm = MAX(WIND_MIN, ma->wind_pm[c->day_idx]);
         m->press = ma->press[c->day_idx] * KPA_2_PA;
         m->ndep = ma->ndep[c->day_idx];
         m->nfix = ma->nfix[c->day_idx];

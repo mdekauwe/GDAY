@@ -227,7 +227,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // Calculates the thickness of the top dry layer and determines water
         // lost in upper layers due to evaporation
         calc_wetting_layers(f, p, s, soil_evap, surface_water);
-        extract_water_from_layers(f, s, soil_evap, transpiration);
+        extract_water_from_layers(f, s, soil_evap, &transpiration);
 
         //
         // determines water movement between soil layers due drainage
@@ -1019,7 +1019,7 @@ double root_zone_supply(fluxes *f, state *s) {
 }
 
 void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
-                               double transpiration) {
+                               double *transpiration) {
 
     // Extract soil evaporation and transpiration from the soil profile
 
@@ -1043,13 +1043,15 @@ void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
     ** Water loss from each layer due to transpiration, T x fraction_uptake.
     ** A layer's share beyond the water it holds (after soil evaporation) is
     ** taken from rooted layers with water to spare, in proportion to it:
-    ** roots take water where it is. Only if the whole root zone is short
-    ** does update_soil_water_storage cut T (the backstop; gs_opt keeps E
-    ** within root_zone_supply).
+    ** roots take water where it is. If the whole root zone is short, T is
+    ** cut to the water extracted (gs_opt keeps E within root_zone_supply,
+    ** but soil evaporation isn't in it), so the reported transpiration is
+    ** the water removed.
     */
     {
         double avail[s->rooted_layers > 0 ? s->rooted_layers : 1];
-        double tj, t_m = transpiration * MM_TO_M, excess = 0.0, spare = 0.0;
+        double tj, t_m = *transpiration * MM_TO_M, excess = 0.0, spare = 0.0;
+        double extracted = 0.0;
 
         for (i = 0; i < s->rooted_layers; i++) {
             avail[i] = MAX(0.0, s->water_frac[i] * s->thickness[i] -
@@ -1066,6 +1068,10 @@ void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
                 tj += MIN(excess, spare) * (avail[i] - tj) / spare;
             }
             f->water_loss[i] += tj;
+            extracted += tj;
+        }
+        if (extracted < t_m) {
+            *transpiration = extracted * M_TO_MM;
         }
     }
 

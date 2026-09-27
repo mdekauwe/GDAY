@@ -67,6 +67,8 @@
 #define SUNLIT 0
 #define SHADED 1
 #define NUM_LEAVES 2
+#define WIND_MIN 0.1     /* forcing floors: wind (m s-1) */
+#define VPD_MIN 0.05     /* and VPD (kPa) */
 #define CANOPY_AIR_ITERMAX 30   /* canopy air space iterations (max) */
 
 

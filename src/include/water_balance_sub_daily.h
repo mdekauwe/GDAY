@@ -37,7 +37,7 @@ void    soil_water_store(double, double [], double [], double, double, double,
                          double, double);
 
 void   zero_water_movement(fluxes *, params *);
-void   extract_water_from_layers(fluxes *, state *, double, double);
+void   extract_water_from_layers(fluxes *, state *, double, double *);
 double root_zone_supply(fluxes *, state *);
 void   update_soil_water_storage(fluxes *, params *, state *, double *, double *);
 double calc_qe_flux(fluxes *, params *, state *, double, double, double, double,

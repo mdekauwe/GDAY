@@ -242,8 +242,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     H += CP * MASS_AIR * 2.0 * cw->gbv_leaf[cw->ileaf] /
                          GBVGBH * (cw->tleaf[cw->ileaf] - tc);
                 }
-                LE = E * calc_latent_heat_of_vapourisation(tc) *
-                     MOLE_WATER_2_G_WATER * G_TO_KG;          /* W m-2 */
+                LE = E * calc_latent_heat_of_vapourisation(tc); /* W m-2 */
                 tc_new = ta_ref + H / (CP * MASS_AIR * ga);
                 ec_new = MIN(ea_ref + E * m->press / ga,
                              calc_sat_water_vapour_press(tc_new));
