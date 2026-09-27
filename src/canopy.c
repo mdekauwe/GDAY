@@ -41,9 +41,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
-    int    n_beta = 0;
+    int    n_beta = 0, k, n_air;
     double doy, year, dummy2=0.0, sum_beta = 0.0;
     double dT, t_lo, t_hi;
+    double ta_ref, vpd_ref, ea_ref, tc, ec, tc_new, ec_new, ga, H, E, LE;
+    double rn_ref[NUM_LEAVES];
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -70,94 +72,185 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
 
-            /* sunlit / shaded loop */
-            for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
+            // soil supply limit for gs_opt: the water above theta at
+            // root_psi_crit in the rooted layers over this step (m -> mm =
+            // kg m-2 -> mmol m-2 s-1)
+            if (c->water_balance == HYDRAULICS) {
+                cw->e_supply = root_zone_supply(p, s, NULL) * M_TO_MM /
+                               SEC_2_HLFHR / (MOLE_WATER_2_G_WATER * G_TO_KG) *
+                               MOL_2_MMOL;
+            } else {
+                cw->e_supply = -1.0;
+            }
 
-                /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
-                initialise_leaf_surface(cw, m);
-                iter = 0;
-                t_lo = -999.9;
-                t_hi = 999.9;
+            /*
+            ** Canopy air space (as CABLE's within_canopy): the leaves see
+            ** canopy air (tc, ec), which is coupled to the reference height
+            ** air through the canopy aerodynamic conductance ga, and the
+            ** canopy's own sensible heat and transpiration warm and
+            ** humidify it:
+            **     tc = ta + H / (cp Ma ga),   ec = ea + E P / ga
+            ** Iterate the leaves (optimiser + energy balance) and the
+            ** canopy air until they agree, so the transpiration the
+            ** optimiser costs is the one delivered, at the canopy air's
+            ** (lower) VPD instead of assuming perfect coupling to the
+            ** reference height.
+            */
+            ta_ref = m->tair;
+            vpd_ref = m->vpd;
+            ea_ref = calc_sat_water_vapour_press(ta_ref) - vpd_ref;
+            tc = ta_ref;
+            ec = ea_ref;
+            H = LE = 0.0;          /* neutral for the first pass */
+            n_air = c->canopy_air_space ? CANOPY_AIR_ITERMAX : 1;
+            rn_ref[SUNLIT] = cw->rnet_leaf[SUNLIT];
+            rn_ref[SHADED] = cw->rnet_leaf[SHADED];
+            for (k = 0; k < n_air; k++) {
+                // canopy air to reference height conductance, with the
+                // stability of the last pass' fluxes (CABLE), or the neutral
+                // log law; floored at roughly the free convection level
+                // (~5 mm s-1) so calm air can't decouple it entirely
+                if (c->canopy_ga_model == CANOPY_GA_CABLE) {
+                    ga = canopy_air_ga_cable(p, s->canht, s->lai, m->wind,
+                                             m->press, ta_ref, H, LE);
+                } else {
+                    ga = canopy_air_ga_simple(p, s->canht, m->wind,
+                                              m->press, ta_ref);
+                }
+                ga = MAX(0.2, ga);
+                m->tair = tc;
+                m->vpd = MAX(0.0, calc_sat_water_vapour_press(tc) - ec);
+                // isothermal net radiation relative to the canopy air the
+                // leaves now see (CABLE: rniso - cp Ma (tvair - tk) gradis)
+                for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
+                    cw->rnet_leaf[cw->ileaf] = rn_ref[cw->ileaf] -
+                                CP * MASS_AIR * (tc - ta_ref) *
+                                cw->gradis[cw->ileaf];
+                }
 
-                /* Leaf temperature loop */
-                while (TRUE) {
+                /* sunlit / shaded loop */
+                for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
 
-                    if (c->ps_pathway != C3) {
-                        /* Nothing implemented */
-                        fprintf(stderr, "C4 photosynthesis not implemented\n");
-                        exit(EXIT_FAILURE);
-                    } else if (c->water_balance == HYDRAULICS) {
-                        // Sperry profit maximisation with the plant
-                        // hydraulics (gs_opt)
-                        gs_opt_leaf(c, cw, m, p, s);
-                    } else {
-                        photosynthesis_C3(c, cw, m, p, s);
-                    }
+                    /* initialise Tleaf, Cs, dleaf at the leaf surface */
+                    initialise_leaf_surface(cw, m);
+                    iter = 0;
+                    t_lo = -999.9;
+                    t_hi = 999.9;
 
-                    if (cw->an_leaf[cw->ileaf] > 1E-04) {
+                    /* Leaf temperature loop */
+                    while (TRUE) {
 
-                        /* Calculate new Cs, dleaf, Tleaf */
+                        if (c->ps_pathway != C3) {
+                            /* Nothing implemented */
+                            fprintf(stderr,
+                                    "C4 photosynthesis not implemented\n");
+                            exit(EXIT_FAILURE);
+                        } else if (c->water_balance == HYDRAULICS) {
+                            // Sperry profit maximisation with the plant
+                            // hydraulics (gs_opt)
+                            gs_opt_leaf(c, cw, m, p, s);
+                        } else {
+                            photosynthesis_C3(c, cw, m, p, s);
+                        }
+
+                        /*
+                        ** New Cs, dleaf, Tleaf. Also when the leaf gains no
+                        ** carbon (stomata shut, gs ~ 1e-9): it still absorbs
+                        ** its net radiation and warms (as CABLE, which always
+                        ** solves the energy balance), and that heat reaches
+                        ** the canopy air.
+                        */
                         solve_leaf_energy_balance(c, cw, f, m, p, s);
 
-                    } else {
-                        /*
-                        ** No carbon gain, so gs = g0 ~ 0. Don't carry over
-                        ** the water fluxes from a previous iteration or
-                        ** timestep.
-                        */
-                        zero_leaf_water_fluxes(c, cw, p, s);
-                        break;
-                    }
-
-                    if (iter >= itermax) {
-                        fprintf(stderr, "No convergence in canopy loop: "
-                                "%.0f doy %.0f hod %d leaf %d Tleaf %.2f "
-                                "new %.2f Tair %.2f\n", year, doy, hod,
-                                cw->ileaf, cw->tleaf[cw->ileaf],
-                                cw->tleaf_new, m->tair);
-                        exit(EXIT_FAILURE);
-                    }
-                    dT = cw->tleaf_new - cw->tleaf[cw->ileaf];
-                    if (fabs(dT) < 0.02) {
-                        break;
-                    }
-
-                    /*
-                    ** Update temperature & do another iteration. Each
-                    ** iteration tells us which side of the solution Tleaf is
-                    ** on (the energy balance wants it warmer or cooler), so
-                    ** keep a bracket. Until both sides are known, under-relax
-                    ** (move half way to the energy balance value), which
-                    ** damps the oscillation for large leaves / low wind; then
-                    ** bisect. The bisection also copes with the energy
-                    ** balance jumping between gs_opt Ci grid points either
-                    ** side of the solution.
-                    */
-                    if (dT > 0.0) {
-                        t_lo = MAX(t_lo, cw->tleaf[cw->ileaf]);
-                    } else {
-                        t_hi = MIN(t_hi, cw->tleaf[cw->ileaf]);
-                    }
-                    if (t_lo > -900.0 && t_hi < 900.0) {
-                        if (t_hi - t_lo < 0.01) {
+                        if (iter >= itermax) {
+                            fprintf(stderr, "No convergence in canopy loop: "
+                                    "%.0f doy %.0f hod %d leaf %d Tleaf %.2f "
+                                    "new %.2f Tair %.2f\n", year, doy, hod,
+                                    cw->ileaf, cw->tleaf[cw->ileaf],
+                                    cw->tleaf_new, m->tair);
+                            exit(EXIT_FAILURE);
+                        }
+                        dT = cw->tleaf_new - cw->tleaf[cw->ileaf];
+                        if (fabs(dT) < 0.02) {
                             break;
                         }
-                        cw->tleaf[cw->ileaf] = 0.5 * (t_lo + t_hi);
-                    } else {
-                        cw->tleaf[cw->ileaf] += 0.5 * dT;
-                    }
-                    iter++;
-                } /* end of leaf temperature loop */
 
-                /* the gs_opt water stress factor, if the leaf transpired */
-                if (c->water_balance == HYDRAULICS &&
-                    cw->an_leaf[cw->ileaf] > 1E-04) {
-                    cw->fwsoil_leaf[cw->ileaf] = gs_opt_beta(c, cw, m, p, s);
+                        /*
+                        ** Update temperature & do another iteration. Each
+                        ** iteration tells us which side of the solution
+                        ** Tleaf is on (the energy balance wants it warmer or
+                        ** cooler), so keep a bracket. Until both sides are
+                        ** known, under-relax (move half way to the energy
+                        ** balance value), which damps the oscillation for
+                        ** large leaves / low wind; then bisect. The bisection
+                        ** also copes with the energy balance jumping between
+                        ** gs_opt Ci grid points either side of the solution.
+                        */
+                        if (dT > 0.0) {
+                            t_lo = MAX(t_lo, cw->tleaf[cw->ileaf]);
+                        } else {
+                            t_hi = MIN(t_hi, cw->tleaf[cw->ileaf]);
+                        }
+                        if (t_lo > -900.0 && t_hi < 900.0) {
+                            if (t_hi - t_lo < 0.01) {
+                                break;
+                            }
+                            cw->tleaf[cw->ileaf] = 0.5 * (t_lo + t_hi);
+                        } else {
+                            cw->tleaf[cw->ileaf] += 0.5 * dT;
+                        }
+                        iter++;
+                    } /* end of leaf temperature loop */
+
+                    /* the gs_opt water stress factor, if the leaf transpired
+                       (the last canopy air iteration's is kept) */
+                    if (c->water_balance == HYDRAULICS &&
+                        cw->an_leaf[cw->ileaf] > 1E-04) {
+                        cw->fwsoil_leaf[cw->ileaf] = gs_opt_beta(c, cw, m, p,
+                                                                 s);
+                    } else {
+                        cw->fwsoil_leaf[cw->ileaf] = -1.0;
+                    }
+
+                } /* end of sunlit/shaded leaf loop */
+
+                if (!c->canopy_air_space) {
+                    break;
+                }
+                /* canopy sensible heat & transpiration (per ground area) */
+                H = E = 0.0;
+                for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
+                    E += cw->trans_leaf[cw->ileaf];
+                    // convective sensible heat through the big leaf boundary
+                    // layer, both sides of the leaf (as the leaf energy
+                    // balance, 2 gbh): Rn_iso - LE also holds the radiative
+                    // exchange, which doesn't heat the canopy air
+                    H += CP * MASS_AIR * 2.0 * cw->gbv_leaf[cw->ileaf] /
+                         GBVGBH * (cw->tleaf[cw->ileaf] - tc);
+                }
+                LE = E * calc_latent_heat_of_vapourisation(tc) *
+                     MOLE_WATER_2_G_WATER * G_TO_KG;          /* W m-2 */
+                tc_new = ta_ref + H / (CP * MASS_AIR * ga);
+                ec_new = MIN(ea_ref + E * m->press / ga,
+                             calc_sat_water_vapour_press(tc_new));
+                if (fabs(tc_new - tc) < 0.02 && fabs(ec_new - ec) < 2.0) {
+                    break;
+                }
+                // under-relaxed, the leaves respond to the canopy air in turn
+                tc += 0.5 * (tc_new - tc);
+                ec += 0.5 * (ec_new - ec);
+            } /* end of canopy air loop */
+            cw->tair_canopy = m->tair;
+            cw->vpd_canopy = m->vpd;
+            m->tair = ta_ref;
+            m->vpd = vpd_ref;
+
+            for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
+                if (cw->fwsoil_leaf[cw->ileaf] >= 0.0) {
                     sum_beta += cw->fwsoil_leaf[cw->ileaf];
                     n_beta++;
                 }
-
-            } /* end of sunlit/shaded leaf loop */
+            }
 
         } else {
 
@@ -170,6 +263,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             /* set tleaf to tair during the night */
             cw->tleaf[SUNLIT] = m->tair;
             cw->tleaf[SHADED] = m->tair;
+            cw->tair_canopy = m->tair;
+            cw->vpd_canopy = m->vpd;
 
             /*
             ** pre-dawn soil water potential (MPa), clearly one should link this
@@ -314,7 +409,8 @@ void calculate_top_of_canopy_leafn(canopy_wk *cw, params *p, state *s) {
         Ntot = s->shootnc * LMA * s->lai;
 
         /* top of canopy leaf N (gN m-2) */
-        cw->N0 = Ntot * p->kn / (1.0 - exp(-p->kn * s->lai));
+        cw->N0 = Ntot * MAX(p->kn, 1.0E-3) /
+                 (1.0 - exp(-MAX(p->kn, 1.0E-3) * s->lai));
     } else {
         cw->N0 = 0.0;
     }
@@ -441,7 +537,7 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
         ----------
         * Wang and Leuning (1998) AFm, 91, 89-111; particularly the Appendix.
     */
-    double kn = p->kn;
+    double kn = MAX(p->kn, 1.0E-3);   /* no division by zero for kn = 0 */
 
     // Parameters to scale up from single leaf to the big leaves
     cw->scalex[SUNLIT] = (1.0 - exp(-cw->kb * s->lai) * \
@@ -464,6 +560,9 @@ void unpack_solar_geometry(canopy_wk *cw, control *c) {
     cw->cos_zenith = cw->cz_store[c->hour_idx];
     cw->elevation = cw->ele_store[c->hour_idx];
     cw->diffuse_frac = cw->df_store[c->hour_idx];
+    // the beam fraction too: the radiation uses it, and otherwise it keeps
+    // the value from the last precomputed step (night, 0), i.e. no beam
+    cw->direct_frac = 1.0 - cw->diffuse_frac;
 
     return;
 }

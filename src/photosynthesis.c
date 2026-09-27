@@ -655,7 +655,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
         h.vpd = m->vpd_am;
         h.tair = m->tair_am;
         h.wind = m->wind_am;
-        h.rnet = calc_net_radiation(p, m->sw_rad_am, m->tair_am) * frac_canopy;
+        h.rnet = calc_net_radiation(c, p, m->sw_rad_am, m->tair_am,
+                                    m->lwdown_am) * frac_canopy;
         ci_am = mate_gs_opt(c, p, s, &h, psi_rz, &f->gsc_am, &psi_am);
 
         h.gamma_star = gamma_star_pm;
@@ -665,7 +666,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
         h.vpd = m->vpd_pm;
         h.tair = m->tair_pm;
         h.wind = m->wind_pm;
-        h.rnet = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm) * frac_canopy;
+        h.rnet = calc_net_radiation(c, p, m->sw_rad_pm, m->tair_pm,
+                                    m->lwdown_pm) * frac_canopy;
         ci_pm = mate_gs_opt(c, p, s, &h, psi_rz, &f->gsc_pm, &psi_pm);
 
         s->predawn_swp = psi_rz;

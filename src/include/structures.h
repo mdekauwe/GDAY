@@ -56,6 +56,17 @@ typedef struct {
                                 GS_OPT_E_STOMATAL (gs alone, as JULES) */
     int   plant_segments;    /* 1 = single plant conductance, 3 = root, stem
                                 and leaf segments in series */
+    long  n_supply_bind;     /* gs_opt leaf steps limited by the soil
+                                supply (E <= E_supply), reported at the end */
+    int   canopy_ga_model;   /* CANOPY_GA_CABLE or CANOPY_GA_SIMPLE, the
+                                canopy air space's conductance to the
+                                reference height (sub-daily) */
+    int   net_lw_model;      /* NET_LW_LWDOWN or NET_LW_MONTEITH (net
+                                radiation of the daily model & sub-daily
+                                soil) */
+    int   canopy_air_space;  /* sub-daily: leaves see canopy air, coupled to
+                                the reference height through the canopy
+                                aerodynamic conductance (as CABLE) */
     int   root_radial_resistance; /* include the root radial resistance in
                                      the layer uptake weights (SPA) */
     int   num_days;
@@ -479,6 +490,7 @@ typedef struct {
     double *nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
     double *lai;        /* prescribed LAI (m2 m-2), only if prescribed_lai */
     double *lwdown;     /* downward LW (W m-2), NULL if not in the forcing */
+    double *lwdown_am, *lwdown_pm;  /* daily: daylight am/pm means */
     double *wind;
     double *press;
 
@@ -520,6 +532,7 @@ typedef struct {
     double nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
     double tsoil;
     double lwdown;     /* downward LW (W m-2), < 0 if not in the forcing */
+    double lwdown_am, lwdown_pm;  /* daily am/pm means, < 0 if missing */
 
     /* daily */
     double tair_am;
@@ -788,6 +801,12 @@ typedef struct {
     double psi_stem_leaf[2]; /* stem water potential feeding each big leaf
                                (MPa, = leaf when not segmented) */
     double psi_stem_canopy;
+    double e_supply;        /* transpiration the rooted soil can supply
+                               this step, water above theta(root_psi_crit)
+                               (mmol m-2 s-1, ground), < 0 no limit */
+    double tair_canopy;     /* canopy air temperature (deg C) and VPD (Pa)
+                               the leaves saw */
+    double vpd_canopy;
     double gbv_leaf[2];     /* big leaf boundary layer conductance for H2O
                                from the last energy balance (mol m-2 s-1) */
 

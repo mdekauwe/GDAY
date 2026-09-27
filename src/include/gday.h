@@ -31,6 +31,10 @@
 /* Stomatal conductanct models */
 #define MEDLYN 0
 #define GS_OPT 1      /* daily (MATE) profit maximisation */
+#define CANOPY_GA_SIMPLE 0  /* canopy air ga: neutral log law, z0h = z0m */
+#define CANOPY_GA_CABLE 1   /* canopy air ga: CABLE rt1 + stability */
+#define NET_LW_LWDOWN 0    /* net long-wave from LWdown (or Swinbank) */
+#define NET_LW_MONTEITH 1  /* old clear-sky 107 - 0.3 T */
 
 /* Photosynthesis models */
 #define MATE 0

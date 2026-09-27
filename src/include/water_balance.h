@@ -30,7 +30,7 @@ double  calc_sat_water_vapour_press(double);
 void    calculate_daily_water_balance(control *, fluxes *, met *, params *,
                                       state *, int, double);
 double  calc_stomatal_conductance(params *, state *, double, double, double);
-double  calc_net_radiation(params *, double, double);
+double  calc_net_radiation(control *, params *, double, double, double);
 double  calc_latent_heat_of_vapourisation(double);
 double  calc_pyschrometric_constant(double, double);
 double  calc_slope_of_sat_vapour_pressure_curve(double);
@@ -50,6 +50,9 @@ void    calc_interception_jules(met *, params *, state *, double *, double *,
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
+double  canopy_air_ga_simple(params *, double, double, double, double);
+double  canopy_air_ga_cable(params *, double, double, double, double, double,
+                            double, double);
 
 void    check_water_balance(control *, fluxes *, state *s, double, double,
                             double, double, double, int);

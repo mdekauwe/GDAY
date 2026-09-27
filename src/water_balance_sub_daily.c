@@ -1,5 +1,7 @@
 #include "water_balance_sub_daily.h"
 
+#define UPTAKE_WEIGHT_FLOOR 5.55E-05   /* mmol m-2 s-1, JULES 1e-9 kg m-2 s-1 */
+
 /* the soil layer being drained, for soil_water_store (see calc_soil_balance) */
 static params *drain_p = NULL;
 static int     drain_layer_idx = 0;
@@ -225,7 +227,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // Calculates the thickness of the top dry layer and determines water
         // lost in upper layers due to evaporation
         calc_wetting_layers(f, p, s, soil_evap, surface_water);
-        extract_water_from_layers(f, s, soil_evap, transpiration);
+        extract_water_from_layers(f, p, s, soil_evap, &transpiration);
 
         //
         // determines water movement between soil layers due drainage
@@ -273,7 +275,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         intercept(c, m, p, f, s, &surface_water, &interception,
                   &canopy_evap, &frac_wet);
 
-        net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
+        net_rad = calc_net_radiation(c, p, m->sw_rad, m->tair, m->lwdown);
         if (c->soil_evap_model == SOIL_EVAP_JULES) {
             soil_evap = soil_evap_penman(c, p, s,
                               cw->rnet_soil, m->tair,
@@ -652,19 +654,27 @@ void calc_water_uptake_per_layer(control *c, fluxes *f, params *p, state *s) {
     //
 
     int    i;
-    double total_est_evap, total_depth;
+    double est_max, total_est_evap, total_depth;
 
     total_est_evap = 0.0;
     s->weighted_swp = 0.0;
 
-    // Estimate max transpiration from gradient-gravity / soil resistance
+    // Estimate max transpiration from gradient-gravity / soil resistance,
+    // floored as JULES (smc_ext: MAX(k_sr (psi - root_psi_crit), 1e-9 kg m-2
+    // s-1) = 5.55e-5 mmol m-2 s-1). Once every layer is at the floor (dry
+    // layers' conductivity collapses even while their psi is held at
+    // psi_close by bound_soil_psi) use thickness weights, as JULES:
+    // otherwise the tiny weights of the bounded top layers win and the root
+    // zone psi stays at psi_close however dry the deeper soil gets.
+    est_max = 0.0;
     for (i = 0; i < s->rooted_layers; i++) {
-        f->est_evap[i] = MAX(0.0, (f->swp[i] - p->root_psi_crit) /
-                                  f->soilR[i]);
+        f->est_evap[i] = MAX(UPTAKE_WEIGHT_FLOOR,
+                             (f->swp[i] - p->root_psi_crit) / f->soilR[i]);
         total_est_evap += f->est_evap[i];
+        est_max = MAX(est_max, f->est_evap[i]);
     }
 
-    if (total_est_evap > 0.0) {
+    if (est_max > UPTAKE_WEIGHT_FLOOR) {
         /* fraction of water taken from layer */
         for (i = 0; i < s->rooted_layers; i++) {
             s->weighted_swp += f->swp[i] * f->est_evap[i];
@@ -673,10 +683,10 @@ void calc_water_uptake_per_layer(control *c, fluxes *f, params *p, state *s) {
         s->weighted_swp /= total_est_evap;
     } else {
         /*
-        ** No water was evaporated, i.e. every rooted layer is drier than
-        ** root_psi_crit. Weight by layer thickness (as JULES), otherwise
-        ** weighted_swp would stay at 0 MPa and the dry soil would look
-        ** saturated.
+        ** Every rooted layer is at the floor (drier than root_psi_crit, or
+        ** its conductivity has collapsed). Weight by layer thickness (as
+        ** JULES), otherwise weighted_swp would stay at 0 MPa (or at
+        ** psi_close) and the dry soil would look wet.
         */
         total_depth = 0.0;
         for (i = 0; i < s->rooted_layers; i++) {
@@ -972,8 +982,30 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     return;
 }
 
-void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
-                               double transpiration) {
+double root_zone_supply(params *p, state *s, double *avail) {
+    /*
+    ** Water the roots can still extract (m): above the water content at
+    ** root_psi_crit, where the layer's uptake weight goes to zero
+    ** (calc_water_uptake_per_layer, JULES fsmc_mod = 2), over the rooted
+    ** layers. avail (optional) gets each layer's share.
+    */
+    double a, total = 0.0;
+    int    i;
+
+    for (i = 0; i < s->rooted_layers; i++) {
+        a = MAX(0.0, (s->water_frac[i] -
+                      soil_theta_at_psi(p, i, p->root_psi_crit)) *
+                     s->thickness[i]);
+        if (avail != NULL) {
+            avail[i] = a;
+        }
+        total += a;
+    }
+    return (total);
+}
+
+void extract_water_from_layers(fluxes *f, params *p, state *s,
+                               double soil_evap, double *transpiration) {
 
     // Extract soil evaporation and transpiration from the soil profile
 
@@ -993,10 +1025,38 @@ void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
     } // ignoring water gain due to due formation...
 
 
-    // Determing water loss from each layer due to transpiration
-    for (i = 0; i < s->rooted_layers; i++) {
-        f->water_loss[i] += (transpiration * MM_TO_M) * \
-                             f->fraction_uptake[i];
+    /*
+    ** Water loss from each layer due to transpiration, T x fraction_uptake,
+    ** with the soil supply backstop (gs_opt keeps E <= E_supply, but the
+    ** delivered flux can differ slightly): a layer's extraction beyond the
+    ** water it holds above theta(root_psi_crit) moves to rooted layers with
+    ** spare water, in proportion to it; T is only cut if the whole root
+    ** zone is short, so the reported transpiration is the water extracted.
+    */
+    {
+        double avail[p->core], tj[p->core], t_m, total, excess = 0.0;
+        double spare = 0.0, move;
+
+        t_m = *transpiration * MM_TO_M;
+        total = root_zone_supply(p, s, avail);
+        if (t_m > total) {
+            t_m = total;
+            *transpiration = t_m * M_TO_MM;
+        }
+        for (i = 0; i < s->rooted_layers; i++) {
+            tj[i] = t_m * f->fraction_uptake[i];
+            excess += MAX(0.0, tj[i] - avail[i]);
+            spare += MAX(0.0, avail[i] - tj[i]);
+        }
+        move = MIN(excess, spare);
+        for (i = 0; i < s->rooted_layers; i++) {
+            if (tj[i] > avail[i]) {
+                tj[i] = avail[i];
+            } else if (spare > 0.0) {
+                tj[i] += move * (avail[i] - tj[i]) / spare;
+            }
+            f->water_loss[i] += tj[i];
+        }
     }
 
     return;
@@ -1178,7 +1238,11 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
 
     // vapour pressure in soil airspace (kPa)
     // dependent on soil water potential - Jones p.110/eq 5.11
-    esurf = esat * exp(1E6 * f->swp[0] * VW / (RGAS * tsk));
+    // the raw (unbounded) potential: JULES' psi_open/psi_close bounds are for
+    // plant water stress, and with them the surface would stay humid at
+    // psi_close as the soil dries
+    esurf = esat * exp(1E6 * MIN(0.0, soil_psi_raw(p, 0, s->water_frac[0])) *
+                       VW / (RGAS * tsk));
 
     // soil conductance to water vapour diffusion (m s-1)...
     // Choudhury & Monteith (1988), Eq 41b
@@ -1242,7 +1306,8 @@ double calc_soil_boundary_layer_conductance(double wind, double canht) {
 ** water content at a given potential, for the scheme set by
 ** control soil_hydraulics (Saxton, van Genuchten or Brooks-Corey/Cosby).
 ** VG and Brooks-Corey use JULES' parameter conventions (soil_b, soil_sathh,
-** soil_satcon, soil_sm_sat), so JULES/SoilGrids values can be used directly.
+** soil_sm_sat) so JULES/SoilGrids values can be used directly, except
+** soil_satcon, which is m s-1 here (JULES satcon is kg m-2 s-1 = mm s-1).
 ** ======================================================================== */
 
 static int soil_scheme = SAXTON;     /* set by setup_soil_hydraulics */

@@ -292,7 +292,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     psurf = read_nc_var(ncid, "Psurf", ntime, TRUE);
     wind = read_nc_var(ncid, "Wind", ntime, TRUE);
     co2 = read_nc_var(ncid, "CO2air", ntime, FALSE);
-    lwdown = c->sub_daily ? read_nc_var(ncid, "LWdown", ntime, FALSE) : NULL;
+    lwdown = read_nc_var(ncid, "LWdown", ntime, FALSE);
     lai = c->prescribed_lai ? read_nc_lai(c, ntime, ncid, met_day) : NULL;
     free(met_day);
     nc_close(ncid);
@@ -391,6 +391,10 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
         if (lai != NULL) {
             ma->lai = alloc_array(nday, "lai");
         }
+        if (lwdown != NULL) {
+            ma->lwdown_am = alloc_array(nday, "lwdown_am");
+            ma->lwdown_pm = alloc_array(nday, "lwdown_pm");
+        }
 
         for (k = 0; k < nday; k++) {
             /* sums: daylight, am, pm; T, wind, press, qair, co2; counts */
@@ -398,6 +402,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
             double a_t = 0, a_w = 0, a_p = 0, a_q = 0, a_par = 0, n_a = 0;
             double p_t = 0, p_w = 0, p_p = 0, p_q = 0, p_par = 0, n_p = 0;
             double t24 = 0, tmin = 999.9, tmax = -999.9, rain = 0, s_lai = 0;
+            double a_lw = 0, p_lw = 0;
             double tc, conv = UMOL_2_JOL * J_TO_MJ * dt; /* umol s-1 -> MJ */
 
             for (step = 0; step < spd; step++) {
@@ -420,9 +425,11 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
                     if (step < spd / 2) {
                         a_t += tc; a_w += wind[i]; a_p += psurf[i];
                         a_q += qair[i]; a_par += par * conv; n_a += 1.0;
+                        a_lw += lwdown != NULL ? lwdown[i] : 0.0;
                     } else {
                         p_t += tc; p_w += wind[i]; p_p += psurf[i];
                         p_q += qair[i]; p_par += par * conv; n_p += 1.0;
+                        p_lw += lwdown != NULL ? lwdown[i] : 0.0;
                     }
                 }
             }
@@ -456,6 +463,10 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
                                                   p_p / n_p) : 0.05;
             ma->par_am[k] = a_par;
             ma->par_pm[k] = p_par;
+            if (lwdown != NULL) {
+                ma->lwdown_am[k] = n_a > 0 ? a_lw / n_a : -999.9;
+                ma->lwdown_pm[k] = n_p > 0 ? p_lw / n_p : -999.9;
+            }
 
             if (current_yr != ma->year[k]) {
                 c->num_years++;

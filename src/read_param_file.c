@@ -487,6 +487,33 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown plant_segments option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "canopy_ga_model")) {
+        if (strcasecmp(temp, "cable") == 0)
+            c->canopy_ga_model = CANOPY_GA_CABLE;
+        else if (strcasecmp(temp, "simple") == 0)
+            c->canopy_ga_model = CANOPY_GA_SIMPLE;
+        else {
+            fprintf(stderr, "Unknown canopy_ga_model option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "net_lw_model")) {
+        if (strcasecmp(temp, "lwdown") == 0)
+            c->net_lw_model = NET_LW_LWDOWN;
+        else if (strcasecmp(temp, "monteith") == 0)
+            c->net_lw_model = NET_LW_MONTEITH;
+        else {
+            fprintf(stderr, "Unknown net_lw_model option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "canopy_air_space")) {
+        if (strcasecmp(temp, "false") == 0)
+            c->canopy_air_space = FALSE;
+        else if (strcasecmp(temp, "true") == 0)
+            c->canopy_air_space = TRUE;
+        else {
+            fprintf(stderr, "Unknown canopy_air_space option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "root_radial_resistance")) {
         if (strcasecmp(temp, "false") == 0)
             c->root_radial_resistance = FALSE;

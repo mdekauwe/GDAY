@@ -67,6 +67,7 @@
 #define SUNLIT 0
 #define SHADED 1
 #define NUM_LEAVES 2
+#define CANOPY_AIR_ITERMAX 30   /* canopy air space iterations (max) */
 
 
 #endif /* CONSTANTS */

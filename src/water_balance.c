@@ -109,8 +109,10 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     calc_interception(c, m, p, f, s, &throughfall, &interception,
                       &canopy_evap);
 
-    net_rad_am = calc_net_radiation(p, m->sw_rad_am, m->tair_am);
-    net_rad_pm = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm);
+    net_rad_am = calc_net_radiation(c, p, m->sw_rad_am, m->tair_am,
+                                    m->lwdown_am);
+    net_rad_pm = calc_net_radiation(c, p, m->sw_rad_pm, m->tair_pm,
+                                    m->lwdown_pm);
 
     //net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
     //soil_evap = calc_soil_evaporation(m, p, s, net_rad);
@@ -345,7 +347,9 @@ void calc_interception_jules(met *m, params *p, state *s,
     epot = MAX(0.0, *canopy_evap);
 
     if (cap > 0.0 && epot > 0.0) {
-        *frac_wet = s->canopy_store / (epot + cap);
+        // capped at 1, as JULES (sf_resist fraca): when LAI falls the
+        // store can exceed the capacity
+        *frac_wet = MIN(1.0, s->canopy_store / (epot + cap));
     } else {
         *frac_wet = 0.0;
     }
@@ -574,12 +578,25 @@ double calc_canopy_evaporation(met *m, params *p, state *s, double rnet) {
 }
 
 
-double calc_net_radiation(params *p, double sw_rad, double tair) {
+double calc_net_radiation(control *c, params *p, double sw_rad, double tair,
+                          double lwdown) {
+    /*
+        Isothermal net radiation of the surface (W m-2): absorbed shortwave
+        plus the long-wave balance. net_lw_model = lwdown (default): emission
+        at air temperature against the downward long-wave, measured when the
+        forcing has it (as JULES), otherwise Swinbank's clear-sky estimate.
+        net_lw_model = monteith: the old fixed clear-sky loss below.
+    */
+    double net_rad, net_lw, tk = tair + DEG_TO_KELVIN;
 
-    double net_rad, net_lw;
-
-    /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52, eqn 4.17 */
-    net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
+    if (c->net_lw_model == NET_LW_LWDOWN) {
+        net_lw = LEAF_EMISSIVITY * (SIGMA * tk * tk * tk * tk -
+                                    downward_longwave(tair, lwdown));
+    } else {
+        /* Net loss of long-wave radn, Monteith & Unsworth '90, pg 52,
+           eqn 4.17 */
+        net_lw = 107.0 - 0.3 * tair;            /* W m-2 */
+    }
 
     /* Net radiation recieved by a surf, Monteith & Unsw '90, pg 54 eqn 4.21
         - note the minus net_lw is correct as eqn 4.17 is reversed in
@@ -842,6 +859,119 @@ double calc_stomatal_conductance(params *p, state *s, double vpd, double Ca,
 
 
 
+
+double canopy_air_ga_simple(params *p, double canht, double wind,
+                            double press, double tair) {
+    /*
+        Conductance (mol m-2 s-1) from the canopy air space to the reference
+        height, neutral log law with the momentum roughness for heat too:
+        with a canopy air space the leaf boundary layer (the source of the
+        z0h < z0m "excess resistance") is already between the leaves and the
+        canopy air, so using z0h here would count it twice.
+    */
+    double z0m, d, zref, arg, cmolar, vk = 0.41;
+
+    cmolar = press / (RGAS * (tair + DEG_TO_KELVIN));
+    z0m = p->dz0v_dh * canht;
+    d = p->displace_ratio * canht;
+    zref = p->wind_height > canht ? p->wind_height : canht;
+    arg = log((zref - d) / z0m);
+
+    return (vk * vk * wind / (arg * arg) * cmolar);
+}
+
+static double cable_psim(double zeta) {
+    /* CABLE psim: integrated stability function for momentum, Businger-
+       Dyer (unstable) and Beljaars & Holtslag 1991 (stable) */
+    double a = 1.0, b = 0.667, xc = 5.0, dd = 0.35, gu = 16.0, x;
+
+    if (zeta > 0.0) {
+        return (-a * zeta - b * (zeta - xc / dd) * exp(-dd * zeta) -
+                b * xc / dd);
+    }
+    x = pow(1.0 + gu * fabs(zeta), 0.25);
+    return (log((1.0 + x * x) * (1.0 + x) * (1.0 + x) / 8.0) -
+            2.0 * atan(x) + M_PI * 0.5);
+}
+
+static double cable_psis(double zeta) {
+    /* CABLE psis: integrated stability function for scalars */
+    double a = 1.0, b = 0.667, cc = 5.0, dd = 0.35, gu = 16.0, st, y;
+
+    if (zeta > 0.0) {
+        st = zeta;
+        return (-pow(1.0 + 2.0 / 3.0 * a * st, 1.5) -
+                b * (st - cc / dd) * exp(-dd * st) - b * cc / dd + 1.0);
+    }
+    y = sqrt(1.0 + gu * fabs(zeta));
+    return (2.0 * log((1.0 + y) * 0.5));
+}
+
+double canopy_air_ga_cable(params *p, double canht, double lai, double wind,
+                           double press, double tair, double H, double LE) {
+    /*
+        Conductance (mol m-2 s-1) from the canopy air space to the reference
+        height, CABLE's rt1 (cable_roughness ruff_resist, cable_canopy
+        define_canopy): Raupach's localised near-field theory, the sum of
+        three height integrals (in the canopy, the roughness sublayer, and
+        the inertial sublayer above it) over the friction velocity, with the
+        Monin-Obukhov stability of the canopy sensible and latent heat
+        fluxes H, LE (W m-2, ground area; 0 = neutral) iterated as CABLE:
+
+            rt1 = max(5, (rt1usa + rt1usb + rt1usc) / us)   (s m-1)
+
+        The roughness (d, z0m, us/uh) comes from LAI and height as CABLE,
+        not from displace_ratio / dz0v_dh. The reference height is taken
+        above the ground (wind_height, else canht + 2 m) and expressed above
+        the displacement height.
+    */
+    const double csd = 0.003, crd = 0.3, usuhm = 0.3, ccd = 15.0;
+    const double ccw_c = 2.0, vonk = 0.40, csw = 0.5, a33 = 1.25;
+    const double ctl = 0.4, grav = 9.8, umin = 1.0;
+    const double zetneg = -15.0, zetpos = 1.0;
+    double h = MAX(canht, 0.1), laih = MAX(lai, 0.0), usuh, xx, dh, disp;
+    double z0m, zref, term2, term3, term5, zruffs, rt1usa, rt1usb, rt1usc;
+    double z0soil, zs, us = 0.1, rt1 = 5.0, zeta = 0.0, tk, rho, cmolar;
+    int    it;
+
+    tk = tair + DEG_TO_KELVIN;
+    cmolar = press / (RGAS * tk);
+    rho = cmolar * MASS_AIR;                            /* kg m-3 */
+
+    usuh = MIN(sqrt(csd + crd * laih * 0.5), usuhm);
+    xx = sqrt(ccd * MAX(laih * 0.5, 0.0005));
+    dh = 1.0 - (1.0 - exp(-xx)) / xx;
+    disp = dh * h;
+    z0m = (1.0 - dh) * exp(log(ccw_c) - 1.0 + 1.0 / ccw_c - vonk / usuh) * h;
+    zref = (p->wind_height > h ? p->wind_height : h + 2.0) - disp;
+    zref = MAX(MAX(zref, 3.5 + z0m), h - disp);
+    z0soil = 0.0009 * MIN(1.0, laih) + 1.0E-4;
+
+    term2 = exp(2.0 * csw * laih * (1.0 - disp / h));
+    term3 = MAX(a33 * a33 * ctl * 2.0 * csw * laih, 1.0E-6);
+    term5 = MAX((2.0 / 3.0) * h / MAX(disp, 1.0E-6), 1.0);
+    zruffs = disp + h * a33 * a33 * ctl / vonk / term5;
+    rt1usa = term5 * (term2 - 1.0) / term3;
+    rt1usb = MAX(0.0, term5 * (MIN(zref + disp, zruffs) - h) /
+                      (a33 * a33 * ctl * h));
+    zs = MAX(zruffs - disp, z0soil);
+
+    for (it = 0; it < 4; it++) {         /* CABLE's default NITER */
+        us = vonk * MAX(wind, umin) /
+             (log(zref / z0m) - cable_psim(zeta) +
+              cable_psim(zeta * z0m / zref));
+        us = MIN(MAX(1.0E-6, us), 10.0);
+        rt1usc = (zref + disp > zruffs) ?
+                 (log(zref / zs) - cable_psis(zeta) +
+                  cable_psis(zeta * zs / zref)) / vonk : 0.0;
+        rt1 = MAX(5.0, (rt1usa + rt1usb + rt1usc) / us);
+        zeta = -(vonk * grav * zref * (H + 0.07 * LE)) /
+               (rho * CP * tk * us * us * us);
+        zeta = MIN(zetpos, MAX(zetneg, zeta));
+    }
+
+    return (cmolar / rt1);
+}
 
 double canopy_boundary_layer_conduct(params *p, double canht, double wind,
                                      double press, double tair) {
@@ -1484,7 +1614,7 @@ double soil_evap_penman(control *c, params *p, state *s, double rn_soil,
         fth = 1.0 / M_PI / sqrt(w) * (sqrt(M_PI / (4.0 * w)) - 1.0);
         rs = MIN(rtevap_max, lm / (4.0 * MAX(k1, 1E-12)) +
                              (dz + pore * fth) / Dff);        /* s m-1 */
-        gs = 1.0 / rs;
+        gs = p->gsoil_f / rs;        /* gsoil_f applies to both, as JULES */
     }
 
     ga = calc_soil_boundary_layer_conductance(wind, s->canht) * cmolar;

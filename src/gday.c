@@ -196,6 +196,11 @@ int main(int argc, char **argv)
         run_sim(cw, c, f, fs, ma, m, p, s, nr);
     }
 
+    if (c->water_balance == HYDRAULICS && c->n_supply_bind > 0) {
+        fprintf(stderr, "gs_opt: the soil supply limited %ld leaf steps\n",
+                c->n_supply_bind);
+    }
+
     /* clean up - not every file is opened in every run mode */
     if (c->ofp != NULL) {
         fclose(c->ofp);
@@ -1208,6 +1213,10 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
         m->sw_rad = m->par * c1;
         m->sw_rad_am = ma->par_am[c->day_idx] * c2;
         m->sw_rad_pm = ma->par_pm[c->day_idx] * c2;
+        m->lwdown_am = ma->lwdown_am != NULL ? ma->lwdown_am[c->day_idx]
+                                             : -999.9;
+        m->lwdown_pm = ma->lwdown_pm != NULL ? ma->lwdown_pm[c->day_idx]
+                                             : -999.9;
         m->rain = ma->rain[c->day_idx];
         m->vpd_am = ma->vpd_am[c->day_idx] * KPA_2_PA;
         m->vpd_pm = ma->vpd_pm[c->day_idx] * KPA_2_PA;

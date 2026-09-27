@@ -64,6 +64,7 @@ typedef struct {
     double bseg[N_PLANT_SEG];  /* Weibull parameters (MPa, -) */
     double cseg[N_PLANT_SEG];
     double gsw_max;    /* big leaf cap on gs for H2O (mol m-2 s-1), <= 0 off */
+    double e_max;      /* soil supply limit on E (mmol m-2 s-1), < 0 off */
     const gs_opt_canopy_in *canopy;  /* A(Ci) & E(gs) supplied (daily), or
                                         NULL for the Farquhar leaf above */
 } leaf_in;
@@ -229,7 +230,8 @@ static void eval_ci(const leaf_in *in, double ci, leaf_state *st) {
     st->e = MAX(0.0, gv * in->dleaf / in->press) * MOL_2_MMOL;
     st->psi = plant_supply(in, st->e, in->psi_rz, &st->psi_stem, &st->kl);
     st->feasible = (st->kl > in->kcrit) && (st->psi <= in->psi_rz + 1E-12) &&
-                   (in->gsw_max <= 0.0 || gsw <= in->gsw_max);
+                   (in->gsw_max <= 0.0 || gsw <= in->gsw_max) &&
+                   (in->e_max < 0.0 || st->e <= in->e_max);
 
     return;
 }
@@ -422,6 +424,10 @@ static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
     leaf_photo_params(c, cw, p, s, &in->gamma_star, &in->km, &in->vcmax,
                       &jmax, &J, &in->Vj, &in->rd);
     in->canopy = NULL;
+    // the soil supply, shared between the big leaves by their kmax (leaf
+    // area) share, as the conductance
+    in->e_max = (cw->e_supply >= 0.0 && s->lai > 0.0) ?
+                cw->e_supply * cw->lai_leaf[idx] / s->lai : -1.0;
     in->cs = cw->Cs;
     in->dleaf = MAX(cw->dleaf, 0.0);
     in->gbv = c->gs_opt_e == GS_OPT_E_TOTAL ? cw->gbv_leaf[idx] : -1.0;
@@ -470,9 +476,19 @@ void gs_opt_leaf(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         optimise(c, &in, p, &best);
     }
 
+    // count the steps the soil supply limited (the optimum at the limit)
+    if (best.feasible && in.e_max >= 0.0 && best.e > 0.98 * in.e_max) {
+        c->n_supply_bind++;
+    }
+
     // an open optimum is clipped at zero, as JULES
     cw->an_leaf[idx] = best.feasible ? MAX(0.0, best.an) : best.an;
     cw->rd_leaf[idx] = in.rd;
+    if (best.feasible && best.an < 0.0) {
+        // keep GPP (An + Rd) at the gross rate of that state, best.an + rd,
+        // not Rd
+        cw->rd_leaf[idx] = MAX(0.0, in.rd + best.an);
+    }
     cw->gsc_leaf[idx] = MAX(GS_OPT_CLOSED_GSC, best.gsc);
     cw->lwp_leaf[idx] = best.psi;
     cw->psi_stem_leaf[idx] = best.psi_stem;
@@ -499,6 +515,7 @@ int gs_opt_canopy(control *c, params *p, const gs_opt_canopy_in *cp,
     in.cs = cp->ca;
     in.psi_rz = cp->psi_rz;
     in.gsw_max = -1.0;
+    in.e_max = -1.0;       /* the canopy path has its own e_max check */
     setup_plant(c, p, cp->kmax, &in);
     if (in.kmax <= 0.0) {
         closed_state(&in, &best);
@@ -555,6 +572,7 @@ double gs_opt_beta(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     leaf_state wet;
 
     setup_leaf(c, cw, m, p, s, 0.0, &in);
+    in.e_max = -1.0;           /* wet soil: no supply limit */
     if (in.kmax <= 0.0 || in.Vj <= 0.0 || in.vcmax <= 0.0) {
         return (1.0);
     }

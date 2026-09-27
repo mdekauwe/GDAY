@@ -39,7 +39,8 @@ void write_output_subdaily_header(control *c, FILE **fp) {
     */
     fprintf(*fp, "an_canopy,rd_canopy,gsc_canopy,");
     fprintf(*fp, "apar_canopy,trans_canopy,tleaf,");
-    fprintf(*fp, "psi_rootzone,lwp_sun,lwp_sha,kl_canopy,lai_sun,psi_stem\n");
+    fprintf(*fp, "psi_rootzone,lwp_sun,lwp_sha,kl_canopy,lai_sun,psi_stem,");
+    fprintf(*fp, "tair_canopy,vpd_canopy\n");
     return;
 }
 
@@ -171,10 +172,11 @@ void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, state *s,
                        (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2.0);
 
     /* plant hydraulics (gs_opt) */
-    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f\n",
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f,%.10f\n",
                        s->weighted_swp, cw->lwp_leaf[SUNLIT],
                        cw->lwp_leaf[SHADED], cw->kl_canopy,
-                       cw->lai_leaf[SUNLIT], cw->psi_stem_canopy);
+                       cw->lai_leaf[SUNLIT], cw->psi_stem_canopy,
+                       cw->tair_canopy, cw->vpd_canopy);
 
     return;
 }
