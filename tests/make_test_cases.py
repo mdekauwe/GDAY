@@ -77,6 +77,8 @@ def set_keys(txt, d):
             txt = pat.sub("%s = %s" % (key, val), txt)
         else:
             section = "[files]" if key.startswith("out_") else "[control]"
+            if key == "root_psi_crit":
+                section = "[params]"
             if key.startswith("soil_") and key not in ("soil_hydraulics",
                                                         "soil_drainage",
                                                         "soil_evap_model"):
@@ -115,8 +117,11 @@ def main():
         "sd_hyd_dry": {"water_balance": "hydraulics", "met": "dry"},
         "sd_hyd_dry_cascade": {"water_balance": "hydraulics", "met": "dry",
                                "soil_drainage": "cascading"},
-        "sd_hyd_dry_store": {"water_balance": "hydraulics", "met": "dry",
-                             "water_store": "true"},
+        "sd_hyd_dry_golden": {"water_balance": "hydraulics", "met": "dry",
+                              "gs_opt_search": "golden"},
+        "sd_hyd_dry_jules_rz": {"water_balance": "hydraulics", "met": "dry",
+                                "root_radial_resistance": "false",
+                                "root_psi_crit": "-4.889"},
         # JULES FR-Pue soil parameters (b, sathh, satcon, sm_sat)
         "sd_hyd_dry_vg": {"water_balance": "hydraulics", "met": "dry",
                           "soil_hydraulics": "van_genuchten",

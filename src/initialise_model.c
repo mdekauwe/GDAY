@@ -52,7 +52,9 @@ void initialise_control(control *c) {
                                          non-stomatal limitation */
     c->water_stress = TRUE;         /* water stress modifier turned on=TRUE (default)...ability to turn off to test things without drought stress = FALSE */
     c->water_balance = 0;            /* Water calculations: 0=simple 2 layered bucket; 1=SPA-style hydraulics */
-    c->water_store = FALSE;         /* Simulate capacitance or not? */
+    c->water_store = FALSE;
+    c->gs_opt_search = GS_OPT_FLAT;
+    c->root_radial_resistance = TRUE;
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
     c->soil_hydraulics = SAXTON;
@@ -100,7 +102,6 @@ void initialise_params(params *p) {
     p->c_alloc_fmin = 0.15;
     p->c_alloc_rmax = 0.35;
     p->c_alloc_rmin = 0.05;
-    p->capac = 0.04;   // 0.04-0.12 (MPa per unit relative water content)
     p->cfracts = 0.5;
     p->crdecay = 0.0;
     p->cretrans = 0.0;
@@ -161,7 +162,7 @@ void initialise_params(params *p) {
     p->jmaxnb = 0.0;
     p->jv_intercept = 0.0;
     p->jv_slope = 1.86;
-    p->kp = 2.0;        //plant component of the leaf-specific hydraulic conductance (mmol m-2 s-1 MPa-1 )
+    p->kp = 2.0;        // max plant hydraulic conductance per leaf area (mmol m-2 s-1 MPa-1)
     p->kc25 = 404.9;    /* MM coefft of Rubisco for CO2 (umol mol-1) */
     p->kdec1 = 3.965571;
     p->kdec2 = 14.61;
@@ -217,7 +218,6 @@ void initialise_params(params *p) {
     p->psi_sat_root = -999.9;
     p->psi_sat_topsoil = -999.9;
     p->p50 = -3.0;        // xylem pressure where 50% of the conductivity is lost
-    p->plc_shape = 30.0;  // slope paramater: derivative (% MPa-1) at x (e.g. s50 is the slope of the curve at P50). Higher values thus indicate steeper response to xylem pressure
     p->qs = 1.0; /* exponent in water stress modifier, =1.0 JULES type representation, the smaller the values the more curved the depletion. */
     p->r0 = 0.1325;
     p->rateloss = 0.5;
@@ -284,7 +284,13 @@ void initialise_params(params *p) {
     p->root_density = 0.5e6;
     p->max_depth = 2.0;
     p->root_resist = 20;      /* Evergreen value: fine root hydraulic resistivity (MPa s g mmol-1 H2O) */
-    p->min_lwp = -2.0;        /* minimum leaf water potential (MPa) */
+    p->root_psi_crit = -2.0;  /* was min_lwp */
+    p->p88 = -4.0;
+    p->kcrit_frac = 0.95;     /* JULES kcrit_fractional_loss */
+    p->gs_opt_gl_max = 0.02;  /* JULES som_gl_max (m s-1) */
+    p->gs_opt_n_sample = 100; /* JULES som_n_sample */
+    p->gs_opt_n_prescan = 15; /* JULES som_n_ci_prescan */
+    p->gs_opt_n_golden = 16;  /* JULES som_n_ci_golden_iter */
 
     /* Hydraulics stuff - private */
     p->potA = NULL;             // component of the Saxton soil water retention equations
@@ -295,7 +301,6 @@ void initialise_params(params *p) {
     p->porosity = NULL;         // soil layer porosity
     p->field_capacity = NULL;   // Field capacity of moisture for each layer, when soil water content at SWP = -10kPa
     p->wetting = 10;            // number of layers to use for wetting calcs
-    p->plc_dead = 0.85;
     p->soil_b = -999.9;         /* VG/Brooks-Corey soil, see soil_hydraulics */
     p->soil_sathh = -999.9;
     p->soil_satcon = -999.9;

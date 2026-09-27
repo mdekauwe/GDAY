@@ -134,9 +134,19 @@ int main(int argc, char **argv)
         fprintf(stderr, "soil_evap_model = or needs water_balance = hydraulics\n");
         exit(EXIT_FAILURE);
     }
-    if (c->water_store && c->water_balance != HYDRAULICS) {
-        /* the plant store is set up and exchanges water with the SPA layers */
-        fprintf(stderr, "water_store needs water_balance = hydraulics\n");
+    if (c->water_store) {
+        fprintf(stderr, "water_store (plant capacitance) was part of the Emax "
+                "scheme, which gs_opt replaced (git tag last-emax)\n");
+        exit(EXIT_FAILURE);
+    }
+    if (c->water_balance == HYDRAULICS && !c->sub_daily) {
+        fprintf(stderr, "water_balance = hydraulics (gs_opt) needs "
+                "sub_daily = true\n");
+        exit(EXIT_FAILURE);
+    }
+    if (c->water_balance == HYDRAULICS &&
+        (p->p50 >= 0.0 || p->p88 >= p->p50)) {
+        fprintf(stderr, "gs_opt needs p88 < p50 < 0 (MPa)\n");
         exit(EXIT_FAILURE);
     }
 
@@ -144,11 +154,6 @@ int main(int argc, char **argv)
         allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);
         setup_hydraulics_arrays(f, p, s);
-
-        // i.e. not dead
-        cw->death_year = -999.9;
-        cw->death_doy = -999.9;
-        cw->not_dead = TRUE;
     }
 
     /* PLUMBER2 style netCDF (as JULES reads) or GDAY's ascii format */
@@ -394,21 +399,6 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         }
         s->pawater_root = root_zone_total;
 
-        // If we are simulating capcitance
-        if (c->water_store) {
-
-            cw->not_dead = TRUE;
-            cw->death_year = -999;
-            cw->death_doy = -999;
-
-            // Assume 10 mm (kg m-2) for now
-            cw->plant_water = 10.0;
-
-            // to calculate rwc, keep track of initial water content.
-            cw->plant_water0 = cw->plant_water;
-            cw->xylem_psi = 0.0;
-            //cw->xylem_psi = s->weighted_swp;
-        }
 
     } else {
         s->pawater_root = p->wcapac_root;

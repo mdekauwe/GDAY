@@ -42,13 +42,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     */
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    n_beta = 0;
-    double doy, year, dummy2=0.0, relk, sum_beta = 0.0;
-    double relax, dT, prev_dT;
-
-    // Hydraulic conductance of the entire soil-to-leaf pathway
-    // - this is only used in hydraulics, so set it to zero.
-    // (mmol m–2 s–1 MPa–1)
-    double ktot = 0.0;
+    double doy, year, dummy2=0.0, sum_beta = 0.0;
+    double dT, t_lo, t_hi;
 
     /* loop through the day */
     zero_carbon_day_fluxes(f);
@@ -56,17 +51,6 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     sunlight_hrs = 0;
     doy = ma->doy[c->hour_idx];
     year = ma->year[c->hour_idx];
-
-    // reset plant water store to yesterday's value
-    if (c->water_store) {
-        // Assign plant hydraulic conductance (mmol m–2 s–1 MPa–1) from PLC
-        // curve and stem water potential
-        relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-        cw->plant_k = relk * p->kp;
-    } else {
-        // no cavitation when stem water storage not simulated
-        cw->plant_k = p->kp;
-    }
 
     for (hod = 0; hod < c->num_hlf_hrs; hod++) {
         unpack_met_data(c, f, ma, m, hod, dummy2);
@@ -92,30 +76,28 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 initialise_leaf_surface(cw, m);
                 iter = 0;
-                relax = 0.5;
-                prev_dT = 0.0;
+                t_lo = -999.9;
+                t_hi = 999.9;
 
                 /* Leaf temperature loop */
                 while (TRUE) {
 
-                    if (c->ps_pathway == C3) {
-                        photosynthesis_C3(c, cw, m, p, s);
-                    } else {
+                    if (c->ps_pathway != C3) {
                         /* Nothing implemented */
                         fprintf(stderr, "C4 photosynthesis not implemented\n");
                         exit(EXIT_FAILURE);
+                    } else if (c->water_balance == HYDRAULICS) {
+                        // Sperry profit maximisation with the plant
+                        // hydraulics (gs_opt)
+                        gs_opt_leaf(c, cw, m, p, s);
+                    } else {
+                        photosynthesis_C3(c, cw, m, p, s);
                     }
 
                     if (cw->an_leaf[cw->ileaf] > 1E-04) {
 
-                        if (c->water_balance == HYDRAULICS) {
-                            // Ensure transpiration does not exceed Emax, if it
-                            // does we recalculate gs and An
-                            calculate_emax(c, cw, f, m, p, s, &ktot);
-                        }
-
                         /* Calculate new Cs, dleaf, Tleaf */
-                        solve_leaf_energy_balance(c, cw, f, m, p, s, ktot);
+                        solve_leaf_energy_balance(c, cw, f, m, p, s);
 
                     } else {
                         /*
@@ -123,7 +105,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         ** the water fluxes from a previous iteration or
                         ** timestep.
                         */
-                        zero_leaf_water_fluxes(c, cw, s);
+                        zero_leaf_water_fluxes(c, cw, p, s);
                         break;
                     }
 
@@ -134,29 +116,43 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                 cw->ileaf, cw->tleaf[cw->ileaf],
                                 cw->tleaf_new, m->tair);
                         exit(EXIT_FAILURE);
-                    } else if (fabs(cw->tleaf[cw->ileaf] - cw->tleaf_new) < 0.02) {
+                    }
+                    dT = cw->tleaf_new - cw->tleaf[cw->ileaf];
+                    if (fabs(dT) < 0.02) {
                         break;
                     }
 
                     /*
-                    ** Update temperature & do another iteration. Under-relax
-                    ** (move part way to the energy balance value), halving
-                    ** the step whenever it changes sign, which damps the
-                    ** oscillation for large leaves / low wind without
-                    ** changing the converged solution.
+                    ** Update temperature & do another iteration. Each
+                    ** iteration tells us which side of the solution Tleaf is
+                    ** on (the energy balance wants it warmer or cooler), so
+                    ** keep a bracket. Until both sides are known, under-relax
+                    ** (move half way to the energy balance value), which
+                    ** damps the oscillation for large leaves / low wind; then
+                    ** bisect. The bisection also copes with the energy
+                    ** balance jumping between gs_opt Ci grid points either
+                    ** side of the solution.
                     */
-                    dT = cw->tleaf_new - cw->tleaf[cw->ileaf];
-                    if (dT * prev_dT < 0.0) {
-                        relax = MAX(0.5 * relax, 0.05);
+                    if (dT > 0.0) {
+                        t_lo = MAX(t_lo, cw->tleaf[cw->ileaf]);
+                    } else {
+                        t_hi = MIN(t_hi, cw->tleaf[cw->ileaf]);
                     }
-                    prev_dT = dT;
-                    cw->tleaf[cw->ileaf] += relax * dT;
+                    if (t_lo > -900.0 && t_hi < 900.0) {
+                        if (t_hi - t_lo < 0.01) {
+                            break;
+                        }
+                        cw->tleaf[cw->ileaf] = 0.5 * (t_lo + t_hi);
+                    } else {
+                        cw->tleaf[cw->ileaf] += 0.5 * dT;
+                    }
                     iter++;
                 } /* end of leaf temperature loop */
 
-                /* the Emax water stress factor, if the leaf transpired */
+                /* the gs_opt water stress factor, if the leaf transpired */
                 if (c->water_balance == HYDRAULICS &&
                     cw->an_leaf[cw->ileaf] > 1E-04) {
+                    cw->fwsoil_leaf[cw->ileaf] = gs_opt_beta(c, cw, m, p, s);
                     sum_beta += cw->fwsoil_leaf[cw->ileaf];
                     n_beta++;
                 }
@@ -168,7 +164,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             zero_hourly_fluxes(cw);
             calculate_soil_net_radiation_night(cw, p, s, m->tair, m->lwdown);
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
-                zero_leaf_water_fluxes(c, cw, s);
+                zero_leaf_water_fluxes(c, cw, p, s);
             }
 
             /* set tleaf to tair during the night */
@@ -190,24 +186,14 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         scale_leaf_to_canopy(c, cw, s);
         if (c->water_balance == HYDRAULICS && hod == 24) {
             s->midday_lwp = cw->lwp_canopy;
-            s->midday_xwp = cw->xylem_psi;
+            s->midday_plc = p->kp > 0.0 ?
+                            100.0 * (1.0 - cw->kl_canopy / p->kp) : 0.0;
         }
         sum_hourly_carbon_fluxes(cw, f, p);
 
-        // We need to remove the et_deficit which will come from the
-        // plant storage from the water we need to extract from the soil.
-        // We will add this back later to the transpiration output.
-        if (c->water_balance == HYDRAULICS && c->water_store) {
-            cw->trans_canopy -= cw->trans_deficit_canopy ;
-            if (cw->trans_canopy < 0.0) {
-                cw->trans_canopy = 0.0;
-            }
-        }
-
         calculate_water_balance_sub_daily(c, cw, f, m, nr, p, s, dummy,
                                           cw->trans_canopy, cw->omega_canopy,
-                                          cw->rnet_canopy,
-                                          cw->trans_deficit_canopy, year, doy);
+                                          cw->rnet_canopy, year, doy);
 
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
             write_subdaily_outputs_ascii(c, cw, year, doy, hod);
@@ -224,8 +210,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     }
 
     if (c->water_stress && c->water_balance == HYDRAULICS) {
-        // Daytime mean of the Emax stress factor (supply / demand), used in
-        // soil decomposition and allocation. Unchanged if nothing transpired.
+        // Daytime mean of the gs_opt stress factor (A / A with wet soil),
+        // used in soil decomposition and allocation. Unchanged if nothing
+        // transpired.
         if (n_beta > 0) {
             s->wtfac_root = sum_beta / (double)n_beta;
             s->wtfac_topsoil = s->wtfac_root;
@@ -243,7 +230,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 }
 
 void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
-                               params *p, state *s, double ktot) {
+                               params *p, state *s) {
     /*
         Wrapper to solve conductances, transpiration and calculate a new
         leaf temperautre, vpd and Cs at the leaf surface.
@@ -282,9 +269,10 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     cw->dleaf = cw->trans_leaf[idx] * m->press / gv;
 
     if (c->water_balance == HYDRAULICS) {
-        // leaf water potential (MPa)
+        // leaf water potential (MPa) supplying the transpiration
         trans_mmol = cw->trans_leaf[idx] * MOL_2_MMOL;
-        cw->lwp_leaf[idx] = calc_lwp(f, s, ktot, trans_mmol);
+        cw->lwp_leaf[idx] = gs_opt_psi_leaf(cw, p, s, trans_mmol,
+                                            &cw->kl_leaf[idx]);
     }
 
     return;
@@ -351,7 +339,7 @@ void zero_hourly_fluxes(canopy_wk *cw) {
     return;
 }
 
-void zero_leaf_water_fluxes(control *c, canopy_wk *cw, state *s) {
+void zero_leaf_water_fluxes(control *c, canopy_wk *cw, params *p, state *s) {
     /*
         Reset the current leaf's water fluxes for when it isn't transpiring,
         i.e. at night or when An is ~0. With no flow the leaf water potential
@@ -363,8 +351,8 @@ void zero_leaf_water_fluxes(control *c, canopy_wk *cw, state *s) {
     cw->omega_leaf[idx] = 0.0;
 
     if (c->water_balance == HYDRAULICS) {
-        cw->trans_deficit_leaf[idx] = 0.0;
-        cw->lwp_leaf[idx] = s->weighted_swp;
+        // no flow, the leaf is at the root zone water potential
+        cw->lwp_leaf[idx] = gs_opt_psi_leaf(cw, p, s, 0.0, &cw->kl_leaf[idx]);
     }
 
     return;
@@ -381,11 +369,18 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
     cw->rnet_canopy = cw->rnet_leaf[SUNLIT] + cw->rnet_leaf[SHADED];
 
     if (c->water_balance == HYDRAULICS) {
-        cw->lwp_canopy = (cw->lwp_leaf[SUNLIT] + cw->lwp_leaf[SHADED]) / 2.0;
-
-        // mmol m-2 s-1 to mol m-2 s-1, for consistency with transpiration
-        cw->trans_deficit_canopy = (cw->trans_deficit_leaf[SUNLIT] +
-                                   cw->trans_deficit_leaf[SHADED]) * MMOL_2_MOL;
+        // leaf area weighted means
+        double lai = cw->lai_leaf[SUNLIT] + cw->lai_leaf[SHADED];
+        if (lai > 0.0) {
+            cw->lwp_canopy = (cw->lwp_leaf[SUNLIT] * cw->lai_leaf[SUNLIT] +
+                              cw->lwp_leaf[SHADED] * cw->lai_leaf[SHADED]) /
+                             lai;
+            cw->kl_canopy = (cw->kl_leaf[SUNLIT] * cw->lai_leaf[SUNLIT] +
+                             cw->kl_leaf[SHADED] * cw->lai_leaf[SHADED]) / lai;
+        } else {
+            cw->lwp_canopy = s->weighted_swp;
+            cw->kl_canopy = cw->kl_leaf[SUNLIT];
+        }
     }
 
 
@@ -449,99 +444,6 @@ void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {
 }
 
 
-
-void calculate_emax(control *c, canopy_wk *cw, fluxes *f, met *m, params *p,
-                    state *s, double *ktot) {
-
-    // Assumption that during the day transpiration cannot exceed a maximum
-    // value, Emax (e_supply). At this point we've reached a leaf water
-    // potential minimum. Once this point is reached transpiration, gs and A
-    // are reclulated
-    //
-    // Reference:
-    // * Duursma et al. 2008, Tree Physiology 28, 265–276
-
-    double e_supply, e_demand, gsv;
-    int    idx = cw->ileaf;
-
-    // Hydraulic conductance of the entire soil-to-leaf pathway, per unit
-    // ground area (mmol m–2 s–1 MPa–1). The soil resistance is per ground
-    // area and plant_k per leaf area. The two big leaves share the supply
-    // in proportion to their leaf area, so ktot is this leaf's share (it is
-    // also used for this leaf's water potential).
-    double frac;
-    if (s->lai > 0.0) {
-        frac = cw->lai_leaf[idx] / s->lai;
-        *ktot = frac / (f->total_soil_resist + 1.0 / (cw->plant_k * s->lai));
-    } else {
-        *ktot = 0.0;
-    }
-
-    // Maximum transpiration rate (mmol m-2 s-1)
-    // Following Darcy's law which relates leaf transpiration to hydraulic
-    // conductance of the soil-to-leaf pathway and leaf & soil water potentials.
-    // Transpiration is limited in the perfectly isohydric case above the
-    // critical threshold for embolism given by min_lwp.
-    e_supply = MAX(0.0, *ktot * (s->weighted_swp - p->min_lwp));
-
-    // Leaf transpiration (mmol m-2 s-1), i.e. ignoring boundary layer effects!
-    e_demand = MOL_2_MMOL * (m->vpd / m->press) * cw->gsc_leaf[idx] * GSVGSC;
-
-    if (e_demand > e_supply) {
-
-        // Calculate gs (mol m-2 s-1) given supply (Emax)
-        gsv = MMOL_2_MOL * e_supply / (m->vpd / m->press);
-        cw->gsc_leaf[idx] = gsv / GSVGSC;
-
-        // gs cannot be lower than minimum (cuticular conductance)
-        if (cw->gsc_leaf[idx] < p->gs_min) {
-            cw->gsc_leaf[idx] = p->gs_min;
-            gsv = cw->gsc_leaf[idx] * GSVGSC;
-        }
-
-        // Need to calculate an effective beta to use in soil decomposition
-        cw->fwsoil_leaf[idx] = e_supply / e_demand;
-        //cw->fwsoil_leaf[idx] = exp(p->g1 * s->predawn_swp);
-
-        // Re-solve An for the new gs
-        photosynthesis_C3_emax(c, cw, m, p, s, cw->apar_leaf[idx],
-                               cw->fwsoil_leaf[idx]);
-
-    } else {
-
-        cw->fwsoil_leaf[idx] = 1.0;
-        gsv = cw->gsc_leaf[idx] * GSVGSC;
-
-    }
-
-    // Transpiration minus supply by soil/plant (emax) must be drawn from
-    // plant reserve (mmol m-2 s-1). As long as there is sufficient soil water
-    // this will be 0 as gsv will have been recalculated from the supply. There
-    // will only be a deficit when the soil is empty and cuticular conductance
-    // has taken over.
-    cw->trans_deficit_leaf[idx] = MAX(0.0,
-                                      (m->vpd / m->press) * gsv * MOL_2_MMOL -\
-                                       e_supply);
-    return;
-}
-
-double calc_lwp(fluxes *f, state *s, double ktot, double transpiration) {
-
-    double lwp;
-
-    if (ktot > 0.0) {
-        lwp = s->weighted_swp - (transpiration / ktot);
-    } else {
-        lwp = s->weighted_swp;
-    }
-
-    // Set lower limit to LWP
-    if (lwp < -20.0) {
-        lwp = -20.0;
-    }
-
-    return (lwp);
-}
 
 void unpack_solar_geometry(canopy_wk *cw, control *c) {
 

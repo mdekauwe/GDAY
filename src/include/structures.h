@@ -48,7 +48,10 @@ typedef struct {
     int   water_stress;
     int   nonstomatal_limitation; /* also scale Vcmax/Jmax by beta */
     int   water_balance;
-    int   water_store;
+    int   water_store;       /* retired with Emax, must be false */
+    int   gs_opt_search;     /* GS_OPT_FLAT or GS_OPT_GOLDEN */
+    int   root_radial_resistance; /* include the root radial resistance in
+                                     the layer uptake weights (SPA) */
     int   num_days;
     int   total_num_days;
     char  git_code_ver[STRING_LENGTH];
@@ -176,7 +179,7 @@ typedef struct {
     double predawn_swp;     /* MPa */
     double midday_lwp;     /* MPa */
     double lwp;
-    double midday_xwp;     // MPa
+    double midday_plc;     /* midday loss of xylem conductance (%) */
 } state;
 
 typedef struct {
@@ -382,13 +385,25 @@ typedef struct {
     double root_density; /* g biomass m-3*/
     double max_depth;    /* (m) */
     double root_resist;
-    double min_lwp;         /* minimum leaf water potential (MPa) */
     double gs_min;
-    double kp;
-    double p50;
-    double plc_shape;
-    double capac;
-    double plc_dead;
+
+    /* gs_opt (Sperry profit maximisation), hydraulics */
+    double root_psi_crit;    /* water potential at which roots stop taking
+                                up water, sets the layer uptake weights
+                                (MPa), JULES root_psi_crit (was min_lwp) */
+    double kp;               /* maximum plant (xylem) hydraulic conductance
+                                per unit leaf area (mmol m-2 s-1 MPa-1),
+                                JULES kmax_pft */
+    double p50;              /* xylem water potential at 50% loss of
+                                conductance (MPa) */
+    double p88;              /* ... and at 88% (MPa) */
+    double kcrit_frac;       /* loss of conductance at which the xylem fails,
+                                kcrit = (1 - kcrit_frac) kp (-) */
+    double gs_opt_gl_max;    /* max leaf conductance for H2O (m s-1), <= 0
+                                for no cap, JULES som_gl_max */
+    int    gs_opt_n_sample;  /* Ci samples, flat search */
+    int    gs_opt_n_prescan; /* Ci samples, golden search prescan */
+    int    gs_opt_n_golden;  /* golden section iterations */
 
     /* not shared via cmd line */
     double *potA;
@@ -718,7 +733,7 @@ typedef struct {
     double omega_leaf[2];   /* leaf decoupling coefficient (-) */
     double tleaf[2];        /* leaf temperature (deg C) */
     double lwp_leaf[2];     /* leaf water potential (MPa) */
-    double fwsoil_leaf[2];  /* Effective beta */
+    double fwsoil_leaf[2];  /* gs_opt water stress factor, A / A(wet soil) */
     double an_canopy;       /* canopy net photosynthesis (umol m-2 s-1) */
     double rd_canopy;       /* canopy respiration in the light (umol m-2 s-1) */
     double gsc_canopy;      /* canopy stomatal conductance to CO2 (mol m-2 s-1) */
@@ -747,24 +762,10 @@ typedef struct {
     double *ele_store;      /* Array to hold elevations */
     double *df_store;       /* Array to hold diffuse fractions */
 
-    // Used in the hydraulics calculations when water is limiting //
-    double ts_Cs;           // Temporary variable to store Cs //
-    double ts_vcmax;        // Temporary variable to store vcmax //
-    double ts_km;           // Temporary variable to store km //
-    double ts_gamma_star;   // Temporary variable to store gamma_star //
-    double ts_rd;           // Temporary variable to store rd //
-    double ts_jmax;         // Temporary variable to store jmax //
-
-    // Capacitance stuff
-    double plant_k;
-    double xylem_psi;
-    double plant_water0;
-    double plant_water;
-    double trans_deficit_leaf[2];
-    double trans_deficit_canopy;
-    int    not_dead;
-    double death_year;
-    double death_doy;
+    /* gs_opt */
+    double kl_leaf[2];      /* xylem conductance at the leaf water potential
+                               (mmol m-2 s-1 MPa-1, per unit leaf area) */
+    double kl_canopy;       /* ... canopy mean */
 
 } canopy_wk;
 

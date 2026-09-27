@@ -70,6 +70,8 @@
 #define SOIL_EVAP_OR 2
 #define CANOPY_EVAP_GDAY 0
 #define CANOPY_EVAP_JULES 1
+#define GS_OPT_FLAT 1
+#define GS_OPT_GOLDEN 2
 
 #define SAXTON 0
 #define VAN_GENUCHTEN 1

@@ -121,10 +121,8 @@ void write_output_header(control *c, FILE **fp) {
     /* Misc */
     fprintf(*fp, "predawn_swp,");
     fprintf(*fp, "midday_lwp,");
-    fprintf(*fp, "midday_xwp,");
+    fprintf(*fp, "midday_plc,");
     fprintf(*fp, "leafretransn,");
-    fprintf(*fp, "dead_year,");
-    fprintf(*fp, "dead_doy,");
     fprintf(*fp, "theta0,");
     fprintf(*fp, "theta1,");
     fprintf(*fp, "theta2,");
@@ -272,10 +270,8 @@ void write_daily_outputs_ascii(control *c, canopy_wk *cw, fluxes *f, state *s,
     /* Misc */
     fprintf(c->ofp, "%.10f,", s->predawn_swp);
     fprintf(c->ofp, "%.10f,", s->midday_lwp);
-    fprintf(c->ofp, "%.10f,", s->midday_xwp);
+    fprintf(c->ofp, "%.10f,", s->midday_plc);
     fprintf(c->ofp, "%.10f,", f->leafretransn);
-    fprintf(c->ofp, "%.10f,", cw->death_year);
-    fprintf(c->ofp, "%.10f,", cw->death_doy);
 
     if (c->water_balance == HYDRAULICS) {
         fprintf(c->ofp, "%.10f,", s->water_frac[0]);

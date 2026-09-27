@@ -15,6 +15,36 @@
 * =========================================================================== */
 #include "photosynthesis.h"
 
+void leaf_photo_params(control *c, canopy_wk *cw, params *p, state *s,
+                       double *gamma_star, double *km, double *vcmax,
+                       double *jmax, double *J, double *Vj, double *rd) {
+    //
+    //  Photosynthetic parameters of the current big leaf (sunlit or shaded)
+    //  at its leaf temperature, scaled from the single leaf to the big leaf
+    //  (Wang & Leuning 1998 appendix C), and the electron transport rate for
+    //  the leaf's absorbed PAR. Shared by the Medlyn and gs_opt models.
+    //
+    double tleaf = cw->tleaf[cw->ileaf];
+    double scalex = cw->scalex[cw->ileaf];
+
+    *gamma_star = calc_co2_compensation_point(p, tleaf);
+    *km = calculate_michaelis_menten(p, tleaf);
+    calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, jmax, vcmax);
+
+    // leaf respiration in the light, Collatz et al. 1991
+    *rd = 0.015 * *vcmax;
+
+    // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C
+    *vcmax *= scalex;
+    *jmax *= scalex;
+    *rd *= scalex;
+
+    // Rate of electron transport, which is a function of absorbed PAR
+    calc_electron_transport_rate(p, cw->apar_leaf[cw->ileaf], *jmax, J, Vj);
+
+    return;
+}
+
 void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     //
     //  Calculate photosynthesis following Farquhar & von Caemmerer, this is an
@@ -29,36 +59,18 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     //  * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
     //
 
-    double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0, par;
-    double Ci, Ac, Aj, Cs, tleaf, dleaf, dleaf_kpa;
-    //double Rd0 = 0.92;  Dark respiration rate make a paramater!
+    double gamma_star, km, jmax, vcmax, rd, J, Vj, gs_over_a, g0;
+    double Ci, Ac, Aj, Cs, dleaf, dleaf_kpa;
     int    idx, error = FALSE;
     double g0_zero = 1E-09; // numerical issues, don't use zero
-    double scalex = cw->scalex[cw->ileaf];
 
     // unpack some stuff
     idx = cw->ileaf;
-    par = cw->apar_leaf[idx];
     Cs = cw->Cs;
-    tleaf = cw->tleaf[idx];
     dleaf = cw->dleaf;
 
-    // Calculate photosynthetic parameters from leaf temperature.
-    gamma_star = calc_co2_compensation_point(p, tleaf);
-    km = calculate_michaelis_menten(p, tleaf);
-    calculate_jmaxt_vcmaxt(c, cw, p, s, tleaf, &jmax, &vcmax);
-
-    // leaf respiration in the light, Collatz et al. 1991
-    rd = 0.015 * vcmax;
-    // rd = calc_leaf_day_respiration(tleaf, Rd0);
-
-    // Scaling from single leaf to canopy, see Wang & Leuning 1998 appendix C
-    vcmax *= scalex;
-    jmax *= scalex;
-    rd *= scalex;
-
-    // Rate of electron transport, which is a function of absorbed PAR
-    calc_electron_transport_rate(p, par, jmax, &J, &Vj);
+    leaf_photo_params(c, cw, p, s, &gamma_star, &km, &vcmax, &jmax, &J, &Vj,
+                      &rd);
 
     // Deal with extreme cases
     if (jmax <= 0.0 || vcmax <= 0.0 || isnan(J)) {
@@ -113,17 +125,6 @@ void photosynthesis_C3(control *c, canopy_wk *cw, met *m, params *p, state *s) {
         cw->an_leaf[idx] = MIN(Ac, Aj) - rd;
         cw->rd_leaf[idx] = rd;
         cw->gsc_leaf[idx] = MAX(g0, g0 + gs_over_a * cw->an_leaf[idx]);
-    }
-
-    // Pack calculated values into a temporary array as we may need to
-    // recalculate A if water is limiting, i.e. the Emax case below
-    if (c->water_balance == HYDRAULICS) {
-        cw->ts_Cs = Cs;
-        cw->ts_vcmax = vcmax;
-        cw->ts_jmax = jmax;
-        cw->ts_km = km;
-        cw->ts_gamma_star = gamma_star;
-        cw->ts_rd = rd;
     }
 
     return;
@@ -186,66 +187,6 @@ int solve_ci(double g0, double gs_over_a, double rd, double Cs,
     *Ci = quad(A, B, C, large_root, &error);
 
     return (error);
-}
-
-void photosynthesis_C3_emax(control *c, canopy_wk *cw, met *m, params *p,
-                            state *s, double par, double water_stress) {
-    //
-    //  Calculate photosynthesis as above but for here we are resolving Ci and
-    //  A for a given gs (Jarvis style) to get the Emax solution.
-    //
-
-    double gamma_star, km, jmax, vcmax, rd, Vj, gs;
-    double A, B, C, Ac, Aj, Cs, J;
-    int    idx, qudratic_error = FALSE, large_root;
-
-    // Unpack calculated properties from first photosynthesis solution
-    idx = cw->ileaf;
-    Cs = cw->ts_Cs;
-    vcmax = cw->ts_vcmax;
-    km = cw->ts_km;
-    gamma_star = cw->ts_gamma_star;
-    rd = cw->ts_rd;
-    jmax = cw->ts_jmax;
-    qudratic_error = FALSE;
-    large_root = FALSE;
-    J = quad(p->theta, -(p->alpha_j * par + jmax),
-             p->alpha_j * par * jmax, large_root, &qudratic_error);
-    Vj = J / 4.0;
-    gs = cw->gsc_leaf[idx];
-
-    /* Solution when Rubisco rate is limiting */
-    //A = 1.0 / gs;
-    //B = (0.0 - vcmax) / gs - Cs - km;
-    //C = vcmax * (Cs - gamma_star);
-
-    // From MAESTRA, not sure of the reason for the difference.
-    A = 1.0 / gs;
-    B = (rd - vcmax) / gs - Cs - km;
-    C = vcmax * (Cs - gamma_star) - rd * (Cs + km);
-
-    qudratic_error = FALSE;
-    large_root = FALSE;
-    Ac = quad(A, B, C, large_root, &qudratic_error);
-    if (qudratic_error) {
-        Ac = 0.0;
-    }
-
-    // Solution when electron transport rate is limiting
-    A = 1.0 / gs;
-    B = (rd - Vj) / gs - Cs - 2.0 * gamma_star;
-    C = Vj * (Cs - gamma_star) - rd * (Cs + 2.0 * gamma_star);
-
-    qudratic_error = FALSE;
-    large_root = FALSE;
-    Aj = quad(A, B, C, large_root, &qudratic_error);
-    if (qudratic_error) {
-        Aj = 0.0;
-    }
-
-    cw->an_leaf[idx] = MIN(Ac, Aj);
-
-    return;
 }
 
 double calc_co2_compensation_point(params *p, double tleaf) {

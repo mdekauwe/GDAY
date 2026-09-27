@@ -88,11 +88,11 @@ void initialise_soils_sub_daily(control *c, fluxes *f, params *p, state *s) {
             f->soil_conduct[i] = soil_conductivity(p, i, s->water_frac[i]);
         }
 
-        calc_soil_root_resistance(f, p, s);
+        calc_soil_root_resistance(c, f, p, s);
         calc_soil_water_potential(f, p, s);
 
         /* Calculate the weighted soil-water-potential */
-        calc_water_uptake_per_layer(f, p, s);
+        calc_water_uptake_per_layer(c, f, p, s);
     }
 
     free(fsoil_top);
@@ -119,8 +119,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
                                        met *m, nrutil *nr, params *p, state *s,
                                        int daylen, double trans,
                                        double omega_leaf, double rnet_leaf,
-                                       double et_deficit, double year,
-                                       double doy) {
+                                       double year, double doy) {
     /*
         Calculate the water balance (including all water fluxes).
         - we are using all the hydraulics instead
@@ -156,16 +155,13 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
 
 #ifdef CHECK_WATER_BALANCE
     // Debug/test build: verify each timestep closes (see tests/)
-    double wb_store0 = 0.0, wb_store1 = 0.0, wb_resid, plant0 = 0.0;
+    double wb_store0 = 0.0, wb_store1 = 0.0, wb_resid;
     int    wb_i;
     if (c->water_balance == HYDRAULICS) {
         for (wb_i = 0; wb_i < p->soil_layers; wb_i++)
             wb_store0 += s->water_frac[wb_i] * s->thickness[wb_i] * M_TO_MM;
     }
     wb_store0 += s->canopy_store;
-    if (c->water_store) {
-        plant0 = cw->plant_water;
-    }
 #endif
 
     if (c->water_balance == HYDRAULICS) {
@@ -219,11 +215,11 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         }
 
         calc_soil_water_potential(f, p, s);
-        calc_soil_root_resistance(f, p, s);
+        calc_soil_root_resistance(c, f, p, s);
 
         // If we have leaves we are transpiring
         if (s->lai > 0.0) {
-            calc_water_uptake_per_layer(f, p, s);
+            calc_water_uptake_per_layer(c, f, p, s);
         }
 
         // Calculates the thickness of the top dry layer and determines water
@@ -310,13 +306,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
 
     }
 
-    if (c->water_store) {
-        // Do we need to take any water from the plant store? This function
-        // also checks to for drought-induced mortality
-        update_plant_water_store(cw, f, p, s, &transpiration, &et, et_deficit,
-                                 year, doy);
-    }
-
     sum_hourly_water_fluxes(f, soil_evap, transpiration, et, interception,
                             surface_water, canopy_evap, runoff, omega_leaf,
                             m->rain);
@@ -326,10 +315,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         for (wb_i = 0; wb_i < p->soil_layers; wb_i++)
             wb_store1 += s->water_frac[wb_i] * s->thickness[wb_i] * M_TO_MM;
         wb_store1 += s->canopy_store;
-        if (c->water_store) {
-            // water drawn from the plant store is included in et
-            wb_store1 += cw->plant_water - plant0;
-        }
         wb_resid = m->rain - (et + runoff) - (wb_store1 - wb_store0);
         if (fabs(wb_resid) > 1E-08) {
             fprintf(stderr, "Water balance not closed: %d %d %.10f mm\n",
@@ -608,7 +593,7 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     return;
 }
 
-void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
+void calc_soil_root_resistance(control *c, fluxes *f, params *p, state *s) {
 
     /* head of pressure (MPa/m) */
     double head = 0.009807;
@@ -638,9 +623,13 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
             rsum += 1.0 / soilR1;
 
             // second component of below ground resistance related to root
-            // hydraulics
-            soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i]);
-            //f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
+            // hydraulics (SPA). JULES (Bonan et al. 2014 eqn A23) uses only
+            // the soil to root term.
+            if (c->root_radial_resistance) {
+                soilR2 = p->root_resist / (s->root_mass[i] * s->thickness[i]);
+            } else {
+                soilR2 = 0.0;
+            }
             f->soilR[i] = soilR1 + soilR2; /* MPa s m2 mmol-1 */
         }
     }
@@ -651,24 +640,27 @@ void calc_soil_root_resistance(fluxes *f, params *p, state *s) {
 }
 
 
-void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
+void calc_water_uptake_per_layer(control *c, fluxes *f, params *p, state *s) {
     //
     // Determine which layer water is extracted from. This is achieved by
     // roughly estimating the maximum rate of water supply from each rooted
-    // soil layer, using SWP and hydraulic resistance of each layer. Actual
-    // water from each layer is determined using the estimated value as a
-    // weighted factor.
+    // soil layer, using SWP and hydraulic resistance of each layer, with the
+    // roots at root_psi_crit. Actual water from each layer is determined
+    // using the estimated value as a weighted factor, and the root zone
+    // water potential (weighted_swp, used by gs_opt) is the uptake weighted
+    // mean. This is also JULES' fsmc_mod = 2 weighting (smc_ext).
     //
 
     int    i;
-    double total_est_evap;
+    double total_est_evap, total_depth;
 
     total_est_evap = 0.0;
     s->weighted_swp = 0.0;
 
     // Estimate max transpiration from gradient-gravity / soil resistance
     for (i = 0; i < s->rooted_layers; i++) {
-        f->est_evap[i] = MAX(0.0, (f->swp[i] - p->min_lwp) / f->soilR[i]);
+        f->est_evap[i] = MAX(0.0, (f->swp[i] - p->root_psi_crit) /
+                                  f->soilR[i]);
         total_est_evap += f->est_evap[i];
     }
 
@@ -682,11 +674,16 @@ void calc_water_uptake_per_layer(fluxes *f, params *p, state *s) {
     } else {
         /*
         ** No water was evaporated, i.e. every rooted layer is drier than
-        ** min_lwp. Use the unweighted mean, otherwise weighted_swp would stay
-        ** at 0 MPa and the dry soil would look saturated.
+        ** root_psi_crit. Weight by layer thickness (as JULES), otherwise
+        ** weighted_swp would stay at 0 MPa and the dry soil would look
+        ** saturated.
         */
+        total_depth = 0.0;
         for (i = 0; i < s->rooted_layers; i++) {
-            f->fraction_uptake[i] = 1.0 / (double)s->rooted_layers;
+            total_depth += s->thickness[i];
+        }
+        for (i = 0; i < s->rooted_layers; i++) {
+            f->fraction_uptake[i] = s->thickness[i] / total_depth;
             s->weighted_swp += f->swp[i] * f->fraction_uptake[i];
         }
     }
@@ -1077,189 +1074,6 @@ void update_soil_water_storage(fluxes *f, params *p, state *s,
     s->pawater_root = root_zone_total;
 
 
-
-    return;
-}
-
-double calc_xylem_water_potential(double rwc, double capac) {
-    //
-    // Calculate the stem xylem water potential (P), based on relative water
-    // content (RWC) and capacitance.
-    //
-    // Parameters:
-    // ----------
-    // rwc : double
-    //    relative water content [-]
-    // capac : double
-    //    capacitance (MPa per unit relative water content)
-    //
-    // Returns:
-    // --------
-    // xylem_psi : double
-    //  xylem water potential (MPa)
-    //
-    double psi1, psi2, xylem_psi, arg1, arg2, arg3;
-    double break0 = 0.5;    // determines shape of asymptote function
-    double hmshape = 0.99;  // determines shape of hyperbolic minimum
-
-    // safety
-    if (rwc > 1.0) {
-        rwc = 1.0;
-    }
-
-    // linear dependence over most of the range.
-    psi1 = -(1.0 - rwc) / capac;
-
-    // when approaching zero rwc, the water potential has to go to infinity.
-    psi2 = -log(rwc / break0);
-    if (psi2 < 0.0) {
-        psi2 = 0.0;
-    }
-    psi2 = -psi2;
-
-    // hyperbolic minimum
-    arg1 = psi1 + psi2;
-    arg2 = (psi1 + psi2) * (psi1 + psi2);
-    arg3 = 4.0 * hmshape * psi1 * psi2;
-    xylem_psi = (arg1 - sqrt(arg2 - arg3)) / (2.0 * hmshape);
-
-    return (xylem_psi);
-}
-
-double calc_relative_weibull(double p, double p50, double sx) {
-    //
-    // Calculate the relative conductivity, given xylem water potential (p),
-    // the p50, and the shape parameter (sx)
-    //
-    // Parameters:
-    // ----------
-    // p : double
-    //    xylem water potential (MPa)
-    // p50 : double
-    //    xylem water potential where 50% of the conductivity is lost
-    // sx : double
-    //    slope paramater: derivative (% MPa-1) at x (e.g. s50 is the slope
-    //    of the curve at P50). Higher values thus indicate steeper response
-    //    to xylem pressure
-    //
-    // Reference:
-    // ---------
-    // * Ogle et al. (2009) Ecological Applications, 19, 577-581.
-    //
-    // NB. Ogle et al. write the curve in terms of positive tensions, so the
-    // shape exponent uses |p50|, p / p50 is already positive.
-    double v, relative_weibull;
-
-    if (p >= 0.0) {
-        return (1.0);
-    }
-
-    v = -50.0 * log(0.5);
-    relative_weibull = pow(0.5, pow((p / p50), (fabs(p50) * sx) / v));
-
-    return (relative_weibull);
-}
-
-double exchange_plant_soil_water(fluxes *f, params *p, state *s,
-                                 double delta) {
-    //
-    // Move water (mm) between the soil and the plant store: delta > 0 is
-    // root uptake to refill the store, delta < 0 is water the store releases
-    // (i.e. transpiration supplied by the store rather than the soil, so the
-    // soil loses correspondingly less). Uses the same layer weighting as
-    // transpiration and can't take more than a layer holds. Returns the
-    // amount actually moved (mm).
-    //
-    int    i;
-    double want, take, moved = 0.0, water;
-
-    for (i = 0; i < s->rooted_layers; i++) {
-        want = delta * MM_TO_M * f->fraction_uptake[i];
-        water = s->water_frac[i] * s->thickness[i];
-        take = (want > 0.0) ? MIN(want, water) : want;
-        s->water_frac[i] = (water - take) / s->thickness[i];
-        moved += take;
-    }
-
-    return (moved * M_TO_MM);
-}
-
-void update_plant_water_store(canopy_wk *cw, fluxes *f, params *p, state *s,
-                              double *transpiration, double *et,
-                              double et_deficit, double year, double doy) {
-    //
-    // NB. water in the store is conserved: refilling it is root uptake from
-    // the soil, and transpiration supplied from it is only what it holds
-    // (above a 5% floor).
-    //
-
-    // 5 % of full hydration
-    double min_value = 0.05 * cw->plant_water0;
-    double ratio, water_flux, stem_relk, arg1, arg2, target, supplied;
-    double conv;
-
-    // Under normal circumstances, i.e et_deficit = 0, the assumption is that
-    // they will fill up the stem immediately (even if near empty).
-    // stem water potential is soilwp - transpiration / (2*k)
-    if (et_deficit * MOLE_WATER_2_G_WATER * SEC_2_HLFHR < 1E-06) {
-
-        // mm 30 min-1 -> mmol m-2 s-1
-        conv = KG_AS_G * G_WATER_2_MOL_WATER * MOL_2_MMOL * HLFHR_2_SEC;
-        water_flux = *transpiration * conv;
-
-        arg1 = s->weighted_swp;
-        if (s->lai > 0.0 && cw->plant_k > 0.0) {
-            arg2 = water_flux / (2.0 * cw->plant_k * s->lai);
-        } else {
-            arg2 = 0.0;
-        }
-        cw->xylem_psi = arg1 - arg2;
-
-        // refill (or drain) the store towards the water content in
-        // equilibrium with the xylem water potential, the water comes from
-        // (or goes back to) the soil
-        target = cw->plant_water0 * (1.0 + cw->xylem_psi * p->capac);
-        target = MAX(min_value, MIN(cw->plant_water0, target));
-        cw->plant_water += exchange_plant_soil_water(f, p, s,
-                                                     target - cw->plant_water);
-
-    } else {
-
-        // now reduce stem water content even further by amount of
-        // transpiration that is not sustained by soil water uptake, but the
-        // store can only supply what it holds above the floor (which avoids
-        // stopping the simulation when we are "dead", i.e. xylem_psi is
-        // very low)
-        //
-        // mol m-2 s-1 to mm/30min
-        conv = MOLE_WATER_2_G_WATER * G_TO_KG * SEC_2_HLFHR;
-        supplied = MAX(0.0, MIN(et_deficit * conv,
-                                cw->plant_water - min_value));
-        cw->plant_water -= supplied;
-
-        // the transpiration we couldn't supply doesn't happen
-        *transpiration += supplied;
-        *et += supplied;
-
-        // and recalculate corresponding xylem water potential
-        ratio = cw->plant_water / cw->plant_water0;
-        cw->xylem_psi = calc_xylem_water_potential(ratio, p->capac);
-
-    }
-
-    // stem relative conductivity (0-1)
-    stem_relk = calc_relative_weibull(cw->xylem_psi, p->p50, p->plc_shape);
-
-    // is the plant dead? Going to store this information and we can work
-    // out how to write it to a file later.
-    if (stem_relk < (1.0 - p->plc_dead) && cw->not_dead) {
-        cw->not_dead = FALSE;
-        cw->death_year = (double)year;
-        cw->death_doy = (double)doy;
-    }
-
-    // Update plant conductance
-    cw->plant_k = stem_relk * p->kp;
 
     return;
 }

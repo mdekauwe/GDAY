@@ -11,8 +11,9 @@ int    calc_electron_transport_rate(params *, double, double, double *,
                                     double *);
 int    solve_ci(double, double, double, double, double, double, double,
                 double *);
-void   photosynthesis_C3_emax(control *, canopy_wk *, met *m, params *,
-                              state *, double, double);
+void   leaf_photo_params(control *, canopy_wk *, params *, state *, double *,
+                          double *, double *, double *, double *, double *,
+                          double *);
 double calc_co2_compensation_point(params *, double);
 double calculate_michaelis_menten(params *, double);
 void   calculate_jmaxt_vcmaxt(control *, canopy_wk *, params *, state *,

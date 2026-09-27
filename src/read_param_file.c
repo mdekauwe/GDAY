@@ -457,6 +457,25 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown canopy_evap_model option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "gs_opt_search")) {
+        if (strcasecmp(temp, "flat") == 0)
+            c->gs_opt_search = GS_OPT_FLAT;
+        else if (strcasecmp(temp, "golden") == 0)
+            c->gs_opt_search = GS_OPT_GOLDEN;
+        else {
+            fprintf(stderr, "Unknown gs_opt_search option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "root_radial_resistance")) {
+        if (strcasecmp(temp, "false") == 0)
+            c->root_radial_resistance = FALSE;
+        else if (strcasecmp(temp, "true") == 0)
+            c->root_radial_resistance = TRUE;
+        else {
+            fprintf(stderr, "Unknown root_radial_resistance option: %s\n",
+                    temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "soil_hydraulics")) {
         if (strcasecmp(temp, "saxton") == 0)
             c->soil_hydraulics = SAXTON;
@@ -678,8 +697,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->branch0 = atof(value);
     } else if (MATCH("params", "branch1")) {
         p->branch1 = atof(value);
-    } else if (MATCH("params", "capac")) {
-        p->capac = atof(value);
     } else if (MATCH("params", "c_alloc_bmax")) {
         p->c_alloc_bmax = atof(value);
     } else if (MATCH("params", "c_alloc_bmin")) {
@@ -752,8 +769,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->kext = atof(value);
     } else if (MATCH("params", "bretrans")) {
         p->bretrans = atof(value);
-    } else if (MATCH("params", "plc_dead")) {
-        p->plc_dead = atof(value);
     } else if (MATCH("params", "fmleaf")) {
         p->fmleaf = atof(value);
     } else if (MATCH("params", "fmroot")) {
@@ -768,6 +783,18 @@ int handler(char *section, char *name, char *value, control *c,
         p->dcatch_dlai = atof(value);
     } else if (MATCH("params", "rain_area_frac")) {
         p->rain_area_frac = atof(value);
+    } else if (MATCH("params", "p88")) {
+        p->p88 = atof(value);
+    } else if (MATCH("params", "kcrit_frac")) {
+        p->kcrit_frac = atof(value);
+    } else if (MATCH("params", "gs_opt_gl_max")) {
+        p->gs_opt_gl_max = atof(value);
+    } else if (MATCH("params", "gs_opt_n_sample")) {
+        p->gs_opt_n_sample = atoi(value);
+    } else if (MATCH("params", "gs_opt_n_prescan")) {
+        p->gs_opt_n_prescan = atoi(value);
+    } else if (MATCH("params", "gs_opt_n_golden")) {
+        p->gs_opt_n_golden = atoi(value);
     } else if (MATCH("params", "leaf_width")) {
         p->leaf_width = atof(value);
     } else if (MATCH("params", "leaf_tau_vis")) {
@@ -936,8 +963,9 @@ int handler(char *section, char *name, char *value, control *c,
         p->max_intercep_lai = atof(value);
     } else if (MATCH("params", "measurement_temp")) {
         p->measurement_temp = atof(value);
-    } else if (MATCH("params", "min_lwp")) {
-        p->min_lwp = atof(value);
+    } else if ((MATCH("params", "min_lwp")) ||
+               (MATCH("params", "root_psi_crit"))) {
+        p->root_psi_crit = atof(value);
     } else if (MATCH("params", "ncbnew")) {
         p->ncbnew = atof(value);
     } else if (MATCH("params", "ncbnewz")) {
@@ -1008,8 +1036,6 @@ int handler(char *section, char *name, char *value, control *c,
         p->prime_z = atof(value);
     } else if (MATCH("params", "p50")) {
         p->p50 = atof(value);
-    } else if (MATCH("params", "plc_shape")) {
-        p->plc_shape = atof(value);
     } else if (MATCH("params", "qs")) {
         p->qs = atof(value);
     } else if (MATCH("params", "r0")) {
