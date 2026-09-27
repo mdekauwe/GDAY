@@ -808,6 +808,11 @@ typedef struct {
     double tair_canopy;     /* canopy air temperature (deg C) and VPD (Pa)
                                the leaves saw */
     double vpd_canopy;
+    double dtc_prev, dec_prev;  /* canopy air - reference T (K) and vapour
+                                   pressure (Pa) of the last daytime step,
+                                   to start the canopy air iteration */
+    double cs_leaf[2], dleaf_leaf[2];  /* each big leaf's Cs and VPD, kept
+                                          between canopy air passes */
     double gbv_leaf[2];     /* big leaf boundary layer conductance for H2O
                                from the last energy balance (mol m-2 s-1) */
 

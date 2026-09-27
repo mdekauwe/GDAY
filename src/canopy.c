@@ -101,8 +101,11 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             ta_ref = m->tair;
             vpd_ref = m->vpd;
             ea_ref = calc_sat_water_vapour_press(ta_ref) - vpd_ref;
-            tc = ta_ref;
-            ec = ea_ref;
+            // start from the last daytime step's canopy air offsets, as the
+            // canopy air changes slowly between half hours
+            tc = ta_ref + (c->canopy_air_space ? cw->dtc_prev : 0.0);
+            ec = MIN(ea_ref + (c->canopy_air_space ? cw->dec_prev : 0.0),
+                     calc_sat_water_vapour_press(tc));
             H = LE = 0.0;          /* neutral for the first pass */
             n_air = c->canopy_air_space ? CANOPY_AIR_ITERMAX : 1;
             rn_ref[SUNLIT] = cw->rnet_leaf[SUNLIT];
@@ -134,7 +137,14 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
 
                     /* initialise Tleaf, Cs, dleaf at the leaf surface */
-                    initialise_leaf_surface(cw, m);
+                    // the leaf state carries over between canopy air
+                    // passes; reset only on the first
+                    if (k == 0) {
+                        initialise_leaf_surface(cw, m);
+                    } else {
+                        cw->Cs = cw->cs_leaf[cw->ileaf];
+                        cw->dleaf = cw->dleaf_leaf[cw->ileaf];
+                    }
                     iter = 0;
                     t_lo = -999.9;
                     t_hi = 999.9;
@@ -203,6 +213,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                         }
                         iter++;
                     } /* end of leaf temperature loop */
+                    cw->cs_leaf[cw->ileaf] = cw->Cs;
+                    cw->dleaf_leaf[cw->ileaf] = cw->dleaf;
 
                     /* the gs_opt water stress factor, if the leaf transpired
                        (the last canopy air iteration's is kept) */
@@ -244,6 +256,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             } /* end of canopy air loop */
             cw->tair_canopy = m->tair;
             cw->vpd_canopy = m->vpd;
+            cw->dtc_prev = tc - ta_ref;
+            cw->dec_prev = ec - ea_ref;
             m->tair = ta_ref;
             m->vpd = vpd_ref;
 

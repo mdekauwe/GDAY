@@ -43,7 +43,8 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
-    cw = (canopy_wk *)malloc(sizeof(canopy_wk));
+    // zeroed: the canopy air iteration starts from state kept in cw
+    cw = (canopy_wk *)calloc(1, sizeof(canopy_wk));
     if (cw == NULL) {
         fprintf(stderr, "canopy wk structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
