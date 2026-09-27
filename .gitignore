@@ -21,3 +21,6 @@ src/version.c.tmp
 # python
 __pycache__/
 *.pyc
+
+# plots are not kept in the repo
+*.png
