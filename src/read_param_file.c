@@ -487,16 +487,6 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown plant_segments option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
-    } else if (MATCH("control", "gs_opt_soil_conductance")) {
-        if (strcasecmp(temp, "false") == 0)
-            c->gs_opt_soil_conductance = FALSE;
-        else if (strcasecmp(temp, "true") == 0)
-            c->gs_opt_soil_conductance = TRUE;
-        else {
-            fprintf(stderr, "Unknown gs_opt_soil_conductance option: %s\n",
-                    temp);
-            exit(EXIT_FAILURE);
-        }
     } else if (MATCH("control", "root_radial_resistance")) {
         if (strcasecmp(temp, "false") == 0)
             c->root_radial_resistance = FALSE;

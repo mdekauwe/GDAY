@@ -58,8 +58,6 @@ typedef struct {
     double psi_rz;     /* root zone water potential (MPa) */
     double kmax;       /* big leaf whole plant xylem conductance (mmol m-2
                           s-1 MPa-1) */
-    double k_soil;     /* soil to root conductance in series ahead of the
-                          plant (same basis), < 0 none */
     double kcrit;
     int    nseg;       /* 1, or root, stem & leaf in series */
     double kseg[N_PLANT_SEG];  /* maximum conductance of each segment */
@@ -173,21 +171,11 @@ static double plant_supply(const leaf_in *in, double e, double psi_rz,
 
         from dpsi_soil/dE = 0, i.e. 1 / k = sum of the segments' 1 / k_s
         with no flow, and k = k(psi_leaf) for a single segment.
-
-        With k_soil the flow first crosses the soil to the root surface
-        (SPA's soil to root conductance at the bulk soil water content), a
-        linear drop psi_rz - E / k_soil: as the soil dries k_soil collapses
-        and so does the whole plant k the profit is costed on.
     */
-    double psi_in = psi_rz, psi_out, k_in, k_out, dpsi_de = 0.0, ks;
+    double psi_in = psi_rz, psi_out, k_in, k_out, dpsi_de = 0.0;
     int    s;
 
-    if (in->k_soil >= 0.0) {
-        ks = MAX(in->k_soil, 1E-12);
-        psi_in = psi_rz - e / ks;
-        dpsi_de = -1.0 / ks;
-    }
-    *psi_stem = psi_in;
+    *psi_stem = psi_rz;
     for (s = 0; s < in->nseg; s++) {
         k_in = weibull_k(psi_in, in->kseg[s], in->bseg[s], in->cseg[s]);
         psi_out = supply_psi_leaf(e, psi_in, in->kseg[s],
@@ -409,7 +397,6 @@ static void setup_plant(control *c, params *p, double kmax, leaf_in *in) {
 
     in->kmax = kmax;
     in->kcrit = (1.0 - p->kcrit_frac) * kmax;
-    in->k_soil = -1.0;
     if (c->plant_segments == N_PLANT_SEG) {
         in->nseg = N_PLANT_SEG;
         for (s = 0; s < N_PLANT_SEG; s++) {
@@ -427,15 +414,6 @@ static void setup_plant(control *c, params *p, double kmax, leaf_in *in) {
     return;
 }
 
-static double leaf_k_soil(control *c, canopy_wk *cw, state *s) {
-    /* the big leaf's share (by leaf area) of the root zone's soil to root
-       conductance, the leaves draw on the soil in parallel; < 0 none */
-    if (!c->gs_opt_soil_conductance || s->k_soil_root < 0.0 || s->lai <= 0.0) {
-        return (-1.0);
-    }
-    return (s->k_soil_root * cw->lai_leaf[cw->ileaf] / s->lai);
-}
-
 static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
                        state *s, double psi_rz, leaf_in *in) {
     double jmax, J, tk;
@@ -450,7 +428,6 @@ static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
     in->press = m->press;
     in->psi_rz = psi_rz;
     setup_plant(c, p, p->kp * cw->lai_leaf[idx], in);
-    in->k_soil = leaf_k_soil(c, cw, s);
 
     // cap on gs for H2O, m s-1 -> mol m-2 s-1, scaled to the big leaf as
     // Vcmax (JULES: som_gl_max * fpar)
@@ -523,7 +500,6 @@ int gs_opt_canopy(control *c, params *p, const gs_opt_canopy_in *cp,
     in.psi_rz = cp->psi_rz;
     in.gsw_max = -1.0;
     setup_plant(c, p, cp->kmax, &in);
-    in.k_soil = cp->k_soil;
     if (in.kmax <= 0.0) {
         closed_state(&in, &best);
     } else {
@@ -557,7 +533,6 @@ double gs_opt_psi_leaf(control *c, canopy_wk *cw, params *p, state *s,
     int     idx = cw->ileaf;
 
     setup_plant(c, p, p->kp * cw->lai_leaf[idx], &in);
-    in.k_soil = leaf_k_soil(c, cw, s);
     if (in.kmax <= 0.0) {
         *kl = p->kp;
         cw->psi_stem_leaf[idx] = s->weighted_swp;
@@ -580,7 +555,6 @@ double gs_opt_beta(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     leaf_state wet;
 
     setup_leaf(c, cw, m, p, s, 0.0, &in);
-    in.k_soil = -1.0;           /* wet soil: no soil limitation */
     if (in.kmax <= 0.0 || in.Vj <= 0.0 || in.vcmax <= 0.0) {
         return (1.0);
     }

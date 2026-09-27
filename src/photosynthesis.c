@@ -54,37 +54,6 @@ static double mate_half_trans(double gsc, void *ctx) {
     return (trans * MOL_2_MMOL);
 }
 
-static double bucket_theta(params *p, state *s) {
-    return (p->theta_wp_root + s->pawater_root / (p->rooting_depth));
-}
-
-static double bucket_k_soil(control *c, params *p, state *s) {
-    /*
-        Soil to root conductance of the bucket (mmol m-2 s-1 MPa-1), SPA's
-        cylindrical root model with the fine roots spread evenly over the
-        rooting depth, at the bucket's water content: it collapses as the
-        soil dries, so the supply (and the stomata) close gradually.
-    */
-    double depth = p->rooting_depth * MM_TO_M, fine_root, root_length;
-
-    if (!c->gs_opt_soil_conductance) {
-        return (-1.0);
-    }
-    /* fine root biomass (g m-2), C x 2, min 20 g as calc_root_distribution */
-    fine_root = MAX(20.0, s->root * TONNES_HA_2_G_M2 * 2.0);
-    root_length = fine_root / depth /
-                  (p->root_density * M_PI * p->root_radius * p->root_radius);
-
-    return (soil_root_conductance(p, soil_conductivity(p, 0, bucket_theta(p, s)),
-                                  root_length, depth));
-}
-
-static double bucket_psi(params *p, state *s) {
-    /* root zone water potential (MPa) of the bucket, from the retention
-       curve (soil_hydraulics) at the root zone water content */
-    return (MIN(0.0, soil_psi_raw(p, 0, bucket_theta(p, s))));
-}
-
 static double mate_gs_opt(control *c, params *p, state *s, mate_half *h,
                           double psi_rz, double *gsc, double *psi_leaf) {
     /*
@@ -93,11 +62,10 @@ static double mate_gs_opt(control *c, params *p, state *s, mate_half *h,
         canopy's plant conductance is kp x LAI, and the hydraulic cost is on
         the peak (midday) transpiration, gs_opt_peak_e x the half-day mean,
         since the xylem sees the peak and the vulnerability curve is
-        nonlinear. The soil to root conductance (bucket_k_soil) is in series
-        with the plant, so the supply tightens as the bucket dries. As a
-        guard, the mean transpiration can't exceed half the bucket's
-        extractable water in each half day, so the GPP chosen is always one
-        the water balance can deliver.
+        nonlinear. The mean transpiration can't exceed what the bucket
+        holds: half of the root zone's extractable water in each half day,
+        so the GPP chosen is one the water balance can deliver (the bucket
+        has no soil to root resistance to limit supply as the soil dries).
     */
     gs_opt_canopy_in cp;
     double ci, e;
@@ -115,7 +83,6 @@ static double mate_gs_opt(control *c, params *p, state *s, mate_half *h,
     cp.psi_rz = psi_rz;
     cp.kmax = p->kp * s->lai;
     cp.e_scale = p->gs_opt_peak_e;
-    cp.k_soil = bucket_k_soil(c, p, s);
     // mm per half day -> mmol m-2 s-1
     cp.e_max = 0.5 * s->pawater_root /
                (MOLE_WATER_2_G_WATER * G_TO_KG * MMOL_2_MOL * h->secs);
@@ -124,6 +91,13 @@ static double mate_gs_opt(control *c, params *p, state *s, mate_half *h,
     return (ci);
 }
 
+static double bucket_psi(params *p, state *s) {
+    /* root zone water potential (MPa) of the bucket, from the retention
+       curve (soil_hydraulics) at the root zone water content */
+    double theta = p->theta_wp_root + s->pawater_root / p->rooting_depth;
+
+    return (MIN(0.0, soil_psi_raw(p, 0, theta)));
+}
 
 void leaf_photo_params(control *c, canopy_wk *cw, params *p, state *s,
                        double *gamma_star, double *km, double *vcmax,

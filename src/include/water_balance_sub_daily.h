@@ -48,7 +48,6 @@ double  soil_theta_at_psi(params *, int, double);
 double  soil_conductivity(params *, int, double);
 void    setup_soil_hydraulics(control *, params *, double *);
 void    setup_soil_retention(control *, params *);
-double  soil_root_conductance(params *, double, double, double);
 void    calc_soil_balance_richards(fluxes *, params *, state *);
 
 #endif /* WATER_BALANCE_SUBDAILY_H */
