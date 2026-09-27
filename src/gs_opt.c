@@ -1,7 +1,8 @@
 /* ============================================================================
 * Stomatal optimisation ("gs_opt"): Sperry et al. (2017) profit maximisation,
-* for the sunlit and shaded big leaves of the sub-daily model with the SPA
-* soil (water_balance = hydraulics). Replaces the Emax scheme.
+* as implemented in De Kauwe et al. (2022), for the sunlit and shaded big
+* leaves of the sub-daily model with the SPA soil (water_balance =
+* hydraulics). Replaces the Emax scheme.
 *
 * At each iteration of the leaf temperature loop the leaf chooses the Ci (and
 * so gs, E and leaf water potential) that maximises
@@ -35,7 +36,9 @@
 * References:
 * -----------
 * * Sperry JS et al. (2017) Plant, Cell & Environment 40: 816–830.
-* * Sabot MEB et al. (2020) New Phytologist 226: 1638-1655.
+* * De Kauwe MG, Sabot MEB, Medlyn BE et al. (2022) Towards species-level
+*   forecasts of drought-induced tree mortality risk. New Phytologist 235:
+*   94-110, https://doi.org/10.1111/nph.18129
 *
 * =========================================================================== */
 #include "gs_opt.h"
