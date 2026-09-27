@@ -123,14 +123,24 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                     }
 
                     if (iter >= itermax) {
-                        fprintf(stderr, "No convergence in canopy loop:\n");
+                        fprintf(stderr, "No convergence in canopy loop: "
+                                "%.0f doy %.0f hod %d leaf %d Tleaf %.2f "
+                                "new %.2f Tair %.2f\n", year, doy, hod,
+                                cw->ileaf, cw->tleaf[cw->ileaf],
+                                cw->tleaf_new, m->tair);
                         exit(EXIT_FAILURE);
                     } else if (fabs(cw->tleaf[cw->ileaf] - cw->tleaf_new) < 0.02) {
                         break;
                     }
 
-                    /* Update temperature & do another iteration */
-                    cw->tleaf[cw->ileaf] = cw->tleaf_new;
+                    /*
+                    ** Update temperature & do another iteration. Under-relax
+                    ** (move half way to the energy balance value), which
+                    ** damps oscillation for large leaves / low wind without
+                    ** changing the converged solution.
+                    */
+                    cw->tleaf[cw->ileaf] += 0.5 * (cw->tleaf_new -
+                                                   cw->tleaf[cw->ileaf]);
                     iter++;
                 } /* end of leaf temperature loop */
 
