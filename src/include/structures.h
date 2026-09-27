@@ -56,6 +56,8 @@ typedef struct {
                                 GS_OPT_E_STOMATAL (gs alone, as JULES) */
     int   plant_segments;    /* 1 = single plant conductance, 3 = root, stem
                                 and leaf segments in series */
+    int   gs_opt_soil_conductance; /* gs_opt: soil to root conductance in
+                                      series with the plant (default on) */
     int   root_radial_resistance; /* include the root radial resistance in
                                      the layer uptake weights (SPA) */
     int   num_days;
@@ -180,6 +182,8 @@ typedef struct {
     double *water_frac;
     double initial_water;
     double weighted_swp;
+    double k_soil_root;    /* soil to root conductance of the root zone, SPA
+                              (mmol m-2 s-1 MPa-1, ground area) */
     double dry_thick;   /* Thickness of dry soil layer above water table (m)*/
     int    rooted_layers;
     double predawn_swp;     /* MPa */

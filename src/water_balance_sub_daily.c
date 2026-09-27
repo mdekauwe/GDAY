@@ -593,30 +593,46 @@ void calc_soil_water_potential(fluxes *f, params *p, state *s) {
     return;
 }
 
+double soil_root_conductance(params *p, double k_soil, double root_length,
+                             double thickness) {
+    /*
+    ** Conductance (mmol m-2 s-1 MPa-1, ground area) from the soil to the
+    ** roots of a layer, SPA's cylindrical model: 2 pi L dz K / ln(r_cyl /
+    ** r_root), r_cyl = (pi L)^-1/2 (half the mean distance between roots).
+    ** k_soil (m s-1), root_length (m m-3), thickness (m).
+    */
+    double head = 0.009807;     /* MPa m-1 */
+    double Lsoil, rs, arg1, arg2;
+
+    Lsoil = k_soil / head;      /* m2 s-1 MPa-1 */
+    if (Lsoil < 1e-35 || root_length <= 0.0) {
+        return (0.0);
+    }
+    rs = sqrt(1.0 / (root_length * M_PI));
+    arg1 = log(rs / p->root_radius);
+    arg2 = 2.0 * M_PI * root_length * thickness * Lsoil;
+
+    /* MPa s m2 m-3 -> MPa s m2 mmol-1 */
+    return (1.0 / ((arg1 / arg2) * 1E-6 * 18. * 0.001));
+}
+
 void calc_soil_root_resistance(control *c, fluxes *f, params *p, state *s) {
 
-    /* head of pressure (MPa/m) */
-    double head = 0.009807;
-    double Lsoil, rs, soilR1, soilR2, arg1, arg2, rsum;
+    double soilR1, soilR2, rsum, ksr;
     int    i;
 
     // Store each layers resistance, used in LWP calculatons
     rsum = 0.0;
     for (i = 0; i < s->rooted_layers; i++) {
 
-        /* converts from ms-1 to m2 s-1 MPa-1 */
-        Lsoil = f->soil_conduct[i] / head;
-
-        if (Lsoil < 1e-35) {
+        ksr = soil_root_conductance(p, f->soil_conduct[i],
+                                    s->root_length[i], s->thickness[i]);
+        if (ksr <= 0.0) {
             /* prevent floating point error */
             f->soilR[i] = 1e35;
         } else {
-            rs = sqrt(1.0 / (s->root_length[i] * M_PI));
-            arg1 = log(rs / p->root_radius);
-            arg2 = 2.0 * M_PI * s->root_length[i] * s->thickness[i] * Lsoil;
-
-            /* soil resistance, convert from MPa s m2 m-3 to MPa s m2 mmol-1 */
-            soilR1 = (arg1 / arg2) * 1E-6 * 18. * 0.001;
+            /* soil resistance (MPa s m2 mmol-1) */
+            soilR1 = 1.0 / ksr;
 
             // Need to combine resistances in parallel, but we only want the
             // soil term as the root component is part of the plant resistance
@@ -635,6 +651,8 @@ void calc_soil_root_resistance(control *c, fluxes *f, params *p, state *s) {
     }
 
     f->total_soil_resist = 1.0 / rsum;
+    /* soil only: the root radial term is part of the plant (gs_opt) */
+    s->k_soil_root = rsum;
 
     return;
 }

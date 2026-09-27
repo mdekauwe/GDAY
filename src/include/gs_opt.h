@@ -26,6 +26,8 @@ typedef struct {
     double ca;           /* umol mol-1, upper end */
     double psi_rz;       /* root zone water potential (MPa) */
     double kmax;         /* plant conductance, same area basis as E */
+    double k_soil;       /* soil to root conductance ahead of the plant,
+                            same basis, < 0 none */
     double e_scale;      /* E costed = e_scale x trans(gs) */
     double e_max;        /* trans(gs) can't exceed the soil's supply (mmol
                             m-2 s-1), < 0 no limit */

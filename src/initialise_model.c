@@ -57,6 +57,7 @@ void initialise_control(control *c) {
     c->gs_opt_e = GS_OPT_E_TOTAL;
     c->plant_segments = 1;
     c->root_radial_resistance = TRUE;
+    c->gs_opt_soil_conductance = TRUE;
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
     c->soil_hydraulics = SAXTON;
@@ -574,6 +575,7 @@ void initialise_state(state *s) {
     s->dry_thick = 0.1;
     s->rooted_layers = 0;
     s->predawn_swp = 0.0;
+    s->k_soil_root = -1.0;
     s->midday_lwp = 0.0;
 
     return;
