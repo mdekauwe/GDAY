@@ -196,7 +196,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                           cw->rnet_canopy, year, doy);
 
         if (c->print_options == SUBDAILY && c->spin_up == FALSE) {
-            write_subdaily_outputs_ascii(c, cw, year, doy, hod);
+            write_subdaily_outputs_ascii(c, cw, s, year, doy, hod);
         }
         c->hour_idx++;
         if (cw->elevation > 0.0 && m->par > 20.0) {

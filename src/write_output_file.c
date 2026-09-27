@@ -38,7 +38,8 @@ void write_output_subdaily_header(control *c, FILE **fp) {
     ** Canopy stuff...
     */
     fprintf(*fp, "an_canopy,rd_canopy,gsc_canopy,");
-    fprintf(*fp, "apar_canopy,trans_canopy,tleaf\n");
+    fprintf(*fp, "apar_canopy,trans_canopy,tleaf,");
+    fprintf(*fp, "psi_rootzone,lwp_sun,lwp_sha,kl_canopy,lai_sun\n");
     return;
 }
 
@@ -152,8 +153,8 @@ void write_output_header(control *c, FILE **fp) {
     return;
 }
 
-void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
-                                  double doy, int hod) {
+void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, state *s,
+                                  double year, double doy, int hod) {
     /*
         Write sub-daily canopy fluxes - very basic for now
     */
@@ -165,9 +166,15 @@ void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, double year,
     fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,",
                        cw->an_canopy, cw->rd_canopy, cw->gsc_canopy);
     /* mean of the sunlit & shaded leaves (tleaf_new is stale at night) */
-    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f\n",
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,",
                        cw->apar_canopy, cw->trans_canopy,
                        (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2.0);
+
+    /* plant hydraulics (gs_opt) */
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,%.10f,%.10f\n",
+                       s->weighted_swp, cw->lwp_leaf[SUNLIT],
+                       cw->lwp_leaf[SHADED], cw->kl_canopy,
+                       cw->lai_leaf[SUNLIT]);
 
     return;
 }
