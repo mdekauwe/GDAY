@@ -487,6 +487,15 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown plant_segments option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "root_depth_model")) {
+        if (strcasecmp(temp, "dynamic") == 0)
+            c->root_depth_model = ROOT_DEPTH_DYNAMIC;
+        else if (strcasecmp(temp, "fixed") == 0)
+            c->root_depth_model = ROOT_DEPTH_FIXED;
+        else {
+            fprintf(stderr, "Unknown root_depth_model option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "canopy_ga_model")) {
         if (strcasecmp(temp, "cable") == 0)
             c->canopy_ga_model = CANOPY_GA_CABLE;

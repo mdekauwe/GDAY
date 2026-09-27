@@ -1328,7 +1328,14 @@ void update_roots(control *c, params *p, state *s) {
     //root_biomass = MAX(min_biomass,  305.0 * C_2_BIOMASS);
 
     root_cross_sec_area = M_PI * p->root_radius * p->root_radius;   /* (m2) */
-    root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
+    if (c->root_depth_model == ROOT_DEPTH_FIXED) {
+        // roots throughout the soil column, as JULES (rootd_ft = zsmc): with
+        // prescribed LAI the C pools aren't spun up and the root pool (and
+        // so the dynamic depth) is far too small
+        root_depth = p->max_depth;
+    } else {
+        root_depth = p->max_depth * root_biomass / (p->root_k + root_biomass);
+    }
 
     /*
     ** Number of rooted layers, including the one the root tip is in. This

@@ -72,15 +72,17 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
 
-            // soil supply limit for gs_opt: the water above theta at
-            // root_psi_crit in the rooted layers over this step (m -> mm =
-            // kg m-2 -> mmol m-2 s-1)
+            // soil supply limit for gs_opt: the transpiration GDAY's own
+            // end-of-step soil water cut would let through (m per step ->
+            // mm = kg m-2 -> mmol m-2 s-1), < 0 no limit
+            cw->e_supply = -1.0;
             if (c->water_balance == HYDRAULICS) {
-                cw->e_supply = root_zone_supply(p, s, NULL) * M_TO_MM /
-                               SEC_2_HLFHR / (MOLE_WATER_2_G_WATER * G_TO_KG) *
-                               MOL_2_MMOL;
-            } else {
-                cw->e_supply = -1.0;
+                double tmax = root_zone_supply(f, s);
+                if (tmax >= 0.0) {
+                    cw->e_supply = tmax * M_TO_MM / SEC_2_HLFHR /
+                                   (MOLE_WATER_2_G_WATER * G_TO_KG) *
+                                   MOL_2_MMOL;
+                }
             }
 
             /*

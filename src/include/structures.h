@@ -56,6 +56,7 @@ typedef struct {
                                 GS_OPT_E_STOMATAL (gs alone, as JULES) */
     int   plant_segments;    /* 1 = single plant conductance, 3 = root, stem
                                 and leaf segments in series */
+    int   root_depth_model;  /* ROOT_DEPTH_DYNAMIC or ROOT_DEPTH_FIXED */
     long  n_supply_bind;     /* gs_opt leaf steps limited by the soil
                                 supply (E <= E_supply), reported at the end */
     int   canopy_ga_model;   /* CANOPY_GA_CABLE or CANOPY_GA_SIMPLE, the

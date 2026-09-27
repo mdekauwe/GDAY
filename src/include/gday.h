@@ -31,6 +31,8 @@
 /* Stomatal conductanct models */
 #define MEDLYN 0
 #define GS_OPT 1      /* daily (MATE) profit maximisation */
+#define ROOT_DEPTH_DYNAMIC 0 /* rooting depth from fine root biomass (SPA) */
+#define ROOT_DEPTH_FIXED 1   /* roots throughout max_depth (JULES) */
 #define CANOPY_GA_SIMPLE 0  /* canopy air ga: neutral log law, z0h = z0m */
 #define CANOPY_GA_CABLE 1   /* canopy air ga: CABLE rt1 + stability */
 #define NET_LW_LWDOWN 0    /* net long-wave from LWdown (or Swinbank) */

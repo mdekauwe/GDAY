@@ -227,7 +227,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // Calculates the thickness of the top dry layer and determines water
         // lost in upper layers due to evaporation
         calc_wetting_layers(f, p, s, soil_evap, surface_water);
-        extract_water_from_layers(f, p, s, soil_evap, &transpiration);
+        extract_water_from_layers(f, s, soil_evap, transpiration);
 
         //
         // determines water movement between soil layers due drainage
@@ -687,14 +687,23 @@ void calc_water_uptake_per_layer(control *c, fluxes *f, params *p, state *s) {
         ** its conductivity has collapsed). Weight by layer thickness (as
         ** JULES), otherwise weighted_swp would stay at 0 MPa (or at
         ** psi_close) and the dry soil would look wet.
+        ** The root zone psi is the thickness weighted mean, but the water is
+        ** taken in proportion to what each layer holds: with thickness
+        ** shares a nearly empty layer keeps a full share and, through the
+        ** per-layer supply limit, throttles the plant while deeper layers
+        ** are wet (the JULES gs_opt_dev v3 failure).
         */
+        double total_water = 0.0;
         total_depth = 0.0;
         for (i = 0; i < s->rooted_layers; i++) {
             total_depth += s->thickness[i];
+            total_water += MAX(0.0, s->water_frac[i] * s->thickness[i]);
         }
         for (i = 0; i < s->rooted_layers; i++) {
-            f->fraction_uptake[i] = s->thickness[i] / total_depth;
-            s->weighted_swp += f->swp[i] * f->fraction_uptake[i];
+            s->weighted_swp += f->swp[i] * s->thickness[i] / total_depth;
+            f->fraction_uptake[i] = total_water > 0.0 ?
+                MAX(0.0, s->water_frac[i] * s->thickness[i]) / total_water :
+                s->thickness[i] / total_depth;
         }
     }
 
@@ -982,30 +991,35 @@ void soil_water_store(double time_dummy, double y[], double dydt[],
     return;
 }
 
-double root_zone_supply(params *p, state *s, double *avail) {
+double root_zone_supply(fluxes *f, state *s) {
     /*
-    ** Water the roots can still extract (m): above the water content at
-    ** root_psi_crit, where the layer's uptake weight goes to zero
-    ** (calc_water_uptake_per_layer, JULES fsmc_mod = 2), over the rooted
-    ** layers. avail (optional) gets each layer's share.
+    ** The largest transpiration (m per step) GDAY's own soil water cut lets
+    ** through untouched. extract_water_from_layers moves a layer's shortfall
+    ** to rooted layers that still hold water (roots take water where it
+    ** is), so the cut only binds when the whole root zone is short:
+    **     T_max = the water held in the rooted layers
+    ** (start of this step). gs_opt uses it as E <= E_supply, so it only
+    ** changes the steps the cut would have hit (the JULES gs_opt_dev v4
+    ** principle: the model's own cap, not a new supply definition). With
+    ** min over layers of water_k / f_k instead, a nearly empty layer with
+    ** a small uptake share throttled the whole plant (JULES v3 failure).
+    ** Returns < 0 when there is no limit.
     */
-    double a, total = 0.0;
+    double total = 0.0;
     int    i;
 
-    for (i = 0; i < s->rooted_layers; i++) {
-        a = MAX(0.0, (s->water_frac[i] -
-                      soil_theta_at_psi(p, i, p->root_psi_crit)) *
-                     s->thickness[i]);
-        if (avail != NULL) {
-            avail[i] = a;
-        }
-        total += a;
+    if (s->rooted_layers <= 0) {
+        return (-1.0);
     }
+    for (i = 0; i < s->rooted_layers; i++) {
+        total += MAX(0.0, s->water_frac[i] * s->thickness[i]);
+    }
+    (void)f;
     return (total);
 }
 
-void extract_water_from_layers(fluxes *f, params *p, state *s,
-                               double soil_evap, double *transpiration) {
+void extract_water_from_layers(fluxes *f, state *s, double soil_evap,
+                               double transpiration) {
 
     // Extract soil evaporation and transpiration from the soil profile
 
@@ -1026,36 +1040,32 @@ void extract_water_from_layers(fluxes *f, params *p, state *s,
 
 
     /*
-    ** Water loss from each layer due to transpiration, T x fraction_uptake,
-    ** with the soil supply backstop (gs_opt keeps E <= E_supply, but the
-    ** delivered flux can differ slightly): a layer's extraction beyond the
-    ** water it holds above theta(root_psi_crit) moves to rooted layers with
-    ** spare water, in proportion to it; T is only cut if the whole root
-    ** zone is short, so the reported transpiration is the water extracted.
+    ** Water loss from each layer due to transpiration, T x fraction_uptake.
+    ** A layer's share beyond the water it holds (after soil evaporation) is
+    ** taken from rooted layers with water to spare, in proportion to it:
+    ** roots take water where it is. Only if the whole root zone is short
+    ** does update_soil_water_storage cut T (the backstop; gs_opt keeps E
+    ** within root_zone_supply).
     */
     {
-        double avail[p->core], tj[p->core], t_m, total, excess = 0.0;
-        double spare = 0.0, move;
+        double avail[s->rooted_layers > 0 ? s->rooted_layers : 1];
+        double tj, t_m = transpiration * MM_TO_M, excess = 0.0, spare = 0.0;
 
-        t_m = *transpiration * MM_TO_M;
-        total = root_zone_supply(p, s, avail);
-        if (t_m > total) {
-            t_m = total;
-            *transpiration = t_m * M_TO_MM;
+        for (i = 0; i < s->rooted_layers; i++) {
+            avail[i] = MAX(0.0, s->water_frac[i] * s->thickness[i] -
+                                (i == rr ? soil_evap * MM_TO_M : 0.0));
+            tj = t_m * f->fraction_uptake[i];
+            excess += MAX(0.0, tj - avail[i]);
+            spare += MAX(0.0, avail[i] - tj);
         }
         for (i = 0; i < s->rooted_layers; i++) {
-            tj[i] = t_m * f->fraction_uptake[i];
-            excess += MAX(0.0, tj[i] - avail[i]);
-            spare += MAX(0.0, avail[i] - tj[i]);
-        }
-        move = MIN(excess, spare);
-        for (i = 0; i < s->rooted_layers; i++) {
-            if (tj[i] > avail[i]) {
-                tj[i] = avail[i];
+            tj = t_m * f->fraction_uptake[i];
+            if (tj > avail[i]) {
+                tj = avail[i];
             } else if (spare > 0.0) {
-                tj[i] += move * (avail[i] - tj[i]) / spare;
+                tj += MIN(excess, spare) * (avail[i] - tj) / spare;
             }
-            f->water_loss[i] += tj[i];
+            f->water_loss[i] += tj;
         }
     }
 

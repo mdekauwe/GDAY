@@ -61,6 +61,7 @@ void initialise_control(control *c) {
     c->net_lw_model = NET_LW_LWDOWN;
     c->canopy_ga_model = CANOPY_GA_CABLE;
     c->n_supply_bind = 0;
+    c->root_depth_model = ROOT_DEPTH_DYNAMIC;
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
     c->soil_hydraulics = SAXTON;
