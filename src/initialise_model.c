@@ -309,6 +309,14 @@ void initialise_params(params *p) {
     p->or_sublayer_dz = 0.005;   /* CABLE psm initial sublayer_dz */
     p->litter_dz_per_c = 0.003;  /* CABLE: litter_dz = clitt * 0.003 */
     p->litter_c = -999.9;
+    p->leaf_tau_vis = 0.1;
+    p->leaf_tau_nir = 0.3;
+    p->leaf_refl_vis = 0.1;
+    p->leaf_refl_nir = 0.3;
+    p->leaf_chi = 0.01;
+    p->soil_refl = 0.1;
+    p->shelter = 2.0;            /* CABLE shelrb */
+    p->wind_height = -999.9;
 
 
 }

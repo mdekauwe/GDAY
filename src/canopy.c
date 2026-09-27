@@ -43,6 +43,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
     int    hod, iter = 0, itermax = 100, dummy=0, sunlight_hrs;
     int    n_beta = 0;
     double doy, year, dummy2=0.0, relk, sum_beta = 0.0;
+    double relax, dT, prev_dT;
 
     // Hydraulic conductance of the entire soil-to-leaf pathway
     // - this is only used in hydraulics, so set it to zero.
@@ -79,7 +80,9 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
         /* Is the sun up? */
         if (cw->elevation > 0.0 && m->par > 20.0) {
-            calculate_absorbed_radiation(cw, p, s, m->sw_rad, m->tair);
+            calculate_absorbed_radiation(cw, p, s, m->sw_rad, m->tair,
+                                         m->lwdown);
+            calc_leaf_bl_forced_conduct(cw, p, s, m);
             calculate_top_of_canopy_leafn(cw, p, s);
             calc_leaf_to_canopy_scalar(cw, p, s);
 
@@ -89,6 +92,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                 /* initialise values of Tleaf, Cs, dleaf at the leaf surface */
                 initialise_leaf_surface(cw, m);
                 iter = 0;
+                relax = 0.5;
+                prev_dT = 0.0;
 
                 /* Leaf temperature loop */
                 while (TRUE) {
@@ -135,12 +140,17 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
 
                     /*
                     ** Update temperature & do another iteration. Under-relax
-                    ** (move half way to the energy balance value), which
-                    ** damps oscillation for large leaves / low wind without
+                    ** (move part way to the energy balance value), halving
+                    ** the step whenever it changes sign, which damps the
+                    ** oscillation for large leaves / low wind without
                     ** changing the converged solution.
                     */
-                    cw->tleaf[cw->ileaf] += 0.5 * (cw->tleaf_new -
-                                                   cw->tleaf[cw->ileaf]);
+                    dT = cw->tleaf_new - cw->tleaf[cw->ileaf];
+                    if (dT * prev_dT < 0.0) {
+                        relax = MAX(0.5 * relax, 0.05);
+                    }
+                    prev_dT = dT;
+                    cw->tleaf[cw->ileaf] += relax * dT;
                     iter++;
                 } /* end of leaf temperature loop */
 
@@ -156,6 +166,7 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
         } else {
 
             zero_hourly_fluxes(cw);
+            calculate_soil_net_radiation_night(cw, p, s, m->tair, m->lwdown);
             for (cw->ileaf = 0; cw->ileaf < NUM_LEAVES; cw->ileaf++) {
                 zero_leaf_water_fluxes(c, cw, s);
             }
@@ -249,13 +260,11 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
 
     idx = cw->ileaf;
 
-    // floor avoids a zero conductance when one fraction has ~no leaf area,
-    // its rnet and An are then ~0 too
-    lai_leaf = MAX(cw->lai_leaf[idx], 0.001);
+    lai_leaf = cw->lai_leaf[idx];
 
     penman_leaf_wrapper(m, p, s, cw->tleaf[idx], cw->rnet_leaf[idx],
-                        cw->gsc_leaf[idx], lai_leaf, &transpiration, &LE, &gbc,
-                        &gh, &gv, &omega);
+                        cw->gsc_leaf[idx], cw->gbhu[idx], cw->gradis[idx],
+                        lai_leaf, &transpiration, &LE, &gbc, &gh, &gv, &omega);
 
     /* store in structure */
     cw->trans_leaf[idx] = transpiration;
@@ -264,8 +273,8 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     /*
      * calculate new Cs, dleaf & tleaf
      */
-    // Rn_iso - LE = cp Ma gh (Tleaf - Tair), gh including the radiative
-    // conductance. MAESPA has Tdiff / 4 here, but that makes the converged
+    // Rn_iso - LE = cp Ma gh (Tleaf - Tair), gh including the (big-leaf)
+    // radiative conductance. MAESPA has Tdiff / 4 here, but that makes the converged
     // leaf-air difference 4x too small.
     Tdiff = (cw->rnet_leaf[idx] - LE) / (CP * MASS_AIR * gh);
     cw->tleaf_new = m->tair + Tdiff;

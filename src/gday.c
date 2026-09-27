@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     	exit(EXIT_FAILURE);
     }
 
-    ma = (met_arrays *)malloc(sizeof(met_arrays));
+    ma = (met_arrays *)calloc(1, sizeof(met_arrays));
     if (ma == NULL) {
     	fprintf(stderr, "met arrays structure: Not allocated enough memory!\n");
     	exit(EXIT_FAILURE);
@@ -184,6 +184,7 @@ int main(int argc, char **argv)
     free(ma->tair);
     free(ma->rain);
     free(ma->tsoil);
+    free(ma->lwdown);
     free(ma->co2);
     free(ma->ndep);
     free(ma->nfix);
@@ -1166,6 +1167,7 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
         m->vpd = ma->vpd[c->hour_idx] * KPA_2_PA;
         m->tair = ma->tair[c->hour_idx];
         m->tsoil = ma->tsoil[c->hour_idx];
+        m->lwdown = ma->lwdown != NULL ? ma->lwdown[c->hour_idx] : -999.9;
         m->par = ma->par[c->hour_idx];
         m->sw_rad = ma->par[c->hour_idx] * PAR_2_SW; /* W m-2 */
         m->Ca = ma->co2[c->hour_idx];

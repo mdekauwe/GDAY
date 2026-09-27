@@ -44,7 +44,9 @@
 #define GBHGBC 1.32            /* Ratio of Gbh:Gbc */
 #define SIGMA 5.67e-8          /* Steffan Boltzman constant (W/m2/K4) */
 #define VW 18.05E-6            // partial molal volume of water, m3 mol-1 at 20C
-#define LEAF_EMISSIVITY 0.95   /* Emissivity of thermal radiation by leaf */
+#define LEAF_EMISSIVITY 0.96   /* Emissivity of thermal radiation by leaf,
+                                  Table 3, Wang and Leuning, 1998 */
+#define SOIL_EMISSIVITY 0.94   /* soil, Table 3, Wang and Leuning, 1998 */
 #define KPA_2_PA 1000.
 #define METER_OF_HEAD_TO_MPA (9.81 * KPA_2_MPA) /* Height (m) x gravity (m/s2) = pressure (kPa) */
 #define PA_2_KPA 0.001

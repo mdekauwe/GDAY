@@ -4,7 +4,8 @@
 *
 * Variables used (time, y, x) with y = x = 1:
 *   Tair (K), SWdown (W m-2), Precip (kg m-2 s-1), Qair (kg kg-1),
-*   Psurf (Pa), Wind (m s-1), CO2air (ppm, optional)
+*   Psurf (Pa), Wind (m s-1), CO2air (ppm, optional),
+*   LWdown (W m-2, optional, sub-daily only)
 *
 * The sub-daily model uses the timesteps directly (30 min data required).
 * For the daily model the timesteps are aggregated into the daily am/pm
@@ -168,7 +169,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
 
     int     ncid, dimid, varid, y0, mo0, d0, h0, mi0, s0;
     size_t  ntime, i, i0, i1, n, j, k, nday, step, spd;
-    double *time, *tair, *sw, *precip, *qair, *psurf, *wind, *co2, *lai;
+    double *time, *tair, *sw, *precip, *qair, *psurf, *wind, *co2, *lai, *lwdown;
     double  dt, t0_days, current_yr, per_step, par;
     char    units[NC_MAX_NAME + 1];
     int    *yr_of, *doy_of;
@@ -229,6 +230,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     psurf = read_nc_var(ncid, "Psurf", ntime, TRUE);
     wind = read_nc_var(ncid, "Wind", ntime, TRUE);
     co2 = read_nc_var(ncid, "CO2air", ntime, FALSE);
+    lwdown = c->sub_daily ? read_nc_var(ncid, "LWdown", ntime, FALSE) : NULL;
     lai = c->prescribed_lai ? read_nc_lai(c, ntime, ncid) : NULL;
     nc_close(ncid);
 
@@ -241,6 +243,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     c->num_years = 0;
     current_yr = -999.9;
     ma->lai = NULL;
+    ma->lwdown = NULL;
 
     if (c->sub_daily) {
         c->total_num_days = nday;
@@ -258,6 +261,9 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
         ma->press = alloc_array(n, "press");
         if (lai != NULL) {
             ma->lai = alloc_array(n, "lai");
+        }
+        if (lwdown != NULL) {
+            ma->lwdown = alloc_array(n, "lwdown");
         }
 
         per_step = dt / (NDAYS_IN_YR * 86400.0);
@@ -285,6 +291,9 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
                 ma->press[j] = psurf[i] * PA_2_KPA;
                 if (lai != NULL) {
                     ma->lai[j] = lai[i];
+                }
+                if (lwdown != NULL) {
+                    ma->lwdown[j] = lwdown[i];
                 }
                 if (current_yr != ma->year[j]) {
                     c->num_years++;
@@ -393,7 +402,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     }
 
     free(time); free(tair); free(sw); free(precip); free(qair); free(psurf);
-    free(wind); free(co2); free(lai); free(yr_of); free(doy_of);
+    free(wind); free(co2); free(lai); free(lwdown); free(yr_of); free(doy_of);
     (void)argv;
 
     return;

@@ -1,6 +1,11 @@
 
 #include "radiation.h"
 
+#define LAI_THRESH 0.001
+#define RAD_THRESH 0.001
+#define VIS 0
+#define NIR 1
+
 void get_diffuse_frac(canopy_wk *cw, int doy, double sw_rad) {
     /*
         For the moment, I am only going to implement Spitters, so this is a bit
@@ -77,12 +82,40 @@ void spitters(canopy_wk *cw, int doy, double sw_rad) {
 
 }
 
+static double diffuse_extinction(params *p, double lai, double *kbx) {
+    /*
+        Extinction coefficient of diffuse radiation for a canopy with black
+        leaves, integrating kb over three sky angles (15, 45, 75 degrees),
+        eq 27 Kowalczyk et al. 2006 (CABLE). Also returns kb for those angles
+        (kbx, needed for the canopy diffuse reflectance).
+    */
+    double gauss_w[3] = {0.308, 0.514, 0.178};
+    double ang[3] = {15.0, 45.0, 75.0};
+    double xphi1, xphi2, cosa, sum = 0.0;
+    int    i;
+
+    xphi1 = 0.5 - p->leaf_chi * (0.633 + 0.33 * p->leaf_chi);
+    xphi2 = 0.877 * (1.0 - 2.0 * xphi1);
+    for (i = 0; i < 3; i++) {
+        cosa = cos(DEG2RAD(ang[i]));
+        kbx[i] = (xphi1 + xphi2 * cosa) / cosa;
+        sum += gauss_w[i] * exp(-kbx[i] * lai);
+    }
+
+    if (lai > LAI_THRESH) {
+        return (-log(sum) / lai);
+    } else {
+        return (0.7);   // bare soil
+    }
+}
+
 void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
-                                  double sw_rad, double tair) {
+                                  double sw_rad, double tair, double lwdown) {
     /*
         Calculate absorded irradiance of sunlit and shaded fractions of
-        the canopy. The total irradiance absorbed by the canopy and the
-        sunlit/shaded components are all expressed on a ground-area basis!
+        the canopy, the soil, and the big-leaf radiative conductances. All
+        expressed on a ground-area basis. Follows CABLE (cable_albedo.F90 and
+        cable_radiation.F90), which implements Wang and Leuning (1998).
 
         NB:  sin_beta == cos_zenith
 
@@ -90,293 +123,235 @@ void calculate_absorbed_radiation(canopy_wk *cw, params *p, state *s,
         -----------
         * Wang and Leuning (1998) AFm, 91, 89-111. B3b and B4, the answer is
           identical de P & F
+        * Kowalczyk et al. (2006) CSIRO Marine and Atmospheric Research
+          paper 013 (CABLE).
 
         but see also:
         * De Pury & Farquhar (1997) PCE, 20, 537-557.
         * Dai et al. (2004) Journal of Climate, 17, 2281-2299.
     */
+    double lai = s->lai, tk, flpwb, flwv, flws, lw_down, emissivity_air;
+    double kbx[3], kd, gross, xphi1, xphi2, transb, transd, gr;
+    double c1[2], rhoch[2], rhocdf[2], albsoil[2], k_dash_d[2], k_dash_b[2];
+    double cexpk_dash_d[2], cexpk_dash_b[2], rho_td[2], rho_tb[2], rhocbm[2];
+    double tau[2], refl[2], qsun[2] = {0.0, 0.0}, qsha[2] = {0.0, 0.0};
+    double qcan_sun_lw = 0.0, qcan_sha_lw = 0.0, Ib, Id, sfact;
+    double a1, a2, a3, a4, a5, a6;
+    double gauss_w[3] = {0.308, 0.514, 0.178};
+    int    b, vegetated_and_sunlit;
 
-    double lw_down = 0.0, flpwb = 0.0, emissivity_air = 0.0;
-    double cos3_15 = 0.0, cos3_45 = 0.0, cos3_75 = 0.0;
-    double tk = 0.0, txx1 = 0.0, txx2 = 0.0;
-    double txx3 = 0.0, kbx1 = 0.0, kbx2 = 0.0, kbx3 = 0.0;
-    double c1_1 = 0.0, c1_2 = 0.0, rhoch_1 = 0.0, rhoch_2 = 0.0;
-    double rhocdf_vis= 0.0, rhocdf_nir= 0.0, sfact= 0.0;
-    double albsoil_vis = 0.0, albsoil_nir = 0.0;
-    double k_dash_d_vis = 0.0, k_dash_d_nir = 0.0, cexpk_dash_d_vis = 0.0;
-    double cexpk_dash_d_nir = 0.0, k_dash_b_nir = 0.0, cexpk_dash_b_nir = 0.0;
-    double rho_td_vis = 0.0, rho_td_nir = 0.0, k_dash_b_vis = 0.0;
-    double rhocbm_vis = 0.0, rhocbm_nir = 0.0, cexpk_dash_b_vis = 0.0;
-    double rho_tb_vis = 0.0, rho_tb_nir = 0.0;
-    double a1_vis = 0.0, a2_vis = 0.0, a3_vis = 0.0, a4_vis = 0.0;
-    double a5_vis = 0.0, a6_vis = 0.0;
-    double a1_nir = 0.0, a2_nir = 0.0, a3_nir = 0.0, a4_nir = 0.0;
-    double a5_nir = 0.0, a6_nir = 0.0;
-    double qcan_sha_vis = 0.0, qcan_sun_vis = 0.0;
-    double qcan_sha_nir = 0.0, qcan_sun_nir = 0.0;
-    double qcan_sha_lw = 0.0, qcan_sun_lw = 0.0, Ib = 0.0, Id = 0.0;
-    double xphi1 = 0.0, xphi2 = 0.0, Gross = 0.0, kd = 0.0;
-    double a1 = 0.0, a2 = 0.0, a3 = 0.0, a4 = 0.0, a5 = 0.0, a6 = 0.0;
-    // leaf emissivity (-), Table 3, Wang and Leuning, 1998
-    double emissivity_leaf = 0.96;
+    tau[VIS] = p->leaf_tau_vis;
+    tau[NIR] = p->leaf_tau_nir;
+    refl[VIS] = p->leaf_refl_vis;
+    refl[NIR] = p->leaf_refl_nir;
+    vegetated_and_sunlit = (lai > LAI_THRESH) && (sw_rad > RAD_THRESH);
 
-    // soil emissivity (-), Table 3, Wang and Leuning, 1998
-    double emissivity_soil = 0.94;
-
-    double LAI_THRESH = 0.001;
-    double RAD_THRESH = 0.001;
-
-    // Gaussian integ. weights
-    double gauss_w1 = 0.308;
-    double gauss_w2 = 0.514;
-    double gauss_w3 = 0.178;
-
-    // leaf transmissivity [-] (VIS: 0.07 - 0.15)
-    // ENF: 0.05; EBF: 0.05; DBF: 0.05; C3G: 0.070
-    double tau_vis = 0.1;
-    double tau_nir = 0.3;
-
-    // leaf reflectance [-] (VIS:0.07 - 0.15)
-    // ENF: 0.062;EBF: 0.076;DBF: 0.092; C3G: 0.11
-    double refl_vis = 0.1;
-    double refl_nir = 0.3;
-
-    // Table 3, Wang and Leuning, 1998
-    double soil_reflectance = 0.1; //(same as MAESTRA)
-
-    //empirical param related to the leaf angle dist (= 0 for spherical LAD)
-    double chi = 9.99999978E-03;
-
-    // surface temperaute - just using air temp
+    // isothermal net radiation: leaves & soil at air temperature
     tk = tair + DEG_TO_KELVIN;
-    
-
-    // Estimate LWdown based on an emprical function of air temperature (K)
-    //following Swinbank, W. C. (1963): Long-wave radiation from clear skies,
-    // Q. J. R. Meteorol. Soc., 89, 339–348, doi:10.1002/qj.49708938105.
-    lw_down = 0.0000094 * SIGMA * pow(tk, 6.0);
-
-    // black-body long-wave radiation
-    flpwb = SIGMA * pow(tk, 4.0);
-
-    // air emissivity
+    flpwb = SIGMA * pow(tk, 4.0);           // black-body long-wave radiation
+    flwv = LEAF_EMISSIVITY * flpwb;
+    flws = SOIL_EMISSIVITY * flpwb;
+    lw_down = downward_longwave(tair, lwdown);
     emissivity_air = lw_down / flpwb;
-
-    // cos(15 45 75 degrees)
-    cos3_15 = cos(DEG2RAD(15.0));
-    cos3_45 = cos(DEG2RAD(45.0));
-    cos3_75 = cos(DEG2RAD(75.0));
-
-    // leaf angle parmameter 1
-    xphi1 = 0.5 - chi * (0.633 + 0.33 * chi);
-
-    // leaf angle parmameter 2
-    xphi2 = 0.877 * (1.0 - 2.0 * xphi1);
 
     // Ross-Goudriaan function is the ratio of the projected area of leaves
     // in the direction perpendicular to the direction of incident solar
     // radiation and the actual leaf area. Approximated as eqn 28,
     // Kowalcyk et al. 2006)
-    Gross = xphi1 + xphi2 * cw->cos_zenith;
+    xphi1 = 0.5 - p->leaf_chi * (0.633 + 0.33 * p->leaf_chi);
+    xphi2 = 0.877 * (1.0 - 2.0 * xphi1);
+    gross = xphi1 + xphi2 * cw->cos_zenith;
 
     // extinction coefficient of direct beam radiation for a canopy with black
-    // leaves, eq 26 Kowalcyk et al. 2006
-    if ( (s->lai > LAI_THRESH) & (cw->direct_frac > RAD_THRESH) ) {   // vegetated
-        cw->kb = Gross / cw->cos_zenith;
-    } else {   // i.e. bare soil
-        cw->kb = 0.5;
+    // leaves, eq 26 Kowalcyk et al. 2006. As CABLE this depends on the sun
+    // angle only (not the beam fraction), so the sunlit leaf area doesn't
+    // jump when the sky becomes overcast.
+    if (lai > LAI_THRESH && cw->cos_zenith > 1.0e-6) {
+        cw->kb = gross / cw->cos_zenith;
+    } else {
+        cw->kb = 0.5;   // bare soil
     }
 
-    // extinction coefficient of diffuse radiation for a canopy with black
-    // leaves, eq 27 Kowalcyk et al. 2006
-    if (s->lai > LAI_THRESH) {  // vegetated
-
-        // Approximate integration of kb
-        kbx1 = (xphi1 + xphi2 * cos3_15) / cos3_15;
-        kbx2 = (xphi1 + xphi2 * cos3_45) / cos3_45;
-        kbx3 = (xphi1 + xphi2 * cos3_75) / cos3_75;
-
-        txx1 = gauss_w1 * exp(-kbx1 * s->lai);
-        txx2 = gauss_w2 * exp(-kbx2 * s->lai);
-        txx3 = gauss_w3 * exp(-kbx3 * s->lai);
-
-        kd = -log(txx1 + txx2 + txx3) / s->lai;
-    } else {   // i.e. bare soil
-        kd = 0.7;
-    }
-
+    kd = diffuse_extinction(p, lai, kbx);
     if (fabs(cw->kb - kd) < RAD_THRESH) {
         cw->kb = kd + RAD_THRESH;
     }
-
-    if (cw->direct_frac < RAD_THRESH) {
+    if (cw->cos_zenith < 1.0e-6) {
         cw->kb = 1.e5;
     }
+    cw->kd = kd;
 
-    c1_1 = sqrt(1. - tau_vis - refl_vis);
-    c1_2 = sqrt(1. - tau_nir - refl_nir);
+    transb = exp(-MIN(cw->kb * lai, 30.0));
+    transd = lai > LAI_THRESH ? exp(-kd * lai) : 1.0;
 
-    // Canopy reflection black horiz leaves
-    // (eq. 6.19 in Goudriaan and van Laar, 1994):
-    rhoch_1 = (1.0 - c1_1) / (1.0 + c1_1);
-    rhoch_2 = (1.0 - c1_2) / (1.0 + c1_2);
-
-    // Canopy reflection of diffuse radiation for black leaves:
-    rhocdf_vis = rhoch_1 * 2. * \
-                    (gauss_w1 * kbx1 / (kbx1 + kd) + \
-                     gauss_w2 * kbx2 / (kbx2 + kd) + \
-                     gauss_w3 * kbx3 / (kbx3 + kd));
-
-    rhocdf_nir = rhoch_2 * 2. * \
-                    (gauss_w1 * kbx1 / (kbx1 + kd) + \
-                     gauss_w2 * kbx2 / (kbx2 + kd) + \
-                     gauss_w3 * kbx3 / (kbx3 + kd));
-
-    // Calculate albedo
-    if (soil_reflectance <= 0.14) {
+    // soil reflectance, the soil is darker in the visible than the NIR,
+    // as CABLE's albsoilsn(:,1:2)
+    if (p->soil_refl <= 0.14) {
         sfact = 0.5;
-    } else if ( ( soil_reflectance > 0.14) & (soil_reflectance <= 0.20) ) {
+    } else if (p->soil_refl <= 0.20) {
         sfact = 0.62;
     } else {
         sfact = 0.68;
     }
+    albsoil[NIR] = 2.0 * p->soil_refl / (1. + sfact);
+    albsoil[VIS] = sfact * albsoil[NIR];
 
-    // soil + snow reflectance (ignoring snow), as CABLE's albsoilsn(:,1:2),
-    // i.e. the soil is darker in the visible than the NIR
-    albsoil_nir = 2.0 * soil_reflectance / (1. + sfact);
-    albsoil_vis = sfact * albsoil_nir;
+    for (b = 0; b < 2; b++) {
+        c1[b] = sqrt(1. - tau[b] - refl[b]);
 
-    // Update extinction coefficients and fractional transmittance for
-    // leaf transmittance and reflection (ie. NOT black leaves):
-    // modified k diffuse(6.20)(for leaf scattering)
-    k_dash_d_vis = kd * c1_1;
-    k_dash_d_nir = kd * c1_2;
+        // Canopy reflection black horiz leaves
+        // (eq. 6.19 in Goudriaan and van Laar, 1994):
+        rhoch[b] = (1.0 - c1[b]) / (1.0 + c1[b]);
 
-    // Define canopy diffuse transmittance (fraction):
-    cexpk_dash_d_vis = exp(-k_dash_d_vis * s->lai);
-    cexpk_dash_d_nir = exp(-k_dash_d_nir * s->lai);
+        // Canopy reflection of diffuse radiation for black leaves:
+        rhocdf[b] = rhoch[b] * 2. * (gauss_w[0] * kbx[0] / (kbx[0] + kd) +
+                                     gauss_w[1] * kbx[1] / (kbx[1] + kd) +
+                                     gauss_w[2] * kbx[2] / (kbx[2] + kd));
 
-    // Calculate effective canopy-soiil diffuse reflectance (fraction)
-    if (s->lai > 0.001) {
-        rho_td_vis = rhocdf_vis + (albsoil_vis - rhocdf_vis) * \
-                        (cexpk_dash_d_vis * cexpk_dash_d_vis);
-        rho_td_nir = rhocdf_nir + (albsoil_nir - rhocdf_nir) * \
-                        (cexpk_dash_d_nir * cexpk_dash_d_nir);
+        // Update extinction coefficients and fractional transmittance for
+        // leaf transmittance and reflection (ie. NOT black leaves):
+        // modified k diffuse(6.20)(for leaf scattering)
+        k_dash_d[b] = kd * c1[b];
+        cexpk_dash_d[b] = exp(-k_dash_d[b] * lai);
+
+        // effective canopy-soil diffuse reflectance (fraction)
+        if (lai > LAI_THRESH) {
+            rho_td[b] = rhocdf[b] + (albsoil[b] - rhocdf[b]) *
+                            (cexpk_dash_d[b] * cexpk_dash_d[b]);
+        } else {
+            rho_td[b] = albsoil[b];
+        }
+
+        if (vegetated_and_sunlit) {
+            k_dash_b[b] = cw->kb * c1[b];
+        } else {
+            k_dash_b[b] = 1.e-9;
+        }
+
+        // Canopy reflection (6.21) beam:
+        rhocbm[b] = 2. * cw->kb / (cw->kb + kd) * rhoch[b];
+
+        // Canopy beam transmittance (fraction):
+        cexpk_dash_b[b] = exp(-MIN(k_dash_b[b] * lai, 30.));
+
+        // effective canopy-soil beam reflectance (fraction):
+        rho_tb[b] = rhocbm[b] + (albsoil[b] - rhocbm[b]) *
+                        (cexpk_dash_b[b] * cexpk_dash_b[b]);
+    }
+
+    cw->qssabs = 0.0;
+    if (vegetated_and_sunlit) {
+        for (b = 0; b < 2; b++) {
+            // Beam and diffuse irradiance *per waveband*, shortwave is split
+            // equally between the visible and NIR (as in CABLE).
+            Ib = 0.5 * sw_rad * cw->direct_frac;
+            Id = 0.5 * sw_rad * cw->diffuse_frac;
+
+            // Radiation absorbed by the sunlit leaf, B3b Wang and Leuning
+            // 1998: scattered diffuse, scattered beam, direct beam
+            a1 = Id * (1.0 - rho_td[b]) * k_dash_d[b];
+            a2 = psi_func(k_dash_d[b] + cw->kb, lai);
+            a3 = Ib * (1.0 - rho_tb[b]) * k_dash_b[b];
+            a4 = psi_func(k_dash_b[b] + cw->kb, lai);
+            a5 = Ib * (1.0 - tau[b] - refl[b]) * cw->kb;
+            a6 = psi_func(cw->kb, lai) - psi_func(2.0 * cw->kb, lai);
+            qsun[b] = a1 * a2 + a3 * a4 + a5 * a6;
+
+            // Radiation absorbed by the shaded leaf, B4  Wang and Leuning 1998
+            a2 = psi_func(k_dash_d[b], lai) -
+                    psi_func(k_dash_d[b] + cw->kb, lai);
+            a4 = psi_func(k_dash_b[b], lai) -
+                    psi_func(k_dash_b[b] + cw->kb, lai);
+            qsha[b] = a1 * a2 + a3 * a4 - a5 * a6;
+
+            // absorbed by the soil (CABLE qssabs)
+            cw->qssabs += Ib * (1.0 - rho_tb[b]) * cexpk_dash_b[b] +
+                          Id * (1.0 - rho_td[b]) * cexpk_dash_d[b];
+        }
     } else {
-        rho_td_vis = albsoil_vis;
-        rho_td_nir = albsoil_nir;
+        cw->qssabs = 0.5 * sw_rad * ((1.0 - albsoil[VIS]) +
+                                     (1.0 - albsoil[NIR]));
     }
 
-    // where vegetated and sunlit
-    if ( (s->lai > LAI_THRESH) & (sw_rad > RAD_THRESH) ) {
-        k_dash_b_vis = cw->kb * c1_1;
-        k_dash_b_nir = cw->kb * c1_2;
+    if (lai > LAI_THRESH) {
+        // Isothermal long-wave absorbed by the sunlit & shaded leaves (CABLE
+        // qcan(:,:,3)): exchange with the soil, the sky and the other leaves
+        qcan_sun_lw = (flws - flwv) * kd * (transd - transb) /
+                        (cw->kb - kd) +
+                      (emissivity_air - LEAF_EMISSIVITY) * kd * flpwb *
+                        (1.0 - transd * transb) / (cw->kb + kd);
+        qcan_sha_lw = (1.0 - transd) * (flws + lw_down - 2.0 * flwv) -
+                        qcan_sun_lw;
+
+        // Radiative conductance of the big leaves (mol m-2 s-1), CABLE
+        // gradis. A leaf deep in the canopy mostly sees other leaves at
+        // the same temperature, so this is much less than 2 x the single
+        // leaf value x LAI.
+        gr = 4.0 * LEAF_EMISSIVITY * SIGMA * tk * tk * tk / (CP * MASS_AIR);
+        cw->gradis[SUNLIT] = gr * kd * ((1.0 - transb * transd) /
+                                        (cw->kb + kd) +
+                                        (transd - transb) / (cw->kb - kd));
+        cw->gradis[SHADED] = 2.0 * gr * (1.0 - transd) - cw->gradis[SUNLIT];
+        cw->gradis[SUNLIT] = MAX(1.0e-3, cw->gradis[SUNLIT]);
+        cw->gradis[SHADED] = MAX(1.0e-3, cw->gradis[SHADED]);
     } else {
-        k_dash_b_vis = 1.e-9;
-        k_dash_b_nir = 1.e-9;
+        cw->gradis[SUNLIT] = 1.0e-3;
+        cw->gradis[SHADED] = 1.0e-3;
     }
 
-    // Canopy reflection (6.21) beam:
-    rhocbm_vis = 2. * cw->kb / (cw->kb + kd) * rhoch_1;
-    rhocbm_nir = 2. * cw->kb / (cw->kb + kd) * rhoch_2;
+    // soil net radiation: SW reaching the soil, LW from the sky through the
+    // gaps and from the canopy, minus soil emission
+    cw->rnet_soil = cw->qssabs + transd * lw_down + (1.0 - transd) * flwv -
+                    flws;
 
-    // Canopy beam transmittance (fraction):
-    cexpk_dash_b_vis = exp(-MIN(k_dash_b_vis * s->lai, 30.));
-    cexpk_dash_b_nir = exp(-MIN(k_dash_b_nir * s->lai, 30.));
-
-    // Calculate effective canopy-soil beam reflectance (fraction):
-    rho_tb_vis = rhocbm_vis + (albsoil_vis - rhocbm_vis) * \
-                    (cexpk_dash_b_vis * cexpk_dash_b_vis);
-    rho_tb_nir = rhocbm_nir + (albsoil_nir - rhocbm_nir) * \
-                    (cexpk_dash_b_nir * cexpk_dash_b_nir);
-
-    if ( (s->lai > LAI_THRESH) & (sw_rad > RAD_THRESH) ) {
-
-        // Beam and diffuse irradiance *per waveband*, shortwave is split
-        // equally between the visible and NIR (as in CABLE). Using the full
-        // shortwave for each band absorbed ~2x the incident PAR.
-        Ib = 0.5 * sw_rad * cw->direct_frac;
-        Id = 0.5 * sw_rad * cw->diffuse_frac;
-
-        a1_vis = Id * (1.0 - rho_td_vis) * k_dash_d_vis;
-        a1_nir = Id * (1.0 - rho_td_nir) * k_dash_d_nir;
-
-        a2_vis = psi_func(k_dash_d_vis + cw->kb, s->lai);
-        a2_nir = psi_func(k_dash_d_nir + cw->kb, s->lai);
-
-        a3_vis = Ib * (1.0 - rho_tb_vis) * k_dash_b_vis;
-        a3_nir = Ib * (1.0 - rho_tb_nir) * k_dash_b_nir;
-
-        a4_vis = psi_func(k_dash_b_vis + cw->kb, s->lai);
-        a4_nir = psi_func(k_dash_b_nir + cw->kb, s->lai);
-
-        a5_vis = Ib * (1.0 - tau_vis - refl_vis) * cw->kb;
-        a5_nir = Ib * (1.0 - tau_nir - refl_nir) * cw->kb;
-
-        a6_vis = psi_func(cw->kb, s->lai) - psi_func(2.0 * cw->kb, s->lai);
-        a6_nir = psi_func(cw->kb, s->lai) - psi_func(2.0 * cw->kb, s->lai);
-
-        qcan_sun_vis = (a1_vis * a2_vis + a3_vis * a4_vis + a5_vis * a6_vis);
-        qcan_sun_nir = (a1_nir * a2_nir + a3_nir * a4_nir + a5_nir * a6_nir);
-
-        // Radiation absorbed by the shaded leaf, B4  Wang and Leuning 1998
-        a2_vis = psi_func(k_dash_d_vis, s->lai) - \
-                    psi_func(k_dash_d_vis + cw->kb, s->lai);
-        a2_nir = psi_func(k_dash_d_nir, s->lai) - \
-                    psi_func(k_dash_d_nir + cw->kb, s->lai);
-
-        a4_vis = psi_func(k_dash_b_vis, s->lai) - \
-                    psi_func(k_dash_b_vis + cw->kb, s->lai);
-        a4_nir = psi_func(k_dash_b_nir, s->lai) - \
-                    psi_func(k_dash_b_nir + cw->kb, s->lai);
-
-        qcan_sha_vis = (a1_vis * a2_vis + a3_vis * a4_vis - a5_vis * a6_vis);
-        qcan_sha_nir = (a1_nir * a2_nir + a3_nir * a4_nir - a5_nir * a6_nir);
-
-    }
-
-    // Longwave radiation absorbed by sunlit leaves under isothermal conditions
-    // B18 Wang and Leuning 1998
-    a1 = -kd * SIGMA * pow(tk, 4);
-    a2 = emissivity_leaf * (1.0 - emissivity_air);
-    a3 = psi_func(cw->kb + kd, s->lai);
-    a4 = 1.0 - emissivity_soil;
-    a5 = (emissivity_leaf - emissivity_air);
-    // soil-reflected term: down through the canopy (exp(-kd L)), then back
-    // up from the soil to the sunlit leaves (exp(-2 kd L) psi(kb - kd)).
-    // Was psi(2 kd) * psi(kb - kd), which isn't dimensionless.
-    a6 = exp(-2.0 * kd * s->lai) * psi_func(cw->kb - kd, s->lai);
-    qcan_sun_lw = a1 * (a2 * a3 + a4 * a5 * a6);
-
-    // Longwave radiation absorbed by shaded leaves under isothermal conditions
-    // B19 Wang and Leuning 1998: whole canopy minus the sunlit part, with
-    // the soil term entering with the same sign as for the sunlit leaves so
-    // that sunlit + shaded = canopy
-    a3 = psi_func(kd, s->lai);
-    a6 = exp(-kd * s->lai) * a3;
-    qcan_sha_lw = a1 * (a2 * a3 + a4 * a5 * a6) - qcan_sun_lw;
-
-    cw->apar_leaf[SUNLIT] = qcan_sun_vis * J_2_UMOL;
-    cw->apar_leaf[SHADED] = qcan_sha_vis * J_2_UMOL;
+    cw->apar_leaf[SUNLIT] = qsun[VIS] * J_2_UMOL;
+    cw->apar_leaf[SHADED] = qsha[VIS] * J_2_UMOL;
 
     // Total energy absorbed by canopy, summing VIS, NIR and LW components, to
     // leave us with the indivual leaf components.
-    cw->rnet_leaf[SUNLIT] = qcan_sun_vis + qcan_sun_nir + qcan_sun_lw;
-    cw->rnet_leaf[SHADED] = qcan_sha_vis + qcan_sha_nir + qcan_sha_lw;
+    cw->rnet_leaf[SUNLIT] = qsun[VIS] + qsun[NIR] + qcan_sun_lw;
+    cw->rnet_leaf[SHADED] = qsha[VIS] + qsha[NIR] + qcan_sha_lw;
 
-    // where vegetated and sunlit
-    if ( (s->lai > LAI_THRESH) & (sw_rad > RAD_THRESH) ) {
-
+    if (vegetated_and_sunlit) {
         /* Calculate sunlit &shdaded LAI of the canopy - de P * F eqn 18*/
-        cw->lai_leaf[SUNLIT] = (1.0 - exp(-cw->kb * s->lai)) / cw->kb;
-        cw->lai_leaf[SHADED] = s->lai - cw->lai_leaf[SUNLIT];
+        cw->lai_leaf[SUNLIT] = (1.0 - transb) / cw->kb;
+        cw->lai_leaf[SHADED] = lai - cw->lai_leaf[SUNLIT];
     } else {
         cw->lai_leaf[SUNLIT] = 0.0;
         cw->lai_leaf[SHADED] = 0.0;
     }
 
+    return;
+}
+
+void calculate_soil_net_radiation_night(canopy_wk *cw, params *p, state *s,
+                                        double tair, double lwdown) {
+    /* soil net (long-wave) radiation when the sun is down, as above */
+    double kbx[3], transd, flpwb;
+
+    flpwb = SIGMA * pow(tair + DEG_TO_KELVIN, 4.0);
+    transd = s->lai > LAI_THRESH ? exp(-diffuse_extinction(p, s->lai, kbx) *
+                                       s->lai) : 1.0;
+    cw->qssabs = 0.0;
+    cw->rnet_soil = transd * downward_longwave(tair, lwdown) +
+                    (1.0 - transd) * LEAF_EMISSIVITY * flpwb -
+                    SOIL_EMISSIVITY * flpwb;
 
     return;
+}
+
+double downward_longwave(double tair, double lwdown) {
+    /*
+        Downward long-wave (W m-2): the forcing if it has it, otherwise the
+        clear sky estimate from air temperature (K), Swinbank, W. C. (1963)
+        Q. J. R. Meteorol. Soc., 89, 339–348.
+    */
+    double tk = tair + DEG_TO_KELVIN;
+
+    if (lwdown > 0.0) {
+        return (lwdown);
+    }
+    return (0.0000094 * SIGMA * pow(tk, 6.0));
 }
 
 double psi_func(double z, double lai) {

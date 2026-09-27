@@ -83,6 +83,11 @@ int parse_ini_file(control *c, params *p, state *s)
 
 
 
+static void unknown_key(const char *section, const char *name) {
+    /* a misspelt or misplaced key would otherwise be silently ignored */
+    fprintf(stderr, "Warning: unknown key [%s] %s ignored\n", section, name);
+}
+
 int handler(char *section, char *name, char *value, control *c,
             params *p, state *s)
 {
@@ -125,6 +130,8 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(c->lai_fname, temp);
     } else if (MATCH("files", "lai_var")) {
         strcpy(c->lai_var, temp);
+    } else if (strcmp(section, "files") == 0) {
+        unknown_key(section, name);
     }
 
     /*
@@ -532,6 +539,8 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown water stress option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (strcmp(section, "control") == 0) {
+        unknown_key(section, name);
     }
 
 
@@ -625,6 +634,8 @@ int handler(char *section, char *name, char *value, control *c,
         s->structsurf = atof(value);
     } else if (MATCH("state", "structsurfn")) {
         s->structsurfn = atof(value);
+    } else if (strcmp(section, "state") == 0) {
+        unknown_key(section, name);
     }
 
     /* Params */
@@ -728,6 +739,38 @@ int handler(char *section, char *name, char *value, control *c,
         p->eav = atof(value);
     } else if (MATCH("params", "edj")) {
         p->edj = atof(value);
+    } else if (MATCH("params", "kext")) {
+        p->kext = atof(value);
+    } else if (MATCH("params", "bretrans")) {
+        p->bretrans = atof(value);
+    } else if (MATCH("params", "plc_dead")) {
+        p->plc_dead = atof(value);
+    } else if (MATCH("params", "fmleaf")) {
+        p->fmleaf = atof(value);
+    } else if (MATCH("params", "fmroot")) {
+        p->fmroot = atof(value);
+    } else if (MATCH("params", "theta_sat_root")) {
+        s->theta_sat_root = atof(value);
+    } else if (MATCH("params", "theta_sat_topsoil")) {
+        s->theta_sat_topsoil = atof(value);
+    } else if (MATCH("params", "leaf_width")) {
+        p->leaf_width = atof(value);
+    } else if (MATCH("params", "leaf_tau_vis")) {
+        p->leaf_tau_vis = atof(value);
+    } else if (MATCH("params", "leaf_tau_nir")) {
+        p->leaf_tau_nir = atof(value);
+    } else if (MATCH("params", "leaf_refl_vis")) {
+        p->leaf_refl_vis = atof(value);
+    } else if (MATCH("params", "leaf_refl_nir")) {
+        p->leaf_refl_nir = atof(value);
+    } else if (MATCH("params", "leaf_chi")) {
+        p->leaf_chi = atof(value);
+    } else if (MATCH("params", "soil_refl")) {
+        p->soil_refl = atof(value);
+    } else if (MATCH("params", "shelter")) {
+        p->shelter = atof(value);
+    } else if (MATCH("params", "wind_height")) {
+        p->wind_height = atof(value);
     } else if (MATCH("params", "gs_nvg")) {
         p->gs_nvg = atof(value);
     } else if (MATCH("params", "gsoil_f")) {
@@ -1046,6 +1089,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->wretrans = atof(value);
     } else if (MATCH("params", "z0h_z0m")) {
         p->z0h_z0m = atof(value);
+    } else if (strcmp(section, "params") == 0) {
+        unknown_key(section, name);
     }
 
     return (1);

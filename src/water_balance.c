@@ -612,22 +612,24 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
 }
 
 void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
-                         double gsc, double lai_leaf, double *transpiration,
-                         double *LE, double *gbc, double *gh, double *gv,
-                         double *omega) {
+                         double gsc, double gbhu, double gradis,
+                         double lai_leaf, double *transpiration, double *LE,
+                         double *gbc, double *gh, double *gv, double *omega) {
     /*
         Calculates transpiration by leaves using the Penman-Monteith
 
-        NB. rnet and gsc are big-leaf values (per m2 ground for the sunlit or
-        shaded fraction), so the per unit leaf area boundary layer and
-        radiation conductances are scaled by that fraction's LAI.
+        NB. rnet, gsc, the forced convection (gbhu) and radiative (gradis)
+        conductances are big-leaf values (per m2 ground for the sunlit or
+        shaded fraction, see calc_leaf_bl_forced_conduct and
+        calculate_absorbed_radiation); the free convection conductance is
+        per leaf area and scaled by the fraction's LAI, as in CABLE.
 
         Parameters:
         ----------
         press : float
             atmospheric pressure (Pa)
         rnet : float
-            net radiation (J m-2 s-1)
+            isothermal net radiation (J m-2 s-1)
         vpd : float
             vapour pressure deficit of air (Pa)
         tair : float
@@ -639,24 +641,18 @@ void penman_leaf_wrapper(met *m, params *p, state *s, double tleaf, double rnet,
 
 
     */
-    double slope, epsilon, lambda, gradn, gbhu, gbhf, gbh, gbv, gsv, gamma;
-
-    /* Radiation conductance (mol m-2 s-1) */
-    gradn = calc_radiation_conductance(m->tair);
-
-    /* Boundary layer conductance for heat - single sided, forced
-       convection (mol m-2 s-1) */
-    gbhu = calc_bdn_layer_forced_conduct(m->tair, m->press, m->wind,
-                                         p->leaf_width);
+    double slope, epsilon, lambda, gbhf, gbh, gbv, gsv, gamma;
 
     /* Boundary layer conductance for heat - single sided, free convection */
     gbhf = calc_bdn_layer_free_conduct(m->tair, tleaf, m->press, p->leaf_width);
 
-    /* Total boundary layer conductance for heat, scaled to the big leaf */
-    gbh = (gbhu + gbhf) * lai_leaf;
+    /* Total boundary layer conductance for heat of the big leaf. The floor
+       avoids a zero conductance when a fraction has ~no leaf area, its rnet
+       and An are then ~0 too */
+    gbh = MAX(gbhu + gbhf * lai_leaf, 1.0E-03);
 
-    /* Total conductance for heat - two-sided */
-    *gh = 2.0 * (gbh + gradn * lai_leaf);
+    /* Total conductance for heat - two-sided boundary layer + radiative */
+    *gh = 2.0 * gbh + gradis;
 
     gbv = GBVGBH * gbh;
     gsv = GSVGSC * gsc;
@@ -862,47 +858,66 @@ double canopy_boundary_layer_conduct(params *p, double canht, double wind,
     return (ga);
 }
 
-double calc_radiation_conductance(double tair) {
-    /*  Returns the 'radiation conductance' at given temperature.
-
-        Units: mol m-2 s-1
+void calc_leaf_bl_forced_conduct(canopy_wk *cw, params *p, state *s,
+                                 met *m) {
+    /*
+        Forced convection boundary layer conductance for heat of the sunlit
+        and shaded big leaves (mol m-2 s-1, single sided, per m2 ground),
+        following CABLE (cable_canopy.F90): the top leaf conductance from the
+        wind at the canopy top, integrated through the canopy with an
+        exponential wind profile, the sunlit leaves weighted to the top of
+        the canopy by exp(-kb L).
 
         References:
         -----------
-        * Formula from Ying-Ping's version of Maestro, cf. Wang and Leuning
-          1998, Table 1,
-        * See also Jones (1992) p. 108.
-        * And documented in Medlyn 2007, equation A3, although I think there
-          is a mistake. It should be Tk**3 not Tk**4, see W & L.
+        * Wang and Leuning (1998) AFm, 91, 89-111.
+        * Raupach (1994) BLM, 71, 211-216 (ustar:uh, d:h).
+        * Raupach et al. (1997) CSIRO SCAM manual, eq 3.12 & 3.14.
     */
-    double grad;
-    double Tk;
+    double APOL = 0.70;     /* Polhausen coeff: single-sided plate */
+    double PRANDT = 0.71;   /* Prandtl number: visc/diffh */
+    double CSD = 0.003;     /* substrate drag coefficient */
+    double CRD = 0.3;       /* element drag coefficient */
+    double CCD = 15.0;      /* constant in d/h equation */
+    double CCW_C = 2.0;     /* ccw=(zw-d)/(h-d) */
+    double USUHM = 0.3;     /* max of us/uh */
+    double VONK = 0.40;
+    double lai = s->lai, h = s->canht, tk, cmolar, visc, u_h, d, z0m;
+    double usuh, xx, dh, coexp, gbvtop;
 
-    Tk = tair + DEG_TO_KELVIN;
-    grad = 4.0 * SIGMA * (Tk * Tk * Tk) * LEAF_EMISSIVITY / (CP * MASS_AIR);
+    tk = m->tair + DEG_TO_KELVIN;
+    cmolar = m->press / (RGAS * tk);
+    visc = 1e-5 * MAX(1.0, 1.35 + 0.0092 * m->tair);  /* m2 s-1 */
 
-    return (grad);
-}
+    /* wind at the canopy top, log profile from the forcing height */
+    u_h = m->wind;
+    if (p->wind_height > h) {
+        d = p->displace_ratio * h;
+        z0m = p->dz0v_dh * h;
+        u_h *= log((h - d) / z0m) / log((p->wind_height - d) / z0m);
+    }
+    u_h = MAX(u_h, 0.1);
 
-double calc_bdn_layer_forced_conduct(double tair, double press, double wind,
-                                     double leaf_width) {
-    /*
-        Boundary layer conductance for heat - single sided, forced convection
-        (mol m-2 s-1)
-        See Leuning et al (1995) PC&E 18:1183-1200 Eqn E1
-    */
-    double cmolar, Tk, gbh;
+    /* extinction coefficient for the wind profile in the canopy */
+    usuh = MIN(sqrt(CSD + CRD * (lai * 0.5)), USUHM);
+    xx = sqrt(CCD * MAX(lai * 0.5, 0.0005));
+    dh = 1.0 - (1.0 - exp(-xx)) / xx;
+    coexp = usuh / (VONK * CCW_C * (1.0 - dh));
 
-    // Floor the wind speed, in still air with tleaf = tair (i.e. the first
-    // iteration) both the forced and free components are otherwise zero, so
-    // gbc = 0 and Cs = Ca - An / gbc blows up.
-    double min_wind = 0.1; // m s-1
+    /* top leaf, per unit leaf area */
+    gbvtop = cmolar * APOL * visc / PRANDT / p->leaf_width *
+             sqrt(u_h * p->leaf_width / visc) * pow(PRANDT, 1.0 / 3.0) /
+             p->shelter;
+    gbvtop = MAX(0.05, gbvtop);
 
-    Tk = tair + DEG_TO_KELVIN;
-    cmolar = press / (RGAS * Tk);
-    gbh = 0.003 * sqrt(MAX(wind, min_wind) / leaf_width) * cmolar;
+    cw->gbhu[SUNLIT] = gbvtop * (1.0 - exp(-MIN(lai * (0.5 * coexp + cw->kb),
+                                                20.0))) /
+                       (cw->kb + 0.5 * coexp);
+    cw->gbhu[SHADED] = (2.0 / coexp) * gbvtop *
+                       (1.0 - exp(-MIN(0.5 * coexp * lai, 20.0))) -
+                       cw->gbhu[SUNLIT];
 
-    return (gbh);
+    return;
 }
 
 double calc_bdn_layer_free_conduct(double tair, double tleaf, double press,

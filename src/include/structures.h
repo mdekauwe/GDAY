@@ -414,6 +414,17 @@ typedef struct {
     double or_sublayer_dz;   /* Or: viscous sublayer thickness (m) */
     double litter_dz_per_c;  /* Or: litter depth per litter C (m per t C ha-1) */
     double litter_c;         /* Or: surface litter C (t C ha-1), <0 = simulated */
+
+    /* two-leaf canopy radiation & leaf boundary layer (CABLE) */
+    double leaf_tau_vis;     /* leaf transmittance, visible (-) */
+    double leaf_tau_nir;     /* leaf transmittance, near infrared (-) */
+    double leaf_refl_vis;    /* leaf reflectance, visible (-) */
+    double leaf_refl_nir;    /* leaf reflectance, near infrared (-) */
+    double leaf_chi;         /* leaf angle distribution, 0 = spherical (-) */
+    double soil_refl;        /* soil reflectance, SW mean (-) */
+    double shelter;          /* leaf boundary layer sheltering factor (-) */
+    double wind_height;      /* height of the wind forcing (m), <= canht
+                                means the wind is at the canopy top */
     int     wetting;         /* number of wetting layers */
 
 
@@ -430,6 +441,7 @@ typedef struct {
     double *ndep;
     double *nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
     double *lai;        /* prescribed LAI (m2 m-2), only if prescribed_lai */
+    double *lwdown;     /* downward LW (W m-2), NULL if not in the forcing */
     double *wind;
     double *press;
 
@@ -470,6 +482,7 @@ typedef struct {
     double ndep;
     double nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
     double tsoil;
+    double lwdown;     /* downward LW (W m-2), < 0 if not in the forcing */
 
     /* daily */
     double tair_am;
@@ -717,6 +730,12 @@ typedef struct {
     double dleaf;           /* leaf VPD (Pa) */
     double Cs;              /* CO2 conc at the leaf surface (umol mol-1) */
     double kb;              /* beam radiation ext coeff of canopy */
+    double kd;              /* diffuse radiation ext coeff of canopy */
+    double gradis[2];       /* big-leaf radiative conductance (mol m-2 s-1) */
+    double gbhu[2];         /* big-leaf forced convection boundary layer
+                               conductance for heat (mol m-2 s-1) */
+    double qssabs;          /* SW absorbed by the soil (W m-2) */
+    double rnet_soil;       /* soil net radiation (W m-2) */
     double scalex[2];      /* scale from single leaf to canopy */
     double *cz_store;       /* Array to hold coz zenith angles */
     double *ele_store;      /* Array to hold elevations */

@@ -170,8 +170,6 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         calc_interception(c, m, p, f, s, &surface_water, &interception,
                           &canopy_evap);
 
-        net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
-
         if (c->soil_evap_model == SOIL_EVAP_GDAY) {
             soil_evap = calc_qe_flux(f, p, s, m->tair, m->tsoil,
                                      m->vpd, m->press, m->wind);
@@ -180,7 +178,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
             double th1 = s->water_frac[0];
             double sathh = p->soil_sathh > 0.0 ? p->soil_sathh : 0.1;
             soil_evap = soil_evap_penman(c, p, s,
-                              net_rad * exp(-0.398 * s->lai), m->tair,
+                              cw->rnet_soil, m->tair,
                               m->vpd, m->press, m->wind, th1,
                               soil_theta_at_psi(p, 0, p->soil_psi_open),
                               soil_conductivity(p, 0, th1), sathh);
@@ -264,7 +262,7 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         net_rad = calc_net_radiation(p, m->sw_rad, m->tair);
         if (c->soil_evap_model == SOIL_EVAP_JULES) {
             soil_evap = soil_evap_penman(c, p, s,
-                              net_rad * exp(-0.398 * s->lai), m->tair,
+                              cw->rnet_soil, m->tair,
                               m->vpd, m->press, m->wind,
                               topsoil_theta(p, s), p->theta_fc_topsoil,
                               0.0, 0.0);

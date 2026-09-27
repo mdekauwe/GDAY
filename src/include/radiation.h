@@ -15,7 +15,11 @@
 void   calculate_solar_geometry(canopy_wk *, params *, double, double);
 void   get_diffuse_frac(canopy_wk *, int, double);
 void   spitters(canopy_wk *, int, double);
-void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double, double);
+void   calculate_absorbed_radiation(canopy_wk *, params *, state *, double, double,
+                                    double);
+void   calculate_soil_net_radiation_night(canopy_wk *, params *, state *,
+                                          double, double);
+double downward_longwave(double, double);
 double psi_func(double, double);
 
 #endif /* RADIATION_H */

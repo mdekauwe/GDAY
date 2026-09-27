@@ -22,8 +22,8 @@ void    penman_canopy_wrapper(params *, state *, double, double, double, double,
                               double, double, double, double *, double *,
                               double *, double *, double *);
 void    penman_leaf_wrapper(met *, params *, state *, double, double,
-                            double, double, double *, double *, double *,
-                            double *, double *, double *);
+                            double, double, double, double, double *,
+                            double *, double *, double *, double *, double *);
 void    penman_monteith(double, double, double, double, double, double, double *,
                         double *, double *, double *);
 double  calc_sat_water_vapour_press(double);
@@ -44,8 +44,7 @@ void    calc_soil_params(double *, double *, double *,
 void    calculate_soil_water_fac(control *, params *, state *);
 void    update_daily_water_struct(fluxes *, double, double, double, double,
                                   double, double, double);
-double  calc_radiation_conductance(double);
-double  calc_bdn_layer_forced_conduct(double, double, double,double);
+void    calc_leaf_bl_forced_conduct(canopy_wk *, params *, state *, met *);
 double  calc_bdn_layer_free_conduct(double, double, double, double);
 
 double  canopy_boundary_layer_conduct(params *, double, double, double, double);
