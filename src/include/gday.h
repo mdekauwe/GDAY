@@ -99,6 +99,7 @@ void   zero_stuff(control *, state *);
 void   day_end_calculations(control *, params *, state *, int, int);
 void   unpack_met_data(control *, fluxes *f, met_arrays *, met *, int, double);
 void   allocate_numerical_libs_stuff(nrutil *);
+void   set_prescribed_lai(control *, met_arrays *, state *);
 void   fill_up_solar_arrays(canopy_wk *, control *, met_arrays *, params *);
 void   zero_fast_spinup_stuff(fast_spinup *);
 void   accumulate_fast_spinup_stuff(fast_spinup *, fluxes *, state *);

@@ -121,6 +121,10 @@ int handler(char *section, char *name, char *value, control *c,
         strcpy(c->out_fname_hdr, temp);
     } else if (MATCH("files", "out_param_fname")) {
         strcpy(c->out_param_fname, temp);
+    } else if (MATCH("files", "lai_fname")) {
+        strcpy(c->lai_fname, temp);
+    } else if (MATCH("files", "lai_var")) {
+        strcpy(c->lai_var, temp);
     }
 
     /*
@@ -239,6 +243,25 @@ int handler(char *section, char *name, char *value, control *c,
             c->fixed_lai = TRUE;
         else {
             fprintf(stderr, "Unknown fixed_lai option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
+    } else if (MATCH("control", "met_start_year")) {
+        c->met_start_year = atoi(value);
+    } else if (MATCH("control", "met_end_year")) {
+        c->met_end_year = atoi(value);
+    } else if (MATCH("control", "lai_pft_index")) {
+        c->lai_pft_index = atoi(value);
+    } else if (MATCH("control", "prescribed_lai")) {
+        if (strcmp(temp, "False") == 0 ||
+            strcmp(temp, "FALSE") == 0 ||
+            strcmp(temp, "false") == 0)
+            c->prescribed_lai = FALSE;
+        else if (strcmp(temp, "True") == 0 ||
+            strcmp(temp, "TRUE") == 0 ||
+            strcmp(temp, "true") == 0)
+            c->prescribed_lai = TRUE;
+        else {
+            fprintf(stderr, "Unknown prescribed_lai option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
     } else if (MATCH("control", "fixleafnc")) {
@@ -668,6 +691,12 @@ int handler(char *section, char *name, char *value, control *c,
         p->eav = atof(value);
     } else if (MATCH("params", "edj")) {
         p->edj = atof(value);
+    } else if (MATCH("params", "nc_co2")) {
+        p->nc_co2 = atof(value);
+    } else if (MATCH("params", "nc_ndep")) {
+        p->nc_ndep = atof(value);
+    } else if (MATCH("params", "nc_nfix")) {
+        p->nc_nfix = atof(value);
     } else if (MATCH("params", "edv")) {
         p->edv = atof(value);
     } else if (MATCH("params", "delsv")) {

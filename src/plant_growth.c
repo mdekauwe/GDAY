@@ -532,7 +532,7 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
             ** Now reduce LAI for down-regulated growth (we're in the
             ** evergreen branch, deciduous allocation is from storage)
             */
-            if (c->fixed_lai == FALSE) {
+            if (c->fixed_lai == FALSE && c->prescribed_lai == FALSE) {
                 /* update leaf area [m2 m-2] */
                 if (float_eq(s->shoot, 0.0)) {
                     s->lai = 0.0;
@@ -827,6 +827,8 @@ void carbon_allocation(control *c, fluxes *f, params *p, state *s,
 
     if (c->fixed_lai) {
         s->lai = p->fix_lai;
+    } else if (c->prescribed_lai) {
+        s->lai = s->lai_prescribed;
     }
 
     return;

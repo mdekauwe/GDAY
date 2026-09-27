@@ -26,6 +26,12 @@ void initialise_control(control *c) {
     c->deciduous_model = FALSE;     /* evergreen_model=False, deciduous_model=True */
     c->fixed_stem_nc = TRUE;        /* False=vary stem N:C with foliage, True=fixed stem N:C */
     c->fixed_lai = FALSE;           /* Fix LAI */
+    c->prescribed_lai = FALSE;      /* LAI from the met file */
+    c->met_start_year = 0;
+    c->met_end_year = 0;
+    c->lai_pft_index = 0;
+    strcpy(c->lai_fname, "*NOT SET*");
+    strcpy(c->lai_var, "lai_pft");
     c->fixleafnc = FALSE;           /* fixed leaf N C ? */
     c->grazing = 0;                 /* Is foliage grazed? 0=No, 1=daily, 2=annual and then set disturbance_doy=doy */
     c->gs_model = MEDLYN;           /* Stomatal conductance model, currently only this one is implemented */
@@ -117,6 +123,9 @@ void initialise_params(params *p) {
     p->eao = 36380.0;   /* Temp. response of Ko (J mol-1) */
     p->eav = 51560.0;
     p->edj = 200000.0;
+    p->nc_co2 = -999.9;
+    p->nc_ndep = 0.0;
+    p->nc_nfix = 0.0;
     p->edv = -999.9;          /* off: Vcmax has no high T deactivation */
     p->delsv = 650.0;
     p->photo_tlow = 0.0;      /* Jmax/Vcmax ramp linearly to full between */

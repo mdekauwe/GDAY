@@ -142,11 +142,16 @@ int main(int argc, char **argv)
         cw->not_dead = TRUE;
     }
 
-    if (c->sub_daily) {
+    /* PLUMBER2 style netCDF (as JULES reads) or GDAY's ascii format */
+    if (is_netcdf_file(c->met_fname)) {
+        read_met_data_netcdf(argv, c, ma, p);
+    } else if (c->sub_daily) {
         read_subdaily_met_data(argv, c, ma);
-        fill_up_solar_arrays(cw, c, ma, p);
     } else {
         read_daily_met_data(argv, c, ma);
+    }
+    if (c->sub_daily) {
+        fill_up_solar_arrays(cw, c, ma, p);
     }
 
 
@@ -177,6 +182,7 @@ int main(int argc, char **argv)
     free(ma->co2);
     free(ma->ndep);
     free(ma->nfix);
+    free(ma->lai);
     free(ma->wind);
     free(ma->press);
     free(ma->par);
@@ -350,6 +356,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
     if (c->fixed_lai) {
         s->lai = p->fix_lai;
+    } else if (c->prescribed_lai) {
+        /* reset each day in the day loop */
+        s->lai = ma->lai[0];
     } else {
         s->lai = MAX(0.01, (p->sla * M2_AS_HA / KG_AS_TONNES /
                             p->cfracts * s->shoot));
@@ -487,6 +496,10 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 hurricane(f, p, s);
             }
 
+
+            if (c->prescribed_lai) {
+                set_prescribed_lai(c, ma, s);
+            }
 
             calc_day_growth(cw, c, f, fs, ma, m, nr, p, s, s->day_length[doy],
                             doy, fdecay, rdecay);
@@ -1195,6 +1208,27 @@ void unpack_met_data(control *c, fluxes *f, met_arrays *ma, met *m, int hod,
 
     /* N deposition + biological N fixation */
     f->ninflow = m->ndep + m->nfix;
+
+    return;
+}
+
+void set_prescribed_lai(control *c, met_arrays *ma, state *s) {
+    /*
+        Today's LAI from the met forcing, the daily mean for sub-daily input
+        (c->hour_idx points at the first timestep of the day)
+    */
+    int    i;
+    double sum = 0.0;
+
+    if (c->sub_daily) {
+        for (i = 0; i < c->num_hlf_hrs; i++) {
+            sum += ma->lai[c->hour_idx + i];
+        }
+        s->lai_prescribed = sum / (double)c->num_hlf_hrs;
+    } else {
+        s->lai_prescribed = ma->lai[c->day_idx];
+    }
+    s->lai = s->lai_prescribed;
 
     return;
 }

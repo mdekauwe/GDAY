@@ -138,6 +138,13 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
+    ma->lai = NULL;
+    if (c->prescribed_lai &&
+        (ma->lai = (double *)calloc(file_len, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for lai array\n");
+		exit(EXIT_FAILURE);
+    }
+
 
     i = 0;
     c->num_years = 0;
@@ -168,6 +175,10 @@ void read_daily_met_data(char **argv, control *c, met_arrays *ma)
             fprintf(stderr, "%s: badly formatted input in met file on line %d %d\n", \
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
+        }
+        if (c->prescribed_lai) {
+            ma->lai[i] = read_last_column(line, nvars + 1, *argv,
+                                          i + 1 + skipped_lines);
         }
 
         /* Build an array of the unique years as we loop over the input file */
@@ -271,6 +282,13 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
 		exit(EXIT_FAILURE);
     }
 
+    ma->lai = NULL;
+    if (c->prescribed_lai &&
+        (ma->lai = (double *)calloc(file_len, sizeof(double))) == NULL) {
+        fprintf(stderr,"Error allocating space for lai array\n");
+		exit(EXIT_FAILURE);
+    }
+
     current_yr = ma->year[0];
 
     i = 0;
@@ -298,6 +316,10 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
                     *argv, (int)i+1+skipped_lines, nvars);
             exit(EXIT_FAILURE);
         }
+        if (c->prescribed_lai) {
+            ma->lai[i] = read_last_column(line, nvars + 1, *argv,
+                                          i + 1 + skipped_lines);
+        }
 
         /* Build an array of the unique years as we loop over the input file */
         if (current_yr != ma->year[i]) {
@@ -309,4 +331,34 @@ void read_subdaily_met_data(char **argv, control *c, met_arrays *ma)
 
     fclose(fp);
     return;
+}
+
+double read_last_column(char *line, int ncols, char *prog, int line_num) {
+    /*
+        With prescribed_lai the met file has one extra (last) column, check
+        the column count and return its value
+    */
+    int   n = 1;
+    char *ptr;
+
+    for (ptr = line; *ptr; ptr++) {
+        if (*ptr == ',') {
+            n++;
+        }
+    }
+    if (n != ncols) {
+        fprintf(stderr, "%s: prescribed_lai needs %d columns in the met file, "
+                "found %d on line %d\n", prog, ncols, n, line_num);
+        exit(EXIT_FAILURE);
+    }
+
+    return (atof(strrchr(line, ',') + 1));
+}
+
+int is_netcdf_file(char *fname) {
+    /* met forcing is read as netCDF if the name ends in .nc or .nc4 */
+    size_t n = strlen(fname);
+
+    return ((n > 3 && strcmp(fname + n - 3, ".nc") == 0) ||
+            (n > 4 && strcmp(fname + n - 4, ".nc4") == 0));
 }

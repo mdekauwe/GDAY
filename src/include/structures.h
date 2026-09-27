@@ -23,6 +23,12 @@ typedef struct {
     int   disturbance;
     int   fixed_stem_nc;
     int   fixed_lai;
+    int   prescribed_lai;  /* LAI read from the met file (extra last column) */
+    int   met_start_year;  /* netCDF forcing: first year to use (0 = all) */
+    int   met_end_year;    /* netCDF forcing: last year to use (0 = all) */
+    int   lai_pft_index;   /* netCDF LAI file: index on the pft dimension */
+    char  lai_fname[STRING_LENGTH];  /* netCDF LAI file (optional) */
+    char  lai_var[STRING_LENGTH];    /* its LAI variable name */
     int   fixleafnc;
     int   grazing;
     int   gs_model;
@@ -79,6 +85,7 @@ typedef struct {
     double cstore;                      /* C store for deciduous model (t/ha) */
     double inorgn;                      /* Inorganic soil N pool - dynamic (t/ha) */
     double lai;                         /* leaf area index m2 (leaf) m-2 (ground) */
+    double lai_prescribed;   /* today's prescribed LAI (m2 m-2) */
     double fipar;
     double metabsoil;                   /* metabolic soil c (t/ha) */
     double metabsoiln;                  /* metabolic soil n (t/ha) */
@@ -225,6 +232,9 @@ typedef struct {
     double fhw;                             /* n:c ratio of stemwood - immobile pool and new ring */
     double finesoil;                        /* clay+silt fraction */
     double fix_lai;                       /* value to fix LAI to, control fixed_lai flag must be set */
+    double nc_co2;                        /* netCDF forcing: CO2 (ppm) if the file has no CO2air */
+    double nc_ndep;                       /* netCDF forcing: N deposition (t N ha-1 yr-1) */
+    double nc_nfix;                       /* netCDF forcing: N fixation (t N ha-1 yr-1) */
     double fracfaeces;                      /* Fractn of grazd C that ends up in faeces (0..1) */
     double fracteaten;                      /* Fractn of leaf prodn eaten by grazers */
     double fractosoil;                      /* Fractn of grazed N recycled to soil:faeces+urine */
@@ -398,6 +408,7 @@ typedef struct {
     double *co2;
     double *ndep;
     double *nfix;       /* N inputs from biological fixation (t/ha/timestep (d/30min)) */
+    double *lai;        /* prescribed LAI (m2 m-2), only if prescribed_lai */
     double *wind;
     double *press;
 

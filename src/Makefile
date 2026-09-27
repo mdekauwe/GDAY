@@ -5,6 +5,14 @@ CFLAGS   = -O3 -Wall -Wno-unused-parameter
 #           -fsanitize=address,undefined
 INCLS    = -I./include
 LIBS     = -lm
+
+# netCDF met forcing (PLUMBER2 files) if the library is available; build
+# without it with `make NETCDF=no`
+NETCDF  ?= $(if $(shell command -v nc-config 2>/dev/null),yes,no)
+ifeq ($(NETCDF),yes)
+INCLS   += $(shell nc-config --cflags) -DHAVE_NETCDF
+LIBS    += $(shell nc-config --libs)
+endif
 PROGRAM  = gday
 ARCH     = x86_64
 PREFIX   = $(HOME)/bin/$(ARCH)
@@ -14,7 +22,7 @@ $(PROGRAM).c version.c read_param_file.c read_met_file.c litter_production.c \
 utilities.c plant_growth.c photosynthesis.c water_balance.c \
 water_balance_sub_daily.c simple_moving_average.c soils.c optimal_root_model.c \
 initialise_model.c write_output_file.c phenology.c disturbance.c canopy.c \
-radiation.c zbrent.c odeint.c nrutil.c rkqs.c rkck.c
+radiation.c zbrent.c odeint.c nrutil.c rkqs.c rkck.c read_met_netcdf.c
 
 OBJECTS  = $(SOURCES:.c=.o)
 DEPS     = $(OBJECTS:.o=.d)
