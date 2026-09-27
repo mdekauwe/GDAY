@@ -14,6 +14,90 @@
 *
 * =========================================================================== */
 #include "photosynthesis.h"
+#include "gs_opt.h"
+#include "water_balance.h"
+#include "water_balance_sub_daily.h"
+
+/* one MATE half day (am or pm) for the daily gs_opt */
+typedef struct {
+    params *p;
+    state  *s;
+    double  gamma_star, km, vcmax, jmax;
+    double  par;       /* incident PAR (umol m-2 d-1) */
+    double  apar;      /* absorbed PAR (umol m-2 d-1) */
+    double  daylen;    /* h */
+    double  secs;      /* seconds in the half day */
+    double  press, vpd, tair, wind, rnet, ca;
+} mate_half;
+
+static double mate_half_gpp(double ci, void *ctx) {
+    /* canopy GPP at Ci, mean over the half day (umol m-2 s-1) */
+    mate_half *h = (mate_half *)ctx;
+    double alpha, ac, aj;
+
+    alpha = calculate_quantum_efficiency(h->p, ci, h->gamma_star);
+    ac = assim(ci, h->gamma_star, h->vcmax, h->km);
+    aj = assim(ci, h->gamma_star, h->jmax / 4.0, 2.0 * h->gamma_star);
+
+    return (h->apar / 2.0 *
+            epsilon(h->p, MIN(ac, aj), h->par, alpha, h->daylen) / h->secs);
+}
+
+static double mate_half_trans(double gsc, void *ctx) {
+    /* canopy transpiration (mmol m-2 s-1) at gs, as the water balance */
+    mate_half *h = (mate_half *)ctx;
+    double ga, gsv, trans, LE, omega;
+
+    penman_canopy_wrapper(h->p, h->s, h->press, h->vpd, h->tair, h->wind,
+                          h->rnet, h->ca, 0.0, gsc, &ga, &gsv, &trans, &LE,
+                          &omega);
+    return (trans * MOL_2_MMOL);
+}
+
+static double mate_gs_opt(control *c, params *p, state *s, mate_half *h,
+                          double psi_rz, double *gsc, double *psi_leaf) {
+    /*
+        Profit maximising Ci for the half day (Sperry et al. 2017; De Kauwe
+        et al. 2022), with the same hydraulics as the sub-daily model: the
+        canopy's plant conductance is kp x LAI, and the hydraulic cost is on
+        the peak (midday) transpiration, gs_opt_peak_e x the half-day mean,
+        since the xylem sees the peak and the vulnerability curve is
+        nonlinear. The mean transpiration can't exceed what the bucket
+        holds: half of the root zone's extractable water in each half day,
+        so the GPP chosen is one the water balance can deliver (the bucket
+        has no soil to root resistance to limit supply as the soil dries).
+    */
+    gs_opt_canopy_in cp;
+    double ci, e;
+
+    if (h->apar <= 0.0 || s->lai <= 0.0) {
+        *gsc = 0.0;
+        *psi_leaf = psi_rz;
+        return (h->gamma_star);
+    }
+    cp.assim = mate_half_gpp;
+    cp.trans = mate_half_trans;
+    cp.ctx = h;
+    cp.gamma_star = h->gamma_star;
+    cp.ca = h->ca;
+    cp.psi_rz = psi_rz;
+    cp.kmax = p->kp * s->lai;
+    cp.e_scale = p->gs_opt_peak_e;
+    // mm per half day -> mmol m-2 s-1
+    cp.e_max = 0.5 * s->pawater_root /
+               (MOLE_WATER_2_G_WATER * G_TO_KG * MMOL_2_MOL * h->secs);
+    gs_opt_canopy(c, p, &cp, &ci, gsc, psi_leaf, &e);
+
+    return (ci);
+}
+
+static double bucket_psi(params *p, state *s) {
+    /* root zone water potential (MPa) of the bucket, from the retention
+       curve (soil_hydraulics) at the root zone water content */
+    double theta = p->theta_wp_root + s->pawater_root / p->rooting_depth;
+
+    return (MIN(0.0, soil_psi_raw(p, 0, theta)));
+}
 
 void leaf_photo_params(control *c, canopy_wk *cw, params *p, state *s,
                        double *gamma_star, double *km, double *vcmax,
@@ -531,6 +615,8 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
            gamma_star_pm, Km_am, Km_pm, jmax_am, jmax_pm, vcmax_am, vcmax_pm,
            ci_am, ci_pm, alpha_am, alpha_pm, ac_am, ac_pm, aj_am, aj_pm,
            asat_am, asat_pm, lue_am, lue_pm, lue_avg, conv;
+    double psi_rz, psi_am, psi_pm, frac_canopy;
+    mate_half h;
     double mt = p->measurement_temp + DEG_TO_KELVIN;
 
     /* Calculate mate params & account for temperature dependencies */
@@ -545,8 +631,49 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     calculate_jmax_and_vcmax(c, p, s, m->Tk_am, N0, &jmax_am, &vcmax_am, mt);
     calculate_jmax_and_vcmax(c, p, s, m->Tk_pm, N0, &jmax_pm, &vcmax_pm, mt);
 
-    ci_am = calculate_ci(c, p, s, m->vpd_am, m->Ca);
-    ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
+    /* Covert PAR units (umol PAR MJ-1) */
+    conv = MJ_TO_J * J_2_UMOL;
+    m->par *= conv;
+
+    if (c->gs_model == GS_OPT) {
+        /* profit maximising Ci for each half day */
+        psi_rz = bucket_psi(p, s);
+        frac_canopy = 1.0 - exp(-0.398 * s->lai);   /* as the water balance */
+        h.p = p;
+        h.s = s;
+        h.par = m->par;
+        h.apar = s->lai > 0.0 ? m->par * s->fipar : 0.0;
+        h.daylen = daylen;
+        h.secs = SECS_IN_HOUR * daylen / 2.0;
+        h.press = m->press;
+        h.ca = m->Ca;
+
+        h.gamma_star = gamma_star_am;
+        h.km = Km_am;
+        h.vcmax = vcmax_am;
+        h.jmax = jmax_am;
+        h.vpd = m->vpd_am;
+        h.tair = m->tair_am;
+        h.wind = m->wind_am;
+        h.rnet = calc_net_radiation(p, m->sw_rad_am, m->tair_am) * frac_canopy;
+        ci_am = mate_gs_opt(c, p, s, &h, psi_rz, &f->gsc_am, &psi_am);
+
+        h.gamma_star = gamma_star_pm;
+        h.km = Km_pm;
+        h.vcmax = vcmax_pm;
+        h.jmax = jmax_pm;
+        h.vpd = m->vpd_pm;
+        h.tair = m->tair_pm;
+        h.wind = m->wind_pm;
+        h.rnet = calc_net_radiation(p, m->sw_rad_pm, m->tair_pm) * frac_canopy;
+        ci_pm = mate_gs_opt(c, p, s, &h, psi_rz, &f->gsc_pm, &psi_pm);
+
+        s->predawn_swp = psi_rz;
+        s->midday_lwp = MIN(psi_am, psi_pm);
+    } else {
+        ci_am = calculate_ci(c, p, s, m->vpd_am, m->Ca);
+        ci_pm = calculate_ci(c, p, s, m->vpd_pm, m->Ca);
+    }
 
     /* quantum efficiency calculated for C3 plants */
     alpha_am = calculate_quantum_efficiency(p, ci_am, gamma_star_am);
@@ -563,10 +690,6 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     /* light-saturated photosynthesis rate at the top of the canopy (gross) */
     asat_am = MIN(aj_am, ac_am);
     asat_pm = MIN(aj_pm, ac_pm);
-
-    /* Covert PAR units (umol PAR MJ-1) */
-    conv = MJ_TO_J * J_2_UMOL;
-    m->par *= conv;
 
     /* LUE (umol C umol-1 PAR) ; note conversion in epsilon */
     lue_am = epsilon(p, asat_am, m->par, alpha_am, daylen);

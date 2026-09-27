@@ -142,10 +142,12 @@ void calculate_water_balance(control *c, fluxes *f, met *m, params *p,
     frac_canopy = 1.0 - exp(-0.398 * s->lai);
 
     penman_canopy_wrapper(p, s, m->press, m->vpd_am, m->tair_am, m->wind_am,
-                          net_rad_am * frac_canopy, m->Ca, gpp_am, &ga_am,
+                          net_rad_am * frac_canopy, m->Ca, gpp_am,
+                          c->gs_model == GS_OPT ? f->gsc_am : -1.0, &ga_am,
                           &gs_am, &transpiration_am, &LE_am, &omega_am);
     penman_canopy_wrapper(p, s, m->press, m->vpd_pm, m->tair_pm, m->wind_pm,
-                          net_rad_pm * frac_canopy, m->Ca, gpp_pm, &ga_pm,
+                          net_rad_pm * frac_canopy, m->Ca, gpp_pm,
+                          c->gs_model == GS_OPT ? f->gsc_pm : -1.0, &ga_pm,
                           &gs_pm, &transpiration_pm, &LE_pm, &omega_pm);
 
     /* mol m-2 s-1 to mm/day */
@@ -595,7 +597,7 @@ double calc_net_radiation(params *p, double sw_rad, double tair) {
 
 void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
                            double tair, double wind, double rnet, double ca,
-                           double gpp, double *ga, double *gsv,
+                           double gpp, double gsc_in, double *ga, double *gsv,
                            double *transpiration, double *LE, double *omega) {
     /*
         Calculates transpiration at the canopy scale (or big leaf) using the
@@ -621,6 +623,9 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
             ambient CO2 concentration (umol mol-1)
         gpp : float
             gross primary productivity (umol m-2 s-1)
+        gsc_in : float
+            stomatal conductance to CO2 (mol m-2 s-1) if >= 0 (daily
+            gs_opt), otherwise from gpp by the Medlyn model
         ga : float
             canopy scale boundary layer conductance (mol m-2 s-1; returned)
         gsv : float
@@ -635,7 +640,11 @@ void penman_canopy_wrapper(params *p, state *s, double press, double vpd,
     double gv, gsc, epsilon, slope, gamma, lambda;
 
     /* stomtal conductance to CO2 */
-    gsc = calc_stomatal_conductance(p, s, vpd, ca, gpp);
+    if (gsc_in >= 0.0) {
+        gsc = gsc_in;
+    } else {
+        gsc = calc_stomatal_conductance(p, s, vpd, ca, gpp);
+    }
 
     /* stomtal conductance to H2O */
     *gsv = GSVGSC * gsc;

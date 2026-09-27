@@ -30,6 +30,7 @@
 
 /* Stomatal conductanct models */
 #define MEDLYN 0
+#define GS_OPT 1      /* daily (MATE) profit maximisation */
 
 /* Photosynthesis models */
 #define MATE 0

@@ -64,6 +64,8 @@ typedef struct {
     double bseg[N_PLANT_SEG];  /* Weibull parameters (MPa, -) */
     double cseg[N_PLANT_SEG];
     double gsw_max;    /* big leaf cap on gs for H2O (mol m-2 s-1), <= 0 off */
+    const gs_opt_canopy_in *canopy;  /* A(Ci) & E(gs) supplied (daily), or
+                                        NULL for the Farquhar leaf above */
 } leaf_in;
 
 typedef struct {
@@ -196,12 +198,24 @@ static double plant_supply(const leaf_in *in, double e, double psi_rz,
 
 static void eval_ci(const leaf_in *in, double ci, leaf_state *st) {
     /* leaf state at a given Ci */
-    double Ac, Aj, gsw, gv, dcs;
+    double Ac, Aj, gsw, gv, dcs, e;
+
+    st->ci = ci;
+    if (in->canopy != NULL) {
+        const gs_opt_canopy_in *cp = in->canopy;
+        st->an = cp->assim(ci, cp->ctx);
+        st->gsc = st->an / MAX(in->cs - ci, 0.1);
+        e = MAX(0.0, cp->trans(MAX(0.0, st->gsc), cp->ctx));
+        st->e = cp->e_scale * e;
+        st->psi = plant_supply(in, st->e, in->psi_rz, &st->psi_stem, &st->kl);
+        st->feasible = (st->kl > in->kcrit) &&
+                       (st->psi <= in->psi_rz + 1E-12) &&
+                       (cp->e_max < 0.0 || e <= cp->e_max);
+        return;
+    }
 
     Ac = in->vcmax * (ci - in->gamma_star) / (ci + in->km);
     Aj = in->Vj * (ci - in->gamma_star) / (ci + 2.0 * in->gamma_star);
-
-    st->ci = ci;
     st->an = MIN(Ac, Aj) - in->rd;
 
     // floor Cs - Ci, near Cs a narrow golden bracket would otherwise give an
@@ -407,6 +421,7 @@ static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
 
     leaf_photo_params(c, cw, p, s, &in->gamma_star, &in->km, &in->vcmax,
                       &jmax, &J, &in->Vj, &in->rd);
+    in->canopy = NULL;
     in->cs = cw->Cs;
     in->dleaf = MAX(cw->dleaf, 0.0);
     in->gbv = c->gs_opt_e == GS_OPT_E_TOTAL ? cw->gbv_leaf[idx] : -1.0;
@@ -464,6 +479,45 @@ void gs_opt_leaf(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     cw->kl_leaf[idx] = in.kmax > 0.0 ? best.kl / cw->lai_leaf[idx] : 0.0;
 
     return;
+}
+
+int gs_opt_canopy(control *c, params *p, const gs_opt_canopy_in *cp,
+                  double *ci, double *gsc, double *psi_leaf, double *e) {
+    /*
+        Profit maximising Ci of a canopy that supplies A(Ci) and E(gs)
+        (the daily MATE model). Returns FALSE when the stomata stay shut (no
+        feasible open state or no carbon to gain), with ci = gamma*.
+        e (mmol m-2 s-1) is the costed transpiration (e_scale x E) and
+        psi_leaf the leaf water potential supplying it.
+    */
+    leaf_in    in;
+    leaf_state best;
+
+    memset(&in, 0, sizeof(in));
+    in.canopy = cp;
+    in.gamma_star = cp->gamma_star;
+    in.cs = cp->ca;
+    in.psi_rz = cp->psi_rz;
+    in.gsw_max = -1.0;
+    setup_plant(c, p, cp->kmax, &in);
+    if (in.kmax <= 0.0) {
+        closed_state(&in, &best);
+    } else {
+        optimise(c, &in, p, &best);
+    }
+    if (!best.feasible || best.an <= 0.0) {
+        *ci = cp->gamma_star;
+        *gsc = 0.0;
+        *psi_leaf = cp->psi_rz;
+        *e = 0.0;
+        return (FALSE);
+    }
+    *ci = best.ci;
+    *gsc = best.gsc;
+    *psi_leaf = best.psi;
+    *e = best.e;
+
+    return (TRUE);
 }
 
 double gs_opt_psi_leaf(control *c, canopy_wk *cw, params *p, state *s,

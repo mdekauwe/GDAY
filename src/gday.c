@@ -150,6 +150,27 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
+    if (c->gs_model == GS_OPT) {
+        /* daily (MATE) profit maximisation on the bucket */
+        if (c->sub_daily || c->water_balance != BUCKET || c->ps_pathway != C3) {
+            fprintf(stderr, "gs_model = gs_opt is the daily C3 (MATE) model "
+                    "with water_balance = bucket; the sub-daily model uses "
+                    "gs_opt through water_balance = hydraulics\n");
+            exit(EXIT_FAILURE);
+        }
+        if (c->nonstomatal_limitation) {
+            fprintf(stderr, "gs_opt has no non-stomatal limitation, set "
+                    "nonstomatal_limitation = false\n");
+            exit(EXIT_FAILURE);
+        }
+        if (p->p50 >= 0.0 || p->p88 >= p->p50 || p->kp <= 0.0) {
+            fprintf(stderr, "gs_opt needs kp > 0 and p88 < p50 < 0 (MPa)\n");
+            exit(EXIT_FAILURE);
+        }
+        /* bucket water potential from the retention curve */
+        setup_soil_retention(c, p);
+    }
+
     if (c->water_balance == HYDRAULICS) {
         allocate_numerical_libs_stuff(nr);
         initialise_roots(f, p, s);

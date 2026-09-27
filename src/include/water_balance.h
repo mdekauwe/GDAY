@@ -19,8 +19,8 @@ double  calc_soil_evaporation(met *, params*, state *, double);
 void    calc_interception(control *c, met *m, params *, fluxes *, state *,
                           double *, double *, double *);
 void    penman_canopy_wrapper(params *, state *, double, double, double, double,
-                              double, double, double, double *, double *,
-                              double *, double *, double *);
+                              double, double, double, double, double *,
+                              double *, double *, double *, double *);
 void    penman_leaf_wrapper(met *, params *, state *, double, double,
                             double, double, double, double, double *,
                             double *, double *, double *, double *, double *);

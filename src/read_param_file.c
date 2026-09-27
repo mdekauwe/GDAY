@@ -290,6 +290,8 @@ int handler(char *section, char *name, char *value, control *c,
         if (strcmp(temp, "MEDLYN") == 0||
             strcmp(temp, "medlyn") == 0)
             c->gs_model = MEDLYN;
+        else if (strcasecmp(temp, "gs_opt") == 0)
+            c->gs_model = GS_OPT;
         else {
             fprintf(stderr, "Unknown gs model: %s\n", temp);
             exit(EXIT_FAILURE);
@@ -812,6 +814,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->gs_opt_n_sample = atoi(value);
     } else if (MATCH("params", "gs_opt_n_prescan")) {
         p->gs_opt_n_prescan = atoi(value);
+    } else if (MATCH("params", "gs_opt_peak_e")) {
+        p->gs_opt_peak_e = atof(value);
     } else if (MATCH("params", "gs_opt_n_golden")) {
         p->gs_opt_n_golden = atoi(value);
     } else if (MATCH("params", "seg_frac_root")) {

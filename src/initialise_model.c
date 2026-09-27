@@ -293,6 +293,7 @@ void initialise_params(params *p) {
     p->gs_opt_n_sample = 100; /* JULES som_n_sample */
     p->gs_opt_n_prescan = 15; /* JULES som_n_ci_prescan */
     p->gs_opt_n_golden = 16;  /* JULES som_n_ci_golden_iter */
+    p->gs_opt_peak_e = M_PI / 2.0;  /* sinusoidal half day: peak / mean */
     p->seg_frac_root = 0.5;   /* Wang et al. 2019: k root:stem:leaf */
     p->seg_frac_stem = 0.25;  /* 1000:2000:2000 */
     p->seg_frac_leaf = 0.25;

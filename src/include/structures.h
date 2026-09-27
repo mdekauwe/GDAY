@@ -410,6 +410,8 @@ typedef struct {
     int    gs_opt_n_sample;  /* Ci samples, flat search */
     int    gs_opt_n_prescan; /* Ci samples, golden search prescan */
     int    gs_opt_n_golden;  /* golden section iterations */
+    double gs_opt_peak_e;    /* daily gs_opt: the hydraulic cost is on the
+                                peak (midday) E = this x the am/pm mean E */
     /* plant_segments = segmented: share of the whole plant resistance and
        vulnerability of the root, stem & leaf (P50/P88 < -900 = the whole
        plant values) */
@@ -555,6 +557,9 @@ typedef struct {
     double gpp_gCm2;
     double npp_gCm2;
     double gpp_am;
+    double gsc_am, gsc_pm;  /* daily gs_opt: canopy gs for CO2 chosen by
+                               MATE (mol m-2 s-1), used by the water
+                               balance */
     double gpp_pm;
     double gpp;
     double npp;

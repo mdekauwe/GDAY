@@ -1341,17 +1341,16 @@ double soil_conductivity(params *p, int i, double theta) {
                                    p->cond3[i]));
 }
 
-void setup_soil_hydraulics(control *c, params *p, double *fsoil) {
+void setup_soil_retention(control *c, params *p) {
     /*
-    ** Per layer porosity & field capacity (-10 kPa, used for gravity
-    ** drainage) for the chosen scheme. Saxton also needs its coefficients.
+    ** van Genuchten or Brooks-Corey retention curve from the JULES style
+    ** parameters, without the SPA layer arrays (so the daily gs_opt can use
+    ** soil_psi_raw for its bucket)
     */
-    int i;
-
     soil_scheme = c->soil_hydraulics;
     if (soil_scheme == SAXTON) {
-        calc_saxton_stuff(p, fsoil);
-        return;
+        fprintf(stderr, "Saxton soil hydraulics need the SPA layers\n");
+        exit(EXIT_FAILURE);
     }
     if (p->soil_b <= 0.0 || p->soil_sathh <= 0.0 || p->soil_satcon <= 0.0 ||
         p->soil_sm_sat <= 0.0) {
@@ -1360,6 +1359,23 @@ void setup_soil_hydraulics(control *c, params *p, double *fsoil) {
                 soil_scheme == VAN_GENUCHTEN ? "van_genuchten" : "brooks_corey");
         exit(EXIT_FAILURE);
     }
+
+    return;
+}
+
+void setup_soil_hydraulics(control *c, params *p, double *fsoil) {
+    /*
+    ** Per layer porosity & field capacity (-10 kPa, used for gravity
+    ** drainage) for the chosen scheme. Saxton also needs its coefficients.
+    */
+    int i;
+
+    if (c->soil_hydraulics == SAXTON) {
+        soil_scheme = SAXTON;
+        calc_saxton_stuff(p, fsoil);
+        return;
+    }
+    setup_soil_retention(c, p);
     for (i = 0; i < p->core; i++) {
         p->porosity[i] = p->soil_sm_sat;
         p->field_capacity[i] = soil_theta_at_psi(p, i, -0.01);

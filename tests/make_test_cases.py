@@ -110,6 +110,18 @@ def main():
         "print_options": "daily"})
     open(os.path.join(out_dir, "daily.cfg"), "w").write(daily)
 
+    # daily MATE with gs_opt (profit maximisation) on the bucket
+    daily_gsopt = set_keys(base, {
+        "met_fname": os.path.join(example_dir, "met_data",
+                                  "DUKE_met_data_amb_co2.csv"),
+        "out_fname": os.path.join(out_dir, "out_daily_gsopt.csv"),
+        "print_options": "daily", "gs_model": "gs_opt",
+        "nonstomatal_limitation": "false",
+        "soil_hydraulics": "van_genuchten",
+        "soil_b": "6.742", "soil_sathh": "0.22656875",
+        "soil_satcon": "4.2228e-6", "soil_sm_sat": "0.43648"})
+    open(os.path.join(out_dir, "daily_gsopt.cfg"), "w").write(daily_gsopt)
+
     # sub-daily cases
     cases = {
         "sd_bucket": {"water_balance": "bucket"},
@@ -184,7 +196,7 @@ def main():
         txt = set_keys(base, keys)
         open(os.path.join(out_dir, "%s.cfg" % name), "w").write(txt)
 
-    print(" ".join(["daily"] + list(cases)))
+    print(" ".join(["daily", "daily_gsopt"] + list(cases)))
 
 
 if __name__ == "__main__":
