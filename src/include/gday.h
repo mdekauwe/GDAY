@@ -70,6 +70,7 @@
 
 #define GRAVITY 0
 #define CASCADING 1
+#define RICHARDS 2
 
 /* Spinup method */
 #define BRUTE 0

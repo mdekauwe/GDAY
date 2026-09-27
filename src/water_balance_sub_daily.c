@@ -209,7 +209,11 @@ void calculate_water_balance_sub_daily(control *c, canopy_wk *cw, fluxes *f,
         // determines water movement between soil layers due drainage
         // down the profile
         //
-        for (i = 0; i < p->soil_layers; i++) {
+        if (c->soil_drainage == RICHARDS) {
+            // Darcy flow between all layers (capillary rise too)
+            calc_soil_balance_richards(f, p, s);
+        }
+        for (i = 0; i < p->soil_layers && c->soil_drainage != RICHARDS; i++) {
             if (c->soil_drainage == GRAVITY) {
                 calc_soil_balance(f, nr, p, s, i);
             } else if (c->soil_drainage == CASCADING) {
@@ -1508,5 +1512,104 @@ void setup_soil_hydraulics(control *c, params *p, double *fsoil) {
         p->porosity[i] = p->soil_sm_sat;
         p->field_capacity[i] = soil_theta_at_psi(p, i, -0.01);
     }
+    return;
+}
+
+void calc_soil_balance_richards(fluxes *f, params *p, state *s) {
+    /*
+    ** Redistribution of soil water by Richards' equation over the timestep:
+    ** Darcy flux between adjacent layers (depth positive downward)
+    **     q = K_mean (1 - (h_below - h_above) / dz)       (m s-1, + down)
+    ** so water also moves up from wetter to drier layers (capillary rise).
+    ** Free drainage (q = K) out of the bottom layer into the core layer,
+    ** which is counted as runoff. Pressure head from the raw retention curve
+    ** (JULES only bounds psi for the plant water stress).
+    **
+    ** Explicit, with adaptive sub-steps limited by stability (dz^2 / 2D) and
+    ** so that no layer is over-filled or emptied; the water moves as
+    ** transfers between layers, so mass is conserved exactly. The net result
+    ** is put into water_gain / water_loss like the other drainage schemes.
+    */
+    int    i, nl = p->soil_layers, nsub = 0;
+    double dt_left = SEC_2_HLFHR, dt, dz, kbar, h[nl], k[nl], q[nl + 1];
+    double theta[nl], wc, dmax, rate, dth, cap;
+    double min_dt = 1.0;   /* s */
+
+    for (i = 0; i < nl; i++) {
+        theta[i] = s->water_frac[i];
+    }
+
+    while (dt_left > 1E-9) {
+        for (i = 0; i < nl; i++) {
+            h[i] = soil_psi_raw(p, i, MAX(1E-6, theta[i])) /
+                   METER_OF_HEAD_TO_MPA;                       /* m, < 0 */
+            k[i] = soil_conductivity(p, i, theta[i]);
+        }
+
+        /* fluxes: q[i] is the flux into layer i from above (q[0] = 0 here,
+           infiltration is handled separately), q[nl] out of the bottom */
+        q[0] = 0.0;
+        dt = dt_left;
+        for (i = 0; i < nl - 1; i++) {
+            dz = 0.5 * (s->thickness[i] + s->thickness[i + 1]);
+            kbar = 0.5 * (k[i] + k[i + 1]);
+            q[i + 1] = kbar * (1.0 - (h[i + 1] - h[i]) / dz);
+
+            /* stability: D = K dh/dtheta ~ K |dh| / |dtheta| */
+            dth = fabs(theta[i + 1] - theta[i]);
+            if (dth > 1E-6) {
+                rate = kbar * fabs(h[i + 1] - h[i]) / dth;
+                dt = MIN(dt, 0.4 * dz * dz / MAX(rate, 1E-30));
+            }
+        }
+        q[nl] = k[nl - 1];                               /* free drainage */
+
+        /* don't over-fill or empty any layer in this sub-step */
+        for (i = 0; i < nl; i++) {
+            rate = q[i] - q[i + 1];                           /* m s-1 */
+            wc = theta[i] * s->thickness[i];
+            cap = (p->porosity[i] - theta[i]) * s->thickness[i];
+            dmax = rate > 0.0 ? cap : wc;
+            if (fabs(rate) > 1E-30) {
+                dt = MIN(dt, 0.5 * MAX(dmax, 1E-9) / fabs(rate));
+            }
+        }
+        dt = MAX(MIN(dt, dt_left), MIN(min_dt, dt_left));
+
+        for (i = 0; i <= nl; i++) {
+            double w = q[i] * dt;                   /* m moved at this face */
+            if (i > 0 && i < nl) {
+                /* limit so neither side goes below zero / above porosity */
+                if (w > 0.0) {
+                    w = MIN(w, theta[i - 1] * s->thickness[i - 1]);
+                    w = MIN(w, (p->porosity[i] - theta[i]) * s->thickness[i]);
+                } else {
+                    w = MAX(w, -theta[i] * s->thickness[i]);
+                    w = MAX(w, -(p->porosity[i - 1] - theta[i - 1]) *
+                               s->thickness[i - 1]);
+                }
+                theta[i - 1] -= w / s->thickness[i - 1];
+                theta[i] += w / s->thickness[i];
+                if (w > 0.0) {
+                    f->water_loss[i - 1] += w;
+                    f->water_gain[i] += w;
+                } else {
+                    f->water_loss[i] += -w;
+                    f->water_gain[i - 1] += -w;
+                }
+            } else if (i == nl) {
+                w = MIN(MAX(0.0, w), theta[nl - 1] * s->thickness[nl - 1]);
+                theta[nl - 1] -= w / s->thickness[nl - 1];
+                f->water_loss[nl - 1] += w;
+                f->water_gain[nl] += w;           /* core layer -> runoff */
+            }
+        }
+        dt_left -= dt;
+        if (++nsub > 100000) {
+            fprintf(stderr, "Richards drainage: too many sub-steps\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     return;
 }

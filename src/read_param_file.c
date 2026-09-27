@@ -412,6 +412,8 @@ int handler(char *section, char *name, char *value, control *c,
         else if (strcmp(temp, "CASCADING") == 0||
             strcmp(temp, "cascading") == 0)
             c->soil_drainage = CASCADING;
+        else if (strcasecmp(temp, "richards") == 0)
+            c->soil_drainage = RICHARDS;
         else {
             fprintf(stderr, "Unknown soil_drainage option: %s\n", temp);
             exit(EXIT_FAILURE);
