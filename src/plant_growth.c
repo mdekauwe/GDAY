@@ -479,7 +479,21 @@ int nitrogen_allocation(control *c, fluxes *f, params *p, state *s,
         ** wood could take more N than was available. LAI is only readjusted
         ** below when it isn't prescribed.
         */
-        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
+        if (arg > ntot && c->fixleafnc == FALSE && c->ncycle &&
+            c->prescribed_lai) {
+            /*
+            ** With a prescribed LAI growth can't respond, so don't cut NPP
+            ** (and GPP) back; instead the woody tissue gets only the N that
+            ** is available, i.e. new wood has a lower N:C, so N is still
+            ** conserved.
+            */
+            double scale = ntot / arg;
+            f->npstemimm *= scale;
+            f->npstemmob *= scale;
+            f->npbranch *= scale;
+            f->npcroot *= scale;
+
+        } else if (arg > ntot && c->fixleafnc == FALSE && c->ncycle) {
 
             /* Need to readjust the LAI for the reduced growth as this will
                have already been increased. First we need to figure out how
