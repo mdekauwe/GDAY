@@ -174,7 +174,7 @@ BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
 
 ## Hydraulics
-The multi-layer soil scheme considers infiltration and drainage (gravity, cascading or Richards redistribution) between layers, with Saxton, van Genuchten or Brooks-Corey soil hydraulics (the latter two use JULES' parameter conventions, so JULES/SoilGrids values can be used). Root water uptake is weighted across layers as in JULES (fsmc_mod = 2). Stomatal conductance follows the Sperry et al. (2017) profit maximisation (`water_balance = hydraulics`): at each step the sunlit and shaded leaves choose the Ci that maximises the carbon gain minus the hydraulic cost (the loss of xylem conductance from a Weibull vulnerability curve set by P50/P88, with an optional root/stem/leaf segmentation). Transpiration is limited to what the soil can supply, with gs and photosynthesis reduced consistently. The sub-daily canopy also has an optional canopy air space coupled to the reference height through CABLE's aerodynamic resistance. The earlier Emax approach (Duursma et al. 2008) is available at the git tag `last-emax`.
+The multi-layer soil scheme considers infiltration and drainage (gravity, cascading or Richards redistribution) between layers, with Saxton, van Genuchten or Brooks-Corey soil hydraulics (the latter two parameterised by b, sathh, satcon and sm_sat, e.g. from SoilGrids). Root water uptake is weighted across layers by each layer's soil water potential and soil-to-root resistance. Stomatal conductance follows the Sperry et al. (2017) profit maximisation (`water_balance = hydraulics`): at each step the sunlit and shaded leaves choose the Ci that maximises the carbon gain minus the hydraulic cost (the loss of xylem conductance from a Weibull vulnerability curve set by P50/P88, with an optional root/stem/leaf segmentation). Transpiration is limited to what the soil can supply, with gs and photosynthesis reduced consistently. The sub-daily canopy also has an optional canopy air space coupled to the reference height through CABLE's aerodynamic resistance. The earlier Emax approach (Duursma et al. 2008) is available at the git tag `last-emax`.
 
 We do not currently implement the thermal calculations which would allow you to estimate soil temperature.
 
@@ -232,15 +232,16 @@ previous behaviour unless noted.
   water. Rooting depth from root biomass or the whole column
   (`root_depth_model = dynamic | fixed`).
 - **Soil hydraulics:** `soil_hydraulics = saxton | van_genuchten |
-  brooks_corey` (Clapp-Hornberger/Cosby), using JULES' parameter
-  conventions; JULES' soil water potential bounds and dry soil correction
-  (`bound_soil_psi`, `dry_soil_correction`); Richards redistribution
+  brooks_corey` (Clapp-Hornberger/Cosby); soil water potential bounds and
+  a dry soil correction (`bound_soil_psi`, `dry_soil_correction`); Richards
+  redistribution
   (`soil_drainage = richards`).
-- **Soil evaporation:** `soil_evap_model = gday | jules | or` (JULES
-  gsoil with `gsoil_f`; Or/Decker as in CABLE, with a litter layer);
+- **Soil evaporation:** `soil_evap_model = gday | jules | or` (a surface
+  conductance scaled by `gsoil_f`; Or/Decker as in CABLE, with a litter
+  layer);
   `soil_tortuosity` (params) tunes the GDAY scheme.
-- **Canopy interception:** `canopy_evap_model = jules` (JULES capacity,
-  wet fraction and sieve).
+- **Canopy interception:** `canopy_evap_model = jules` (capacity catch0 +
+  dcatch_dlai x LAI, a wet canopy fraction evaporating at the potential rate).
 - **Radiation and energy balance:** the two-leaf scheme checked against
   CABLE (longwave, radiative and boundary layer conductances); a
   long-standing bug that dropped the direct beam in the sub-daily model is
