@@ -50,6 +50,10 @@ typedef struct {
     int   water_balance;
     int   water_store;       /* retired with Emax, must be false */
     int   gs_opt_search;     /* GS_OPT_FLAT or GS_OPT_GOLDEN */
+    int   gs_opt_e;          /* E the optimiser costs: GS_OPT_E_TOTAL (gs in
+                                series with the leaf boundary layer, the E
+                                the energy balance delivers) or
+                                GS_OPT_E_STOMATAL (gs alone, as JULES) */
     int   root_radial_resistance; /* include the root radial resistance in
                                      the layer uptake weights (SPA) */
     int   num_days;
@@ -766,6 +770,8 @@ typedef struct {
     double kl_leaf[2];      /* xylem conductance at the leaf water potential
                                (mmol m-2 s-1 MPa-1, per unit leaf area) */
     double kl_canopy;       /* ... canopy mean */
+    double gbv_leaf[2];     /* big leaf boundary layer conductance for H2O
+                               from the last energy balance (mol m-2 s-1) */
 
 } canopy_wk;
 

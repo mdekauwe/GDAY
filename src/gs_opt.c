@@ -22,8 +22,12 @@
 * xylem_hydraulics_cumulative_weibull_jls_mod) as closely as GDAY's leaf
 * model allows: A is Farquhar min(Ac, Aj) - Rd with GDAY's leaf parameters,
 * the CO2 at the leaf surface (Cs) is used in place of Ca because GDAY
-* solves the boundary layer separately, and E = 1.6 gs D / P with D the
-* leaf to air vapour pressure deficit from the energy balance.
+* solves the boundary layer separately, and by default the transpiration
+* costed is the one the leaf energy balance delivers, E = gv D / P with gv
+* = gs in series with the leaf boundary layer and D the leaf to air vapour
+* pressure deficit (gs_opt_e = total). gs_opt_e = stomatal uses gs alone,
+* as JULES, whose optimiser leaves out the boundary layer and aerodynamic
+* resistances that its surface energy balance then applies.
 *
 * The plant conductance is per unit leaf area (kp, as JULES kmax_pft), all
 * leaves draw on it in parallel, so each big leaf gets kp x its leaf area.
@@ -45,6 +49,8 @@ typedef struct {
     double vcmax, Vj, km, gamma_star, rd;
     double cs;         /* CO2 at the leaf surface (umol mol-1) */
     double dleaf;      /* leaf to air VPD (Pa) */
+    double gbv;        /* big leaf boundary layer conductance for H2O
+                          (mol m-2 s-1), <= 0 ignores it (JULES) */
     double press;      /* Pa */
     double psi_rz;     /* root zone water potential (MPa) */
     double kmax;       /* big leaf xylem conductance (mmol m-2 s-1 MPa-1) */
@@ -139,7 +145,7 @@ static double supply_psi_leaf(double e, double psi_rz, double kmax,
 
 static void eval_ci(const leaf_in *in, double ci, leaf_state *st) {
     /* leaf state at a given Ci */
-    double Ac, Aj, gsw, dcs;
+    double Ac, Aj, gsw, gv, dcs;
 
     Ac = in->vcmax * (ci - in->gamma_star) / (ci + in->km);
     Aj = in->Vj * (ci - in->gamma_star) / (ci + 2.0 * in->gamma_star);
@@ -152,7 +158,10 @@ static void eval_ci(const leaf_in *in, double ci, leaf_state *st) {
     dcs = MAX(in->cs - ci, 0.1);
     st->gsc = st->an / dcs;                       /* mol CO2 m-2 s-1 */
     gsw = GSVGSC * st->gsc;
-    st->e = MAX(0.0, gsw * in->dleaf / in->press) * MOL_2_MMOL;
+    // the transpiration this gs gives: gs in series with the boundary layer
+    // (what the energy balance delivers), or gs alone (JULES)
+    gv = gsw > 0.0 && in->gbv > 0.0 ? gsw * in->gbv / (gsw + in->gbv) : gsw;
+    st->e = MAX(0.0, gv * in->dleaf / in->press) * MOL_2_MMOL;
     st->psi = supply_psi_leaf(st->e, in->psi_rz, in->kmax, in->kcrit,
                               in->b, in->c, &st->kl);
     st->feasible = (st->kl > in->kcrit) && (st->psi <= in->psi_rz + 1E-12) &&
@@ -319,6 +328,7 @@ static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
                       &jmax, &J, &in->Vj, &in->rd);
     in->cs = cw->Cs;
     in->dleaf = MAX(cw->dleaf, 0.0);
+    in->gbv = c->gs_opt_e == GS_OPT_E_TOTAL ? cw->gbv_leaf[idx] : -1.0;
     in->press = m->press;
     in->psi_rz = psi_rz;
     in->kmax = p->kp * cw->lai_leaf[idx];

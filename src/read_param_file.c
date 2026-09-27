@@ -466,6 +466,16 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown gs_opt_search option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "gs_opt_e")) {
+        if (strcasecmp(temp, "total") == 0)
+            c->gs_opt_e = GS_OPT_E_TOTAL;
+        else if (strcasecmp(temp, "stomatal") == 0 ||
+                 strcasecmp(temp, "jules") == 0)
+            c->gs_opt_e = GS_OPT_E_STOMATAL;
+        else {
+            fprintf(stderr, "Unknown gs_opt_e option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "root_radial_resistance")) {
         if (strcasecmp(temp, "false") == 0)
             c->root_radial_resistance = FALSE;

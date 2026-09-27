@@ -256,6 +256,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     /* store in structure */
     cw->trans_leaf[idx] = transpiration;
     cw->omega_leaf[idx] = omega;
+    cw->gbv_leaf[idx] = GBVGBH * gbc * GBHGBC;
 
     /*
      * calculate new Cs, dleaf & tleaf
@@ -413,6 +414,8 @@ void initialise_leaf_surface(canopy_wk *cw, met *m) {
     cw->tleaf[cw->ileaf] = m->tair;
     cw->dleaf = m->vpd;
     cw->Cs = m->Ca;
+    /* forced convection only until the first energy balance */
+    cw->gbv_leaf[cw->ileaf] = GBVGBH * MAX(cw->gbhu[cw->ileaf], 1.0E-03);
 }
 
 void calc_leaf_to_canopy_scalar(canopy_wk *cw, params *p, state *s) {

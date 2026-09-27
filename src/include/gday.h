@@ -72,6 +72,8 @@
 #define CANOPY_EVAP_JULES 1
 #define GS_OPT_FLAT 1
 #define GS_OPT_GOLDEN 2
+#define GS_OPT_E_TOTAL 0
+#define GS_OPT_E_STOMATAL 1
 
 #define SAXTON 0
 #define VAN_GENUCHTEN 1
