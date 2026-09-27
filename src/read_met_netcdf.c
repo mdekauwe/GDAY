@@ -17,7 +17,9 @@
 *
 * Prescribed LAI (control prescribed_lai) is read from lai_fname if set
 * (e.g. the JULES MODIS file, variable lai_var, dimension lai_pft_index),
-* otherwise from the met file's LAI variable.
+* otherwise from the met file's LAI variable. The LAI file either has the
+* met file's timesteps, or is daily ("days/seconds since" time units), in
+* which case each day's value is held over that day's timesteps.
 *
 * Only built with HAVE_NETCDF (see the Makefile).
 * =========================================================================== */
@@ -57,6 +59,8 @@ static void civil_from_days(long z, int *y, int *doy) {
     *doy = (int)(days_from_civil(yy, m, d) - days_from_civil(yy, 1, 1)) + 1;
 }
 
+static double *alloc_array(size_t, const char *);
+
 static double *read_nc_var(int ncid, const char *name, size_t n,
                            int required) {
     /* read a (time[, y, x]) variable as double; NULL if absent & optional */
@@ -94,12 +98,56 @@ static double *read_nc_var(int ncid, const char *name, size_t n,
     return (out);
 }
 
-static double *read_nc_lai(control *c, size_t n, int met_ncid) {
-    /* prescribed LAI, from lai_fname (pft dimension) or the met file */
+static long *read_lai_days(int ncid, size_t len) {
+    /* day (since 1970-01-01) of each record of a daily LAI file */
+    int     varid, y, mo, d, h = 0, mi = 0, s = 0;
+    size_t  i;
+    double *t, scale;
+    long   *day;
+    char    units[NC_MAX_NAME + 1], what[16];
+
+    NC_CHECK(nc_inq_varid(ncid, "time", &varid), "LAI time variable");
+    memset(units, 0, sizeof(units));
+    NC_CHECK(nc_get_att_text(ncid, varid, "units", units), "LAI time units");
+    if (sscanf(units, "%15s since %d-%d-%d %d:%d:%d", what, &y, &mo, &d, &h,
+               &mi, &s) < 4) {
+        fprintf(stderr, "Can't parse LAI time units '%s'\n", units);
+        exit(EXIT_FAILURE);
+    }
+    if (strcmp(what, "days") == 0) {
+        scale = 1.0;
+    } else if (strcmp(what, "seconds") == 0) {
+        scale = 1.0 / 86400.0;
+    } else {
+        fprintf(stderr, "LAI time units must be days or seconds since ...\n");
+        exit(EXIT_FAILURE);
+    }
+    t = alloc_array(len, "LAI time");
+    day = malloc(len * sizeof(long));
+    NC_CHECK(nc_get_var_double(ncid, varid, t), "LAI time");
+    for (i = 0; i < len; i++) {
+        day[i] = days_from_civil(y, mo, d) +
+                 (long)floor((h * 3600.0 + mi * 60.0 + s) / 86400.0 +
+                             t[i] * scale + 1E-9);
+        if (i > 0 && day[i] != day[i-1] + 1) {
+            fprintf(stderr, "Daily LAI file must have consecutive days "
+                    "(record %zu)\n", i);
+            exit(EXIT_FAILURE);
+        }
+    }
+    free(t);
+
+    return (day);
+}
+
+static double *read_nc_lai(control *c, size_t n, int met_ncid,
+                           const long *met_day) {
+    /* prescribed LAI, from lai_fname (pft dimension) or the met file.
+       met_day: day (since 1970-01-01) of each met timestep */
     int     ncid, varid, ndims, dimids[NC_MAX_VAR_DIMS], d, idim_time = -1;
-    int     idim_pft = -1;
-    size_t  start[NC_MAX_VAR_DIMS], count[NC_MAX_VAR_DIMS], len, i;
-    double *out;
+    size_t  start[NC_MAX_VAR_DIMS], count[NC_MAX_VAR_DIMS], len, i, nlai = n;
+    long    k, *lai_day = NULL;
+    double *out, *daily;
     char    dname[NC_MAX_NAME + 1];
 
     if (strcmp(c->lai_fname, "*NOT SET*") == 0) {
@@ -116,14 +164,13 @@ static double *read_nc_lai(control *c, size_t n, int met_ncid) {
         count[d] = 1;
         if (strcmp(dname, "time") == 0) {
             idim_time = d;
-            if (len < n) {
-                fprintf(stderr, "LAI file has %zu timesteps, met has %zu\n",
-                        len, n);
-                exit(EXIT_FAILURE);
+            if (len != n) {
+                // not on the met timesteps: a daily file
+                lai_day = read_lai_days(ncid, len);
+                nlai = len;
             }
-            count[d] = n;
+            count[d] = nlai;
         } else if (strcmp(dname, "pft") == 0) {
-            idim_pft = d;
             start[d] = (size_t)c->lai_pft_index;
         }
     }
@@ -131,19 +178,32 @@ static double *read_nc_lai(control *c, size_t n, int met_ncid) {
         fprintf(stderr, "LAI variable %s has no time dimension\n", c->lai_var);
         exit(EXIT_FAILURE);
     }
-    if ((out = malloc(n * sizeof(double))) == NULL) {
-        fprintf(stderr, "Error allocating space for LAI\n");
-        exit(EXIT_FAILURE);
-    }
-    NC_CHECK(nc_get_vara_double(ncid, varid, start, count, out), c->lai_var);
+    daily = alloc_array(nlai, "LAI");
+    NC_CHECK(nc_get_vara_double(ncid, varid, start, count, daily),
+             c->lai_var);
     nc_close(ncid);
+    if (lai_day == NULL) {
+        out = daily;
+    } else {
+        out = alloc_array(n, "LAI");
+        for (i = 0; i < n; i++) {
+            k = met_day[i] - lai_day[0];
+            if (k < 0 || k >= (long)nlai) {
+                fprintf(stderr, "Daily LAI file doesn't cover met timestep "
+                        "%zu\n", i);
+                exit(EXIT_FAILURE);
+            }
+            out[i] = daily[k];
+        }
+        free(daily);
+        free(lai_day);
+    }
     for (i = 0; i < n; i++) {
         if (out[i] < 0.0 || isnan(out[i])) {
             fprintf(stderr, "Bad LAI value at timestep %zu\n", i);
             exit(EXIT_FAILURE);
         }
     }
-    (void)idim_pft;
 
     return (out);
 }
@@ -173,6 +233,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     double  dt, t0_days, current_yr, per_step, par;
     char    units[NC_MAX_NAME + 1];
     int    *yr_of, *doy_of;
+    long   *met_day;
 
     NC_CHECK(nc_open(c->met_fname, NC_NOWRITE, &ncid), c->met_fname);
     NC_CHECK(nc_inq_dimid(ncid, "time", &dimid), "time dimension");
@@ -202,9 +263,10 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
               (h0 * 3600.0 + mi0 * 60.0 + s0) / 86400.0;
     yr_of = malloc(ntime * sizeof(int));
     doy_of = malloc(ntime * sizeof(int));
+    met_day = malloc(ntime * sizeof(long));
     for (i = 0; i < ntime; i++) {
-        civil_from_days((long)floor(t0_days + time[i] / 86400.0 + 1E-9),
-                        &yr_of[i], &doy_of[i]);
+        met_day[i] = (long)floor(t0_days + time[i] / 86400.0 + 1E-9);
+        civil_from_days(met_day[i], &yr_of[i], &doy_of[i]);
     }
 
     /* optional subset of whole years */
@@ -231,7 +293,8 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     wind = read_nc_var(ncid, "Wind", ntime, TRUE);
     co2 = read_nc_var(ncid, "CO2air", ntime, FALSE);
     lwdown = c->sub_daily ? read_nc_var(ncid, "LWdown", ntime, FALSE) : NULL;
-    lai = c->prescribed_lai ? read_nc_lai(c, ntime, ncid) : NULL;
+    lai = c->prescribed_lai ? read_nc_lai(c, ntime, ncid, met_day) : NULL;
+    free(met_day);
     nc_close(ncid);
 
     if (co2 == NULL && p->nc_co2 < 0.0) {
