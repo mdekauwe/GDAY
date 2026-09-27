@@ -2,7 +2,7 @@
 
 GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b).
 
-The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily canopy follows [CABLE](https://github.com/CABLE-LSM/CABLE)'s two-leaf scheme (Wang and Leuning, 1998; Kowalczyk et al., 2006): radiation absorption by the sunlit and shaded leaves, long-wave exchange, radiative and boundary layer conductances, and optionally a canopy air space with CABLE's aerodynamic resistance. The coupled photosynthesis and leaf energy balance, solved separately for each leaf, follow [MAESPA](http://maespa.github.io/manual.html). In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a multi-layer soil with plant hydraulics, in which stomatal conductance follows the Sperry et al. (2017) profit maximisation ("gs_opt", as implemented in De Kauwe et al. 2022 and JULES gs_opt_dev); this replaced the earlier Emax approach (git tag `last-emax`). A daily (MATE) version of the profit maximisation is also available (`gs_model = gs_opt`).
+The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily canopy follows [CABLE](https://github.com/CABLE-LSM/CABLE)'s two-leaf scheme (Wang and Leuning, 1998; Kowalczyk et al., 2006): radiation absorption by the sunlit and shaded leaves, long-wave exchange, radiative and boundary layer conductances, and optionally a canopy air space with CABLE's aerodynamic resistance. The coupled photosynthesis and leaf energy balance, solved separately for each leaf, follow [MAESPA](http://maespa.github.io/manual.html). In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a multi-layer soil with plant hydraulics, in which stomatal conductance follows the Sperry et al. (2017) profit maximisation ("gs_opt"; De Kauwe et al. 2022); this replaced the earlier Emax approach (git tag `last-emax`). A daily (MATE) version of the profit maximisation is also available (`gs_model = gs_opt`).
 
 GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993).
 
@@ -144,7 +144,7 @@ wind_pm | afternoon wind speed | m s<sup>-1</sup>
 par_am | morning photosynthetically active radiation (total, sunrise to noon) | MJ m<sup>-2</sup>
 par_pm | afternoon photosynthetically active radiation (total, noon to sunset) | MJ m<sup>-2</sup>
 
-**netCDF file (PLUMBER2 / ALMA, as JULES reads):**
+**netCDF file:**
 
 If `met_fname` is a netCDF file it is read directly, for either time step
 (the daily model aggregates the 30 min records into the daily/am/pm forcing
@@ -158,7 +158,7 @@ in params `nc_co2` (ppm, if there is no CO2air), `nc_ndep` and `nc_nfix`
 (t N ha<sup>-1</sup> yr<sup>-1</sup>; not in the forcing). Soil temperature is
 taken as the daily mean air temperature. Prescribed LAI (`prescribed_lai =
 true`): from `lai_fname` (variable `lai_var`, pft index `lai_pft_index`, e.g.
-the JULES MODIS LAI file), on the met time steps or daily, otherwise from the
+a MODIS LAI file), on the met time steps or daily, otherwise from the
 met file's `LAI` variable.
 
 ## Nitrogen inputs
@@ -222,7 +222,7 @@ Config options in `code` (control section unless stated); defaults keep the
 previous behaviour unless noted.
 - **Stomatal optimisation:** Sperry et al. (2017) profit maximisation
   replaces Emax in the sub-daily hydraulics (git tag `last-emax` has Emax),
-  ported from JULES gs_opt_dev: flat or golden-section Ci search
+  (De Kauwe et al. 2022): flat or golden-section Ci search
   (`gs_opt_search`), Weibull vulnerability from P50/P88, optional root/stem/
   leaf segments (`plant_segments = segmented`), transpiration costed as
   delivered (`gs_opt_e`). A daily MATE version: `gs_model = gs_opt`.
