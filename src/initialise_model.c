@@ -319,6 +319,7 @@ void initialise_params(params *p) {
     p->ds_min_depth = 0.0;
     p->gs_nvg = 0.01;            /* JULES gs_nvg_io, soil */
     p->gsoil_f = 1.0;
+    p->soil_tortuosity = 2.5;  /* SPA */
     p->or_sublayer_dz = 0.005;   /* CABLE psm initial sublayer_dz */
     p->litter_dz_per_c = 0.003;  /* CABLE: litter_dz = clitt * 0.003 */
     p->litter_c = -999.9;

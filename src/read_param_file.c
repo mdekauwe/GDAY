@@ -854,6 +854,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->gs_nvg = atof(value);
     } else if (MATCH("params", "gsoil_f")) {
         p->gsoil_f = atof(value);
+    } else if (MATCH("params", "soil_tortuosity")) {
+        p->soil_tortuosity = atof(value);
     } else if (MATCH("params", "or_sublayer_dz")) {
         p->or_sublayer_dz = atof(value);
     } else if (MATCH("params", "litter_dz_per_c")) {

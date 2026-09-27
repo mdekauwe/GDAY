@@ -439,6 +439,8 @@ typedef struct {
     /* soil evaporation: JULES (gs_nvg, gsoil_f) & Or/Decker (CABLE psm) */
     double gs_nvg;           /* JULES bare soil conductance (m s-1) */
     double gsoil_f;          /* JULES scaling of gsoil under the canopy (-) */
+    double soil_tortuosity;  /* SPA (gday) soil evaporation: tortuosity of
+                                the dry surface layer (-) */
     double or_sublayer_dz;   /* Or: viscous sublayer thickness (m) */
     double litter_dz_per_c;  /* Or: litter depth per litter C (m per t C ha-1) */
     double litter_c;         /* Or: surface litter C (t C ha-1), <0 = simulated */

@@ -1147,10 +1147,9 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
     //   homogeneous land surfaces. Quarterly Journal of the Royal
     //   Meteorological Society, 480, 373-398.
 
-    double diff, ea, esat, esurf, lambda, rho, tortuosity, tk;
+    double diff, ea, esat, esurf, lambda, rho, tk;
     double qe_flux, tsk, ga, gws, conv, gw_tot;
 
-    tortuosity = 2.5;
     tk = tair + DEG_TO_KELVIN;
     tsk = tsoil + DEG_TO_KELVIN;
 
@@ -1183,7 +1182,7 @@ double calc_qe_flux(fluxes *f, params *p, state *s, double tair, double tsoil,
 
     // soil conductance to water vapour diffusion (m s-1)...
     // Choudhury & Monteith (1988), Eq 41b
-    gws = p->porosity[0] * diff / (tortuosity * s->dry_thick);
+    gws = p->porosity[0] * diff / (p->soil_tortuosity * s->dry_thick);
 
     // Total conductance
     gw_tot = (1.0 / ga + 1.0 / gws);
