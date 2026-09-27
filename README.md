@@ -2,7 +2,7 @@
 
 GDAY (Generic Decomposition And Yield) is a simple ecosystem model that simulates carbon, nitrogen, and water dynamics at the stand scale (Comins and McMurtrie, 1993; Medlyn et al. 2000; Corbeels et al. 2005a,b).
 
-The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESPA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a [SPA](http://www.geos.ed.ac.uk/homes/mwilliam/spa.html)-style representation of hydraulics. GDAY-SPA resolves multiple soil layers, soil and leaf water potential and limits gas exchange following the Emax approach (see [MAESPA](http://maespa.github.io/manual.html) for more details).
+The model can be run at either a daily time step, or a 30-minute time step. When the model is run at the sub-daily timescale, photosynthesis is calculated using a two-leaf (sunlit/shade) approximation (de Pury and Farquhar, 1997; Wang and Leuning, 1998), otherwise photosynthesis is calculated following Sands (1995;1996). The sub-daily approach (photosynthesis & leaf energy balance) mirrors [MAESPA](http://maespa.github.io/manual.html), without the complexity of the radiation treatment. In the standard model the water balance is represented simply, with two (fixed) soil water "buckets", which represent a top soil (e.g. 5 cm) and a larger root-zone. If you are using the sub-daily version, there is now the option to use a [SPA](http://www.geos.ed.ac.uk/homes/mwilliam/spa.html)-style multi-layer soil with plant hydraulics, in which stomatal conductance follows the Sperry et al. (2017) profit maximisation ("gs_opt", as implemented in De Kauwe et al. 2022 and JULES gs_opt_dev); this replaced the earlier Emax approach (git tag `last-emax`). A daily (MATE) version of the profit maximisation is also available (`gs_model = gs_opt`).
 
 GDAY uses a modified version of the [CENTURY](https://www.nrel.colostate.edu/projects/century/) model to simulate soil carbon and nutrient dynamics (Parton et al. 1987; 1993).
 
@@ -91,11 +91,11 @@ When I have time I will write something more extensive (ha), but information abo
 The git hash allows you to connect which version of the model code produced which version of the model output. I'd argue for maintaining this functionality, but if you don't use git or wish to ignore me, filling this line with gibberish and disabling the shell command in the Makefile should allow you to do this.
 
 ## Potential gotchas
-- The parameter alpha_j which represents the quantum yield of electron transport (mol mol-1) is the intrinsic quantum yield (i.e. per unit APAR). For the two-leaf version of the model, alpha_j should be divided by (1.0 - omega), where omega is the leaf scattering coefficient of PAR (leaf reflectance and transmittance combined). Currently we are assuming omega = 0.15 (radiation.c), this is currently hardwired.
+- The parameter alpha_j which represents the quantum yield of electron transport (mol mol-1) is the intrinsic quantum yield (i.e. per unit APAR). For the two-leaf version of the model, alpha_j should be divided by (1.0 - omega), where omega is the leaf scattering coefficient of PAR (leaf reflectance and transmittance combined). The leaf transmittance and reflectance (and so omega) are parameters (leaf_tau_vis, leaf_refl_vis, leaf_tau_nir, leaf_refl_nir).
 
 - The deciduous phenology scheme does not currently work with the two-leaf version of the model (can be fixed).
 
-- Wind speed must be > 0.0, some flux files have timesteps where this isn't the case and it will crash the model. Similarly, with the Medlyn gs model, VPD must be greater than 0.05 kPa.
+- Wind speed and VPD are floored at 0.1 m s<sup>-1</sup> and 0.05 kPa when the forcing is read (flux site files can have calm or saturated steps, which previously crashed the model or the Medlyn gs model).
 
 ## Meteorological driving file
 
@@ -123,14 +123,14 @@ press | atmospheric pressure | kPa
 Variable | Description | Units
 --- | --- | ---
 year | |
-doy  | day of year  | [0-365/6]
+doy  | day of year  | [1-365/6]
 tair | (daylight) air temperature | deg C
 rain | rainfall | mm day<sup>-1</sup>
 tsoil | soil temperature | deg C
 tam | morning air temperature | deg C
 tpm | afternoon air temperature | deg C
 tmin | minimum (day) air temperature | deg C
-tmax | minimum (day) air temperature | deg C
+tmax | maximum (day) air temperature | deg C
 tday | day average air temperature (24 hrs) | deg C
 vpd_am | morning vapour pressure deficit | kPa
 vpd_pm | afternoon vapour pressure deficit | kPa
@@ -141,8 +141,25 @@ wind | wind speed | m s<sup>-1</sup>
 press | atmospheric pressure | kPa
 wind_am | morning wind speed | m s<sup>-1</sup>
 wind_pm | afternoon wind speed | m s<sup>-1</sup>
-par_am | morning photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
-par_pm | afternoon photosynthetically active radiation | MJ m<sup>-2</sup> d<sup>-1</sup>
+par_am | morning photosynthetically active radiation (total, sunrise to noon) | MJ m<sup>-2</sup>
+par_pm | afternoon photosynthetically active radiation (total, noon to sunset) | MJ m<sup>-2</sup>
+
+**netCDF file (PLUMBER2 / ALMA, as JULES reads):**
+
+If `met_fname` is a netCDF file it is read directly, for either time step
+(the daily model aggregates the 30 min records into the daily/am/pm forcing
+above, using daylight steps before/after noon). Variables (time, y, x), SI
+units: `Tair` (K), `SWdown` (W m<sup>-2</sup>; PAR = 2.3 x SWdown), `Precip`
+(kg m<sup>-2</sup> s<sup>-1</sup>), `Qair` (kg kg<sup>-1</sup>; VPD from Qair,
+Tair and Psurf), `Psurf` (Pa), `Wind` (m s<sup>-1</sup>), optional `CO2air`
+(ppm) and `LWdown` (W m<sup>-2</sup>). Time must be "seconds since ...".
+Options: `met_start_year`, `met_end_year` (control; whole years to use), and
+in params `nc_co2` (ppm, if there is no CO2air), `nc_ndep` and `nc_nfix`
+(t N ha<sup>-1</sup> yr<sup>-1</sup>; not in the forcing). Soil temperature is
+taken as the daily mean air temperature. Prescribed LAI (`prescribed_lai =
+true`): from `lai_fname` (variable `lai_var`, pft index `lai_pft_index`, e.g.
+the JULES MODIS LAI file), on the met time steps or daily, otherwise from the
+met file's `LAI` variable.
 
 ## Nitrogen inputs
 Nitrogen (N) entering the system via biological N fixation (BNF; tonnes ha<sup>-1</sup> yr<sup>-1</sup>) and N deposition (tonnes ha<sup>-1</sup> yr<sup>-1</sup>) are prescribed and passed via the met file. If information isn't available from the experiment GDAY is being applied to, BNF can be calculated as a function of evapotranspiration (ET) based on Cleveland et al. 1999.
@@ -157,7 +174,7 @@ BNF = 0.102 * (ET * mm_2_cm) + 0.524
 ```
 
 ## Hydraulics
-From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage between layers. We also implement the soil-to-leaf hydraulics from SPA, which includes weighting soil water potential. We limit gas exchange following the Emax approach (Duursma et al. 2008). This approach therefore assumes isohydric behaviour, i.e. the plant maintains a leaf water potential above a critical minimum value.
+From SPA we borrow the multi-layer soil scheme, which considers infiltration and drainage (gravity, cascading or Richards redistribution) between layers, with Saxton, van Genuchten or Brooks-Corey soil hydraulics (the latter two use JULES' parameter conventions, so JULES/SoilGrids values can be used). Root water uptake is weighted across layers as in JULES (fsmc_mod = 2). Stomatal conductance follows the Sperry et al. (2017) profit maximisation (`water_balance = hydraulics`): at each step the sunlit and shaded leaves choose the Ci that maximises the carbon gain minus the hydraulic cost (the loss of xylem conductance from a Weibull vulnerability curve set by P50/P88, with an optional root/stem/leaf segmentation). Transpiration is limited to what the soil can supply, with gs and photosynthesis reduced consistently. The sub-daily canopy also has an optional canopy air space coupled to the reference height through CABLE's aerodynamic resistance. The earlier Emax approach (Duursma et al. 2008) is available at the git tag `last-emax`.
 
 We do not currently implement the thermal calculations which would allow you to estimate soil temperature.
 
@@ -195,7 +212,49 @@ of photosynthesis from leaves to canopies without the errors of big-leaf models.
 10. Parton, W.J., Scurlock, J.M.O., Ojima, D.S., Gilmanov, T.G., Scholes, R.J., Schimel, D.S., Kirchner, T., Menaut, J.-C., Seastedt, T., Garcia Moya, E. Kamnalrut, A., and Kinyamario, J.I. (1993) Observations and modeling of biomass and soil or- ganic matter dynamics for the grassland biome worldwide. Global Biogeochem. Cycles, 7: 785–809.
 11. Duursma, RA and Kolari, P and Perämäki, M and Nikinmaa, E and Hari, P and Delzon, S and Loustau, D and Ilvesniemi, H and Pumpanen, J and Mäkelä, A. (2008) Predicting the decline in daily maximum transpiration rate of two pine stands during drought based on constant minimum leaf water potential and plant hydraulic conductance. Tree physiology, 28, 265-276.
 12. Duusma, R. A. and Medlyn, B. E. (2012) MAESPA: a model to study interactions between water limitation, environmental drivers and vegetation function at tree and stand levels, with an example application to [CO2] x drought interactions. Geoscientific Model Development, 5, 919-940.
+13. Sperry, J. S., Venturas, M. D., Anderegg, W. R. L., Mencuccini, M., Mackay, D. S., Wang, Y. and Love, D. M. (2017) Predicting stomatal responses to the environment from the optimization of photosynthetic gain and hydraulic cost. Plant, Cell & Environment, 40, 816-830.
+14. De Kauwe, M. G., Sabot, M. E. B., Medlyn, B. E., Pitman, A. J., Meir, P., Cernusak, L. A., Gallagher, R. V., Ukkola, A. M., Rifai, S. W. and Choat, B. (2022) Towards species-level forecasts of drought-induced tree mortality risk. New Phytologist, 235, 94-110.
 
+
+## Recent changes (2026, branch profit-max, now on master)
+Config options in `code` (control section unless stated); defaults keep the
+previous behaviour unless noted.
+- **Stomatal optimisation:** Sperry et al. (2017) profit maximisation
+  replaces Emax in the sub-daily hydraulics (git tag `last-emax` has Emax),
+  ported from JULES gs_opt_dev: flat or golden-section Ci search
+  (`gs_opt_search`), Weibull vulnerability from P50/P88, optional root/stem/
+  leaf segments (`plant_segments = segmented`), transpiration costed as
+  delivered (`gs_opt_e`). A daily MATE version: `gs_model = gs_opt`.
+- **Soil water supply:** transpiration is kept within what the soil can
+  supply, with gs and photosynthesis reduced consistently (no carbon gain
+  for water that did not move); uptake is taken from layers that hold
+  water. Rooting depth from root biomass or the whole column
+  (`root_depth_model = dynamic | fixed`).
+- **Soil hydraulics:** `soil_hydraulics = saxton | van_genuchten |
+  brooks_corey` (Clapp-Hornberger/Cosby), using JULES' parameter
+  conventions; JULES' soil water potential bounds and dry soil correction
+  (`bound_soil_psi`, `dry_soil_correction`); Richards redistribution
+  (`soil_drainage = richards`).
+- **Soil evaporation:** `soil_evap_model = gday | jules | or` (JULES
+  gsoil with `gsoil_f`; Or/Decker as in CABLE, with a litter layer);
+  `soil_tortuosity` (params) tunes the GDAY (SPA) scheme.
+- **Canopy interception:** `canopy_evap_model = jules` (JULES capacity,
+  wet fraction and sieve).
+- **Radiation and energy balance:** the two-leaf scheme checked against
+  CABLE (longwave, radiative and boundary layer conductances); a
+  long-standing bug that dropped the direct beam in the sub-daily model is
+  fixed; net radiation from the forcing's LWdown (`net_lw_model = lwdown |
+  monteith`); leaf optical properties are parameters; closed leaves still
+  solve their energy balance.
+- **Canopy air space** (sub-daily, `canopy_air_space`, default on): leaves
+  exchange with canopy air coupled to the reference height through CABLE's
+  aerodynamic resistance (`canopy_ga_model = cable | simple`).
+- **Forcing:** PLUMBER2/ALMA netCDF met files, prescribed LAI from a netCDF
+  file (on the met time steps, or daily).
+- **Earlier clean-up:** many bug fixes, water conservation in the hydraulics
+  scheme, the non-stomatal limitation proxy behind a switch
+  (`nonstomatal_limitation`), a rewritten SAS spin-up, and regression tests
+  (`tests/run_tests.sh`).
 
 ## Contacts
 * [Martin De Kauwe](http://mdekauwe.github.io/).
