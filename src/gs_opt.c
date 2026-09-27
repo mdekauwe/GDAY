@@ -53,27 +53,35 @@ typedef struct {
                           (mol m-2 s-1), <= 0 ignores it (JULES) */
     double press;      /* Pa */
     double psi_rz;     /* root zone water potential (MPa) */
-    double kmax;       /* big leaf xylem conductance (mmol m-2 s-1 MPa-1) */
+    double kmax;       /* big leaf whole plant xylem conductance (mmol m-2
+                          s-1 MPa-1) */
     double kcrit;
-    double b, c;       /* Weibull parameters (MPa, -) */
+    int    nseg;       /* 1, or root, stem & leaf in series */
+    double kseg[N_PLANT_SEG];  /* maximum conductance of each segment */
+    double bseg[N_PLANT_SEG];  /* Weibull parameters (MPa, -) */
+    double cseg[N_PLANT_SEG];
     double gsw_max;    /* big leaf cap on gs for H2O (mol m-2 s-1), <= 0 off */
 } leaf_in;
 
 typedef struct {
-    double ci, an, gsc, e, psi, kl;
+    double ci, an, gsc, e, psi, kl, psi_stem;
     int    feasible;
 } leaf_state;
 
 
-void weibull_params(params *p, double *b, double *c) {
+static void weibull_bc(double p50, double p88, double *b, double *c) {
     /*
         Cumulative Weibull k(psi) = kmax exp(-(psi / b)^c) through P50 and
         P88, as JULES pftparm_io.
     */
-    *c = log(log(1.0 - 0.5) / log(1.0 - 0.88)) / log(p->p50 / p->p88);
-    *b = p->p50 / pow(-log(1.0 - 0.5), 1.0 / *c);
+    *c = log(log(1.0 - 0.5) / log(1.0 - 0.88)) / log(p50 / p88);
+    *b = p50 / pow(-log(1.0 - 0.5), 1.0 / *c);
 
     return;
+}
+
+void weibull_params(params *p, double *b, double *c) {
+    weibull_bc(p->p50, p->p88, b, c);
 }
 
 static double weibull_k(double psi, double kmax, double b, double c) {
@@ -143,6 +151,46 @@ static double supply_psi_leaf(double e, double psi_rz, double kmax,
     return (psi);
 }
 
+static double plant_supply(const leaf_in *in, double e, double psi_rz,
+                           double *psi_stem, double *k_plant) {
+    /*
+        Leaf water potential (MPa) supplying e (mmol m-2 s-1) through the
+        plant's segments in series (root, stem, leaf, or the whole plant as
+        one), each with its own vulnerability curve. Returns the water
+        potential at the top of the stem (= leaf for a single segment) and
+        the whole plant conductance k = -dE/dpsi_leaf, which the profit
+        is costed on:
+
+            E = int_{psi_out}^{psi_in} k_s  =>  dpsi_out/dE =
+                (k_s(psi_in) dpsi_in/dE - 1) / k_s(psi_out)
+
+        from dpsi_soil/dE = 0, i.e. 1 / k = sum of the segments' 1 / k_s
+        with no flow, and k = k(psi_leaf) for a single segment.
+    */
+    double psi_in = psi_rz, psi_out, k_in, k_out, dpsi_de = 0.0;
+    int    s;
+
+    *psi_stem = psi_rz;
+    for (s = 0; s < in->nseg; s++) {
+        k_in = weibull_k(psi_in, in->kseg[s], in->bseg[s], in->cseg[s]);
+        psi_out = supply_psi_leaf(e, psi_in, in->kseg[s],
+                                  in->kcrit / in->kmax * in->kseg[s],
+                                  in->bseg[s],
+                                  in->cseg[s], &k_out);
+        dpsi_de = (k_in * dpsi_de - 1.0) / MAX(k_out, 1E-30);
+        if (s == in->nseg - 2) {
+            *psi_stem = psi_out;
+        }
+        psi_in = psi_out;
+    }
+    if (in->nseg == 1) {
+        *psi_stem = psi_in;
+    }
+    *k_plant = -1.0 / dpsi_de;
+
+    return (psi_in);
+}
+
 static void eval_ci(const leaf_in *in, double ci, leaf_state *st) {
     /* leaf state at a given Ci */
     double Ac, Aj, gsw, gv, dcs;
@@ -162,8 +210,7 @@ static void eval_ci(const leaf_in *in, double ci, leaf_state *st) {
     // (what the energy balance delivers), or gs alone (JULES)
     gv = gsw > 0.0 && in->gbv > 0.0 ? gsw * in->gbv / (gsw + in->gbv) : gsw;
     st->e = MAX(0.0, gv * in->dleaf / in->press) * MOL_2_MMOL;
-    st->psi = supply_psi_leaf(st->e, in->psi_rz, in->kmax, in->kcrit,
-                              in->b, in->c, &st->kl);
+    st->psi = plant_supply(in, st->e, in->psi_rz, &st->psi_stem, &st->kl);
     st->feasible = (st->kl > in->kcrit) && (st->psi <= in->psi_rz + 1E-12) &&
                    (in->gsw_max <= 0.0 || gsw <= in->gsw_max);
 
@@ -180,8 +227,7 @@ static void closed_state(const leaf_in *in, leaf_state *st) {
     st->an = -in->rd;
     st->gsc = GS_OPT_CLOSED_GSC;
     st->e = 0.0;
-    st->psi = in->psi_rz;
-    st->kl = weibull_k(in->psi_rz, in->kmax, in->b, in->c);
+    st->psi = plant_supply(in, 0.0, in->psi_rz, &st->psi_stem, &st->kl);
     st->feasible = FALSE;
 }
 
@@ -319,6 +365,38 @@ static int search_golden(const leaf_in *in, int n_prescan, int n_iter,
     return (FALSE);
 }
 
+static void setup_plant(control *c, params *p, double kmax, leaf_in *in) {
+    /*
+        Whole plant, or root, stem and leaf segments sharing the whole plant
+        resistance (seg_frac_*), so the segments in series give kmax when
+        well watered. Segment P50/P88 default to the whole plant values.
+    */
+    double frac[N_PLANT_SEG] = {p->seg_frac_root, p->seg_frac_stem,
+                                p->seg_frac_leaf};
+    double p50[N_PLANT_SEG] = {p->p50_root, p->p50_stem, p->p50_leaf};
+    double p88[N_PLANT_SEG] = {p->p88_root, p->p88_stem, p->p88_leaf};
+    double sum = frac[0] + frac[1] + frac[2];
+    int    s;
+
+    in->kmax = kmax;
+    in->kcrit = (1.0 - p->kcrit_frac) * kmax;
+    if (c->plant_segments == N_PLANT_SEG) {
+        in->nseg = N_PLANT_SEG;
+        for (s = 0; s < N_PLANT_SEG; s++) {
+            in->kseg[s] = kmax * sum / frac[s];
+            weibull_bc(p50[s] < -900.0 ? p->p50 : p50[s],
+                       p88[s] < -900.0 ? p->p88 : p88[s],
+                       &in->bseg[s], &in->cseg[s]);
+        }
+    } else {
+        in->nseg = 1;
+        in->kseg[0] = kmax;
+        weibull_bc(p->p50, p->p88, &in->bseg[0], &in->cseg[0]);
+    }
+
+    return;
+}
+
 static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
                        state *s, double psi_rz, leaf_in *in) {
     double jmax, J, tk;
@@ -331,9 +409,7 @@ static void setup_leaf(control *c, canopy_wk *cw, met *m, params *p,
     in->gbv = c->gs_opt_e == GS_OPT_E_TOTAL ? cw->gbv_leaf[idx] : -1.0;
     in->press = m->press;
     in->psi_rz = psi_rz;
-    in->kmax = p->kp * cw->lai_leaf[idx];
-    in->kcrit = (1.0 - p->kcrit_frac) * in->kmax;
-    weibull_params(p, &in->b, &in->c);
+    setup_plant(c, p, p->kp * cw->lai_leaf[idx], in);
 
     // cap on gs for H2O, m s-1 -> mol m-2 s-1, scaled to the big leaf as
     // Vcmax (JULES: som_gl_max * fpar)
@@ -381,29 +457,32 @@ void gs_opt_leaf(control *c, canopy_wk *cw, met *m, params *p, state *s) {
     cw->rd_leaf[idx] = in.rd;
     cw->gsc_leaf[idx] = MAX(GS_OPT_CLOSED_GSC, best.gsc);
     cw->lwp_leaf[idx] = best.psi;
+    cw->psi_stem_leaf[idx] = best.psi_stem;
     cw->kl_leaf[idx] = in.kmax > 0.0 ? best.kl / cw->lai_leaf[idx] : 0.0;
 
     return;
 }
 
-double gs_opt_psi_leaf(canopy_wk *cw, params *p, state *s, double e_mmol,
-                       double *kl) {
+double gs_opt_psi_leaf(control *c, canopy_wk *cw, params *p, state *s,
+                       double e_mmol, double *kl) {
     /*
         Leaf water potential (MPa) supplying the big leaf's actual
         transpiration (mmol m-2 s-1) from the energy balance; returns the
-        xylem conductance per unit leaf area in kl.
+        whole plant xylem conductance per unit leaf area in kl, and sets the
+        stem water potential.
     */
-    double b, c, kmax, psi, k;
-    int    idx = cw->ileaf;
+    leaf_in in;
+    double  psi, k;
+    int     idx = cw->ileaf;
 
-    weibull_params(p, &b, &c);
-    kmax = p->kp * cw->lai_leaf[idx];
-    if (kmax <= 0.0) {
+    setup_plant(c, p, p->kp * cw->lai_leaf[idx], &in);
+    if (in.kmax <= 0.0) {
         *kl = p->kp;
+        cw->psi_stem_leaf[idx] = s->weighted_swp;
         return (s->weighted_swp);
     }
-    psi = supply_psi_leaf(e_mmol, s->weighted_swp, kmax,
-                          (1.0 - p->kcrit_frac) * kmax, b, c, &k);
+    psi = plant_supply(&in, e_mmol, s->weighted_swp,
+                       &cw->psi_stem_leaf[idx], &k);
     *kl = k / cw->lai_leaf[idx];
 
     return (psi);

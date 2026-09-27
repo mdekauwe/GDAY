@@ -272,7 +272,7 @@ void solve_leaf_energy_balance(control *c, canopy_wk *cw, fluxes *f, met *m,
     if (c->water_balance == HYDRAULICS) {
         // leaf water potential (MPa) supplying the transpiration
         trans_mmol = cw->trans_leaf[idx] * MOL_2_MMOL;
-        cw->lwp_leaf[idx] = gs_opt_psi_leaf(cw, p, s, trans_mmol,
+        cw->lwp_leaf[idx] = gs_opt_psi_leaf(c, cw, p, s, trans_mmol,
                                             &cw->kl_leaf[idx]);
     }
 
@@ -353,7 +353,7 @@ void zero_leaf_water_fluxes(control *c, canopy_wk *cw, params *p, state *s) {
 
     if (c->water_balance == HYDRAULICS) {
         // no flow, the leaf is at the root zone water potential
-        cw->lwp_leaf[idx] = gs_opt_psi_leaf(cw, p, s, 0.0, &cw->kl_leaf[idx]);
+        cw->lwp_leaf[idx] = gs_opt_psi_leaf(c, cw, p, s, 0.0, &cw->kl_leaf[idx]);
     }
 
     return;
@@ -378,9 +378,14 @@ void scale_leaf_to_canopy(control *c, canopy_wk *cw, state *s) {
                              lai;
             cw->kl_canopy = (cw->kl_leaf[SUNLIT] * cw->lai_leaf[SUNLIT] +
                              cw->kl_leaf[SHADED] * cw->lai_leaf[SHADED]) / lai;
+            cw->psi_stem_canopy = (cw->psi_stem_leaf[SUNLIT] *
+                                   cw->lai_leaf[SUNLIT] +
+                                   cw->psi_stem_leaf[SHADED] *
+                                   cw->lai_leaf[SHADED]) / lai;
         } else {
             cw->lwp_canopy = s->weighted_swp;
             cw->kl_canopy = cw->kl_leaf[SUNLIT];
+            cw->psi_stem_canopy = s->weighted_swp;
         }
     }
 

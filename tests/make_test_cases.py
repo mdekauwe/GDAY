@@ -119,6 +119,8 @@ def main():
                                "soil_drainage": "cascading"},
         "sd_hyd_dry_golden": {"water_balance": "hydraulics", "met": "dry",
                               "gs_opt_search": "golden"},
+        "sd_hyd_dry_segmented": {"water_balance": "hydraulics", "met": "dry",
+                                 "plant_segments": "segmented"},
         "sd_hyd_dry_jules_rz": {"water_balance": "hydraulics", "met": "dry",
                                 "root_radial_resistance": "false",
                                 "root_psi_crit": "-4.889"},

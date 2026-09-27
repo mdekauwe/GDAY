@@ -54,6 +54,8 @@ typedef struct {
                                 series with the leaf boundary layer, the E
                                 the energy balance delivers) or
                                 GS_OPT_E_STOMATAL (gs alone, as JULES) */
+    int   plant_segments;    /* 1 = single plant conductance, 3 = root, stem
+                                and leaf segments in series */
     int   root_radial_resistance; /* include the root radial resistance in
                                      the layer uptake weights (SPA) */
     int   num_days;
@@ -408,6 +410,12 @@ typedef struct {
     int    gs_opt_n_sample;  /* Ci samples, flat search */
     int    gs_opt_n_prescan; /* Ci samples, golden search prescan */
     int    gs_opt_n_golden;  /* golden section iterations */
+    /* plant_segments = segmented: share of the whole plant resistance and
+       vulnerability of the root, stem & leaf (P50/P88 < -900 = the whole
+       plant values) */
+    double seg_frac_root, seg_frac_stem, seg_frac_leaf;
+    double p50_root, p50_stem, p50_leaf;
+    double p88_root, p88_stem, p88_leaf;
 
     /* not shared via cmd line */
     double *potA;
@@ -770,6 +778,9 @@ typedef struct {
     double kl_leaf[2];      /* xylem conductance at the leaf water potential
                                (mmol m-2 s-1 MPa-1, per unit leaf area) */
     double kl_canopy;       /* ... canopy mean */
+    double psi_stem_leaf[2]; /* stem water potential feeding each big leaf
+                               (MPa, = leaf when not segmented) */
+    double psi_stem_canopy;
     double gbv_leaf[2];     /* big leaf boundary layer conductance for H2O
                                from the last energy balance (mol m-2 s-1) */
 

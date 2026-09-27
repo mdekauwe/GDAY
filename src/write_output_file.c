@@ -39,7 +39,7 @@ void write_output_subdaily_header(control *c, FILE **fp) {
     */
     fprintf(*fp, "an_canopy,rd_canopy,gsc_canopy,");
     fprintf(*fp, "apar_canopy,trans_canopy,tleaf,");
-    fprintf(*fp, "psi_rootzone,lwp_sun,lwp_sha,kl_canopy,lai_sun\n");
+    fprintf(*fp, "psi_rootzone,lwp_sun,lwp_sha,kl_canopy,lai_sun,psi_stem\n");
     return;
 }
 
@@ -171,23 +171,23 @@ void write_subdaily_outputs_ascii(control *c, canopy_wk *cw, state *s,
                        (cw->tleaf[SUNLIT] + cw->tleaf[SHADED]) / 2.0);
 
     /* plant hydraulics (gs_opt) */
-    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,%.10f,%.10f\n",
+    fprintf(c->ofp_sd, "%.10f,%.10f,%.10f,%.10f,%.10f,%.10f\n",
                        s->weighted_swp, cw->lwp_leaf[SUNLIT],
                        cw->lwp_leaf[SHADED], cw->kl_canopy,
-                       cw->lai_leaf[SUNLIT]);
+                       cw->lai_leaf[SUNLIT], cw->psi_stem_canopy);
 
     return;
 }
 
-void write_daily_outputs_ascii(control *c, canopy_wk *cw, fluxes *f, state *s,
-                               int year, int doy) {
+void write_daily_outputs_ascii(control *c, canopy_wk *cw, fluxes *f,
+                               params *p, state *s, int year, int doy) {
     /*
         Write daily state and fluxes headers to an output CSV file. Note we
         are not writing anything useful like units as there is a wrapper
         script to translate the outputs to a nice CSV file with input met
         data, units and nice header information.
     */
-
+    int i;
 
     /* time stuff */
     fprintf(c->ofp, "%.10f,%.10f,", (double)year, (double)doy);
@@ -280,50 +280,15 @@ void write_daily_outputs_ascii(control *c, canopy_wk *cw, fluxes *f, state *s,
     fprintf(c->ofp, "%.10f,", s->midday_plc);
     fprintf(c->ofp, "%.10f,", f->leafretransn);
 
-    if (c->water_balance == HYDRAULICS) {
-        fprintf(c->ofp, "%.10f,", s->water_frac[0]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[1]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[2]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[3]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[4]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[5]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[6]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[7]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[8]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[9]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[10]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[11]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[12]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[13]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[14]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[15]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[16]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[17]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[18]);
-        fprintf(c->ofp, "%.10f,", s->water_frac[19]);
-        fprintf(c->ofp, "%.10f\n", s->water_frac[20]);
-    } else {
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f,", -999.9);
-        fprintf(c->ofp, "%.10f\n", -999.9);
+    /* SPA layer water contents; the columns are fixed at 21, beyond the
+       model's layers (or for the bucket) they are -999.9 */
+    for (i = 0; i < 21; i++) {
+        if (c->water_balance == HYDRAULICS && i < p->core) {
+            fprintf(c->ofp, "%.10f", s->water_frac[i]);
+        } else {
+            fprintf(c->ofp, "%.10f", -999.9);
+        }
+        fprintf(c->ofp, i < 20 ? "," : "\n");
     }
 
     return;

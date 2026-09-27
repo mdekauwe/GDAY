@@ -476,6 +476,15 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown gs_opt_e option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "plant_segments")) {
+        if (strcasecmp(temp, "single") == 0)
+            c->plant_segments = 1;
+        else if (strcasecmp(temp, "segmented") == 0)
+            c->plant_segments = N_PLANT_SEG;
+        else {
+            fprintf(stderr, "Unknown plant_segments option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "root_radial_resistance")) {
         if (strcasecmp(temp, "false") == 0)
             c->root_radial_resistance = FALSE;
@@ -805,6 +814,24 @@ int handler(char *section, char *name, char *value, control *c,
         p->gs_opt_n_prescan = atoi(value);
     } else if (MATCH("params", "gs_opt_n_golden")) {
         p->gs_opt_n_golden = atoi(value);
+    } else if (MATCH("params", "seg_frac_root")) {
+        p->seg_frac_root = atof(value);
+    } else if (MATCH("params", "seg_frac_stem")) {
+        p->seg_frac_stem = atof(value);
+    } else if (MATCH("params", "seg_frac_leaf")) {
+        p->seg_frac_leaf = atof(value);
+    } else if (MATCH("params", "p50_root")) {
+        p->p50_root = atof(value);
+    } else if (MATCH("params", "p50_stem")) {
+        p->p50_stem = atof(value);
+    } else if (MATCH("params", "p50_leaf")) {
+        p->p50_leaf = atof(value);
+    } else if (MATCH("params", "p88_root")) {
+        p->p88_root = atof(value);
+    } else if (MATCH("params", "p88_stem")) {
+        p->p88_stem = atof(value);
+    } else if (MATCH("params", "p88_leaf")) {
+        p->p88_leaf = atof(value);
     } else if (MATCH("params", "leaf_width")) {
         p->leaf_width = atof(value);
     } else if (MATCH("params", "leaf_tau_vis")) {

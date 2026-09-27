@@ -55,6 +55,7 @@ void initialise_control(control *c) {
     c->water_store = FALSE;
     c->gs_opt_search = GS_OPT_FLAT;
     c->gs_opt_e = GS_OPT_E_TOTAL;
+    c->plant_segments = 1;
     c->root_radial_resistance = TRUE;
     c->spin_up = FALSE;             /* Spin up to a steady state? If False it just runs the model */
     c->soil_drainage = GRAVITY;
@@ -292,6 +293,11 @@ void initialise_params(params *p) {
     p->gs_opt_n_sample = 100; /* JULES som_n_sample */
     p->gs_opt_n_prescan = 15; /* JULES som_n_ci_prescan */
     p->gs_opt_n_golden = 16;  /* JULES som_n_ci_golden_iter */
+    p->seg_frac_root = 0.5;   /* Wang et al. 2019: k root:stem:leaf */
+    p->seg_frac_stem = 0.25;  /* 1000:2000:2000 */
+    p->seg_frac_leaf = 0.25;
+    p->p50_root = p->p50_stem = p->p50_leaf = -999.9;
+    p->p88_root = p->p88_stem = p->p88_leaf = -999.9;
 
     /* Hydraulics stuff - private */
     p->potA = NULL;             // component of the Saxton soil water retention equations

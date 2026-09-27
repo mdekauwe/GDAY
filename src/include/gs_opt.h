@@ -12,7 +12,8 @@
 #include "photosynthesis.h"
 
 void   gs_opt_leaf(control *, canopy_wk *, met *, params *, state *);
-double gs_opt_psi_leaf(canopy_wk *, params *, state *, double, double *);
+double gs_opt_psi_leaf(control *, canopy_wk *, params *, state *, double,
+                       double *);
 double gs_opt_beta(control *, canopy_wk *, met *, params *, state *);
 void   weibull_params(params *, double *, double *);
 

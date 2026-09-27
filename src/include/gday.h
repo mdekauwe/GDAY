@@ -74,6 +74,7 @@
 #define GS_OPT_GOLDEN 2
 #define GS_OPT_E_TOTAL 0
 #define GS_OPT_E_STOMATAL 1
+#define N_PLANT_SEG 3   /* root, stem, leaf */
 
 #define SAXTON 0
 #define VAN_GENUCHTEN 1
