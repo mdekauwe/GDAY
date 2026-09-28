@@ -39,6 +39,7 @@ void initialise_control(control *c) {
     c->modeljm = 2;                 /* modeljm=0, Jmax and Vcmax parameters are read in, modeljm=1, parameters are calculated from leaf N content, modeljm=2, Vcmax is calculated from leaf N content but Jmax is related to Vcmax */
     c->ncycle = TRUE;               /* Nitrogen cycle on or off? */
     c->pcycle = FALSE;
+    c->p_limit_photo = FALSE;
     c->strpfloat = FALSE;
     c->puptake_model = 1;
     c->text_effect_p = 1;

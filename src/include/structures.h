@@ -36,6 +36,7 @@ typedef struct {
     int   modeljm;
     int   ncycle;
     int   pcycle;   /* phosphorus cycle on or off */
+    int   p_limit_photo;   /* cap N-based Vcmax/Jmax by leaf P (Walker et al. 2014) */
     int   strpfloat;   /* structural litter P:C floats (else structcp) */
     int   puptake_model;   /* P uptake: 0 constant, 1 labile P x rate, 2 as 1 x root/(root+krp) */
     int   text_effect_p;   /* strongly sorbed -> mineral P: 1 CENTURY pH/texture, 0 constant psecmnp */
@@ -922,6 +923,7 @@ typedef struct {
     double rnet_canopy;     /* canopy net radiation (W m-2) */
     double lwp_canopy;      /* Leaf water potential for the canopy(MPa) */
     double N0;              /* top of canopy nitrogen (g N m-2)) */
+    double P0;              /* top of canopy phosphorus (g P m-2) */
     double elevation;       /* sun elevation angle in degrees */
     double cos_zenith;      /* cos(zenith angle of sun) in radians */
     double diffuse_frac;    /* Fraction of incident rad which is diffuse (-) */

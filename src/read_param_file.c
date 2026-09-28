@@ -333,6 +333,15 @@ int handler(char *section, char *name, char *value, control *c,
             fprintf(stderr, "Unknown pcycle option: %s\n", temp);
             exit(EXIT_FAILURE);
         }
+    } else if (MATCH("control", "p_limit_photo")) {
+        if (strcasecmp(temp, "false") == 0)
+            c->p_limit_photo = FALSE;
+        else if (strcasecmp(temp, "true") == 0)
+            c->p_limit_photo = TRUE;
+        else {
+            fprintf(stderr, "Unknown p_limit_photo option: %s\n", temp);
+            exit(EXIT_FAILURE);
+        }
     } else if (MATCH("control", "strpfloat")) {
         if (strcasecmp(temp, "false") == 0)
             c->strpfloat = FALSE;

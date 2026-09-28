@@ -140,6 +140,12 @@ int main(int argc, char **argv)
                 "for the deciduous model yet\n");
         exit(EXIT_FAILURE);
     }
+    if (c->p_limit_photo && (c->modeljm < 1 || c->modeljm > 2 ||
+                             c->ps_pathway != C3)) {
+        fprintf(stderr, "p_limit_photo caps the N-based Vcmax/Jmax, so needs "
+                "modeljm = 1 or 2 and C3 photosynthesis\n");
+        exit(EXIT_FAILURE);
+    }
     if (c->water_store) {
         fprintf(stderr, "water_store (plant capacitance) was part of the Emax "
                 "scheme, which gs_opt replaced (git tag last-emax)\n");

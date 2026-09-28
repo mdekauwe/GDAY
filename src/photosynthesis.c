@@ -362,10 +362,12 @@ void calculate_jmaxt_vcmaxt(control *c, canopy_wk *cw, params *p, state *s,
     } else if (c->modeljm == 1) {
         vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
         jmax25 = (p->jmaxna * cw->N0 + p->jmaxnb);
+        p_limit_capacity(c, p, cw->P0, &vcmax25, &jmax25);
         *vcmax = vcmax_temperature(p, vcmax25, tleaf);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
     } else if (c->modeljm == 2) {
         vcmax25 = (p->vcmaxna * cw->N0 + p->vcmaxnb);
+        p_limit_capacity(c, p, cw->P0, &vcmax25, NULL);
         jmax25 = (p->jv_slope * vcmax25 - p->jv_intercept);
         *vcmax = vcmax_temperature(p, vcmax25, tleaf);
         *jmax = peaked_arrhenius(jmax25, p->eaj, tleaf, tref, p->delsj, p->edj);
@@ -611,7 +613,7 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     * Medlyn et al. (2002) PCE, 25, 1167-1179, see pg. 1170.
 
     */
-    double N0, gamma_star_am,
+    double N0, P0, gamma_star_am,
            gamma_star_pm, Km_am, Km_pm, jmax_am, jmax_pm, vcmax_am, vcmax_pm,
            ci_am, ci_pm, alpha_am, alpha_pm, ac_am, ac_pm, aj_am, aj_pm,
            asat_am, asat_pm, lue_am, lue_pm, lue_avg, conv;
@@ -628,8 +630,11 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
     Km_am = calculate_michaelis_menten_parameter(p, m->Tk_am, mt);
     Km_pm = calculate_michaelis_menten_parameter(p, m->Tk_pm, mt);
 
-    calculate_jmax_and_vcmax(c, p, s, m->Tk_am, N0, &jmax_am, &vcmax_am, mt);
-    calculate_jmax_and_vcmax(c, p, s, m->Tk_pm, N0, &jmax_pm, &vcmax_pm, mt);
+    P0 = c->p_limit_photo ? calculate_top_of_canopy_p(c, p, s) : 0.0;
+    calculate_jmax_and_vcmax(c, p, s, m->Tk_am, N0, P0, &jmax_am, &vcmax_am,
+                             mt);
+    calculate_jmax_and_vcmax(c, p, s, m->Tk_pm, N0, P0, &jmax_pm, &vcmax_pm,
+                             mt);
 
     /* Covert PAR units (umol PAR MJ-1) */
     conv = MJ_TO_J * J_2_UMOL;
@@ -717,6 +722,46 @@ void mate_C3_photosynthesis(control *c, fluxes *f, met *m, params *p, state *s,
 
     /* save apar in MJ m-2 d-1 */
     f->apar *= UMOL_2_JOL * J_TO_MJ;
+
+    return;
+}
+
+double calculate_top_of_canopy_p(control *c, params *p, state *s) {
+    /*
+        Leaf P at the top of the canopy (g P m-2 leaf), with leaf P declining
+        exponentially through the canopy (kp_canopy). The leaf P:C is the
+        modelled one with the P cycle on, else prescribed_leaf_pc.
+    */
+    double leafpc, leafp, kp = MAX(p->kp_canopy, 1.0E-3);
+
+    if (s->lai <= 0.0)
+        return (0.0);
+    leafpc = c->pcycle ? s->shootpc : p->prescribed_leaf_pc;
+
+    /* average leaf P (g P m-2 leaf) */
+    leafp = leafpc * p->cfracts / p->sla * KG_AS_G;
+
+    return (leafp * s->lai * kp / (1.0 - exp(-kp * s->lai)));
+}
+
+void p_limit_capacity(control *c, params *p, double P0, double *vcmax25,
+                      double *jmax25) {
+    /*
+        Cap the N-based Vcmax and Jmax at 25 degC (umol m-2 s-1) by the leaf
+        P, using the Walker et al. (2014) power functions, V = a P0^b (P0 in
+        g P m-2). GDAY-CNP used these coefficients as a linear fit (a P0 + b),
+        which gives a Jmax a third the size at typical leaf P. Pass NULL for
+        jmax25 to cap Vcmax only (modeljm 2 derives Jmax from Vcmax).
+
+        Reference: Walker, A. P. et al. (2014) Ecology and Evolution, 4,
+        3218-3235.
+    */
+    if (!c->p_limit_photo || P0 <= 0.0)
+        return;
+
+    *vcmax25 = MIN(*vcmax25, p->vcmaxpa * pow(P0, p->vcmaxpb));
+    if (jmax25 != NULL)
+        *jmax25 = MIN(*jmax25, p->jmaxpa * pow(P0, p->jmaxpb));
 
     return;
 }
@@ -869,7 +914,8 @@ double calculate_michaelis_menten_parameter(params *p, double Tk, double mt) {
 
 }
 void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
-                              double N0, double *jmax, double *vcmax,
+                              double N0, double P0, double *jmax,
+                              double *vcmax,
                               double mt) {
     /*
         Calculate the maximum RuBP regeneration rate for light-saturated
@@ -882,6 +928,8 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
             air temperature (Kelvin)
         N0 : float
             leaf N
+        P0 : float
+            leaf P (g P m-2), caps Vcmax/Jmax if p_limit_photo
 
         Returns:
         --------
@@ -901,16 +949,17 @@ void calculate_jmax_and_vcmax(control *c, params *p, state *s, double Tk,
     } else if (c->modeljm == 1) {
         /* the maximum rate of electron transport at 25 degC */
         jmax25 = p->jmaxna * N0 + p->jmaxnb;
+        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+        p_limit_capacity(c, p, P0, &vcmax25, &jmax25);
 
         /* this response is well-behaved for TLEAF < 0.0 */
         *jmax = peaked_arrh(mt, jmax25, p->eaj, Tk,
                             p->delsj, p->edj);
 
-        /* the maximum rate of electron transport at 25 degC */
-        vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
         *vcmax = vcmax_temperature(p, vcmax25, Tk - DEG_TO_KELVIN);
     } else if (c->modeljm == 2) {
         vcmax25 = p->vcmaxna * N0 + p->vcmaxnb;
+        p_limit_capacity(c, p, P0, &vcmax25, NULL);
         *vcmax = vcmax_temperature(p, vcmax25, Tk - DEG_TO_KELVIN);
 
         jmax25 = p->jv_slope * vcmax25 - p->jv_intercept;

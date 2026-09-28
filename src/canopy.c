@@ -70,6 +70,8 @@ void canopy(canopy_wk *cw, control *c, fluxes *f, met_arrays *ma, met *m,
                                          m->lwdown);
             calc_leaf_bl_forced_conduct(cw, p, s, m);
             calculate_top_of_canopy_leafn(cw, p, s);
+            cw->P0 = c->p_limit_photo ?
+                     calculate_top_of_canopy_p(c, p, s) : 0.0;
             calc_leaf_to_canopy_scalar(cw, p, s);
 
             // soil supply limit for gs_opt: the transpiration GDAY's own
