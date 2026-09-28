@@ -75,6 +75,8 @@ void fire(control *c, fluxes *f, params *p, state *s) {
     * 100 percent of surface litter
     * 50 percent of N volatilized to the atmosphere
     * 50 percent of N returned to inorgn pool"
+    * P isn't volatilised: all the burnt P is returned to the labile pool
+      (the sorption re-equilibrates the next day)
     * Coarse roots are not damaged by fire!
 
     vaguely following ...
@@ -84,6 +86,9 @@ void fire(control *c, fluxes *f, params *p, state *s) {
 
     totaln = s->branchn + s->shootn + s->stemn + s->structsurfn;
     s->inorgn += totaln / 2.0;
+    if (c->pcycle) {
+        s->inorglabp += s->branchp + s->shootp + s->stemp + s->structsurfp;
+    }
 
     /* re-establish everything with C/N ~ 25.  */
     if (c->alloc_model == GRASSES) {
@@ -127,6 +132,24 @@ void fire(control *c, fluxes *f, params *p, state *s) {
     f->deadbranchn = 0.0;
     f->deadstemn = 0.0;
 
+    /* P pools re-established at a N:P of 10 */
+    if (c->pcycle) {
+        s->branchp = s->branchn / 10.0;
+        s->stempimm = s->stemnimm / 10.0;
+        s->stempmob = s->stemnmob / 10.0;
+        s->stemp = s->stempimm + s->stempmob;
+        s->metabsurfp = 0.0;
+        s->rootp = s->rootn / 10.0;
+        s->shootp = s->shootn / 10.0;
+        s->structsurfp = s->structsurfn / 10.0;
+        f->deadleafp = 0.0;
+        f->deadrootp = 0.0;
+        f->deadbranchp = 0.0;
+        f->deadstemp = 0.0;
+        s->shootpc = s->shootp / s->shoot;
+        s->rootpc = s->rootp / s->root;
+    }
+
     /* update N:C of plant pools */
     if (float_eq(s->shoot, 0.0))
         s->shootnc = 0.0;
@@ -155,16 +178,20 @@ void hurricane(fluxes *f, params *p, state *s) {
         were added to the partitioned litter fluxes, which are overwritten
         later in the day, i.e. they vanished. No retranslocation.
     */
-    double frac_lost = 0.4, lost_c, lost_n;
+    double frac_lost = 0.4, lost_c, lost_n, lost_p;
 
     lost_c = s->shoot * frac_lost;
     lost_n = s->shootn * frac_lost;
+    lost_p = s->shootp * frac_lost;
 
     f->deadleaves += lost_c;
     f->deadleafn += lost_n;
+    f->deadleafp += lost_p;
 
-    /* shoot N isn't updated from deadleafn, so remove it here */
+    /* shoot N & P aren't updated from the dead leaf N & P, so remove them
+       here */
     s->shootn -= lost_n;
+    s->shootp -= lost_p;
 
     return;
 }
