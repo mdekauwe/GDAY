@@ -29,7 +29,7 @@ $ make clean ; make
 $ tests/run_tests.sh
 ```
 
-builds the model with a per-timestep water balance check (`-DCHECK_WATER_BALANCE`) and runs the daily Duke example plus sub-daily bucket and hydraulics cases (including drought and cascading drainage) on a synthetic 30 min forcing derived from the Duke data. It needs python3 (no extra packages) and takes ~10 s.
+builds the model with a per-timestep water balance check (`-DCHECK_WATER_BALANCE`) and a daily nitrogen balance check (`-DCHECK_NUTRIENT_BALANCE`) and runs the daily Duke example plus sub-daily bucket and hydraulics cases (including drought and cascading drainage) on a synthetic 30 min forcing derived from the Duke data. It needs python3 (no extra packages) and takes ~10 s.
 
 ## Running the model
 A simple model usage can be displayed by calling GDAY as follows:

@@ -21,7 +21,7 @@ trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/build"
 cp -r "$ROOT/src/"*.c "$ROOT/src/include" "$ROOT/src/Makefile" "$WORK/build/"
 ( cd "$WORK/build" && rm -f version.c && \
-  make -s CFLAGS="-O2 -Wall -Wno-unused-parameter -DCHECK_WATER_BALANCE" \
+  make -s CFLAGS="-O2 -Wall -Wno-unused-parameter -DCHECK_WATER_BALANCE -DCHECK_NUTRIENT_BALANCE" \
   > build.log 2>&1 ) || { echo "BUILD FAILED"; cat "$WORK/build/build.log"; exit 1; }
 GDAY="$WORK/build/gday"
 

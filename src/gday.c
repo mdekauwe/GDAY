@@ -324,6 +324,27 @@ int main(int argc, char **argv)
     exit(EXIT_SUCCESS);
 }
 
+double total_ecosystem_n(state *s) {
+    /* all the N in the plant, its store, litter, SOM and inorganic pools
+       (t ha-1) */
+    return (s->shootn + s->rootn + s->crootn + s->branchn + s->stemnimm +
+            s->stemnmob + s->nstore + s->structsurfn + s->structsoiln +
+            s->metabsurfn + s->metabsoiln + s->activesoiln + s->slowsoiln +
+            s->passivesoiln + s->inorgn);
+}
+
+void check_n_balance(fluxes *f, state *s, double n_start, int year,
+                     int doy) {
+    /* the day's change in ecosystem N must equal inputs - losses */
+    double err = total_ecosystem_n(s) - n_start - (f->ninflow - f->nloss);
+
+    if (fabs(err) > 1E-9 * MAX(1.0, n_start)) {
+        fprintf(stderr, "N balance not closed: %d doy %d error %.3e t ha-1\n",
+                year, doy + 1, err);
+        exit(EXIT_FAILURE);
+    }
+}
+
 void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
              met_arrays *ma, met *m, params *p, state *s, nrutil *nr) {
 
@@ -548,12 +569,20 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 set_prescribed_lai(c, ma, s);
             }
 
+#ifdef CHECK_NUTRIENT_BALANCE
+            double n_start = total_ecosystem_n(s);
+#endif
             calc_day_growth(cw, c, f, fs, ma, m, nr, p, s, s->day_length[doy],
                             doy, fdecay, rdecay);
 
             //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
             calculate_csoil_flows(c, f, fs, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
+#ifdef CHECK_NUTRIENT_BALANCE
+            if (c->ncycle) {
+                check_n_balance(f, s, n_start, year, doy);
+            }
+#endif
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {

@@ -968,35 +968,27 @@ void calculate_n_immobilisation(fluxes *f, params *p, state *s, double *nimmob,
     nimob : float
         N immobilsed
     */
-    double nmin, arg1, arg2, arg3, numer1, numer2, denom;
+    double arg;
 
     /* N:C new SOM - active, slow and passive */
     *active_nc_slope = calculate_nc_slope(p, p->actncmax, p->actncmin);
     *slow_nc_slope = calculate_nc_slope(p, p->slowncmax, p->slowncmin);
     *passive_nc_slope = calculate_nc_slope(p, p->passncmax, p->passncmin);
 
-    /* convert units */
-    nmin = p->nmin0 / M2_AS_HA * G_AS_TONNES;
-
-    arg1 = (p->passncmin - *passive_nc_slope * nmin) * f->c_into_passive;
-    arg2 = (p->slowncmin - *slow_nc_slope * nmin) * f->c_into_slow;
-    arg3 = f->c_into_active * (p->actncmin - *active_nc_slope * nmin);
-    numer1 = arg1 + arg2 + arg3;
-
-    arg1 = f->c_into_passive * p->passncmax;
-    arg2 = f->c_into_slow * p->slowncmax;
-    arg3 = f->c_into_active * p->actncmax;
-    numer2 = arg1 + arg2 + arg3;
-
-    arg1 = f->c_into_passive * *passive_nc_slope;
-    arg2 = f->c_into_slow * *slow_nc_slope;
-    arg3 = f->c_into_active * *active_nc_slope;
-    denom = arg1 + arg2 + arg3;
-
-    /* evaluate N immobilisation in new SOM */
-    *nimmob = numer1 + denom * s->inorgn;
-    if (*nimmob > numer2)
-        *nimmob = numer2;
+    /*
+    ** N immobilised in new SOM: each pool's C input at its N:C, which rises
+    ** linearly with the inorganic N between ncmin and ncmax, capped per pool
+    ** exactly as calculate_npools applies it (the total used to be capped
+    ** instead, which differed whenever one pool was at its cap and another
+    ** wasn't, so the N balance didn't close).
+    */
+    arg = s->inorgn - p->nmin0 / M2_AS_HA * G_AS_TONNES;
+    *nimmob = f->c_into_active * MIN(p->actncmax,
+                                     p->actncmin + *active_nc_slope * arg) +
+              f->c_into_slow * MIN(p->slowncmax,
+                                   p->slowncmin + *slow_nc_slope * arg) +
+              f->c_into_passive * MIN(p->passncmax,
+                                      p->passncmin + *passive_nc_slope * arg);
 
     return;
 }
@@ -1055,7 +1047,7 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
     */
     double n_into_active, n_out_of_active, n_into_slow, n_out_of_slow,
            n_into_passive, n_out_of_passive, arg, active_nc, fixn, slow_nc,
-           pass_nc;
+           pass_nc, nlittrelease_before;
 
     /*
         net N release implied by separation of litter into structural
@@ -1065,6 +1057,7 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
 
     /* N released or fixed from the N inorganic pool is incremented with
        each call to nc_limit and stored in f->nlittrelease */
+    nlittrelease_before = f->nlittrelease;
     f->nlittrelease = 0.0;
 
     s->structsurfn += (f->n_surf_struct_litter -
@@ -1141,13 +1134,20 @@ void calculate_npools(control *c, fluxes *f, params *p, state *s,
     fixn = nc_flux(f->c_into_passive, n_into_passive, pass_nc);
     s->passivesoiln += n_into_passive + fixn - n_out_of_passive;
 
+    /*
+    ** The net mineralisation was computed (calc_net_mineralisation, then
+    ** adjusted for root exudation) with the litter release from the
+    ** previous call; replace it with today's, so the inorganic N pool gets
+    ** the N the litter pools released or fixed today.
+    */
+    f->nmineralisation += f->nlittrelease - nlittrelease_before;
+
     /* Daily increment of soil inorganic N pool, diff btw in and effluxes
        (grazer urine n goes directly into inorganic pool) nb inorgn may be
        unstable if rateuptake is large */
     s->inorgn += (f->ninflow + f->nurine + f->nmineralisation -
                   f->nloss - f->nuptake);
 
-    /*f->nmineralisation = f->ngross - f->nimmob + f->nlittrelease;*/
     return;
 }
 

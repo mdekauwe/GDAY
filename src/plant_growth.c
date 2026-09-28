@@ -1119,7 +1119,7 @@ void allocate_stored_c_and_n(fluxes *f, params *p, state *s) {
     Allocate stored C&N. This is either down as the model is initialised
     for the first time or at the end of each year.
     */
-    double ntot;
+    double ntot, woody, scale;
 
     /* ========================
        Carbon - fixed fractions
@@ -1143,9 +1143,22 @@ void allocate_stored_c_and_n(fluxes *f, params *p, state *s) {
     s->n_to_alloc_branch = s->cstore * f->albranch * p->ncbnew;
     s->n_to_alloc_croot = s->cstore * f->alcroot * p->nccnew;
 
-    /* Calculate remaining N left to allocate to leaves and roots */
-    ntot = MAX(0.0, (s->nstore - s->n_to_alloc_stemimm - s->n_to_alloc_stemmob -
-                     s->n_to_alloc_branch));
+    /*
+    ** Remaining N for leaves and roots. The coarse root N comes out of the
+    ** store too (it used to be left out, creating N), and if the woody
+    ** demand exceeds the store it is scaled down to what is there.
+    */
+    woody = s->n_to_alloc_stemimm + s->n_to_alloc_stemmob +
+            s->n_to_alloc_branch + s->n_to_alloc_croot;
+    if (woody > s->nstore && woody > 0.0) {
+        scale = MAX(0.0, s->nstore) / woody;
+        s->n_to_alloc_stemimm *= scale;
+        s->n_to_alloc_stemmob *= scale;
+        s->n_to_alloc_branch *= scale;
+        s->n_to_alloc_croot *= scale;
+        woody = MAX(0.0, s->nstore);
+    }
+    ntot = MAX(0.0, s->nstore - woody);
 
     /* allocate remaining N to flexible-ratio pools */
     s->n_to_alloc_shoot = (ntot * f->alleaf /
