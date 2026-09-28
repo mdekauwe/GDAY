@@ -627,6 +627,66 @@ int ohandler(char *section, char *name, char *value, control *c, params *p,
     } else if (MATCH("state", "structsurfn")) {
         fprintf(c->ofp, "structsurfn = %.10f\n", s->structsurfn);
         *match = TRUE;
+    } else if (MATCH("state", "shootp")) {
+        fprintf(c->ofp, "shootp = %.10f\n", s->shootp);
+        *match = TRUE;
+    } else if (MATCH("state", "rootp")) {
+        fprintf(c->ofp, "rootp = %.10f\n", s->rootp);
+        *match = TRUE;
+    } else if (MATCH("state", "crootp")) {
+        fprintf(c->ofp, "crootp = %.10f\n", s->crootp);
+        *match = TRUE;
+    } else if (MATCH("state", "branchp")) {
+        fprintf(c->ofp, "branchp = %.10f\n", s->branchp);
+        *match = TRUE;
+    } else if (MATCH("state", "stemp")) {
+        fprintf(c->ofp, "stemp = %.10f\n", s->stemp);
+        *match = TRUE;
+    } else if (MATCH("state", "stempimm")) {
+        fprintf(c->ofp, "stempimm = %.10f\n", s->stempimm);
+        *match = TRUE;
+    } else if (MATCH("state", "stempmob")) {
+        fprintf(c->ofp, "stempmob = %.10f\n", s->stempmob);
+        *match = TRUE;
+    } else if (MATCH("state", "pstore")) {
+        fprintf(c->ofp, "pstore = %.10f\n", s->pstore);
+        *match = TRUE;
+    } else if (MATCH("state", "structsurfp")) {
+        fprintf(c->ofp, "structsurfp = %.10f\n", s->structsurfp);
+        *match = TRUE;
+    } else if (MATCH("state", "structsoilp")) {
+        fprintf(c->ofp, "structsoilp = %.10f\n", s->structsoilp);
+        *match = TRUE;
+    } else if (MATCH("state", "metabsurfp")) {
+        fprintf(c->ofp, "metabsurfp = %.10f\n", s->metabsurfp);
+        *match = TRUE;
+    } else if (MATCH("state", "metabsoilp")) {
+        fprintf(c->ofp, "metabsoilp = %.10f\n", s->metabsoilp);
+        *match = TRUE;
+    } else if (MATCH("state", "activesoilp")) {
+        fprintf(c->ofp, "activesoilp = %.10f\n", s->activesoilp);
+        *match = TRUE;
+    } else if (MATCH("state", "slowsoilp")) {
+        fprintf(c->ofp, "slowsoilp = %.10f\n", s->slowsoilp);
+        *match = TRUE;
+    } else if (MATCH("state", "passivesoilp")) {
+        fprintf(c->ofp, "passivesoilp = %.10f\n", s->passivesoilp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorglabp")) {
+        fprintf(c->ofp, "inorglabp = %.10f\n", s->inorglabp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgsorbp")) {
+        fprintf(c->ofp, "inorgsorbp = %.10f\n", s->inorgsorbp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgssorbp")) {
+        fprintf(c->ofp, "inorgssorbp = %.10f\n", s->inorgssorbp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgoccp")) {
+        fprintf(c->ofp, "inorgoccp = %.10f\n", s->inorgoccp);
+        *match = TRUE;
+    } else if (MATCH("state", "inorgparp")) {
+        fprintf(c->ofp, "inorgparp = %.10f\n", s->inorgparp);
+        *match = TRUE;
     }
 
     return (1);

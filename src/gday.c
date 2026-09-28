@@ -356,6 +356,34 @@ void check_n_balance(fluxes *f, state *s, double n_start, int year,
     }
 }
 
+/*
+** During spin-up the mineral P pools are held at the site's values (with
+** deposition and little loss they have no steady state and would drift up
+** over the millennia of a spin-up), so the plant and organic P come to
+** equilibrium with the site's mineral P
+*/
+static int    hold_mineral_p = FALSE;
+static double held_mineral_p[5];
+
+static void hold_mineral_p_pools(params *p, state *s) {
+    /* labile & sorbed put on the Langmuir isotherm from the labile P */
+    s->inorgsorbp = p->smax * s->inorglabp / (p->ks + s->inorglabp);
+    held_mineral_p[0] = s->inorglabp;
+    held_mineral_p[1] = s->inorgsorbp;
+    held_mineral_p[2] = s->inorgssorbp;
+    held_mineral_p[3] = s->inorgoccp;
+    held_mineral_p[4] = s->inorgparp;
+    hold_mineral_p = TRUE;
+}
+
+static void restore_mineral_p_pools(state *s) {
+    s->inorglabp = held_mineral_p[0];
+    s->inorgsorbp = held_mineral_p[1];
+    s->inorgssorbp = held_mineral_p[2];
+    s->inorgoccp = held_mineral_p[3];
+    s->inorgparp = held_mineral_p[4];
+}
+
 double total_ecosystem_p(state *s) {
     /* all the P in the plant, litter, SOM and mineral pools, including the
        parent material (t ha-1) */
@@ -623,6 +651,9 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
                 check_p_balance(f, s, p_start, year, doy);
             }
 #endif
+            if (hold_mineral_p) {
+                restore_mineral_p_pools(s);
+            }
 
             /* update stress SMA */
             if (c->deciduous_model && s->leaf_out_days[doy] > 0.0) {
@@ -744,6 +775,9 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
     }
 
     fprintf(stderr, "Spinning up the model...\n");
+    if (c->pcycle) {
+        hold_mineral_p_pools(p, s);
+    }
 
     if (c->spinup_method == BRUTE) {
 
@@ -783,6 +817,7 @@ void spin_up_pools(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
         sas_spinup(cw, c, f, fs, ma, m, p, s, nr);
     }
 
+    hold_mineral_p = FALSE;
     write_final_state(c, p, s);
 
     return;
