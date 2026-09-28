@@ -40,7 +40,13 @@ double lloyd_and_taylor(double);
 
 /* N stuff */
 int    nitrogen_allocation(control *c, fluxes *, params *, state *, double,
-                           double, double, double, double, double, int);
+                           double, double, double, double, double, double,
+                           double, double, double, int);
+void   calculate_pcwood_ratios(params *, state *, double *, double *,
+                               double *, double *);
+double phosphorus_retrans(control *, fluxes *, params *, state *, double,
+                          double);
+double calculate_puptake(control *, params *, state *);
 double calculate_growth_stress_limitation(params *, state *);
 double calculate_nuptake(control *, params *, state *);
 

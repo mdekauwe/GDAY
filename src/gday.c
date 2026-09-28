@@ -135,6 +135,11 @@ int main(int argc, char **argv)
         fprintf(stderr, "soil_evap_model = or needs water_balance = hydraulics\n");
         exit(EXIT_FAILURE);
     }
+    if (c->pcycle && (c->ncycle == FALSE || c->deciduous_model)) {
+        fprintf(stderr, "pcycle needs ncycle = true and isn't implemented "
+                "for the deciduous model yet\n");
+        exit(EXIT_FAILURE);
+    }
     if (c->water_store) {
         fprintf(stderr, "water_store (plant capacitance) was part of the Emax "
                 "scheme, which gs_opt replaced (git tag last-emax)\n");

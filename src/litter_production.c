@@ -58,6 +58,16 @@ void calculate_litterfall(control *c, fluxes *f, fast_spinup *fs,
     f->deadstemn = p->wdecay * (s->stemnimm + s->stemnmob * \
                     (1.0 - p->wretrans));
 
+    /* P litter production, as N (fretransp for leaves) */
+    if (c->pcycle) {
+        f->deadleafp = f->deadleaves * s->shootpc * (1.0 - p->fretransp);
+        f->deadrootp = f->deadroots * s->rootpc * (1.0 - p->rretrans);
+        f->deadcrootp = p->crdecay * s->crootp * (1.0 - p->cretrans);
+        f->deadbranchp = p->bdecay * s->branchp * (1.0 - p->bretrans);
+        f->deadstemp = p->wdecay * (s->stempimm + s->stempmob *
+                                    (1.0 - p->wretrans));
+    }
+
     /* Animal grazing? */
 
     /* Daily... */
@@ -73,6 +83,9 @@ void calculate_litterfall(control *c, fluxes *f, fast_spinup *fs,
         f->ceaten = 0.0;
         f->neaten = 0.0;
     }
+    // P eaten with the foliage, at its P:C
+    f->peaten = (c->pcycle && s->shoot > 0.0) ?
+                f->ceaten * s->shootp / s->shoot : 0.0;
     return;
 
 }
