@@ -5,7 +5,8 @@
 * Variables used (time, y, x) with y = x = 1:
 *   Tair (K), SWdown (W m-2), Precip (kg m-2 s-1), Qair (kg kg-1),
 *   Psurf (Pa), Wind (m s-1), CO2air (ppm, optional),
-*   LWdown (W m-2, optional, sub-daily only)
+*   LWdown (W m-2, optional, sub-daily only),
+*   Ndep (kg N m-2 s-1, optional; else the constant nc_ndep)
 *
 * The sub-daily model uses the timesteps directly (30 min data required).
 * For the daily model the timesteps are aggregated into the daily am/pm
@@ -13,7 +14,8 @@
 * daylight (PAR >= 5 umol m-2 s-1) timesteps before/after noon.
 *
 * Not in PLUMBER2 files: soil temperature (daily mean air temperature is
-* used), N deposition & fixation (params nc_ndep, nc_nfix, t N ha-1 yr-1).
+* used), N fixation (param nc_nfix, t N ha-1 yr-1) and, unless the file
+* has Ndep, N deposition (param nc_ndep, t N ha-1 yr-1).
 *
 * Prescribed LAI (control prescribed_lai) is read from lai_fname if set
 * (e.g. the JULES MODIS file, variable lai_var, dimension lai_pft_index),
@@ -229,7 +231,8 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
 
     int     ncid, dimid, varid, y0, mo0, d0, h0, mi0, s0;
     size_t  ntime, i, i0, i1, n, j, k, nday, step, spd;
-    double *time, *tair, *sw, *precip, *qair, *psurf, *wind, *co2, *lai, *lwdown;
+    double *time, *tair, *sw, *precip, *qair, *psurf, *wind, *co2, *lai, *lwdown,
+           *ndep;
     double  dt, t0_days, current_yr, per_step, par;
     char    units[NC_MAX_NAME + 1];
     int    *yr_of, *doy_of;
@@ -293,6 +296,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     wind = read_nc_var(ncid, "Wind", ntime, TRUE);
     co2 = read_nc_var(ncid, "CO2air", ntime, FALSE);
     lwdown = read_nc_var(ncid, "LWdown", ntime, FALSE);
+    ndep = read_nc_var(ncid, "Ndep", ntime, FALSE);
     lai = c->prescribed_lai ? read_nc_lai(c, ntime, ncid, met_day) : NULL;
     free(met_day);
     nc_close(ncid);
@@ -348,7 +352,9 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
                 ma->tsoil[j] = tmean;
                 ma->vpd[j] = qair_to_vpd(qair[i], ma->tair[j], psurf[i]);
                 ma->co2[j] = co2 != NULL ? co2[i] : p->nc_co2;
-                ma->ndep[j] = p->nc_ndep * per_step;
+                /* kg N m-2 s-1 -> t N ha-1 per step */
+                ma->ndep[j] = ndep != NULL ? MAX(0.0, ndep[i]) * dt *
+                              KG_M2_2_TONNES_HA : p->nc_ndep * per_step;
                 ma->nfix[j] = p->nc_nfix * per_step;
                 ma->wind[j] = wind[i];
                 ma->press[j] = psurf[i] * PA_2_KPA;
@@ -442,6 +448,13 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
             ma->tmax[k] = tmax;
             ma->rain[k] = rain;
             ma->ndep[k] = p->nc_ndep / NDAYS_IN_YR;
+            if (ndep != NULL) {
+                ma->ndep[k] = 0.0;
+                for (step = 0; step < spd; step++) {
+                    ma->ndep[k] += MAX(0.0, ndep[i + step]) * dt *
+                                   KG_M2_2_TONNES_HA;
+                }
+            }
             ma->nfix[k] = p->nc_nfix / NDAYS_IN_YR;
             if (lai != NULL) {
                 ma->lai[k] = s_lai / (double)spd;
@@ -476,7 +489,7 @@ void read_met_data_netcdf(char **argv, control *c, met_arrays *ma,
     }
 
     free(time); free(tair); free(sw); free(precip); free(qair); free(psurf);
-    free(wind); free(co2); free(lai); free(lwdown); free(yr_of); free(doy_of);
+    free(wind); free(co2); free(lai); free(lwdown); free(ndep); free(yr_of); free(doy_of);
     (void)argv;
 
     return;
