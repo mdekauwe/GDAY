@@ -123,8 +123,12 @@ void calculate_psoil_flows(control *c, fluxes *f, params *p, state *s,
     imm_p = MAX(0.0, f->c_into_passive * pc_p);
     f->pimmob = imm_a + imm_s + imm_p;
 
-    /* biochemical (phosphatase) mineralisation of the slow pool */
-    f->p_slow_biochemical = biochemical_p_mineralisation(f, p, s);
+    /*
+    ** biochemical (phosphatase) mineralisation of the slow pool; it depends
+    ** on the N cost of P uptake, so needs the N cycle (off in a CP run)
+    */
+    f->p_slow_biochemical = c->ncycle ?
+                            biochemical_p_mineralisation(f, p, s) : 0.0;
 
     /* mineral P transfers */
     f->p_par_to_min = p->p_rate_par_weather * s->inorgparp;

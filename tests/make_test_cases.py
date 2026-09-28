@@ -148,6 +148,14 @@ def main():
         "print_options": "daily", "pcycle": "true"}))
     open(os.path.join(out_dir, "daily_p.cfg"), "w").write(daily_p)
 
+    # carbon-phosphorus only (N cycle off)
+    daily_cp = p_state(set_keys(base, {
+        "met_fname": os.path.join(example_dir, "met_data",
+                                  "DUKE_met_data_amb_co2.csv"),
+        "out_fname": os.path.join(out_dir, "out_daily_cp.csv"),
+        "print_options": "daily", "pcycle": "true", "ncycle": "false"}))
+    open(os.path.join(out_dir, "daily_cp.cfg"), "w").write(daily_cp)
+
     # sub-daily cases
     cases = {
         "sd_bucket": {"water_balance": "bucket"},
@@ -222,7 +230,7 @@ def main():
         txt = set_keys(base, keys)
         open(os.path.join(out_dir, "%s.cfg" % name), "w").write(txt)
 
-    print(" ".join(["daily", "daily_gsopt", "daily_p"] + list(cases)))
+    print(" ".join(["daily", "daily_gsopt", "daily_p", "daily_cp"] + list(cases)))
 
 
 if __name__ == "__main__":

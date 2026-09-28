@@ -135,9 +135,9 @@ int main(int argc, char **argv)
         fprintf(stderr, "soil_evap_model = or needs water_balance = hydraulics\n");
         exit(EXIT_FAILURE);
     }
-    if (c->pcycle && (c->ncycle == FALSE || c->deciduous_model)) {
-        fprintf(stderr, "pcycle needs ncycle = true and isn't implemented "
-                "for the deciduous model yet\n");
+    if (c->pcycle && c->deciduous_model) {
+        fprintf(stderr, "pcycle isn't implemented for the deciduous model "
+                "yet\n");
         exit(EXIT_FAILURE);
     }
     if (c->p_limit_photo && (c->modeljm < 1 || c->modeljm > 2 ||
