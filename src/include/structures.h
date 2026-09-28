@@ -371,6 +371,7 @@ typedef struct {
     double passpcmax; /* passive SOM P:C max */
     double passpcmin; /* passive SOM P:C min */
     double pmin0; /* labile P at which SOM P:C is at its min (g m-2) */
+    double pmincrit; /* labile P at which SOM P:C reaches its max (g m-2) */
     double structcp; /* structural litter C:P */
     double structratp; /* structural litter P:C as a fraction of metabolic (strpfloat) */
     double pcmaxfyoung; /* max leaf P:C, young stand */

@@ -350,6 +350,28 @@ void check_n_balance(fluxes *f, state *s, double n_start, int year,
     }
 }
 
+double total_ecosystem_p(state *s) {
+    /* all the P in the plant, litter, SOM and mineral pools, including the
+       parent material (t ha-1) */
+    return (s->shootp + s->rootp + s->crootp + s->branchp + s->stempimm +
+            s->stempmob + s->pstore + s->structsurfp + s->structsoilp +
+            s->metabsurfp + s->metabsoilp + s->activesoilp + s->slowsoilp +
+            s->passivesoilp + s->inorglabp + s->inorgsorbp + s->inorgssorbp +
+            s->inorgoccp + s->inorgparp);
+}
+
+void check_p_balance(fluxes *f, state *s, double p_start, int year,
+                     int doy) {
+    /* the day's change in ecosystem P must equal deposition - leaching */
+    double err = total_ecosystem_p(s) - p_start - (f->p_atm_dep - f->ploss);
+
+    if (fabs(err) > 1E-9 * MAX(1.0, p_start)) {
+        fprintf(stderr, "P balance not closed: %d doy %d error %.3e t ha-1\n",
+                year, doy + 1, err);
+        exit(EXIT_FAILURE);
+    }
+}
+
 void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
              met_arrays *ma, met *m, params *p, state *s, nrutil *nr) {
 
@@ -576,6 +598,7 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
 
 #ifdef CHECK_NUTRIENT_BALANCE
             double n_start = total_ecosystem_n(s);
+            double p_start = total_ecosystem_p(s);
 #endif
             calc_day_growth(cw, c, f, fs, ma, m, nr, p, s, s->day_length[doy],
                             doy, fdecay, rdecay);
@@ -583,9 +606,15 @@ void run_sim(canopy_wk *cw, control *c, fluxes *f, fast_spinup *fs,
             //printf("%d %f %f\n", doy, f->gpp*100, s->lai);
             calculate_csoil_flows(c, f, fs, p, s, m->tsoil, doy);
             calculate_nsoil_flows(c, f, p, s, doy);
+            if (c->pcycle) {
+                calculate_psoil_flows(c, f, p, s, doy);
+            }
 #ifdef CHECK_NUTRIENT_BALANCE
             if (c->ncycle) {
                 check_n_balance(f, s, n_start, year, doy);
+            }
+            if (c->pcycle) {
+                check_p_balance(f, s, p_start, year, doy);
             }
 #endif
 

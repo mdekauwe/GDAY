@@ -87,6 +87,24 @@ def set_keys(txt, d):
     return txt
 
 
+def p_state(txt, np_ratio=15.0):
+    """Add P pools to [state]: organic pools at N/np_ratio, plus mineral P"""
+    st = txt[txt.index("[state]"):]
+    st = st[:st.index("\n[", 1)]
+    vals = dict(re.findall(r"^(\w+)\s*=\s*([-\d.eE+]+)\s*$", st, re.M))
+    npools = {"shootn": "shootp", "rootn": "rootp", "crootn": "crootp",
+              "branchn": "branchp", "stemn": "stemp", "stemnimm": "stempimm",
+              "stemnmob": "stempmob", "structsurfn": "structsurfp",
+              "structsoiln": "structsoilp", "metabsurfn": "metabsurfp",
+              "metabsoiln": "metabsoilp", "activesoiln": "activesoilp",
+              "slowsoiln": "slowsoilp", "passivesoiln": "passivesoilp"}
+    lines = ["%s = %.10f" % (pk, float(vals[nk]) / np_ratio)
+             for nk, pk in npools.items()]
+    lines += ["pstore = 0.0006", "inorglabp = 0.0005", "inorgsorbp = 0.0",
+              "inorgssorbp = 0.02", "inorgoccp = 0.02", "inorgparp = 0.01"]
+    return txt.replace("[state]", "[state]\n" + "\n".join(lines), 1)
+
+
 def main():
     example_dir, out_dir = sys.argv[1], sys.argv[2]
     nyears = int(sys.argv[3]) if len(sys.argv) > 3 else 3
@@ -121,6 +139,14 @@ def main():
         "soil_b": "6.742", "soil_sathh": "0.22656875",
         "soil_satcon": "4.2228e-6", "soil_sm_sat": "0.43648"})
     open(os.path.join(out_dir, "daily_gsopt.cfg"), "w").write(daily_gsopt)
+
+    # daily with the P cycle (P off must not change the daily case)
+    daily_p = p_state(set_keys(base, {
+        "met_fname": os.path.join(example_dir, "met_data",
+                                  "DUKE_met_data_amb_co2.csv"),
+        "out_fname": os.path.join(out_dir, "out_daily_p.csv"),
+        "print_options": "daily", "pcycle": "true"}))
+    open(os.path.join(out_dir, "daily_p.cfg"), "w").write(daily_p)
 
     # sub-daily cases
     cases = {
@@ -196,7 +222,7 @@ def main():
         txt = set_keys(base, keys)
         open(os.path.join(out_dir, "%s.cfg" % name), "w").write(txt)
 
-    print(" ".join(["daily", "daily_gsopt"] + list(cases)))
+    print(" ".join(["daily", "daily_gsopt", "daily_p"] + list(cases)))
 
 
 if __name__ == "__main__":

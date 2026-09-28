@@ -222,6 +222,7 @@ void initialise_params(params *p) {
     p->passpcmax = 0.05;
     p->passpcmin = 0.005;
     p->pmin0 = 0.0;
+    p->pmincrit = 2.0;       /* CENTURY VARAT1(2,3) */
     p->structcp = 5500.0;
     p->structratp = 0.0;
     p->pcmaxfyoung = 0.004;

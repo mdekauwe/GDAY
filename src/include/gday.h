@@ -106,6 +106,7 @@
 #include "disturbance.h"
 #include "phenology.h"
 #include "soils.h"
+#include "soils_p.h"
 #include "version.h"
 #include "rkck.h"
 #include "rkqs.h"

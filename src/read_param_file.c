@@ -1157,6 +1157,8 @@ int handler(char *section, char *name, char *value, control *c,
         p->passpcmin = atof(value);
     } else if (MATCH("params", "pmin0")) {
         p->pmin0 = atof(value);
+    } else if (MATCH("params", "pmincrit")) {
+        p->pmincrit = atof(value);
     } else if (MATCH("params", "structcp")) {
         p->structcp = atof(value);
     } else if (MATCH("params", "structratp")) {
