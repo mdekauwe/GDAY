@@ -145,7 +145,12 @@ void write_output_header(control *c, FILE **fp) {
     fprintf(*fp, "theta17,");
     fprintf(*fp, "theta18,");
     fprintf(*fp, "theta19,");
-    fprintf(*fp, "theta20\n");
+    fprintf(*fp, "theta20");
+    if (c->pcycle) {
+        /* phosphorus (pcycle) */
+        fprintf(*fp, ",%s", "shootp,rootp,crootp,branchp,stemp,pstore,structsurfp,structsoilp,metabsurfp,metabsoilp,activesoilp,slowsoilp,passivesoilp,inorglabp,inorgsorbp,inorgssorbp,inorgoccp,inorgparp,totalp,shootpc,puptake,ploss,retransp,pgross,pimmob,pmineralisation,p_slow_biochemical,p_atm_dep,p_par_to_min,p_ssorb_to_occ,ppleaf,pproot,ppbranch,ppstemimm,ppstemmob,ppcroot,deadleafp,deadrootp");
+    }
+    fprintf(*fp, "\n");
 
     if (c->output_ascii == FALSE) {
         fprintf(*fp, "nrows=%d\n", nrows);
@@ -290,8 +295,49 @@ void write_daily_outputs_ascii(control *c, canopy_wk *cw, fluxes *f,
         } else {
             fprintf(c->ofp, "%.10f", -999.9);
         }
-        fprintf(c->ofp, i < 20 ? "," : "\n");
+        fprintf(c->ofp, i < 20 ? "," : "");
     }
+    if (c->pcycle) {
+        fprintf(c->ofp, ",%.10f", s->shootp);
+        fprintf(c->ofp, ",%.10f", s->rootp);
+        fprintf(c->ofp, ",%.10f", s->crootp);
+        fprintf(c->ofp, ",%.10f", s->branchp);
+        fprintf(c->ofp, ",%.10f", s->stemp);
+        fprintf(c->ofp, ",%.10f", s->pstore);
+        fprintf(c->ofp, ",%.10f", s->structsurfp);
+        fprintf(c->ofp, ",%.10f", s->structsoilp);
+        fprintf(c->ofp, ",%.10f", s->metabsurfp);
+        fprintf(c->ofp, ",%.10f", s->metabsoilp);
+        fprintf(c->ofp, ",%.10f", s->activesoilp);
+        fprintf(c->ofp, ",%.10f", s->slowsoilp);
+        fprintf(c->ofp, ",%.10f", s->passivesoilp);
+        fprintf(c->ofp, ",%.10f", s->inorglabp);
+        fprintf(c->ofp, ",%.10f", s->inorgsorbp);
+        fprintf(c->ofp, ",%.10f", s->inorgssorbp);
+        fprintf(c->ofp, ",%.10f", s->inorgoccp);
+        fprintf(c->ofp, ",%.10f", s->inorgparp);
+        fprintf(c->ofp, ",%.10f", s->totalp);
+        fprintf(c->ofp, ",%.10f", s->shootpc);
+        fprintf(c->ofp, ",%.10f", f->puptake);
+        fprintf(c->ofp, ",%.10f", f->ploss);
+        fprintf(c->ofp, ",%.10f", f->retransp);
+        fprintf(c->ofp, ",%.10f", f->pgross);
+        fprintf(c->ofp, ",%.10f", f->pimmob);
+        fprintf(c->ofp, ",%.10f", f->pmineralisation);
+        fprintf(c->ofp, ",%.10f", f->p_slow_biochemical);
+        fprintf(c->ofp, ",%.10f", f->p_atm_dep);
+        fprintf(c->ofp, ",%.10f", f->p_par_to_min);
+        fprintf(c->ofp, ",%.10f", f->p_ssorb_to_occ);
+        fprintf(c->ofp, ",%.10f", f->ppleaf);
+        fprintf(c->ofp, ",%.10f", f->pproot);
+        fprintf(c->ofp, ",%.10f", f->ppbranch);
+        fprintf(c->ofp, ",%.10f", f->ppstemimm);
+        fprintf(c->ofp, ",%.10f", f->ppstemmob);
+        fprintf(c->ofp, ",%.10f", f->ppcroot);
+        fprintf(c->ofp, ",%.10f", f->deadleafp);
+        fprintf(c->ofp, ",%.10f", f->deadrootp);
+    }
+    fprintf(c->ofp, "\n");
 
     return;
 }

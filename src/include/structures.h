@@ -35,6 +35,10 @@ typedef struct {
     int   model_optroot;
     int   modeljm;
     int   ncycle;
+    int   pcycle;   /* phosphorus cycle on or off */
+    int   strpfloat;   /* structural litter P:C floats (else structcp) */
+    int   puptake_model;   /* P uptake: 0 constant, 1 labile P x rate, 2 as 1 x root/(root+krp) */
+    int   text_effect_p;   /* strongly sorbed -> mineral P: 1 CENTURY pH/texture, 0 constant psecmnp */
     int   num_years;
     int   nuptake_model;
     int   output_ascii;
@@ -110,6 +114,43 @@ typedef struct {
     double crootn;                      /* coarse root n (t/ha) */
     double cstore;                      /* C store for deciduous model (t/ha) */
     double inorgn;                      /* Inorganic soil N pool - dynamic (t/ha) */
+    /* phosphorus (pcycle) */
+    double shootp; /* shoot P (t/ha) */
+    double rootp; /* fine root P (t/ha) */
+    double crootp; /* coarse root P (t/ha) */
+    double branchp; /* branch P (t/ha) */
+    double stemp; /* stem P = stempimm + stempmob (t/ha) */
+    double stempimm; /* immobile stem P (t/ha) */
+    double stempmob; /* mobile stem P (t/ha) */
+    double pstore; /* P store, deciduous (t/ha) */
+    double shootpc; /* shoot P:C */
+    double rootpc; /* root P:C */
+    double structsurfp; /* surface structural litter P (t/ha) */
+    double structsoilp; /* soil structural litter P (t/ha) */
+    double metabsurfp; /* surface metabolic litter P (t/ha) */
+    double metabsoilp; /* soil metabolic litter P (t/ha) */
+    double activesoilp; /* active SOM P (t/ha) */
+    double slowsoilp; /* slow SOM P (t/ha) */
+    double passivesoilp; /* passive SOM P (t/ha) */
+    double inorglabp; /* labile inorganic P (t/ha) */
+    double inorgsorbp; /* sorbed inorganic P (t/ha) */
+    double inorgssorbp; /* strongly sorbed inorganic P (t/ha) */
+    double inorgoccp; /* occluded P (t/ha) */
+    double inorgparp; /* parent material P (t/ha) */
+    double inorgavlp; /* available mineral P = labile + sorbed (t/ha) */
+    double inorgp; /* total inorganic P (t/ha) */
+    double plantp; /* plant P (t/ha) */
+    double litterp; /* litter P (t/ha) */
+    double litterpag; /* aboveground litter P (t/ha) */
+    double litterpbg; /* belowground litter P (t/ha) */
+    double soilp; /* soil organic + inorganic P (t/ha) */
+    double totalp; /* total ecosystem P (t/ha) */
+    double p_to_alloc_shoot; /* deciduous P allocation */
+    double p_to_alloc_root;
+    double p_to_alloc_croot;
+    double p_to_alloc_branch;
+    double p_to_alloc_stemimm;
+    double p_to_alloc_stemmob;
     double lai;                         /* leaf area index m2 (leaf) m-2 (ground) */
     double lai_prescribed;   /* today's prescribed LAI (m2 m-2) */
     double fipar;
@@ -322,6 +363,57 @@ typedef struct {
     double nmax;
     double nmin;                            /* (bewdy) minimum leaf n for +ve p/s (g/m2) */
     double nmin0;                           /* mineral N pool corresponding to Actnc0,etc (g/m2) */
+    /* phosphorus (pcycle) */
+    double actpcmax; /* active SOM P:C max */
+    double actpcmin; /* active SOM P:C min */
+    double slowpcmax; /* slow SOM P:C max */
+    double slowpcmin; /* slow SOM P:C min */
+    double passpcmax; /* passive SOM P:C max */
+    double passpcmin; /* passive SOM P:C min */
+    double pmin0; /* labile P at which SOM P:C is at its min (g m-2) */
+    double structcp; /* structural litter C:P */
+    double structratp; /* structural litter P:C as a fraction of metabolic (strpfloat) */
+    double pcmaxfyoung; /* max leaf P:C, young stand */
+    double pcmaxfold; /* max leaf P:C, old stand */
+    double pcrfac; /* fine root P:C as a fraction of leaf */
+    double pcbnew; /* new branch P:C, old */
+    double pcbnewz; /* new branch P:C, young */
+    double pccnew; /* new coarse root P:C, old */
+    double pccnewz; /* new coarse root P:C, young */
+    double pcwimm; /* immobile stem P:C, old */
+    double pcwimmz; /* immobile stem P:C, young */
+    double pcwnew; /* new stem P:C, old */
+    double pcwnewz; /* new stem P:C, young */
+    double pf_min; /* min leaf P:C */
+    double fretransp; /* leaf P retranslocation fraction */
+    double prescribed_leaf_pc; /* leaf P:C when the P cycle is off (photosynthesis) */
+    double faecescp; /* faeces C:P */
+    double fractosoilp; /* fraction of grazed P returned to soil */
+    double prateuptake; /* P uptake rate constant (yr-1) */
+    double krp; /* P uptake root coefficient (t C/ha) */
+    double puptakez; /* constant P uptake (t P/ha/yr, puptake_model 0) */
+    double prateloss; /* labile P leaching rate (yr-1) */
+    double smax; /* max sorbed P (t P/ha; 700 g m-2 Yang et al. 2016) */
+    double ks; /* Langmuir half-saturation of sorption (t P/ha; 0.5 g m-2) */
+    double rate_sorb_ssorb; /* sorbed -> strongly sorbed P (yr-1) */
+    double rate_ssorb_occ; /* strongly sorbed -> occluded P (yr-1) */
+    double psecmnp; /* strongly sorbed -> mineral P, constant (d-1; text_effect_p 0) */
+    double phmin; /* CENTURY pH range, min */
+    double phmax; /* CENTURY pH range, max */
+    double phtextmin; /* CENTURY ssorb -> mineral rate, min (d-1) */
+    double phtextmax; /* CENTURY ssorb -> mineral rate, max (d-1) */
+    double phtextslope; /* CENTURY sand slope */
+    double soilph; /* soil pH */
+    double p_atm_deposition; /* atmospheric P deposition (t P/ha/yr) */
+    double p_rate_par_weather; /* parent material P weathering rate (yr-1) */
+    double max_p_biochemical; /* max biochemical P mineralisation (t P/ha/yr; Wang et al. 2007) */
+    double crit_n_cost_of_p; /* N cost of P uptake above which phosphatase is made (g N/g P) */
+    double biochemical_p_constant; /* biochemical P mineralisation half-saturation (g N/g P) */
+    double kp_canopy; /* extinction coefficient of leaf P in the canopy */
+    double jmaxpa; /* Jmax vs leaf P (Walker et al. 2014) */
+    double jmaxpb;
+    double vcmaxpa; /* Vcmax vs leaf P (Walker et al. 2014) */
+    double vcmaxpb;
     double nmincrit;                        /* Critical mineral N pool at max soil N:C (g/m2) (Parton et al 1993, McMurtrie et al 2001). */
     double ntheta_root;                     /* Fitted parameter based on Landsberg and Waring */
     double ntheta_topsoil;                  /* Fitted parameter based on Landsberg and Waring */
@@ -586,6 +678,59 @@ typedef struct {
     /* n */
     double nuptake;
     double nloss;
+    /* phosphorus (pcycle, t P/ha/d) */
+    double retransp;
+    double leafretransp;
+    double puptake;
+    double ploss;
+    double pgross;
+    double pimmob;
+    double plittrelease;
+    double pmineralisation;
+    double ppleaf;
+    double pproot;
+    double ppcroot;
+    double ppbranch;
+    double ppstemimm;
+    double ppstemmob;
+    double deadleafp;
+    double deadrootp;
+    double deadcrootp;
+    double deadbranchp;
+    double deadstemp;
+    double peaten;
+    double purine;
+    double p_surf_struct_litter;
+    double p_surf_metab_litter;
+    double p_soil_struct_litter;
+    double p_soil_metab_litter;
+    double p_surf_struct_to_slow;
+    double p_soil_struct_to_slow;
+    double p_surf_struct_to_active;
+    double p_soil_struct_to_active;
+    double p_surf_metab_to_active;
+    double p_soil_metab_to_active;
+    double p_active_to_slow;
+    double p_active_to_passive;
+    double p_slow_to_active;
+    double p_slow_to_passive;
+    double p_slow_biochemical;
+    double p_passive_to_active;
+    double p_lab_in;
+    double p_lab_out;
+    double p_sorb_in;
+    double p_sorb_out;
+    double p_min_to_ssorb;
+    double p_ssorb_to_min;
+    double p_ssorb_to_occ;
+    double p_par_to_min;
+    double p_atm_dep;
+    double lprate;
+    double rprate;
+    double bprate;
+    double cprate;
+    double wpimrate;
+    double wpmobrate;
     double npassive;        /* n passive -> active */
     double ngross;          /* N gross mineralisation */
     double nimmob;          /* N immobilisation in SOM */

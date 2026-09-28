@@ -1049,6 +1049,14 @@ void correct_rate_constants(params *p, int output) {
         p->kdec7 *= NDAYS_IN_YR;
         p->nuptakez *= NDAYS_IN_YR;
         p->nmax *= NDAYS_IN_YR;
+        p->prateuptake *= NDAYS_IN_YR;
+        p->prateloss *= NDAYS_IN_YR;
+        p->puptakez *= NDAYS_IN_YR;
+        p->p_atm_deposition *= NDAYS_IN_YR;
+        p->p_rate_par_weather *= NDAYS_IN_YR;
+        p->max_p_biochemical *= NDAYS_IN_YR;
+        p->rate_sorb_ssorb *= NDAYS_IN_YR;
+        p->rate_ssorb_occ *= NDAYS_IN_YR;
     } else {
         p->rateuptake /= NDAYS_IN_YR;
         p->rateloss /= NDAYS_IN_YR;
@@ -1070,6 +1078,14 @@ void correct_rate_constants(params *p, int output) {
         p->kdec7 /= NDAYS_IN_YR;
         p->nuptakez /= NDAYS_IN_YR;
         p->nmax /= NDAYS_IN_YR;
+        p->prateuptake /= NDAYS_IN_YR;
+        p->prateloss /= NDAYS_IN_YR;
+        p->puptakez /= NDAYS_IN_YR;
+        p->p_atm_deposition /= NDAYS_IN_YR;
+        p->p_rate_par_weather /= NDAYS_IN_YR;
+        p->max_p_biochemical /= NDAYS_IN_YR;
+        p->rate_sorb_ssorb /= NDAYS_IN_YR;
+        p->rate_ssorb_occ /= NDAYS_IN_YR;
     }
 
     return;
@@ -1202,6 +1218,24 @@ void day_end_calculations(control *c, params *p, state *s, int days_in_year,
     s->littern = s->litternag + s->litternbg;
     s->plantn = s->shootn + s->rootn + s->crootn + s->branchn + s->stemn;
     s->totaln = s->plantn + s->littern + s->soiln;
+
+    /* total plant, soil & litter phosphorus */
+    if (c->pcycle) {
+        s->shootpc = s->shoot > 0.0 ? s->shootp / s->shoot : 0.0;
+        s->rootpc = s->root > 0.0 ? MAX(0.0, s->rootp / s->root) : 0.0;
+        s->inorgavlp = s->inorglabp + s->inorgsorbp;
+        s->inorgp = s->inorgavlp + s->inorgssorbp + s->inorgoccp +
+                    s->inorgparp;
+        s->soilp = s->inorgp + s->activesoilp + s->slowsoilp +
+                   s->passivesoilp;
+        s->litterpag = s->structsurfp + s->metabsurfp;
+        s->litterpbg = s->structsoilp + s->metabsoilp;
+        s->litterp = s->litterpag + s->litterpbg;
+        s->stemp = s->stempimm + s->stempmob;
+        s->plantp = s->shootp + s->rootp + s->crootp + s->branchp +
+                    s->stemp;
+        s->totalp = s->plantp + s->pstore + s->litterp + s->soilp;
+    }
 
     /* total plant, soil, litter and system carbon */
     s->soilc = s->activesoil + s->slowsoil + s->passivesoil;
